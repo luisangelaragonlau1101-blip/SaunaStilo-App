@@ -1,0 +1,59 @@
+name: saunastilo
+description: "A new Flutter project."
+
+publish_to: 'none' 
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.12.1
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  table_calendar: ^3.1.1
+  cupertino_icons: ^1.0.8
+  firebase_core: ^4.10.0
+  cloud_firestore: ^6.5.0
+  firebase_auth: ^6.5.2
+  google_fonts: ^6.2.0
+  provider: ^6.1.5+1
+  intl: ^0.20.2
+  url_launcher: ^6.3.2
+  
+  # --- PAQUETES PARA REPORTES ---
+  pdf: ^3.11.1
+  printing: ^5.13.1
+  csv: ^6.0.0
+  path_provider: ^2.1.3
+  share_plus: ^13.1.0
+
+  # --- SUBIDA DE IMÁGENES ---
+  image_picker: ^1.2.2
+  firebase_storage: 13.4.2
+  cached_network_image: ^3.4.1
+  simple_barcode_scanner: ^0.6.0
+  audioplayers: ^6.8.1
+  geolocator: ^14.0.3
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.13.1
+  
+# --- CONFIGURACIÓN DEL ÍCONO (Android) ---
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: "assets/logo_saunastilo_2.png"
+
+# --- LOGO Y ASSETS ---
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/logo_saunastilo.png
+    - assets/sounds/beep.ogg
+    - assets/logo_saunastilo_2.png
