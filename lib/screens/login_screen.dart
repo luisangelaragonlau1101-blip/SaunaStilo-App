@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:google_fonts/google_fonts.dart'; 
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -66,6 +67,119 @@ class _LoginScreenState extends State<LoginScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(message),
+            backgroundColor: colorError,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _crearAdministradorInicial() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    final email = _emailController.text.trim().toLowerCase();
+    final password = _passwordController.text;
+
+    if (email != 'luisangel.aragon.lau1101@gmail.com') {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Este alta inicial solo está disponible para el administrador autorizado.'),
+          backgroundColor: colorError,
+        ),
+      );
+      return;
+    }
+
+    if (password.length < 6) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('La contraseña debe tener al menos 6 caracteres.'),
+          backgroundColor: colorError,
+        ),
+      );
+      return;
+    }
+
+    final confirmar = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: const Color(0xFF121212),
+        title: const Text(
+          'Crear acceso administrador',
+          style: TextStyle(color: Colors.white),
+        ),
+        content: const Text(
+          'Se creará la cuenta principal de Sauna Stilo con el correo y la contraseña que acabas de escribir.',
+          style: TextStyle(color: Colors.white70),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('CANCELAR'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('CREAR CUENTA'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmar != true || !mounted) return;
+    setState(() => _isLoading = true);
+
+    UserCredential? credential;
+    try {
+      credential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      await FirebaseFirestore.instance
+          .collection('usuarios')
+          .doc(credential.user!.uid)
+          .set({
+        'nombre': 'Luis Angel',
+        'correo': email,
+        'rol': 'admin',
+        'fecha_registro': FieldValue.serverTimestamp(),
+        'trabajaSabados': false,
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Administrador creado. Bienvenido a Sauna Stilo.'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } on FirebaseAuthException catch (e) {
+      String message = 'No se pudo crear el acceso administrador.';
+      if (e.code == 'email-already-in-use') {
+        message = 'La cuenta ya existe. Usa INICIAR SESIÓN.';
+      } else if (e.code == 'weak-password') {
+        message = 'Elige una contraseña más segura.';
+      } else if (e.code == 'invalid-email') {
+        message = 'El formato del correo no es válido.';
+      }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(message), backgroundColor: colorError),
+        );
+      }
+    } catch (_) {
+      try {
+        await credential?.user?.delete();
+      } catch (_) {
+        await FirebaseAuth.instance.signOut();
+      }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('No se pudo completar el perfil administrador. Inténtalo otra vez.'),
             backgroundColor: colorError,
           ),
         );
@@ -198,6 +312,24 @@ class _LoginScreenState extends State<LoginScreen> {
                             letterSpacing: 1.0,
                           ),
                         ),
+                ),
+                const SizedBox(height: 14),
+                TextButton.icon(
+                  onPressed: _isLoading ? null : _crearAdministradorInicial,
+                  icon: const Icon(Icons.admin_panel_settings_outlined),
+                  label: Text(
+                    'CREAR MI ACCESO ADMINISTRADOR',
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.cinzel(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.8,
+                    ),
+                  ),
+                  style: TextButton.styleFrom(
+                    foregroundColor: colorAcento,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
                 ),
               ],
             ),
