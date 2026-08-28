@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:provider/provider.dart'; 
 import 'firebase_options.dart'; 
 import 'screens/wrapper.dart'; 
@@ -10,8 +11,18 @@ import 'providers/seguimiento_cotizaciones_provider.dart';
 import 'services/cajita_herramientas_service.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
+@pragma('vm:entry-point')
+Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  if (Firebase.apps.isEmpty) {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+  }
+}
+
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
+  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
   runApp(const SaunaStiloBootstrap());
 }
 

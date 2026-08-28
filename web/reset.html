@@ -17,13 +17,6 @@
 <body>
   <main><div class="mark">♨</div><h1>SAUNA STILO</h1><p>Abriendo la aplicación…</p></main>
   <script>
-    // Retiramos registros antiguos sin bloquear el arranque ni borrar todos
-    // los archivos descargados cada vez que se abre este enlace.
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.getRegistrations().then(function (items) {
-        items.forEach(function (item) { item.unregister(); });
-      }).catch(function () {});
-    }
     setTimeout(function () {
       location.replace('./?v=' + Date.now());
     }, 250);
