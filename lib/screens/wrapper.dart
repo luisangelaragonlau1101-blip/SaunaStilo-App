@@ -33,6 +33,7 @@ import 'blog_interno_screen.dart';
 import 'notificaciones_screen.dart';
 import 'reconocimientos_screen.dart';
 import '../services/notificaciones_service.dart';
+import '../widgets/avisos_sonoros.dart';
 
 // --- PANTALLAS DE ASISTENCIAS ---
 import 'trabajador_asistencia_screen.dart';
@@ -138,11 +139,20 @@ class Wrapper extends StatelessWidget {
                         final usuario = UserModel.fromFirestore(userSnapshot.data!);
                         
                         if (usuario.rol == 'admin') {
-                          return AdminDashboard(adminUser: usuario, key: const ValueKey('admin_dash'));
+                          return AvisosSonoros(
+                            usuario: usuario,
+                            child: AdminDashboard(adminUser: usuario, key: const ValueKey('admin_dash')),
+                          );
                         } else if (usuario.rol == 'almacenista') {
-                          return AlmacenistaDashboard(usuario: usuario, key: const ValueKey('almacenista_dash'));
+                          return AvisosSonoros(
+                            usuario: usuario,
+                            child: AlmacenistaDashboard(usuario: usuario, key: const ValueKey('almacenista_dash')),
+                          );
                         } else {
-                          return OperativoDashboard(usuario: usuario, key: const ValueKey('operativo_dash'));
+                          return AvisosSonoros(
+                            usuario: usuario,
+                            child: OperativoDashboard(usuario: usuario, key: const ValueKey('operativo_dash')),
+                          );
                         }
                       }
                       
@@ -688,7 +698,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   crossAxisCount: 2,
                   crossAxisSpacing: 16,
                   mainAxisSpacing: 16,
-                  childAspectRatio: 1.05, 
+                  childAspectRatio: 2.15,
                   children: [
                     const _MenuCard(titulo: "INVENTARIO", icono: Icons.inventory_2_rounded, color: colorAzul, destino: InventarioAdminScreen()),
                     const _MenuCard(titulo: "CLIENTES", icono: Icons.people_alt_rounded, color: colorRosa, destino: AdminClientesScreen()),
@@ -712,7 +722,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                     _MenuCard(titulo: "ASISTENTE IA", icono: Icons.auto_awesome_rounded, color: colorMorado, destino: AsistenteIaScreen(usuario: widget.adminUser)),
                     _AvisosMenuCard(usuario: widget.adminUser, color: colorCyan),
                     _MenuCard(titulo: "RECONOCIMIENTOS", icono: Icons.workspace_premium_rounded, color: colorAmarillo, destino: ReconocimientosScreen(usuario: widget.adminUser)),
-                    _MenuCard(titulo: "BLOG INTERNO", icono: Icons.auto_stories_rounded, color: colorRosa, destino: BlogInternoScreen(usuario: widget.adminUser)),
+                    _MenuCard(titulo: "COMUNIDAD", icono: Icons.hub_rounded, color: colorRosa, destino: BlogInternoScreen(usuario: widget.adminUser)),
                   ],
                 ),
                 const SizedBox(height: 30),
@@ -1052,31 +1062,56 @@ class _MenuCard extends StatelessWidget {
               BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 8, offset: const Offset(0, 4)),
             ],
           ),
-          child: Stack(
+          child: Row(
             children: [
-              Positioned(
-                right: -15,
-                bottom: -15,
-                child: Icon(icono, size: 90, color: color.withOpacity(0.05)),
+              Container(
+                width: 6,
+                decoration: BoxDecoration(
+                  color: color,
+                  borderRadius: const BorderRadius.horizontal(left: Radius.circular(20)),
+                  boxShadow: [BoxShadow(color: color.withOpacity(.45), blurRadius: 12)],
+                ),
               ),
-              Padding(
-                padding: const EdgeInsets.all(20.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              const SizedBox(width: 10),
+              Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: color.withOpacity(.13),
+                  shape: BoxShape.circle,
+                  border: Border.all(color: color.withOpacity(.38)),
+                ),
+                child: Icon(icono, size: 20, color: color),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  titulo,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.inter(
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
+                    letterSpacing: .35,
+                  ),
+                ),
+              ),
+              Container(
+                width: 18,
+                alignment: Alignment.center,
+                child: Stack(
+                  alignment: Alignment.center,
                   children: [
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(color: color.withOpacity(0.15), borderRadius: BorderRadius.circular(14)),
-                      child: Icon(icono, size: 26, color: color),
-                    ),
-                    Text(
-                      titulo, 
-                      style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: Colors.white, letterSpacing: 0.5)
+                    Container(height: 1, color: color.withOpacity(.35)),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: CircleAvatar(radius: 3, backgroundColor: color),
                     ),
                   ],
                 ),
               ),
+              const SizedBox(width: 8),
             ],
           ),
         ),
@@ -1422,7 +1457,7 @@ class _OperativoDashboardState extends State<OperativoDashboard> {
                   crossAxisCount: 2,
                   crossAxisSpacing: 16,
                   mainAxisSpacing: 16,
-                  childAspectRatio: 1.05, 
+                  childAspectRatio: 2.15,
                   children: [
                     const _MenuCard(
                       titulo: "INVENTARIO", 
@@ -1474,8 +1509,8 @@ class _OperativoDashboardState extends State<OperativoDashboard> {
                       destino: ReconocimientosScreen(usuario: widget.usuario),
                     ),
                     _MenuCard(
-                      titulo: "BLOG INTERNO",
-                      icono: Icons.auto_stories_rounded,
+                      titulo: "COMUNIDAD",
+                      icono: Icons.hub_rounded,
                       color: const Color(0xFFFF3399),
                       destino: BlogInternoScreen(usuario: widget.usuario),
                     ),
@@ -2097,7 +2132,7 @@ class _AlmacenistaDashboardState extends State<AlmacenistaDashboard> {
                   crossAxisCount: 2,
                   crossAxisSpacing: 16,
                   mainAxisSpacing: 16,
-                  childAspectRatio: 1.05,
+                  childAspectRatio: 2.15,
                   children: [
                     const _MenuCard(titulo: "INVENTARIO", icono: Icons.inventory_2_rounded, color: colorAzul, destino: InventarioAdminScreen()),
                     const _MenuCard(titulo: "CAJITAS", icono: Icons.home_repair_service_rounded, color: colorNaranja, destino: AdminCajitasScreen()),
@@ -2112,7 +2147,7 @@ class _AlmacenistaDashboardState extends State<AlmacenistaDashboard> {
                     _MenuCard(titulo: "ASISTENTE IA", icono: Icons.auto_awesome_rounded, color: colorMorado, destino: AsistenteIaScreen(usuario: widget.usuario)),
                     _AvisosMenuCard(usuario: widget.usuario, color: colorCyan),
                     _MenuCard(titulo: "MIS INSIGNIAS", icono: Icons.workspace_premium_rounded, color: colorAmarillo, destino: ReconocimientosScreen(usuario: widget.usuario)),
-                    _MenuCard(titulo: "BLOG INTERNO", icono: Icons.auto_stories_rounded, color: colorRosa, destino: BlogInternoScreen(usuario: widget.usuario)),
+                    _MenuCard(titulo: "COMUNIDAD", icono: Icons.hub_rounded, color: colorRosa, destino: BlogInternoScreen(usuario: widget.usuario)),
                   ],
                 ),
                 const SizedBox(height: 100), // Aumentamos el padding para asegurar que la firma no tape el último elemento

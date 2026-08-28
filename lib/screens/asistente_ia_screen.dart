@@ -4,7 +4,9 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
 import '../models/actividad_model.dart';
+import '../models/insumo_model.dart';
 import '../models/user_model.dart';
+import '../services/notificaciones_service.dart';
 
 class AsistenteIaScreen extends StatefulWidget {
   final UserModel usuario;
@@ -25,6 +27,7 @@ class _AsistenteIaScreenState extends State<AsistenteIaScreen> {
   List<ActividadModel> _actividades = <ActividadModel>[];
   List<Map<String, dynamic>> _solicitudes = <Map<String, dynamic>>[];
   List<Map<String, dynamic>> _proyectos = <Map<String, dynamic>>[];
+  List<InsumoModel> _insumos = <InsumoModel>[];
 
   bool get _esAdmin => widget.usuario.rol == AppRoles.admin;
   bool get _esAlmacen => widget.usuario.rol == AppRoles.almacenista;
@@ -82,19 +85,27 @@ class _AsistenteIaScreenState extends State<AsistenteIaScreen> {
                     .collection('proyectos')
                     .snapshots(),
                 builder: (context, proyectosSnapshot) {
-                  _sincronizarDatos(
-                    actividadesSnapshot.data,
-                    solicitudesSnapshot.data,
-                    proyectosSnapshot.data,
-                  );
-                  return Column(
-                    children: [
-                      _resumenOperacion(),
-                      _preguntasRapidas(),
-                      const Divider(height: 1, color: Colors.white10),
-                      Expanded(child: _listaMensajes()),
-                      _entradaMensaje(),
-                    ],
+                  return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                    stream: FirebaseFirestore.instance
+                        .collection('insumos_inventario')
+                        .snapshots(),
+                    builder: (context, inventarioSnapshot) {
+                      _sincronizarDatos(
+                        actividadesSnapshot.data,
+                        solicitudesSnapshot.data,
+                        proyectosSnapshot.data,
+                        inventarioSnapshot.data,
+                      );
+                      return Column(
+                        children: [
+                          _resumenOperacion(),
+                          _preguntasRapidas(),
+                          const Divider(height: 1, color: Colors.white10),
+                          Expanded(child: _listaMensajes()),
+                          _entradaMensaje(),
+                        ],
+                      );
+                    },
                   );
                 },
               );
@@ -109,6 +120,7 @@ class _AsistenteIaScreenState extends State<AsistenteIaScreen> {
     QuerySnapshot<Map<String, dynamic>>? actividades,
     QuerySnapshot<Map<String, dynamic>>? solicitudes,
     QuerySnapshot<Map<String, dynamic>>? proyectos,
+    QuerySnapshot<Map<String, dynamic>>? inventario,
   ) {
     final todas = actividades?.docs
             .map((doc) => ActividadModel.fromJson(doc.data(), doc.id))
@@ -142,6 +154,11 @@ class _AsistenteIaScreenState extends State<AsistenteIaScreen> {
             )
             .toList(growable: false) ??
         const <Map<String, dynamic>>[];
+    _insumos = inventario?.docs
+            .map((doc) => InsumoModel.fromFirestore(doc))
+            .toList(growable: true) ??
+        <InsumoModel>[];
+    _insumos.sort((a, b) => a.nombre.compareTo(b.nombre));
   }
 
   Widget _resumenOperacion() {
@@ -172,8 +189,8 @@ class _AsistenteIaScreenState extends State<AsistenteIaScreen> {
 
   Widget _preguntasRapidas() {
     final opciones = _esAdmin || _esAlmacen
-        ? const ['Resumen de hoy', 'Pendientes', 'Almacén', 'Proyectos']
-        : const ['¿Qué hago hoy?', 'Mis pendientes', 'Mis evidencias', 'Mis logros'];
+        ? const ['Resumen de hoy', 'Pendientes', 'Almacén', 'Herramientas', 'Proyectos']
+        : const ['¿Qué hago hoy?', 'Mis pendientes', 'Herramientas', 'Mis evidencias', 'Mis logros'];
     return SizedBox(
       height: 48,
       child: ListView.separated(
@@ -242,6 +259,14 @@ class _AsistenteIaScreenState extends State<AsistenteIaScreen> {
         ),
         child: Row(
           children: [
+            if (!_esAdmin) ...[
+              IconButton.filledTonal(
+                tooltip: 'Solicitar herramienta',
+                onPressed: _abrirSolicitudHerramienta,
+                icon: const Icon(Icons.handyman_rounded),
+              ),
+              const SizedBox(width: 8),
+            ],
             Expanded(
               child: TextField(
                 controller: _controller,
@@ -272,6 +297,153 @@ class _AsistenteIaScreenState extends State<AsistenteIaScreen> {
     );
   }
 
+  Future<void> _abrirSolicitudHerramienta() async {
+    final disponibles = _insumos
+        .where((insumo) => insumo.cantidadDisponible > 0)
+        .toList(growable: false);
+    if (disponibles.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No hay herramientas disponibles registradas.')),
+      );
+      return;
+    }
+    InsumoModel seleccionado = disponibles.first;
+    int cantidad = 1;
+    bool enviando = false;
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: _tarjeta,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
+      ),
+      builder: (modalContext) => StatefulBuilder(
+        builder: (context, setModalState) => Padding(
+          padding: EdgeInsets.fromLTRB(
+            20,
+            20,
+            20,
+            MediaQuery.of(context).viewInsets.bottom + 24,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'SOLICITAR DESDE EL ASISTENTE',
+                style: GoogleFonts.montserrat(
+                  color: Colors.white,
+                  fontSize: 19,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<InsumoModel>(
+                initialValue: seleccionado,
+                isExpanded: true,
+                decoration: const InputDecoration(labelText: 'Herramienta disponible'),
+                items: disponibles
+                    .map(
+                      (insumo) => DropdownMenuItem(
+                        value: insumo,
+                        child: Text(
+                          '${insumo.nombre} · ${insumo.cantidadDisponible} ${insumo.unidadMedida}',
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    )
+                    .toList(growable: false),
+                onChanged: (value) {
+                  if (value != null) {
+                    setModalState(() {
+                      seleccionado = value;
+                      if (cantidad > seleccionado.cantidadDisponible) cantidad = 1;
+                    });
+                  }
+                },
+              ),
+              const SizedBox(height: 14),
+              Row(
+                children: [
+                  Text('Cantidad', style: GoogleFonts.inter(color: Colors.white70)),
+                  const Spacer(),
+                  IconButton(
+                    onPressed: cantidad > 1 ? () => setModalState(() => cantidad--) : null,
+                    icon: const Icon(Icons.remove_circle_outline_rounded),
+                  ),
+                  Text('$cantidad', style: GoogleFonts.montserrat(fontSize: 18, fontWeight: FontWeight.w900)),
+                  IconButton(
+                    onPressed: cantidad < seleccionado.cantidadDisponible
+                        ? () => setModalState(() => cantidad++)
+                        : null,
+                    icon: const Icon(Icons.add_circle_outline_rounded),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: FilledButton.icon(
+                  style: FilledButton.styleFrom(backgroundColor: _acento),
+                  onPressed: enviando
+                      ? null
+                      : () async {
+                          setModalState(() => enviando = true);
+                          final db = FirebaseFirestore.instance;
+                          final solicitudRef = db.collection('solicitudes_herramientas').doc();
+                          final avisoRef = db.collection('notificaciones').doc();
+                          final batch = db.batch();
+                          batch.set(solicitudRef, {
+                            'proyectoId': 'general',
+                            'proyectoNombre': 'Solicitud desde Asistente IA',
+                            'trabajadorId': widget.usuario.id,
+                            'trabajadorNombre': widget.usuario.nombre,
+                            'insumoId': seleccionado.id,
+                            'nombreInsumo': seleccionado.nombre,
+                            'cantidad': cantidad,
+                            'esRetornable': true,
+                            'estatus': 'pendiente',
+                            'marcadoDevueltoTrabajador': false,
+                            'devueltoConfirmadoAdmin': false,
+                            'fechaSolicitud': FieldValue.serverTimestamp(),
+                            'origen': 'asistente_ia',
+                          });
+                          batch.set(
+                            avisoRef,
+                            NotificacionesService.datosAviso(
+                              titulo: 'Solicitud desde Asistente IA',
+                              mensaje:
+                                  '${widget.usuario.nombre} solicita $cantidad × ${seleccionado.nombre}',
+                              tipo: 'almacen',
+                              rolesDestinatarios: const ['admin', 'almacenista'],
+                            ),
+                          );
+                          await batch.commit();
+                          if (modalContext.mounted) Navigator.pop(modalContext);
+                          if (mounted) {
+                            setState(() {
+                              _mensajes.add(
+                                _MensajeAsistente(
+                                  texto:
+                                      'Solicitud enviada: $cantidad × ${seleccionado.nombre}. Administración y almacén ya recibieron el aviso.',
+                                  esUsuario: false,
+                                ),
+                              );
+                            });
+                          }
+                        },
+                  icon: const Icon(Icons.send_rounded),
+                  label: const Text('ENVIAR SOLICITUD'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   void _enviar(String texto) {
     final limpio = texto.trim();
     if (limpio.isEmpty) return;
@@ -294,6 +466,19 @@ class _AsistenteIaScreenState extends State<AsistenteIaScreen> {
 
   String _responder(String pregunta) {
     final q = pregunta.toLowerCase();
+    if (q.contains('herramienta') || q.contains('inventario') || q.contains('disponible')) {
+      final disponibles = _insumos
+          .where((insumo) => insumo.cantidadDisponible > 0)
+          .toList(growable: false);
+      if (disponibles.isEmpty) {
+        return 'No encuentro herramientas con existencia disponible en el almacén.';
+      }
+      final lista = disponibles.take(12).map(
+        (insumo) =>
+            '• ${insumo.nombre}: ${insumo.cantidadDisponible} ${insumo.unidadMedida}',
+      ).join('\n');
+      return '$lista\n\nUsa el botón de herramienta junto al cuadro de texto para enviar la solicitud directamente.';
+    }
     if (q.contains('almac') || q.contains('solicitud')) {
       final pendientes = _solicitudes
           .where((solicitud) => solicitud['estatus'] == 'pendiente')

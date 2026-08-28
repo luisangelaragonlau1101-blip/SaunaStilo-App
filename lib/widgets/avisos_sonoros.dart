@@ -1,0 +1,92 @@
+import 'dart:async';
+
+import 'package:audioplayers/audioplayers.dart';
+import 'package:flutter/material.dart';
+
+import '../models/notificacion_model.dart';
+import '../models/user_model.dart';
+import '../services/notificaciones_service.dart';
+
+class AvisosSonoros extends StatefulWidget {
+  final UserModel usuario;
+  final Widget child;
+
+  const AvisosSonoros({
+    super.key,
+    required this.usuario,
+    required this.child,
+  });
+
+  @override
+  State<AvisosSonoros> createState() => _AvisosSonorosState();
+}
+
+class _AvisosSonorosState extends State<AvisosSonoros> {
+  final AudioPlayer _player = AudioPlayer();
+  StreamSubscription<List<NotificacionApp>>? _subscription;
+  Set<String>? _idsConocidos;
+
+  @override
+  void initState() {
+    super.initState();
+    _escuchar();
+  }
+
+  @override
+  void didUpdateWidget(covariant AvisosSonoros oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.usuario.id != widget.usuario.id ||
+        oldWidget.usuario.rol != widget.usuario.rol) {
+      _subscription?.cancel();
+      _idsConocidos = null;
+      _escuchar();
+    }
+  }
+
+  void _escuchar() {
+    _subscription = NotificacionesService()
+        .avisosPara(usuarioId: widget.usuario.id, rol: widget.usuario.rol)
+        .listen((avisos) async {
+          final idsActuales = avisos.map((aviso) => aviso.id).toSet();
+          if (_idsConocidos == null) {
+            _idsConocidos = idsActuales;
+            return;
+          }
+          final nuevos = avisos
+              .where((aviso) => !_idsConocidos!.contains(aviso.id))
+              .toList(growable: false);
+          _idsConocidos = idsActuales;
+          if (nuevos.isEmpty) return;
+          try {
+            await _player.play(AssetSource('sounds/beep.ogg'), volume: 1);
+          } catch (_) {}
+          if (!mounted) return;
+          final aviso = nuevos.first;
+          ScaffoldMessenger.of(context)
+            ..hideCurrentSnackBar()
+            ..showSnackBar(
+              SnackBar(
+                backgroundColor: const Color(0xFF171717),
+                behavior: SnackBarBehavior.floating,
+                content: Row(
+                  children: [
+                    const Icon(Icons.notifications_active_rounded, color: Color(0xFF00E5FF)),
+                    const SizedBox(width: 11),
+                    Expanded(child: Text('${aviso.titulo}\n${aviso.mensaje}')),
+                  ],
+                ),
+              ),
+            );
+        });
+  }
+
+  @override
+  void dispose() {
+    _subscription?.cancel();
+    _player.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
+}

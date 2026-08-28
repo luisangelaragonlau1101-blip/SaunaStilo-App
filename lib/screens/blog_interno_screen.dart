@@ -1,21 +1,27 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
 import '../models/user_model.dart';
-import '../services/notificaciones_service.dart';
+import '../services/social_service.dart';
+import 'perfil_social_screen.dart';
+import 'perfiles_equipo_screen.dart';
 
-class BlogInternoScreen extends StatelessWidget {
+class BlogInternoScreen extends StatefulWidget {
   final UserModel usuario;
-
   const BlogInternoScreen({super.key, required this.usuario});
 
-  static const _fondo = Color(0xFF050505);
-  static const _tarjeta = Color(0xFF171717);
-  static const _acento = Color(0xFF8B5CF6);
+  @override
+  State<BlogInternoScreen> createState() => _BlogInternoScreenState();
+}
 
-  bool get _esAdmin => usuario.rol == AppRoles.admin;
+class _BlogInternoScreenState extends State<BlogInternoScreen> {
+  static const _fondo = Color(0xFF050505);
+  static const _tarjeta = Color(0xFF151515);
+  static const _acento = Color(0xFF00E5FF);
+  final SocialService _social = SocialService();
 
   @override
   Widget build(BuildContext context) {
@@ -26,368 +32,364 @@ class BlogInternoScreen extends StatelessWidget {
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'BLOG SAUNA STILO',
-              style: GoogleFonts.montserrat(fontWeight: FontWeight.w900),
-            ),
-            Text(
-              'Noticias y avances mes a mes',
-              style: GoogleFonts.inter(color: Colors.white54, fontSize: 11),
-            ),
+            Text('COMUNIDAD', style: GoogleFonts.montserrat(fontWeight: FontWeight.w900)),
+            Text('La red interna de Sauna Stilo', style: GoogleFonts.inter(color: Colors.white54, fontSize: 11)),
           ],
         ),
+        actions: [
+          IconButton(
+            tooltip: 'Mi perfil',
+            onPressed: () => _abrirPerfil(widget.usuario.id),
+            icon: const Icon(Icons.account_circle_rounded),
+          ),
+          IconButton(
+            tooltip: 'Equipo',
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => PerfilesEquipoScreen(usuarioActual: widget.usuario)),
+            ),
+            icon: const Icon(Icons.groups_rounded),
+          ),
+        ],
       ),
-      floatingActionButton: _esAdmin
-          ? FloatingActionButton.extended(
-              backgroundColor: _acento,
-              foregroundColor: Colors.white,
-              onPressed: () => _crearPublicacion(context),
-              icon: const Icon(Icons.edit_rounded),
-              label: const Text('PUBLICAR'),
-            )
-          : null,
+      floatingActionButton: FloatingActionButton.extended(
+        backgroundColor: _acento,
+        foregroundColor: Colors.black,
+        onPressed: _crearPublicacion,
+        icon: const Icon(Icons.add_a_photo_rounded),
+        label: Text(
+          widget.usuario.rol == AppRoles.admin ? 'COMUNICADO' : 'PUBLICAR AVANCE',
+          style: GoogleFonts.inter(fontWeight: FontWeight.w900),
+        ),
+      ),
       body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-        stream: FirebaseFirestore.instance
-            .collection('blog_publicaciones')
-            .snapshots(),
+        stream: _social.publicaciones(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator(color: _acento));
           }
-          final publicaciones = snapshot.data?.docs
-                  .map(_Publicacion.fromDocument)
-                  .where((publicacion) => _esAdmin || publicacion.publicada)
-                  .toList(growable: true) ??
-              <_Publicacion>[];
-          publicaciones.sort((a, b) => b.mes.compareTo(a.mes));
-          if (publicaciones.isEmpty) return _estadoVacio();
-          return ListView.builder(
-            padding: const EdgeInsets.fromLTRB(18, 10, 18, 110),
-            itemCount: publicaciones.length,
-            itemBuilder: (context, index) {
-              final publicacion = publicaciones[index];
-              final mostrarMes = index == 0 ||
-                  !_mismoMes(publicaciones[index - 1].mes, publicacion.mes);
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (mostrarMes) ...[
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(3, 18, 3, 10),
-                      child: Text(
-                        DateFormat('MMMM yyyy', 'es')
-                            .format(publicacion.mes)
-                            .toUpperCase(),
-                        style: GoogleFonts.inter(
-                          color: _acento,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 1.1,
-                        ),
-                      ),
-                    ),
-                  ],
-                  _tarjetaPublicacion(context, publicacion),
-                ],
-              );
-            },
+          final posts = snapshot.data?.docs.toList(growable: true) ?? [];
+          posts.sort((a, b) => _fecha(b.data()).compareTo(_fecha(a.data())));
+          return RefreshIndicator(
+            onRefresh: () async => Future<void>.delayed(const Duration(milliseconds: 450)),
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(14, 8, 14, 110),
+              children: [
+                _encabezadoComunidad(),
+                const SizedBox(height: 14),
+                if (posts.isEmpty) _estadoVacio() else ...posts.map(_tarjetaPost),
+              ],
+            ),
           );
         },
       ),
     );
   }
 
-  Widget _tarjetaPublicacion(BuildContext context, _Publicacion publicacion) {
+  Widget _encabezadoComunidad() {
     return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: _tarjeta,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: Colors.white10),
-      ),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(22),
-        onTap: () => _abrirPublicacion(context, publicacion),
-        child: Padding(
-          padding: const EdgeInsets.all(19),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
-                    decoration: BoxDecoration(
-                      color: _acento.withOpacity(.16),
-                      borderRadius: BorderRadius.circular(9),
-                    ),
-                    child: Text(
-                      publicacion.categoria.toUpperCase(),
-                      style: GoogleFonts.inter(
-                        color: const Color(0xFFC4B5FD),
-                        fontSize: 10,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                  ),
-                  const Spacer(),
-                  if (!publicacion.publicada)
-                    Text(
-                      'BORRADOR',
-                      style: GoogleFonts.inter(
-                        color: Colors.orange,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                ],
-              ),
-              const SizedBox(height: 13),
-              Text(
-                publicacion.titulo,
-                style: GoogleFonts.montserrat(
-                  color: Colors.white,
-                  fontSize: 19,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-              const SizedBox(height: 7),
-              Text(
-                publicacion.resumen,
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
-                style: GoogleFonts.inter(color: Colors.white60, height: 1.45),
-              ),
-              const SizedBox(height: 13),
-              Row(
-                children: [
-                  const Icon(Icons.person_outline_rounded, color: Colors.white38, size: 16),
-                  const SizedBox(width: 5),
-                  Expanded(
-                    child: Text(
-                      publicacion.autor,
-                      style: GoogleFonts.inter(color: Colors.white38, fontSize: 11),
-                    ),
-                  ),
-                  const Icon(Icons.arrow_forward_rounded, color: _acento, size: 18),
-                ],
-              ),
-            ],
-          ),
+        borderRadius: BorderRadius.circular(24),
+        gradient: const LinearGradient(
+          colors: [Color(0xFF111827), Color(0xFF0F766E)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
       ),
-    );
-  }
-
-  Widget _estadoVacio() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.auto_stories_rounded, size: 72, color: Colors.white24),
-            const SizedBox(height: 18),
-            Text(
-              'Aún no hay publicaciones',
-              style: GoogleFonts.montserrat(
-                color: Colors.white,
-                fontSize: 20,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
-            const SizedBox(height: 7),
-            Text(
-              _esAdmin
-                  ? 'Publica el primer comunicado o resumen del mes.'
-                  : 'Aquí aparecerán noticias, avances y comunicados de la empresa.',
-              textAlign: TextAlign.center,
-              style: GoogleFonts.inter(color: Colors.white54),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _abrirPublicacion(BuildContext context, _Publicacion publicacion) {
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: _tarjeta,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-      ),
-      builder: (context) => DraggableScrollableSheet(
-        expand: false,
-        initialChildSize: .8,
-        minChildSize: .45,
-        maxChildSize: .95,
-        builder: (context, scrollController) => ListView(
-          controller: scrollController,
-          padding: const EdgeInsets.fromLTRB(24, 16, 24, 50),
-          children: [
-            Center(
-              child: Container(
-                width: 48,
-                height: 5,
-                decoration: BoxDecoration(
-                  color: Colors.white24,
-                  borderRadius: BorderRadius.circular(5),
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              publicacion.categoria.toUpperCase(),
-              style: GoogleFonts.inter(
-                color: _acento,
-                fontSize: 11,
-                fontWeight: FontWeight.w900,
-                letterSpacing: 1,
-              ),
-            ),
-            const SizedBox(height: 9),
-            Text(
-              publicacion.titulo,
-              style: GoogleFonts.montserrat(
-                color: Colors.white,
-                fontSize: 27,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
-            const SizedBox(height: 9),
-            Text(
-              '${DateFormat('MMMM yyyy', 'es').format(publicacion.mes)} · ${publicacion.autor}',
-              style: GoogleFonts.inter(color: Colors.white38),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              publicacion.contenido,
-              style: GoogleFonts.inter(color: Colors.white70, height: 1.65, fontSize: 15),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Future<void> _crearPublicacion(BuildContext context) async {
-    final titulo = TextEditingController();
-    final resumen = TextEditingController();
-    final contenido = TextEditingController();
-    final categoria = TextEditingController(text: 'Actualización mensual');
-    DateTime mes = DateTime(DateTime.now().year, DateTime.now().month);
-    bool guardando = false;
-
-    await showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: _tarjeta,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-      ),
-      builder: (modalContext) => StatefulBuilder(
-        builder: (context, setModalState) => Padding(
-          padding: EdgeInsets.fromLTRB(
-            22,
-            18,
-            22,
-            MediaQuery.of(context).viewInsets.bottom + 24,
-          ),
-          child: SingleChildScrollView(
+      child: Row(
+        children: [
+          const Icon(Icons.hub_rounded, color: _acento, size: 46),
+          const SizedBox(width: 15),
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'NUEVA PUBLICACIÓN',
-                  style: GoogleFonts.montserrat(
-                    color: Colors.white,
-                    fontSize: 21,
-                    fontWeight: FontWeight.w900,
+                  'TRABAJO CONECTADO',
+                  style: GoogleFonts.montserrat(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 17),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Comparte avances, fotografías y sugerencias con todo el equipo.',
+                  style: GoogleFonts.inter(color: Colors.white60, height: 1.35),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _tarjetaPost(QueryDocumentSnapshot<Map<String, dynamic>> doc) {
+    final data = doc.data();
+    final autorId = data['autorId']?.toString() ?? '';
+    final nombre = data['autorNombre']?.toString() ?? 'Usuario';
+    final rol = data['autorRol']?.toString() ?? AppRoles.trabajador;
+    final foto = data['autorFotoUrl']?.toString() ?? '';
+    final texto = data['texto']?.toString() ?? '';
+    final imagenes = data['imagenes'] is Iterable
+        ? (data['imagenes'] as Iterable).map((e) => e.toString()).toList(growable: false)
+        : const <String>[];
+    final likes = data['likesPor'] is Iterable
+        ? (data['likesPor'] as Iterable).map((e) => e.toString()).toList(growable: false)
+        : const <String>[];
+    final comentarios = data['comentariosCount'] is num ? (data['comentariosCount'] as num).toInt() : 0;
+    final yaLeGusta = likes.contains(widget.usuario.id);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 14),
+      decoration: BoxDecoration(
+        color: _tarjeta,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: rol == AppRoles.admin ? const Color(0xFF8B5CF6).withOpacity(.45) : Colors.white10,
+        ),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                InkWell(
+                  onTap: autorId.isEmpty ? null : () => _abrirPerfil(autorId),
+                  child: CircleAvatar(
+                    radius: 23,
+                    backgroundColor: rol == AppRoles.admin ? const Color(0xFF8B5CF6) : const Color(0xFF0F766E),
+                    backgroundImage: foto.isNotEmpty ? NetworkImage(foto) : null,
+                    child: foto.isEmpty ? Text(nombre.isEmpty ? 'U' : nombre[0].toUpperCase()) : null,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: InkWell(
+                    onTap: autorId.isEmpty ? null : () => _abrirPerfil(autorId),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(nombre, style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w800)),
+                        Text(
+                          '${rol == AppRoles.admin ? 'ADMINISTRACIÓN' : 'AVANCE'} · ${DateFormat('dd MMM · HH:mm', 'es').format(_fecha(data))}',
+                          style: GoogleFonts.inter(
+                            color: rol == AppRoles.admin ? const Color(0xFFC4B5FD) : Colors.white38,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (texto.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 15),
+              child: Text(texto, style: GoogleFonts.inter(color: Colors.white.withOpacity(.9), height: 1.5)),
+            ),
+          if (imagenes.isNotEmpty)
+            SizedBox(
+              height: 330,
+              child: PageView.builder(
+                itemCount: imagenes.length,
+                itemBuilder: (_, index) => Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    Image.network(
+                      imagenes[index],
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => const Center(
+                        child: Icon(Icons.broken_image_rounded, color: Colors.white24, size: 60),
+                      ),
+                    ),
+                    if (imagenes.length > 1)
+                      Positioned(
+                        top: 12,
+                        right: 12,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+                          decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(12)),
+                          child: Text('${index + 1}/${imagenes.length}'),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+            child: Row(
+              children: [
+                TextButton.icon(
+                  onPressed: () => _social.alternarMeGusta(
+                    publicacionId: doc.id,
+                    usuarioId: widget.usuario.id,
+                    yaLeGusta: yaLeGusta,
+                  ),
+                  icon: Icon(
+                    yaLeGusta ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                    color: yaLeGusta ? const Color(0xFFFF3399) : Colors.white54,
+                  ),
+                  label: Text('${likes.length}', style: const TextStyle(color: Colors.white54)),
+                ),
+                TextButton.icon(
+                  onPressed: () => _abrirComentarios(doc.id, autorId),
+                  icon: const Icon(Icons.chat_bubble_outline_rounded, color: _acento),
+                  label: Text('$comentarios sugerencias', style: const TextStyle(color: Colors.white54)),
+                ),
+                const Spacer(),
+                if (autorId.isNotEmpty)
+                  IconButton(
+                    tooltip: 'Ver perfil',
+                    onPressed: () => _abrirPerfil(autorId),
+                    icon: const Icon(Icons.person_outline_rounded, color: Colors.white38),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _crearPublicacion() async {
+    final texto = TextEditingController();
+    final imagenes = <XFile>[];
+    bool publicando = false;
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: _tarjeta,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
+      builder: (modalContext) => StatefulBuilder(
+        builder: (context, setModalState) => Padding(
+          padding: EdgeInsets.fromLTRB(20, 16, 20, MediaQuery.of(context).viewInsets.bottom + 22),
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 44,
+                    height: 5,
+                    decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(5)),
                   ),
                 ),
                 const SizedBox(height: 18),
-                _campo(titulo, 'Título'),
-                const SizedBox(height: 12),
-                _campo(categoria, 'Categoría'),
-                const SizedBox(height: 12),
-                _campo(resumen, 'Resumen corto', maxLines: 2),
-                const SizedBox(height: 12),
-                _campo(contenido, 'Contenido completo', maxLines: 7),
-                const SizedBox(height: 12),
-                ListTile(
-                  tileColor: Colors.white.withOpacity(.04),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                  title: Text('Mes de publicación', style: GoogleFonts.inter(color: Colors.white54)),
-                  subtitle: Text(
-                    DateFormat('MMMM yyyy', 'es').format(mes),
-                    style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w800),
-                  ),
-                  trailing: const Icon(Icons.calendar_month_rounded, color: _acento),
-                  onTap: () async {
-                    final elegido = await showDatePicker(
-                      context: context,
-                      initialDate: mes,
-                      firstDate: DateTime(2025),
-                      lastDate: DateTime(2036, 12, 31),
-                    );
-                    if (elegido != null) {
-                      setModalState(() => mes = DateTime(elegido.year, elegido.month));
-                    }
-                  },
+                Text(
+                  widget.usuario.rol == AppRoles.admin ? 'NUEVO COMUNICADO' : 'PUBLICAR MI AVANCE',
+                  style: GoogleFonts.montserrat(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900),
                 ),
+                const SizedBox(height: 15),
+                TextField(
+                  controller: texto,
+                  maxLines: 5,
+                  textCapitalization: TextCapitalization.sentences,
+                  style: GoogleFonts.inter(color: Colors.white),
+                  decoration: InputDecoration(
+                    hintText: '¿Qué avance, noticia o sugerencia quieres compartir?',
+                    hintStyle: const TextStyle(color: Colors.white38),
+                    filled: true,
+                    fillColor: Colors.white.withOpacity(.04),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(18),
+                      borderSide: const BorderSide(color: Colors.white12),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: publicando
+                            ? null
+                            : () async {
+                                final foto = await ImagePicker().pickImage(source: ImageSource.camera, imageQuality: 82);
+                                if (foto != null) setModalState(() => imagenes.add(foto));
+                              },
+                        icon: const Icon(Icons.photo_camera_rounded),
+                        label: const Text('CÁMARA'),
+                      ),
+                    ),
+                    const SizedBox(width: 9),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: publicando
+                            ? null
+                            : () async {
+                                final fotos = await ImagePicker().pickMultiImage(imageQuality: 82);
+                                if (fotos.isNotEmpty) setModalState(() => imagenes.addAll(fotos));
+                              },
+                        icon: const Icon(Icons.photo_library_rounded),
+                        label: const Text('GALERÍA'),
+                      ),
+                    ),
+                  ],
+                ),
+                if (imagenes.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    height: 82,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: imagenes.length,
+                      separatorBuilder: (_, __) => const SizedBox(width: 8),
+                      itemBuilder: (_, index) => FutureBuilder<Widget>(
+                        future: _preview(imagenes[index]),
+                        builder: (_, snapshot) => Stack(
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(12),
+                              child: SizedBox(
+                                width: 82,
+                                height: 82,
+                                child: snapshot.data ?? const ColoredBox(color: Colors.white10),
+                              ),
+                            ),
+                            Positioned(
+                              right: 2,
+                              top: 2,
+                              child: InkWell(
+                                onTap: () => setModalState(() => imagenes.removeAt(index)),
+                                child: const CircleAvatar(
+                                  radius: 11,
+                                  backgroundColor: Colors.black87,
+                                  child: Icon(Icons.close_rounded, size: 14),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 18),
                 SizedBox(
                   width: double.infinity,
                   height: 54,
                   child: FilledButton.icon(
-                    style: FilledButton.styleFrom(backgroundColor: _acento),
-                    onPressed: guardando
+                    style: FilledButton.styleFrom(backgroundColor: _acento, foregroundColor: Colors.black),
+                    onPressed: publicando
                         ? null
                         : () async {
-                            final tituloLimpio = titulo.text.trim();
-                            final contenidoLimpio = contenido.text.trim();
-                            if (tituloLimpio.isEmpty || contenidoLimpio.isEmpty) {
-                              ScaffoldMessenger.of(modalContext).showSnackBar(
-                                const SnackBar(content: Text('Escribe el título y el contenido.')),
-                              );
-                              return;
-                            }
-                            setModalState(() => guardando = true);
+                            setModalState(() => publicando = true);
                             try {
-                              final db = FirebaseFirestore.instance;
-                              final publicacionRef = db.collection('blog_publicaciones').doc();
-                              final avisoRef = db.collection('notificaciones').doc();
-                              final batch = db.batch();
-                              batch.set(publicacionRef, {
-                                'titulo': tituloLimpio,
-                                'resumen': resumen.text.trim().isEmpty
-                                    ? contenidoLimpio
-                                    : resumen.text.trim(),
-                                'contenido': contenidoLimpio,
-                                'categoria': categoria.text.trim().isEmpty
-                                    ? 'Actualización mensual'
-                                    : categoria.text.trim(),
-                                'mes': Timestamp.fromDate(mes),
-                                'autorId': usuario.id,
-                                'autorNombre': usuario.nombre,
-                                'publicada': true,
-                                'fechaPublicacion': FieldValue.serverTimestamp(),
-                              });
-                              batch.set(
-                                avisoRef,
-                                NotificacionesService.datosAviso(
-                                  titulo: 'Nueva publicación',
-                                  mensaje: tituloLimpio,
-                                  tipo: 'blog',
-                                  rolesDestinatarios: const ['todos'],
-                                ),
+                              await _social.crearPublicacion(
+                                autor: widget.usuario,
+                                texto: texto.text,
+                                imagenes: imagenes,
+                                tipo: widget.usuario.rol == AppRoles.admin ? 'comunicado' : 'avance',
                               );
-                              await batch.commit();
                               if (modalContext.mounted) Navigator.pop(modalContext);
                             } catch (error) {
-                              setModalState(() => guardando = false);
+                              setModalState(() => publicando = false);
                               if (modalContext.mounted) {
                                 ScaffoldMessenger.of(modalContext).showSnackBar(
                                   SnackBar(content: Text('No se pudo publicar: $error')),
@@ -395,14 +397,14 @@ class BlogInternoScreen extends StatelessWidget {
                               }
                             }
                           },
-                    icon: guardando
+                    icon: publicando
                         ? const SizedBox(
                             width: 18,
                             height: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black),
                           )
-                        : const Icon(Icons.campaign_rounded),
-                    label: const Text('PUBLICAR Y NOTIFICAR'),
+                        : const Icon(Icons.send_rounded),
+                    label: const Text('PUBLICAR'),
                   ),
                 ),
               ],
@@ -411,75 +413,155 @@ class BlogInternoScreen extends StatelessWidget {
         ),
       ),
     );
-    titulo.dispose();
-    resumen.dispose();
-    contenido.dispose();
-    categoria.dispose();
+    texto.dispose();
   }
 
-  Widget _campo(
-    TextEditingController controller,
-    String etiqueta, {
-    int maxLines = 1,
-  }) {
-    return TextField(
-      controller: controller,
-      maxLines: maxLines,
-      textCapitalization: TextCapitalization.sentences,
-      style: GoogleFonts.inter(color: Colors.white),
-      decoration: InputDecoration(
-        labelText: etiqueta,
-        labelStyle: const TextStyle(color: Colors.white54),
-        filled: true,
-        fillColor: Colors.white.withOpacity(.04),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: Colors.white12),
-        ),
+  Future<Widget> _preview(XFile imagen) async {
+    final bytes = await imagen.readAsBytes();
+    return Image.memory(bytes, fit: BoxFit.cover);
+  }
+
+  void _abrirPerfil(String autorId) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => PerfilSocialScreen(usuarioActual: widget.usuario, perfilId: autorId),
       ),
     );
   }
 
-  static bool _mismoMes(DateTime a, DateTime b) =>
-      a.year == b.year && a.month == b.month;
-}
+  void _abrirComentarios(String publicacionId, String autorPublicacionId) {
+    final controller = TextEditingController();
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: _tarjeta,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
+      builder: (modalContext) => Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(modalContext).viewInsets.bottom),
+        child: SizedBox(
+          height: MediaQuery.of(modalContext).size.height * .72,
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(18, 18, 10, 10),
+                child: Row(
+                  children: [
+                    Text('COMENTARIOS Y SUGERENCIAS', style: GoogleFonts.montserrat(fontWeight: FontWeight.w900)),
+                    const Spacer(),
+                    IconButton(onPressed: () => Navigator.pop(modalContext), icon: const Icon(Icons.close_rounded)),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                  stream: _social.comentarios(publicacionId),
+                  builder: (context, snapshot) {
+                    final comentarios = snapshot.data?.docs.toList(growable: true) ?? [];
+                    comentarios.sort((a, b) => _fecha(a.data()).compareTo(_fecha(b.data())));
+                    if (comentarios.isEmpty) {
+                      return Center(
+                        child: Text('Sé el primero en dejar una sugerencia.', style: GoogleFonts.inter(color: Colors.white38)),
+                      );
+                    }
+                    return ListView.builder(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      itemCount: comentarios.length,
+                      itemBuilder: (_, index) {
+                        final data = comentarios[index].data();
+                        final autor = data['autorNombre']?.toString() ?? 'Usuario';
+                        return ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          leading: CircleAvatar(
+                            backgroundColor: const Color(0xFF0F766E),
+                            child: Text(autor.isEmpty ? 'U' : autor[0].toUpperCase()),
+                          ),
+                          title: Text(
+                            autor,
+                            style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 13),
+                          ),
+                          subtitle: Text(
+                            data['texto']?.toString() ?? '',
+                            style: GoogleFonts.inter(color: Colors.white60, height: 1.35),
+                          ),
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+              SafeArea(
+                top: false,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(14, 8, 14, 12),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: controller,
+                          textCapitalization: TextCapitalization.sentences,
+                          decoration: InputDecoration(
+                            hintText: 'Escribe un comentario o sugerencia',
+                            filled: true,
+                            fillColor: Colors.white.withOpacity(.05),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(18),
+                              borderSide: BorderSide.none,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      IconButton.filled(
+                        style: IconButton.styleFrom(backgroundColor: _acento, foregroundColor: Colors.black),
+                        onPressed: () async {
+                          final texto = controller.text.trim();
+                          if (texto.isEmpty) return;
+                          controller.clear();
+                          await _social.comentar(
+                            publicacionId: publicacionId,
+                            autorPublicacionId: autorPublicacionId,
+                            autorComentario: widget.usuario,
+                            texto: texto,
+                          );
+                        },
+                        icon: const Icon(Icons.send_rounded),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    ).whenComplete(controller.dispose);
+  }
 
-class _Publicacion {
-  final String id;
-  final String titulo;
-  final String resumen;
-  final String contenido;
-  final String categoria;
-  final String autor;
-  final DateTime mes;
-  final bool publicada;
-
-  const _Publicacion({
-    required this.id,
-    required this.titulo,
-    required this.resumen,
-    required this.contenido,
-    required this.categoria,
-    required this.autor,
-    required this.mes,
-    required this.publicada,
-  });
-
-  factory _Publicacion.fromDocument(
-    QueryDocumentSnapshot<Map<String, dynamic>> doc,
-  ) {
-    final data = doc.data();
-    final mesRaw = data['mes'];
-    final contenido = data['contenido']?.toString() ?? '';
-    return _Publicacion(
-      id: doc.id,
-      titulo: data['titulo']?.toString() ?? 'Sin título',
-      resumen: data['resumen']?.toString() ?? contenido,
-      contenido: contenido,
-      categoria: data['categoria']?.toString() ?? 'Comunicado',
-      autor: data['autorNombre']?.toString() ?? 'Sauna Stilo',
-      mes: mesRaw is Timestamp ? mesRaw.toDate() : DateTime.now(),
-      publicada: data['publicada'] is bool ? data['publicada'] as bool : true,
+  Widget _estadoVacio() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 70, horizontal: 24),
+      child: Column(
+        children: [
+          const Icon(Icons.forum_outlined, size: 72, color: Colors.white24),
+          const SizedBox(height: 16),
+          Text(
+            'Comienza la conversación',
+            style: GoogleFonts.montserrat(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900),
+          ),
+          const SizedBox(height: 7),
+          Text(
+            'Publica el primer avance, fotografía o comunicado del equipo.',
+            textAlign: TextAlign.center,
+            style: GoogleFonts.inter(color: Colors.white38),
+          ),
+        ],
+      ),
     );
+  }
+
+  static DateTime _fecha(Map<String, dynamic> data) {
+    final value = data['fecha'];
+    return value is Timestamp ? value.toDate() : DateTime.now();
   }
 }

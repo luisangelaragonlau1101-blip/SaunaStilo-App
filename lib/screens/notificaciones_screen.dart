@@ -146,6 +146,8 @@ class NotificacionesScreen extends StatelessWidget {
         return Icons.campaign_rounded;
       case 'reconocimiento':
         return Icons.workspace_premium_rounded;
+      case 'social':
+        return Icons.forum_rounded;
       default:
         return Icons.notifications_active_rounded;
     }
@@ -161,6 +163,8 @@ class NotificacionesScreen extends StatelessWidget {
         return const Color(0xFF8B5CF6);
       case 'reconocimiento':
         return const Color(0xFFFFDE21);
+      case 'social':
+        return const Color(0xFF00E5FF);
       default:
         return _acento;
     }
