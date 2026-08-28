@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/user_model.dart';
+import 'push_notifications_service.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -16,6 +17,10 @@ class AuthService {
 
   // Cerrar Sesión
   Future<void> logout() async {
+    final user = _auth.currentUser;
+    if (user != null) {
+      await PushNotificationsService().deactivateFor(user.uid);
+    }
     await _auth.signOut();
   }
 

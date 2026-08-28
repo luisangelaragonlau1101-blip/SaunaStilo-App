@@ -107,6 +107,28 @@ class PushNotificationsService {
     });
   }
 
+  Future<void> deactivateFor(String userId) async {
+    try {
+      String? token;
+      if (!kIsWeb || _webVapidKey.isNotEmpty) {
+        token = await _messaging.getToken(
+          vapidKey: kIsWeb ? _webVapidKey : null,
+          serviceWorkerScriptPath: kIsWeb
+              ? Uri.base.resolve('firebase-messaging-sw.js').path
+              : null,
+        );
+      }
+      if (token != null && token.isNotEmpty) {
+        await _firestore.collection('usuarios').doc(userId).update({
+          'fcmTokens': FieldValue.arrayRemove([token]),
+        });
+      }
+      await _messaging.deleteToken();
+    } catch (error) {
+      debugPrint('[push] No se pudo retirar el token al cerrar sesión: $error');
+    }
+  }
+
   Future<void> dispose() async {
     await _tokenRefreshSubscription?.cancel();
   }
