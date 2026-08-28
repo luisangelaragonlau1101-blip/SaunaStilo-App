@@ -16,6 +16,8 @@ class PushActivationResult {
 class PushNotificationsService {
   static const String _webVapidKey = String.fromEnvironment(
     'FCM_VAPID_KEY',
+    defaultValue:
+        'BG-mPJ0heLV8V0-65XbnbgEidZCeOIUdwHfJhirnHvqq4Nl8LFM3DUvKT9EmiQO2ZYB1Gs9srh8M9xV2b_D9TRY',
   );
 
   final FirebaseMessaging _messaging;

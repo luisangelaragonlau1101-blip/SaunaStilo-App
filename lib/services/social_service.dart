@@ -1,19 +1,22 @@
 import 'dart:typed_data';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../models/user_model.dart';
+import 'media_upload_service.dart';
 import 'notificaciones_service.dart';
 
 class SocialService {
   final FirebaseFirestore _db;
-  final FirebaseStorage _storage;
+  final MediaUploadService _media;
 
-  SocialService({FirebaseFirestore? firestore, FirebaseStorage? storage})
+  SocialService({
+    FirebaseFirestore? firestore,
+    MediaUploadService? media,
+  })
     : _db = firestore ?? FirebaseFirestore.instance,
-      _storage = storage ?? FirebaseStorage.instance;
+      _media = media ?? MediaUploadService();
 
   Stream<QuerySnapshot<Map<String, dynamic>>> publicaciones() =>
       _db.collection('publicaciones_sociales').snapshots();
@@ -38,6 +41,7 @@ class SocialService {
     final publicacionRef = _db.collection('publicaciones_sociales').doc();
     final urls = <String>[];
     final rutas = <String>[];
+    final subidos = <MediaUploadResult>[];
     try {
       // Validamos el permiso antes de transferir fotografías. Así el usuario
       // recibe un error inmediato y no espera una carga que después se pierde.
@@ -62,19 +66,21 @@ class SocialService {
         final nombreSeguro = _nombreSeguro(imagen.name);
         final ruta =
             'comunidad/${autor.id}/${publicacionRef.id}/${index}_$nombreSeguro';
-        final ref = _storage.ref(ruta);
-        await ref.putData(
-          bytes,
-          SettableMetadata(contentType: _tipoMime(imagen.name)),
+        final resultado = await _media.upload(
+          bytes: bytes,
+          fileName: nombreSeguro,
+          contentType: _tipoMime(imagen.name),
+          folder: ruta,
         );
-        rutas.add(ruta);
-        urls.add(await ref.getDownloadURL());
+        subidos.add(resultado);
+        rutas.add(resultado.path);
+        urls.add(resultado.url);
       }
 
       if (imagenes.isNotEmpty) {
         await publicacionRef.update({
-        'imagenes': urls,
-        'rutasStorage': rutas,
+          'imagenes': urls,
+          'rutasStorage': rutas,
           'estado': 'publicado',
         });
       }
@@ -91,9 +97,9 @@ class SocialService {
         ),
       );
     } catch (_) {
-      for (final ruta in rutas) {
+      for (final archivo in subidos.reversed) {
         try {
-          await _storage.ref(ruta).delete();
+          await _media.delete(url: archivo.url, path: archivo.path);
         } catch (_) {}
       }
       try {
@@ -155,27 +161,21 @@ class SocialService {
     final comentarioRef = postRef.collection('comentarios').doc();
     final ruta =
         'comunidad/${autorComentario.id}/$publicacionId/comentarios/${comentarioRef.id}.wav';
-    final storageRef = _storage.ref(ruta);
-    await storageRef.putData(
-      wav,
-      SettableMetadata(
-        contentType: 'audio/wav',
-        customMetadata: <String, String>{
-          'autorId': autorComentario.id,
-          'duracionSegundos': '$duracionSegundos',
-        },
-      ),
+    final archivo = await _media.upload(
+      bytes: wav,
+      fileName: '${comentarioRef.id}.wav',
+      contentType: 'audio/wav',
+      folder: ruta,
     );
     try {
-      final audioUrl = await storageRef.getDownloadURL();
       final batch = _db.batch();
       batch.set(comentarioRef, {
         'autorId': autorComentario.id,
         'autorNombre': autorComentario.nombre,
         'autorFotoUrl': autorComentario.fotoUrl ?? '',
         'texto': '',
-        'audioUrl': audioUrl,
-        'audioRuta': ruta,
+        'audioUrl': archivo.url,
+        'audioRuta': archivo.path,
         'duracionSegundos': duracionSegundos,
         'fecha': FieldValue.serverTimestamp(),
       });
@@ -202,7 +202,7 @@ class SocialService {
       }
     } catch (_) {
       try {
-        await storageRef.delete();
+        await _media.delete(url: archivo.url, path: archivo.path);
       } catch (_) {}
       rethrow;
     }

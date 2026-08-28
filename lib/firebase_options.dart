@@ -47,20 +47,20 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyAL8Z_Fwa9RurlvPdxGZYJEf5TVmlahUnA',
-    appId: '1:905977113744:android:dd7961093ce84813f27c15',
-    messagingSenderId: '905977113744',
-    projectId: 'saunastylo-dbd87',
-    authDomain: 'saunastylo-dbd87.firebaseapp.com',
-    storageBucket: 'saunastylo-dbd87.firebasestorage.app',
+    apiKey: 'AIzaSyCqvb1kOvxvPTZzCZLQx6aZgEBnC-AZnYE',
+    appId: '1:1083212885362:web:0b99846f25c4d5c005c1eb',
+    messagingSenderId: '1083212885362',
+    projectId: 'saunastiloapp-17e15',
+    authDomain: 'saunastiloapp-17e15.firebaseapp.com',
+    storageBucket: 'saunastiloapp-17e15.firebasestorage.app',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyAL8Z_Fwa9RurlvPdxGZYJEf5TVmlahUnA',
-    appId: '1:905977113744:android:dd7961093ce84813f27c15',
-    messagingSenderId: '905977113744',
-    projectId: 'saunastylo-dbd87',
-    storageBucket: 'saunastylo-dbd87.firebasestorage.app',
+    apiKey: 'AIzaSyD3hpOQEUU4qfgRPbkzZQE3hKgY-PTr_4Q',
+    appId: '1:1083212885362:android:5dbc7c758d23f96105c1eb',
+    messagingSenderId: '1083212885362',
+    projectId: 'saunastiloapp-17e15',
+    storageBucket: 'saunastiloapp-17e15.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(

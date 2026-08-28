@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/proyecto_service.dart';
 import '../models/proyecto_model.dart';
 import 'proyecto_detalle_trabajador_screen.dart'; 
@@ -31,16 +30,11 @@ class _ProyectosTrabajadorScreenState extends State<ProyectosTrabajadorScreen> {
   // Variable para el filtro de estatus
   late String _filtroEstatus;
 
-  // Diccionario para cargar los clientes una sola vez y buscar rápido
-  Map<String, String> _clientesDict = {};
-  bool _isLoadingClientes = true;
-
   @override
   void initState() {
     super.initState();
     
     _filtroEstatus = widget.filtroInicial ?? 'todos';
-    _cargarClientesParaBuscador();
 
     // Forzamos el redibujado de la pantalla al cambiar el foco
     _searchFocusNode.addListener(() {
@@ -53,26 +47,6 @@ class _ProyectosTrabajadorScreenState extends State<ProyectosTrabajadorScreen> {
     _searchController.dispose();
     _searchFocusNode.dispose(); 
     super.dispose();
-  }
-
-  // Descarga los nombres de los clientes para filtrar en tiempo real
-  Future<void> _cargarClientesParaBuscador() async {
-    try {
-      final snap = await FirebaseFirestore.instance.collection('clientes').get();
-      final Map<String, String> dict = {};
-      for (var doc in snap.docs) {
-        dict[doc.id] = (doc.data()['nombre'] ?? 'Sin nombre').toString();
-      }
-      if (mounted) {
-        setState(() {
-          _clientesDict = dict;
-          _isLoadingClientes = false;
-        });
-      }
-    } catch (e) {
-      debugPrint("Error cargando clientes: $e");
-      if (mounted) setState(() => _isLoadingClientes = false);
-    }
   }
 
   // Función para obtener el color según el estatus
@@ -95,9 +69,7 @@ class _ProyectosTrabajadorScreenState extends State<ProyectosTrabajadorScreen> {
         title: Text('PROYECTOS', style: GoogleFonts.inter(fontSize: 16, color: Colors.white, fontWeight: FontWeight.w700, letterSpacing: 1.5)),
         centerTitle: true,
       ),
-      body: _isLoadingClientes 
-      ? const Center(child: CircularProgressIndicator(color: Color(0xFF8B5CF6)))
-      : Column(
+      body: Column(
           children: [
             // --- BARRA DE BÚSQUEDA ---
             Padding(
@@ -161,7 +133,7 @@ class _ProyectosTrabajadorScreenState extends State<ProyectosTrabajadorScreen> {
             // --- LISTA DE PROYECTOS ---
             Expanded(
               child: StreamBuilder<List<Proyecto>>(
-                stream: _proyectoService.getProyectos(),
+                stream: _proyectoService.getProyectos(soloAsignados: true),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const Center(child: CircularProgressIndicator(color: Color(0xFF8B5CF6)));
@@ -177,10 +149,7 @@ class _ProyectosTrabajadorScreenState extends State<ProyectosTrabajadorScreen> {
 
                     final tituloMatch = p.titulo.toLowerCase().contains(_searchQuery);
                     final estatusMatch = p.estatus.replaceAll('_', ' ').toLowerCase().contains(_searchQuery);
-                    final nombreCliente = (_clientesDict[p.idCliente] ?? '').toLowerCase();
-                    final clienteMatch = nombreCliente.contains(_searchQuery);
-
-                    return tituloMatch || estatusMatch || clienteMatch;
+                    return tituloMatch || estatusMatch;
                   }).toList();
 
                   if (proyectos.isEmpty) {
@@ -193,8 +162,6 @@ class _ProyectosTrabajadorScreenState extends State<ProyectosTrabajadorScreen> {
                     itemBuilder: (context, index) {
                       final proyecto = proyectos[index];
                       Color statusColor = _getStatusColor(proyecto.estatus);
-                      String nombreClienteReal = _clientesDict[proyecto.idCliente] ?? 'Cliente desconocido';
-
                       return Card(
                         color: const Color(0xFF1E1E1E),
                         margin: const EdgeInsets.only(bottom: 12),
@@ -233,18 +200,9 @@ class _ProyectosTrabajadorScreenState extends State<ProyectosTrabajadorScreen> {
                                       Text(proyecto.titulo, style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white), maxLines: 1, overflow: TextOverflow.ellipsis),
                                       const SizedBox(height: 6),
                                       
-                                      Row(
-                                        children: [
-                                          const Icon(Icons.person, color: Colors.white54, size: 14),
-                                          const SizedBox(width: 4),
-                                          Expanded(
-                                            child: Text(
-                                              nombreClienteReal, 
-                                              style: GoogleFonts.inter(fontSize: 13, color: Colors.white54),
-                                              maxLines: 1, overflow: TextOverflow.ellipsis,
-                                            ),
-                                          ),
-                                        ],
+                                      Text(
+                                        'Proyecto asignado',
+                                        style: GoogleFonts.inter(fontSize: 13, color: Colors.white54),
                                       ),
                                       const SizedBox(height: 8),
 
@@ -266,42 +224,6 @@ class _ProyectosTrabajadorScreenState extends State<ProyectosTrabajadorScreen> {
                                             ),
                                           ),
                                           
-                                          // 👈 AQUÍ ESTABA EL PROBLEMA: Solo consultamos finanzas si NO es maestro (es decir, si tiene permisos)
-                                          if (!widget.esMaestro && proyecto.estatus == 'pendiente')
-                                            FutureBuilder<DocumentSnapshot>(
-                                              future: FirebaseFirestore.instance
-                                                  .collection('proyectos')
-                                                  .doc(proyecto.id)
-                                                  .collection('finanzas')
-                                                  .doc('datos_pago')
-                                                  .get(),
-                                              builder: (context, finanzasSnapshot) {
-                                                if (finanzasSnapshot.connectionState == ConnectionState.waiting || !finanzasSnapshot.hasData || !finanzasSnapshot.data!.exists) {
-                                                  return const SizedBox();
-                                                }
-                                                
-                                                final data = finanzasSnapshot.data!.data() as Map<String, dynamic>?;
-                                                if (data == null) return const SizedBox();
-
-                                                double cotizacion = (data['cotizacion'] ?? 0.0).toDouble();
-                                                double montoPagado = (data['monto_pagado'] ?? 0.0).toDouble();
-                                                double restante = cotizacion - montoPagado;
-
-                                                if (restante <= 0) return const SizedBox();
-
-                                                return Padding(
-                                                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                                                  child: Text(
-                                                    "Resta: \$${restante.toStringAsFixed(2)}",
-                                                    style: GoogleFonts.inter(
-                                                      fontSize: 11, 
-                                                      fontWeight: FontWeight.w600, 
-                                                      color: Colors.orangeAccent,
-                                                    ),
-                                                  ),
-                                                );
-                                              },
-                                            ),
                                         ],
                                       ),
                                     ],

@@ -1,23 +1,23 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 
 import '../models/actividad_model.dart';
 import '../models/evidencia_actividad_model.dart';
+import 'media_upload_service.dart';
 import 'notificaciones_service.dart';
 
 class ActividadesService {
   final FirebaseFirestore _db;
   final FirebaseAuth? _auth;
-  final FirebaseStorage? _storage;
+  final MediaUploadService _media;
 
   ActividadesService({
     FirebaseFirestore? firestore,
     FirebaseAuth? auth,
-    FirebaseStorage? storage,
+    MediaUploadService? media,
   }) : _db = firestore ?? FirebaseFirestore.instance,
        _auth = auth,
-       _storage = storage;
+       _media = media ?? MediaUploadService(auth: auth);
 
   CollectionReference<Map<String, dynamic>> get _actividadesRef =>
       _db.collection('actividades');
@@ -139,7 +139,6 @@ class ActividadesService {
       throw StateError('Una actividad completada ya no admite avances.');
     }
 
-    final storage = _storage ?? FirebaseStorage.instance;
     final avanceRef = _avancesRef(actividadIdLimpio).doc();
     final evidenciasSubidas = <_EvidenciaSubida>[];
     final documentosEvidenciaEscritos =
@@ -160,35 +159,25 @@ class ActividadesService {
         final storagePath =
             'actividades_evidencias/$actividadIdLimpio/'
             '${avanceRef.id}/${evidenciaRef.id}_$nombreSeguro';
-        final storageRef = storage.ref(storagePath);
         final tipoMime = archivo.tipoMime.trim().isEmpty
             ? 'application/octet-stream'
             : archivo.tipoMime.trim();
-
-        // Se registra antes de subir: si la transferencia falla después de
-        // crear el objeto, la limpieza de mejor esfuerzo también lo alcanza.
-        final evidenciaParcial = _EvidenciaSubida(
-          documentRef: evidenciaRef,
-          storageRef: storageRef,
-          url: '',
-          storagePath: storagePath,
-          nombre: archivo.nombre,
-          tipoMime: tipoMime,
-          tamanioBytes: bytes.length,
+        final archivoSubido = await _media.upload(
+          bytes: bytes,
+          fileName: nombreSeguro,
+          contentType: tipoMime,
+          folder: storagePath,
         );
-        evidenciasSubidas.add(evidenciaParcial);
-        await storageRef.putData(
-          bytes,
-          SettableMetadata(
-            contentType: tipoMime,
-            customMetadata: {
-              'actividadId': actividadIdLimpio,
-              'avanceId': avanceRef.id,
-              'usuarioId': trabajadorIdLimpio,
-            },
+        evidenciasSubidas.add(
+          _EvidenciaSubida(
+            documentRef: evidenciaRef,
+            url: archivoSubido.url,
+            storagePath: archivoSubido.path,
+            nombre: archivo.nombre,
+            tipoMime: tipoMime,
+            tamanioBytes: bytes.length,
           ),
         );
-        evidenciaParcial.url = await storageRef.getDownloadURL();
       }
 
       // Firestore permite como máximo 500 operaciones por lote. Escribimos
@@ -449,15 +438,19 @@ class ActividadesService {
       final evidenciasSnapshot =
           await _evidenciasRef(actividadIdLimpio).get();
       final avancesSnapshot = await _avancesRef(actividadIdLimpio).get();
-      final storage = _storage ?? FirebaseStorage.instance;
 
       // Limpia los binarios nuevos. Los archivos históricos no guardaban su
       // ruta de Storage, por lo que se conservan para no borrar por conjetura.
       for (final evidencia in evidenciasSnapshot.docs) {
-        final storagePath = evidencia.data()['storagePath'];
+        final datos = evidencia.data();
+        final storagePath = datos['storagePath'];
+        final url = datos['url'];
         if (storagePath is String && storagePath.trim().isNotEmpty) {
           try {
-            await storage.ref(storagePath).delete();
+            await _media.delete(
+              url: url is String ? url : '',
+              path: storagePath,
+            );
           } catch (_) {
             // Si el archivo ya no existe, la eliminación puede continuar.
           }
@@ -560,12 +553,15 @@ class ActividadesService {
     return limpio.isEmpty ? 'evidencia' : limpio;
   }
 
-  static Future<void> _eliminarBlobsSubidos(
+  Future<void> _eliminarBlobsSubidos(
     List<_EvidenciaSubida> evidencias,
   ) async {
     for (final evidencia in evidencias.reversed) {
       try {
-        await evidencia.storageRef.delete();
+        await _media.delete(
+          url: evidencia.url,
+          path: evidencia.storagePath,
+        );
       } catch (_) {
         // Limpieza de mejor esfuerzo: se conserva el error original de subida o
         // escritura para que la interfaz muestre la causa real al usuario.
@@ -605,8 +601,7 @@ class ActividadesService {
 
 class _EvidenciaSubida {
   final DocumentReference<Map<String, dynamic>> documentRef;
-  final Reference storageRef;
-  String url;
+  final String url;
   final String storagePath;
   final String nombre;
   final String tipoMime;
@@ -614,7 +609,6 @@ class _EvidenciaSubida {
 
   _EvidenciaSubida({
     required this.documentRef,
-    required this.storageRef,
     required this.url,
     required this.storagePath,
     required this.nombre,

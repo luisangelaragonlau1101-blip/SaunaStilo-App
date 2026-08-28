@@ -6,12 +6,241 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    // Sauna Stilo es una red privada: ninguna información se expone sin
-    // iniciar sesión. Los permisos finos por rol siguen aplicándose en la app.
-    // Esta regla incluye las nuevas publicaciones, comentarios, seguimientos,
-    // chats de proyecto, mensajes de voz y notificaciones.
+    function userPath() {
+      return /databases/$(database)/documents/usuarios/$(request.auth.uid);
+    }
+
+    function hasProfile() {
+      return signedIn() && exists(userPath());
+    }
+
+    function role() {
+      return hasProfile() ? get(userPath()).data.rol : '';
+    }
+
+    function isAdmin() {
+      return role() == 'admin';
+    }
+
+    function isWarehouse() {
+      return isAdmin() || role() == 'almacenista';
+    }
+
+    function isBootstrapAdmin(userId) {
+      return signedIn()
+        && request.auth.uid == userId
+        && request.auth.token.email == 'luisangel.aragon.lau1101@gmail.com'
+        && request.resource.data.correo == request.auth.token.email
+        && request.resource.data.rol == 'admin';
+    }
+
+    function assignedToProject(projectId) {
+      let project = get(/databases/$(database)/documents/proyectos/$(projectId));
+      return isAdmin()
+        || (project.data.encargados is list
+          && request.auth.uid in project.data.encargados);
+    }
+
+    function assignedToActivity(activityId) {
+      let activity = get(/databases/$(database)/documents/actividades/$(activityId));
+      return isAdmin()
+        || activity.data.asignadoATrabajadorId == request.auth.uid;
+    }
+
+    match /usuarios/{userId} {
+      allow read: if signedIn();
+      allow create: if isAdmin() || isBootstrapAdmin(userId)
+        || (signedIn()
+          && request.auth.uid == userId
+          && request.resource.data.correo == request.auth.token.email
+          && request.resource.data.rol == 'trabajador');
+      allow update: if isAdmin()
+        || (signedIn()
+          && request.auth.uid == userId
+          && request.resource.data.rol == resource.data.rol
+          && request.resource.data.correo == resource.data.correo);
+      allow delete: if isAdmin();
+
+      match /sugerencias/{suggestionId} {
+        allow read: if signedIn();
+        allow create: if signedIn()
+          && request.resource.data.autorId == request.auth.uid;
+        allow update, delete: if isAdmin()
+          || (signedIn() && resource.data.autorId == request.auth.uid)
+          || (signedIn() && userId == request.auth.uid);
+      }
+    }
+
+    // Información comercial y financiera: exclusivamente administración.
+    match /clientes/{documentId} {
+      allow read, write: if isAdmin();
+    }
+    match /seguimiento_cotizaciones/{documentId} {
+      allow read, write: if isAdmin();
+    }
+    match /proveedores/{documentId} {
+      allow read, write: if isAdmin();
+    }
+    match /compras/{documentId} {
+      allow read, write: if isAdmin();
+    }
+    match /compras_insumos/{documentId} {
+      allow read, write: if isAdmin();
+    }
+    match /ideas_lineas_negocio/{documentId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /proyectos/{projectId} {
+      allow read: if signedIn()
+        && (isAdmin()
+          || (resource.data.encargados is list
+            && request.auth.uid in resource.data.encargados));
+      allow create, update, delete: if isAdmin();
+
+      match /finanzas/{documentId} {
+        allow read, write: if isAdmin();
+      }
+
+      match /conversacion/{messageId} {
+        allow read: if signedIn() && assignedToProject(projectId);
+        allow create: if signedIn()
+          && assignedToProject(projectId)
+          && request.resource.data.autorId == request.auth.uid;
+        allow update: if signedIn() && assignedToProject(projectId);
+        allow delete: if isAdmin()
+          || (signedIn() && resource.data.autorId == request.auth.uid);
+      }
+    }
+
+    match /actividades/{activityId} {
+      allow read: if signedIn()
+        && (isAdmin()
+          || resource.data.asignadoATrabajadorId == request.auth.uid
+          || assignedToProject(resource.data.proyectoId));
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin()
+        || (signedIn()
+          && resource.data.asignadoATrabajadorId == request.auth.uid
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'estatus',
+            'iniciadoEn',
+            'completadoEn',
+            'ultimoAvance',
+            'comentariosTrabajador',
+            'evidenciasCount',
+            'cantidadEvidencias'
+          ]));
+
+      match /evidencias/{evidenceId} {
+        allow read, write: if signedIn() && assignedToActivity(activityId);
+      }
+      match /avances/{progressId} {
+        allow read, write: if signedIn() && assignedToActivity(activityId);
+      }
+    }
+
+    match /publicaciones_sociales/{postId} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.autorId == request.auth.uid;
+      allow update: if signedIn()
+        && (resource.data.autorId == request.auth.uid
+          || request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'likesPor',
+            'comentariosCount'
+          ]));
+      allow delete: if isAdmin()
+        || (signedIn() && resource.data.autorId == request.auth.uid);
+
+      match /comentarios/{commentId} {
+        allow read: if signedIn();
+        allow create: if signedIn()
+          && request.resource.data.autorId == request.auth.uid;
+        allow update, delete: if isAdmin()
+          || (signedIn() && resource.data.autorId == request.auth.uid);
+      }
+    }
+
+    match /seguimientos/{followId} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.seguidorId == request.auth.uid;
+      allow delete: if isAdmin()
+        || (signedIn() && resource.data.seguidorId == request.auth.uid);
+    }
+
+    match /notificaciones/{notificationId} {
+      allow read, create: if signedIn();
+      allow update: if signedIn()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'leidosPor'
+        ]);
+      allow delete: if isAdmin();
+    }
+
+    match /asistencias/{attendanceId} {
+      allow read: if isAdmin()
+        || (signedIn() && resource.data.usuarioId == request.auth.uid);
+      allow create: if signedIn()
+        && request.resource.data.usuarioId == request.auth.uid;
+      allow update: if isAdmin()
+        || (signedIn() && resource.data.usuarioId == request.auth.uid);
+      allow delete: if isAdmin();
+    }
+
+    match /mensajes_audio/{messageId} {
+      allow read, create: if signedIn();
+      allow update, delete: if isAdmin()
+        || (signedIn() && resource.data.emisorId == request.auth.uid);
+    }
+
+    // Operación interna de almacén. Los trabajadores pueden solicitar y
+    // consultar; administración y almacén mantienen inventario y entregas.
+    match /solicitudes_herramientas/{documentId} {
+      allow read, create, update: if signedIn();
+      allow delete: if isWarehouse();
+    }
+    match /solicitudes_salida/{documentId} {
+      allow read, create, update: if signedIn();
+      allow delete: if isWarehouse();
+    }
+    match /insumos_inventario/{documentId} {
+      allow read: if signedIn();
+      allow write: if isWarehouse();
+    }
+    match /categorias_inventario/{documentId} {
+      allow read: if signedIn();
+      allow write: if isWarehouse();
+    }
+    match /subcategorias_inventario/{documentId} {
+      allow read: if signedIn();
+      allow write: if isWarehouse();
+    }
+    match /cajitas_inventario/{documentId} {
+      allow read: if signedIn();
+      allow write: if isWarehouse();
+    }
+    match /traspasos_inventario/{documentId} {
+      allow read: if signedIn();
+      allow write: if isWarehouse();
+    }
+    match /reparaciones_taller/{documentId} {
+      allow read: if signedIn();
+      allow write: if isWarehouse();
+    }
+    match /historial_recepciones/{documentId} {
+      allow read: if signedIn();
+      allow write: if isWarehouse();
+    }
+    match /cat_saunas/{documentId} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
+    }
+
+    // Cualquier módulo no enumerado queda reservado a administración.
     match /{document=**} {
-      allow read, write: if signedIn();
+      allow read, write: if isAdmin();
     }
   }
 }

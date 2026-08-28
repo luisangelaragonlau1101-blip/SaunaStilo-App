@@ -4,7 +4,6 @@ import 'dart:typed_data';
 
 import 'package:audioplayers/audioplayers.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -17,6 +16,7 @@ import '../models/actividad_model.dart';
 import '../models/insumo_model.dart';
 import '../models/user_model.dart';
 import '../services/ai_assistant_service.dart';
+import '../services/media_upload_service.dart';
 import '../services/notificaciones_service.dart';
 
 class AsistenteIaScreen extends StatefulWidget {
@@ -37,6 +37,7 @@ class _AsistenteIaScreenState extends State<AsistenteIaScreen> {
   final _controller = TextEditingController();
   final _scrollController = ScrollController();
   final _aiService = AiAssistantService();
+  final _media = MediaUploadService();
   final _speech = stt.SpeechToText();
   final _tts = FlutterTts();
   final _recorder = AudioRecorder();
@@ -64,7 +65,7 @@ class _AsistenteIaScreenState extends State<AsistenteIaScreen> {
   bool _leerRespuestas = true;
   bool? _nubeDisponible;
   String? _audioReproduciendo;
-  double _velocidadVoz = .82;
+  double _velocidadVoz = .94;
 
   bool get _esAdmin => widget.usuario.rol == AppRoles.admin;
   bool get _esAlmacen => widget.usuario.rol == AppRoles.almacenista;
@@ -748,17 +749,15 @@ class _AsistenteIaScreenState extends State<AsistenteIaScreen> {
     for (var index = 0; index < imagenes.length; index++) {
       final imagen = imagenes[index];
       final nombre = imagen.name.replaceAll(RegExp(r'[^a-zA-Z0-9._-]+'), '_');
-      final ref = FirebaseStorage.instance.ref().child(
-        'asistente_imagenes/${widget.usuario.id}/${momento}_${index}_${nombre.isEmpty ? 'foto.jpg' : nombre}',
+      final nombreSeguro = nombre.isEmpty ? 'foto.jpg' : nombre;
+      final archivo = await _media.upload(
+        bytes: await imagen.readAsBytes(),
+        fileName: nombreSeguro,
+        contentType: _mimeImagen(imagen.name),
+        folder:
+            'asistente_imagenes/${widget.usuario.id}/${momento}_$index',
       );
-      await ref.putData(
-        await imagen.readAsBytes(),
-        SettableMetadata(
-          contentType: _mimeImagen(imagen.name),
-          customMetadata: {'usuarioId': widget.usuario.id},
-        ),
-      );
-      urls.add(await ref.getDownloadURL());
+      urls.add(archivo.url);
     }
     return urls;
   }
@@ -868,20 +867,13 @@ class _AsistenteIaScreenState extends State<AsistenteIaScreen> {
     try {
       final wav = _crearWav(pcm, sampleRate: 16000, channels: 1);
       final fecha = DateTime.now().millisecondsSinceEpoch;
-      final referencia = FirebaseStorage.instance
-          .ref()
-          .child('audios_asistente/${widget.usuario.id}/audio_$fecha.wav');
-      await referencia.putData(
-        wav,
-        SettableMetadata(
-          contentType: 'audio/wav',
-          customMetadata: <String, String>{
-            'emisorId': widget.usuario.id,
-            'emisorRol': widget.usuario.rol,
-          },
-        ),
+      final archivo = await _media.upload(
+        bytes: wav,
+        fileName: 'audio_$fecha.wav',
+        contentType: 'audio/wav',
+        folder: 'audios_asistente/${widget.usuario.id}',
       );
-      final url = await referencia.getDownloadURL();
+      final url = archivo.url;
       final db = FirebaseFirestore.instance;
       final audioRef = db.collection('mensajes_audio').doc();
       final batch = db.batch();

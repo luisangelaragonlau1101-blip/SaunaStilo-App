@@ -1,12 +1,11 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
 import '../models/user_model.dart';
 import '../services/auth_service.dart';
+import '../services/media_upload_service.dart';
 import 'usuarios_crud_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'admin_modal_horario.dart'; // <-- IMPORTAMOS EL MODAL DE HORARIOS
@@ -26,6 +25,7 @@ class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
   static const Color colorMorado = Color(0xFF8B5CF6);
   
   bool _subiendoFoto = false;
+  final _media = MediaUploadService();
 
   // 📸 LÓGICA PARA SUBIR FOTO DE PERFIL
   Future<void> _actualizarFotoPerfil() async {
@@ -35,14 +35,16 @@ class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
     if (pickedFile != null) {
       setState(() => _subiendoFoto = true);
       try {
-        File file = File(pickedFile.path);
-        String filePath = 'perfiles/${widget.usuario.id}.jpg';
-        
-        TaskSnapshot snapshot = await FirebaseStorage.instance.ref().child(filePath).putFile(file);
-        String downloadUrl = await snapshot.ref.getDownloadURL();
+        final archivo = await _media.upload(
+          bytes: await pickedFile.readAsBytes(),
+          fileName: pickedFile.name.isEmpty ? 'perfil.jpg' : pickedFile.name,
+          contentType: _mimeImagen(pickedFile.name),
+          folder: 'perfiles/${widget.usuario.id}',
+        );
         
         await FirebaseFirestore.instance.collection('usuarios').doc(widget.usuario.id).update({
-          'fotoUrl': downloadUrl,
+          'fotoUrl': archivo.url,
+          'fotoRuta': archivo.path,
         });
         
         ScaffoldMessenger.of(context).showSnackBar(
@@ -56,6 +58,14 @@ class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
         setState(() => _subiendoFoto = false);
       }
     }
+  }
+
+  String _mimeImagen(String nombre) {
+    final limpio = nombre.toLowerCase();
+    if (limpio.endsWith('.png')) return 'image/png';
+    if (limpio.endsWith('.webp')) return 'image/webp';
+    if (limpio.endsWith('.heic')) return 'image/heic';
+    return 'image/jpeg';
   }
 
   // ✏️ LÓGICA PARA EDITAR NOMBRE

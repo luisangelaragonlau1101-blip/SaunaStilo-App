@@ -1,22 +1,22 @@
 import 'dart:typed_data';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../models/proyecto_model.dart';
 import '../models/user_model.dart';
+import 'media_upload_service.dart';
 import 'notificaciones_service.dart';
 
 class ProyectoChatService {
   final FirebaseFirestore _db;
-  final FirebaseStorage _storage;
+  final MediaUploadService _media;
 
   ProyectoChatService({
     FirebaseFirestore? firestore,
-    FirebaseStorage? storage,
+    MediaUploadService? media,
   }) : _db = firestore ?? FirebaseFirestore.instance,
-       _storage = storage ?? FirebaseStorage.instance;
+       _media = media ?? MediaUploadService();
 
   CollectionReference<Map<String, dynamic>> _mensajes(String proyectoId) =>
       _db.collection('proyectos').doc(proyectoId).collection('conversacion');
@@ -35,18 +35,21 @@ class ProyectoChatService {
     final mensajeRef = _mensajes(proyecto.id).doc();
     final urls = <String>[];
     final rutas = <String>[];
+    final subidos = <MediaUploadResult>[];
     try {
       for (var index = 0; index < imagenes.length; index++) {
         final imagen = imagenes[index];
         final ruta =
             'proyectos/${proyecto.id}/chat/${mensajeRef.id}/${index}_${_safeName(imagen.name)}';
-        final ref = _storage.ref(ruta);
-        await ref.putData(
-          await imagen.readAsBytes(),
-          SettableMetadata(contentType: _imageMime(imagen.name)),
+        final archivo = await _media.upload(
+          bytes: await imagen.readAsBytes(),
+          fileName: _safeName(imagen.name),
+          contentType: _imageMime(imagen.name),
+          folder: ruta,
         );
-        rutas.add(ruta);
-        urls.add(await ref.getDownloadURL());
+        subidos.add(archivo);
+        rutas.add(archivo.path);
+        urls.add(archivo.url);
       }
       await mensajeRef.set({
         'autorId': autor.id,
@@ -69,9 +72,9 @@ class ProyectoChatService {
             : '${autor.nombre}: $limpio',
       );
     } catch (_) {
-      for (final ruta in rutas) {
+      for (final archivo in subidos.reversed) {
         try {
-          await _storage.ref(ruta).delete();
+          await _media.delete(url: archivo.url, path: archivo.path);
         } catch (_) {}
       }
       rethrow;
@@ -87,13 +90,11 @@ class ProyectoChatService {
     final mensajeRef = _mensajes(proyecto.id).doc();
     final ruta =
         'proyectos/${proyecto.id}/chat/${mensajeRef.id}/audio_${autor.id}.wav';
-    final storageRef = _storage.ref(ruta);
-    await storageRef.putData(
-      wav,
-      SettableMetadata(
-        contentType: 'audio/wav',
-        customMetadata: {'duracionSegundos': '$duracionSegundos'},
-      ),
+    final archivo = await _media.upload(
+      bytes: wav,
+      fileName: 'audio_${autor.id}.wav',
+      contentType: 'audio/wav',
+      folder: ruta,
     );
     try {
       await mensajeRef.set({
@@ -102,8 +103,8 @@ class ProyectoChatService {
         'autorRol': autor.rol,
         'autorFotoUrl': autor.fotoUrl ?? '',
         'texto': '',
-        'audioUrl': await storageRef.getDownloadURL(),
-        'audioRuta': ruta,
+        'audioUrl': archivo.url,
+        'audioRuta': archivo.path,
         'duracionSegundos': duracionSegundos,
         'imagenes': <String>[],
         'tipo': 'audio',
@@ -118,7 +119,7 @@ class ProyectoChatService {
       );
     } catch (_) {
       try {
-        await storageRef.delete();
+        await _media.delete(url: archivo.url, path: archivo.path);
       } catch (_) {}
       rethrow;
     }

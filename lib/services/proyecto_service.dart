@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../models/proyecto_model.dart';
 
 class ProyectoService {
@@ -24,8 +25,14 @@ class ProyectoService {
   }
 
   // 2. Obtener lista de proyectos
-  Stream<List<Proyecto>> getProyectos() {
-    return _db.collection('proyectos').snapshots().map((snapshot) =>
+  Stream<List<Proyecto>> getProyectos({bool soloAsignados = false}) {
+    Query<Map<String, dynamic>> query = _db.collection('proyectos');
+    if (soloAsignados) {
+      final uid = FirebaseAuth.instance.currentUser?.uid;
+      if (uid == null || uid.isEmpty) return const Stream.empty();
+      query = query.where('encargados', arrayContains: uid);
+    }
+    return query.snapshots().map((snapshot) =>
         snapshot.docs.map((doc) => Proyecto.fromFirestore(doc)).toList());
   }
 

@@ -13,7 +13,10 @@ class AiAssistantService {
   }) async {
     final callable = _functions.httpsCallable(
       'saunaAssistant',
-      options: HttpsCallableOptions(timeout: const Duration(seconds: 12)),
+      // Si el motor generativo todavía no está disponible, regresamos rápido
+      // a las respuestas operativas locales en vez de dejar al usuario
+      // esperando frente a la animación.
+      options: HttpsCallableOptions(timeout: const Duration(seconds: 4)),
     );
     final result = await callable.call(<String, dynamic>{
       'pregunta': pregunta,

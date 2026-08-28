@@ -1,19 +1,19 @@
 {
     "project_info": {
-        "project_number": "905977113744",
-        "project_id": "saunastylo-dbd87",
-        "storage_bucket": "saunastylo-dbd87.firebasestorage.app"
+        "project_number": "1083212885362",
+        "project_id": "saunastiloapp-17e15",
+        "storage_bucket": "saunastiloapp-17e15.firebasestorage.app"
     },
     "client": [{
         "client_info": {
-            "mobilesdk_app_id": "1:905977113744:android:dd7961093ce84813f27c15",
+            "mobilesdk_app_id": "1:1083212885362:android:5dbc7c758d23f96105c1eb",
             "android_client_info": {
                 "package_name": "com.saunastylo.saunastylo"
             }
         },
         "oauth_client": [],
         "api_key": [{
-            "current_key": "AIzaSyAL8Z_Fwa9RurlvPdxGZYJEf5TVmlahUnA"
+            "current_key": "AIzaSyD3hpOQEUU4qfgRPbkzZQE3hKgY-PTr_4Q"
         }],
         "services": {
             "appinvite_service": {

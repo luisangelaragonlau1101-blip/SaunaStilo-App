@@ -2,12 +2,12 @@ importScripts('https://www.gstatic.com/firebasejs/12.15.0/firebase-app-compat.js
 importScripts('https://www.gstatic.com/firebasejs/12.15.0/firebase-messaging-compat.js');
 
 firebase.initializeApp({
-  apiKey: 'AIzaSyAL8Z_Fwa9RurlvPdxGZYJEf5TVmlahUnA',
-  authDomain: 'saunastylo-dbd87.firebaseapp.com',
-  projectId: 'saunastylo-dbd87',
-  storageBucket: 'saunastylo-dbd87.firebasestorage.app',
-  messagingSenderId: '905977113744',
-  appId: '1:905977113744:android:dd7961093ce84813f27c15'
+  apiKey: 'AIzaSyCqvb1kOvxvPTZzCZLQx6aZgEBnC-AZnYE',
+  authDomain: 'saunastiloapp-17e15.firebaseapp.com',
+  projectId: 'saunastiloapp-17e15',
+  storageBucket: 'saunastiloapp-17e15.firebasestorage.app',
+  messagingSenderId: '1083212885362',
+  appId: '1:1083212885362:web:0b99846f25c4d5c005c1eb'
 });
 
 const messaging = firebase.messaging();
