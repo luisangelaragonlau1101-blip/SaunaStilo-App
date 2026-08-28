@@ -1,0 +1,39 @@
+name: Build Web App
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  build-web:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build web application
+        run: flutter build web --release --base-href /
+
+      - name: Upload web application
+        uses: actions/upload-artifact@v4
+        with:
+          name: SaunaStilo-Web
+          path: build/web
+          if-no-files-found: error
+          retention-days: 7
