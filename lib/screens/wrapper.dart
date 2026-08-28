@@ -32,6 +32,7 @@ import 'asistente_ia_screen.dart';
 import 'blog_interno_screen.dart';
 import 'notificaciones_screen.dart';
 import 'reconocimientos_screen.dart';
+import 'modern_dashboard_screen.dart';
 import '../services/notificaciones_service.dart';
 import '../widgets/avisos_sonoros.dart';
 
@@ -141,17 +142,17 @@ class Wrapper extends StatelessWidget {
                         if (usuario.rol == 'admin') {
                           return AvisosSonoros(
                             usuario: usuario,
-                            child: AdminDashboard(adminUser: usuario, key: const ValueKey('admin_dash')),
+                            child: ModernDashboardScreen(usuario: usuario, key: const ValueKey('admin_dash')),
                           );
                         } else if (usuario.rol == 'almacenista') {
                           return AvisosSonoros(
                             usuario: usuario,
-                            child: AlmacenistaDashboard(usuario: usuario, key: const ValueKey('almacenista_dash')),
+                            child: ModernDashboardScreen(usuario: usuario, key: const ValueKey('almacenista_dash')),
                           );
                         } else {
                           return AvisosSonoros(
                             usuario: usuario,
-                            child: OperativoDashboard(usuario: usuario, key: const ValueKey('operativo_dash')),
+                            child: ModernDashboardScreen(usuario: usuario, key: const ValueKey('operativo_dash')),
                           );
                         }
                       }

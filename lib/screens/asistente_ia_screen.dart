@@ -1,11 +1,21 @@
+import 'dart:async';
+import 'dart:convert';
+import 'dart:typed_data';
+
+import 'package:audioplayers/audioplayers.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_tts/flutter_tts.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:record/record.dart';
+import 'package:speech_to_text/speech_to_text.dart' as stt;
 
 import '../models/actividad_model.dart';
 import '../models/insumo_model.dart';
 import '../models/user_model.dart';
+import '../services/ai_assistant_service.dart';
 import '../services/notificaciones_service.dart';
 
 class AsistenteIaScreen extends StatefulWidget {
@@ -20,14 +30,37 @@ class AsistenteIaScreen extends StatefulWidget {
 class _AsistenteIaScreenState extends State<AsistenteIaScreen> {
   static const _fondo = Color(0xFF050505);
   static const _tarjeta = Color(0xFF171717);
-  static const _acento = Color(0xFF8B5CF6);
+  static const _acento = Color(0xFFD6A85F);
+  static const _verde = Color(0xFFB9F56A);
+
   final _controller = TextEditingController();
   final _scrollController = ScrollController();
+  final _aiService = AiAssistantService();
+  final _speech = stt.SpeechToText();
+  final _tts = FlutterTts();
+  final _recorder = AudioRecorder();
+  final _audioPlayer = AudioPlayer();
+  final List<StreamSubscription<dynamic>> _suscripciones = [];
   final List<_MensajeAsistente> _mensajes = <_MensajeAsistente>[];
+
   List<ActividadModel> _actividades = <ActividadModel>[];
   List<Map<String, dynamic>> _solicitudes = <Map<String, dynamic>>[];
   List<Map<String, dynamic>> _proyectos = <Map<String, dynamic>>[];
+  List<Map<String, dynamic>> _clientes = <Map<String, dynamic>>[];
+  List<Map<String, dynamic>> _cotizaciones = <Map<String, dynamic>>[];
   List<InsumoModel> _insumos = <InsumoModel>[];
+
+  StreamSubscription<Uint8List>? _flujoAudio;
+  BytesBuilder _audioBytes = BytesBuilder(copy: false);
+  Timer? _cronometroAudio;
+  int _segundosAudio = 0;
+  bool _escuchando = false;
+  bool _grabandoAudio = false;
+  bool _subiendoAudio = false;
+  bool _pensando = false;
+  bool _leerRespuestas = true;
+  bool? _nubeDisponible;
+  String? _audioReproduciendo;
 
   bool get _esAdmin => widget.usuario.rol == AppRoles.admin;
   bool get _esAlmacen => widget.usuario.rol == AppRoles.almacenista;
@@ -35,18 +68,120 @@ class _AsistenteIaScreenState extends State<AsistenteIaScreen> {
   @override
   void initState() {
     super.initState();
+    _configurarVoz();
+    _escucharDatosPermitidos();
+    _audioPlayer.onPlayerComplete.listen((_) {
+      if (mounted) setState(() => _audioReproduciendo = null);
+    });
     _mensajes.add(
       _MensajeAsistente(
-        texto:
-            'Hola, ${widget.usuario.nombre}. Soy tu asistente de Sauna Stilo. '
-            'Puedo decirte qué debes hacer hoy, qué está vencido, qué falta por comprobar y qué solicitudes esperan atención.',
+        texto: _esAdmin
+            ? 'Hola, ${widget.usuario.nombre}. Tengo acceso administrativo a proyectos, clientes, cotizaciones, tareas y almacén. Puedes pedirme resúmenes, estadísticas, borradores o prioridades y también puedo responderte con voz.'
+            : 'Hola, ${widget.usuario.nombre}. Te ayudo con tus tareas, evidencias, solicitudes y herramientas disponibles. Los datos privados de clientes, cotizaciones y proyectos administrativos permanecen protegidos para tu rol.',
         esUsuario: false,
       ),
     );
   }
 
+  Future<void> _configurarVoz() async {
+    await _tts.setLanguage('es-MX');
+    await _tts.setSpeechRate(.47);
+    await _tts.setPitch(1.0);
+    await _tts.setVolume(1.0);
+  }
+
+  void _escucharDatosPermitidos() {
+    final db = FirebaseFirestore.instance;
+    final Query<Map<String, dynamic>> actividadesQuery = _esAdmin
+        ? db.collection('actividades')
+        : db
+              .collection('actividades')
+              .where('asignadoATrabajadorId', isEqualTo: widget.usuario.id);
+    _suscripciones.add(
+      actividadesQuery.snapshots().listen((snapshot) {
+        if (!mounted) return;
+        setState(() {
+          _actividades = snapshot.docs
+              .map((doc) => ActividadModel.fromJson(doc.data(), doc.id))
+              .toList(growable: false);
+        });
+      }),
+    );
+
+    final Query<Map<String, dynamic>> solicitudesQuery = (_esAdmin || _esAlmacen)
+        ? db.collection('solicitudes_herramientas')
+        : db
+              .collection('solicitudes_herramientas')
+              .where('trabajadorId', isEqualTo: widget.usuario.id);
+    _suscripciones.add(
+      solicitudesQuery.snapshots().listen((snapshot) {
+        if (!mounted) return;
+        setState(() {
+          _solicitudes = snapshot.docs
+              .map((doc) => <String, dynamic>{'id': doc.id, ...doc.data()})
+              .toList(growable: false);
+        });
+      }),
+    );
+
+    _suscripciones.add(
+      db.collection('insumos_inventario').snapshots().listen((snapshot) {
+        if (!mounted) return;
+        final insumos = snapshot.docs
+            .map((doc) => InsumoModel.fromFirestore(doc))
+            .toList(growable: true)
+          ..sort((a, b) => a.nombre.compareTo(b.nombre));
+        setState(() => _insumos = insumos);
+      }),
+    );
+
+    // Estas tres colecciones sensibles ni siquiera se consultan desde un
+    // dispositivo que no tenga rol administrador.
+    if (_esAdmin) {
+      _suscripciones.add(
+        db.collection('proyectos').snapshots().listen((snapshot) {
+          if (!mounted) return;
+          setState(() {
+            _proyectos = snapshot.docs
+                .map((doc) => <String, dynamic>{'id': doc.id, ...doc.data()})
+                .toList(growable: false);
+          });
+        }),
+      );
+      _suscripciones.add(
+        db.collection('clientes').snapshots().listen((snapshot) {
+          if (!mounted) return;
+          setState(() {
+            _clientes = snapshot.docs
+                .map((doc) => <String, dynamic>{'id': doc.id, ...doc.data()})
+                .toList(growable: false);
+          });
+        }),
+      );
+      _suscripciones.add(
+        db.collection('seguimiento_cotizaciones').snapshots().listen((snapshot) {
+          if (!mounted) return;
+          setState(() {
+            _cotizaciones = snapshot.docs
+                .map((doc) => <String, dynamic>{'id': doc.id, ...doc.data()})
+                .toList(growable: false);
+          });
+        }),
+      );
+    }
+  }
+
   @override
   void dispose() {
+    for (final suscripcion in _suscripciones) {
+      suscripcion.cancel();
+    }
+    _flujoAudio?.cancel();
+    _cronometroAudio?.cancel();
+    _speech.cancel();
+    _tts.stop();
+    _recorder.dispose();
+    _audioPlayer.dispose();
     _controller.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -58,107 +193,53 @@ class _AsistenteIaScreenState extends State<AsistenteIaScreen> {
       backgroundColor: _fondo,
       appBar: AppBar(
         backgroundColor: _fondo,
+        surfaceTintColor: Colors.transparent,
+        titleSpacing: 8,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'ASISTENTE IA',
-              style: GoogleFonts.montserrat(fontWeight: FontWeight.w900),
+              'ASISTENTE SAUNA IA',
+              style: GoogleFonts.montserrat(
+                fontWeight: FontWeight.w900,
+                fontSize: 17,
+              ),
             ),
             Text(
-              'Datos reales de la operación',
-              style: GoogleFonts.inter(color: Colors.white54, fontSize: 11),
+              _esAdmin ? 'Acceso administrativo verificado' : 'Acceso protegido por tu rol',
+              style: GoogleFonts.inter(
+                color: _esAdmin ? _verde : Colors.white54,
+                fontSize: 10,
+              ),
             ),
           ],
         ),
-      ),
-      body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-        stream: FirebaseFirestore.instance.collection('actividades').snapshots(),
-        builder: (context, actividadesSnapshot) {
-          return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-            stream: FirebaseFirestore.instance
-                .collection('solicitudes_herramientas')
-                .snapshots(),
-            builder: (context, solicitudesSnapshot) {
-              return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-                stream: FirebaseFirestore.instance
-                    .collection('proyectos')
-                    .snapshots(),
-                builder: (context, proyectosSnapshot) {
-                  return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-                    stream: FirebaseFirestore.instance
-                        .collection('insumos_inventario')
-                        .snapshots(),
-                    builder: (context, inventarioSnapshot) {
-                      _sincronizarDatos(
-                        actividadesSnapshot.data,
-                        solicitudesSnapshot.data,
-                        proyectosSnapshot.data,
-                        inventarioSnapshot.data,
-                      );
-                      return Column(
-                        children: [
-                          _resumenOperacion(),
-                          _preguntasRapidas(),
-                          const Divider(height: 1, color: Colors.white10),
-                          Expanded(child: _listaMensajes()),
-                          _entradaMensaje(),
-                        ],
-                      );
-                    },
-                  );
-                },
-              );
+        actions: [
+          IconButton(
+            tooltip: _leerRespuestas ? 'Desactivar voz' : 'Activar voz',
+            onPressed: () {
+              setState(() => _leerRespuestas = !_leerRespuestas);
+              if (!_leerRespuestas) _tts.stop();
             },
-          );
-        },
+            icon: Icon(
+              _leerRespuestas
+                  ? Icons.volume_up_rounded
+                  : Icons.volume_off_rounded,
+              color: _leerRespuestas ? _acento : Colors.white38,
+            ),
+          ),
+        ],
+      ),
+      body: Column(
+        children: [
+          _resumenOperacion(),
+          _preguntasRapidas(),
+          const Divider(height: 1, color: Colors.white10),
+          Expanded(child: _listaMensajes()),
+          _entradaMensaje(),
+        ],
       ),
     );
-  }
-
-  void _sincronizarDatos(
-    QuerySnapshot<Map<String, dynamic>>? actividades,
-    QuerySnapshot<Map<String, dynamic>>? solicitudes,
-    QuerySnapshot<Map<String, dynamic>>? proyectos,
-    QuerySnapshot<Map<String, dynamic>>? inventario,
-  ) {
-    final todas = actividades?.docs
-            .map((doc) => ActividadModel.fromJson(doc.data(), doc.id))
-            .toList(growable: false) ??
-        const <ActividadModel>[];
-    _actividades = _esAdmin
-        ? todas
-        : todas
-              .where(
-                (actividad) =>
-                    actividad.asignadoATrabajadorId == widget.usuario.id,
-              )
-              .toList(growable: false);
-
-    final todasSolicitudes = solicitudes?.docs
-            .map(
-              (doc) => <String, dynamic>{'id': doc.id, ...doc.data()},
-            )
-            .toList(growable: false) ??
-        const <Map<String, dynamic>>[];
-    _solicitudes = (_esAdmin || _esAlmacen)
-        ? todasSolicitudes
-        : todasSolicitudes
-              .where(
-                (solicitud) => solicitud['trabajadorId'] == widget.usuario.id,
-              )
-              .toList(growable: false);
-    _proyectos = proyectos?.docs
-            .map(
-              (doc) => <String, dynamic>{'id': doc.id, ...doc.data()},
-            )
-            .toList(growable: false) ??
-        const <Map<String, dynamic>>[];
-    _insumos = inventario?.docs
-            .map((doc) => InsumoModel.fromFirestore(doc))
-            .toList(growable: true) ??
-        <InsumoModel>[];
-    _insumos.sort((a, b) => a.nombre.compareTo(b.nombre));
   }
 
   Widget _resumenOperacion() {
@@ -170,81 +251,179 @@ class _AsistenteIaScreenState extends State<AsistenteIaScreen> {
         .where((solicitud) => solicitud['estatus'] == 'pendiente')
         .length;
     return SizedBox(
-      height: 94,
+      height: 92,
       child: ListView(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 10),
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
         children: [
-          _Metrica(titulo: 'PARA HOY', valor: hoy, color: const Color(0xFF00E676)),
-          _Metrica(titulo: 'PENDIENTES', valor: pendientes, color: const Color(0xFFFFDE21)),
+          _Metrica(titulo: 'PARA HOY', valor: hoy, color: _verde),
+          _Metrica(
+            titulo: 'PENDIENTES',
+            valor: pendientes,
+            color: const Color(0xFFFFD166),
+          ),
           _Metrica(
             titulo: _esAdmin || _esAlmacen ? 'ALMACÉN' : 'SOLICITUDES',
             valor: solicitudes,
-            color: const Color(0xFFFF9800),
+            color: const Color(0xFF72D6FF),
           ),
+          if (_esAdmin)
+            _Metrica(
+              titulo: 'CLIENTES',
+              valor: _clientes.length,
+              color: const Color(0xFFFF8FAB),
+            ),
         ],
       ),
     );
   }
 
   Widget _preguntasRapidas() {
-    final opciones = _esAdmin || _esAlmacen
-        ? const ['Resumen de hoy', 'Pendientes', 'Almacén', 'Herramientas', 'Proyectos']
-        : const ['¿Qué hago hoy?', 'Mis pendientes', 'Herramientas', 'Mis evidencias', 'Mis logros'];
+    final opciones = _esAdmin
+        ? const [
+            'Resumen ejecutivo',
+            'Proyectos y estados',
+            'Clientes',
+            'Cotizaciones',
+            'Genera estadísticas',
+          ]
+        : _esAlmacen
+        ? const ['Resumen de hoy', 'Pendientes', 'Almacén', 'Herramientas']
+        : const [
+            '¿Qué hago hoy?',
+            'Mis pendientes',
+            'Herramientas',
+            'Mis evidencias',
+            'Mis logros',
+          ];
     return SizedBox(
-      height: 48,
+      height: 50,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
         itemCount: opciones.length,
         separatorBuilder: (_, __) => const SizedBox(width: 8),
         itemBuilder: (context, index) => ActionChip(
           backgroundColor: _tarjeta,
           side: const BorderSide(color: Colors.white12),
+          avatar: index == 0
+              ? const Icon(Icons.auto_awesome_rounded, size: 16, color: _acento)
+              : null,
           label: Text(
             opciones[index],
             style: GoogleFonts.inter(color: Colors.white70, fontSize: 12),
           ),
-          onPressed: () => _enviar(opciones[index]),
+          onPressed: _pensando ? null : () => _enviar(opciones[index]),
         ),
       ),
     );
   }
 
   Widget _listaMensajes() {
+    final total = _mensajes.length + (_pensando ? 1 : 0);
     return ListView.builder(
       controller: _scrollController,
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 18),
-      itemCount: _mensajes.length,
+      itemCount: total,
       itemBuilder: (context, index) {
+        if (_pensando && index == _mensajes.length) {
+          return const Align(
+            alignment: Alignment.centerLeft,
+            child: _BurbujaPensando(),
+          );
+        }
         final mensaje = _mensajes[index];
         return Align(
           alignment: mensaje.esUsuario
               ? Alignment.centerRight
               : Alignment.centerLeft,
           child: Container(
-            constraints: const BoxConstraints(maxWidth: 560),
+            constraints: const BoxConstraints(maxWidth: 590),
             margin: const EdgeInsets.only(bottom: 12),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+            padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
             decoration: BoxDecoration(
-              color: mensaje.esUsuario ? _acento : _tarjeta,
+              color: mensaje.esUsuario ? const Color(0xFF40372B) : _tarjeta,
               borderRadius: BorderRadius.only(
-                topLeft: const Radius.circular(18),
-                topRight: const Radius.circular(18),
-                bottomLeft: Radius.circular(mensaje.esUsuario ? 18 : 4),
-                bottomRight: Radius.circular(mensaje.esUsuario ? 4 : 18),
+                topLeft: const Radius.circular(20),
+                topRight: const Radius.circular(20),
+                bottomLeft: Radius.circular(mensaje.esUsuario ? 20 : 5),
+                bottomRight: Radius.circular(mensaje.esUsuario ? 5 : 20),
               ),
-              border: mensaje.esUsuario
-                  ? null
-                  : Border.all(color: Colors.white10),
+              border: Border.all(
+                color: mensaje.esUsuario
+                    ? _acento.withOpacity(.35)
+                    : Colors.white10,
+              ),
             ),
-            child: Text(
-              mensaje.texto,
-              style: GoogleFonts.inter(color: Colors.white, height: 1.4),
-            ),
+            child: mensaje.audioUrl != null
+                ? _burbujaAudio(mensaje)
+                : Row(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Flexible(
+                        child: Text(
+                          mensaje.texto,
+                          style: GoogleFonts.inter(
+                            color: Colors.white,
+                            height: 1.42,
+                          ),
+                        ),
+                      ),
+                      if (!mensaje.esUsuario) ...[
+                        const SizedBox(width: 4),
+                        InkWell(
+                          onTap: () => _hablar(mensaje.texto),
+                          borderRadius: BorderRadius.circular(20),
+                          child: const Padding(
+                            padding: EdgeInsets.all(5),
+                            child: Icon(
+                              Icons.volume_up_rounded,
+                              size: 17,
+                              color: Colors.white38,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
           ),
         );
       },
+    );
+  }
+
+  Widget _burbujaAudio(_MensajeAsistente mensaje) {
+    final reproduciendo = _audioReproduciendo == mensaje.audioUrl;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        IconButton.filledTonal(
+          onPressed: () => _reproducirAudio(mensaje.audioUrl!),
+          icon: Icon(
+            reproduciendo ? Icons.stop_rounded : Icons.play_arrow_rounded,
+          ),
+        ),
+        const SizedBox(width: 8),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Mensaje de audio',
+              style: GoogleFonts.inter(
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            Text(
+              _formatoDuracion(mensaje.duracionAudio ?? 0),
+              style: GoogleFonts.inter(color: Colors.white54, fontSize: 11),
+            ),
+          ],
+        ),
+        const SizedBox(width: 16),
+        const Icon(Icons.graphic_eq_rounded, color: _acento),
+      ],
     );
   }
 
@@ -252,44 +431,110 @@ class _AsistenteIaScreenState extends State<AsistenteIaScreen> {
     return SafeArea(
       top: false,
       child: Container(
-        padding: const EdgeInsets.fromLTRB(14, 10, 14, 14),
+        padding: const EdgeInsets.fromLTRB(10, 8, 10, 12),
         decoration: const BoxDecoration(
           color: Color(0xFF0D0D0D),
           border: Border(top: BorderSide(color: Colors.white10)),
         ),
-        child: Row(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            if (!_esAdmin) ...[
-              IconButton.filledTonal(
-                tooltip: 'Solicitar herramienta',
-                onPressed: _abrirSolicitudHerramienta,
-                icon: const Icon(Icons.handyman_rounded),
-              ),
-              const SizedBox(width: 8),
-            ],
-            Expanded(
-              child: TextField(
-                controller: _controller,
-                textCapitalization: TextCapitalization.sentences,
-                style: GoogleFonts.inter(color: Colors.white),
-                onSubmitted: _enviar,
-                decoration: InputDecoration(
-                  hintText: 'Pregunta por tus tareas o pendientes…',
-                  hintStyle: const TextStyle(color: Colors.white38),
-                  filled: true,
-                  fillColor: _tarjeta,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(18),
-                    borderSide: BorderSide.none,
-                  ),
+            if (_grabandoAudio || _subiendoAudio)
+              Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 9),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF291719),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.redAccent.withOpacity(.4)),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      _subiendoAudio
+                          ? Icons.cloud_upload_rounded
+                          : Icons.fiber_manual_record_rounded,
+                      size: 17,
+                      color: Colors.redAccent,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        _subiendoAudio
+                            ? 'Enviando audio…'
+                            : 'Grabando ${_formatoDuracion(_segundosAudio)}',
+                        style: GoogleFonts.inter(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    if (_grabandoAudio)
+                      TextButton(
+                        onPressed: _detenerYEnviarAudio,
+                        child: const Text('ENVIAR'),
+                      ),
+                  ],
                 ),
               ),
-            ),
-            const SizedBox(width: 9),
-            IconButton.filled(
-              style: IconButton.styleFrom(backgroundColor: _acento),
-              onPressed: () => _enviar(_controller.text),
-              icon: const Icon(Icons.arrow_upward_rounded),
+            Row(
+              children: [
+                if (!_esAdmin)
+                  _BotonEntrada(
+                    tooltip: 'Solicitar herramienta',
+                    icono: Icons.handyman_rounded,
+                    onPressed: _abrirSolicitudHerramienta,
+                  ),
+                _BotonEntrada(
+                  tooltip: _escuchando ? 'Detener dictado' : 'Dictar pregunta',
+                  icono: _escuchando ? Icons.mic_rounded : Icons.mic_none_rounded,
+                  activo: _escuchando,
+                  onPressed: _alternarDictado,
+                ),
+                const SizedBox(width: 5),
+                Expanded(
+                  child: TextField(
+                    controller: _controller,
+                    enabled: !_pensando && !_grabandoAudio,
+                    textCapitalization: TextCapitalization.sentences,
+                    style: GoogleFonts.inter(color: Colors.white, fontSize: 14),
+                    onSubmitted: _enviar,
+                    decoration: InputDecoration(
+                      hintText: _escuchando
+                          ? 'Te estoy escuchando…'
+                          : 'Pregunta lo que necesites…',
+                      hintStyle: const TextStyle(color: Colors.white38),
+                      filled: true,
+                      fillColor: _tarjeta,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 12,
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(18),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 5),
+                _BotonEntrada(
+                  tooltip: _grabandoAudio ? 'Detener y enviar audio' : 'Grabar audio',
+                  icono: _grabandoAudio
+                      ? Icons.stop_circle_rounded
+                      : Icons.graphic_eq_rounded,
+                  activo: _grabandoAudio,
+                  onPressed: _subiendoAudio ? null : _alternarGrabacionAudio,
+                ),
+                _BotonEntrada(
+                  tooltip: 'Enviar',
+                  icono: Icons.arrow_upward_rounded,
+                  activo: true,
+                  onPressed: _pensando
+                      ? null
+                      : () => _enviar(_controller.text),
+                ),
+              ],
             ),
           ],
         ),
@@ -297,14 +542,440 @@ class _AsistenteIaScreenState extends State<AsistenteIaScreen> {
     );
   }
 
+  Future<void> _alternarDictado() async {
+    if (_grabandoAudio) return;
+    if (_escuchando) {
+      await _speech.stop();
+      if (mounted) setState(() => _escuchando = false);
+      return;
+    }
+    await _tts.stop();
+    final disponible = await _speech.initialize(
+      onStatus: (status) {
+        if (!mounted) return;
+        if (status == 'done' || status == 'notListening') {
+          setState(() => _escuchando = false);
+        }
+      },
+      onError: (_) {
+        if (mounted) setState(() => _escuchando = false);
+      },
+    );
+    if (!disponible) {
+      _mostrarMensaje('Activa el permiso de micrófono para dictar preguntas.');
+      return;
+    }
+    setState(() => _escuchando = true);
+    await _speech.listen(
+      localeId: 'es_MX',
+      listenFor: const Duration(seconds: 35),
+      pauseFor: const Duration(seconds: 4),
+      onResult: (resultado) {
+        if (!mounted) return;
+        setState(() => _controller.text = resultado.recognizedWords);
+        if (resultado.finalResult && resultado.recognizedWords.trim().isNotEmpty) {
+          _speech.stop();
+          setState(() => _escuchando = false);
+          _enviar(resultado.recognizedWords);
+        }
+      },
+    );
+  }
+
+  Future<void> _alternarGrabacionAudio() async {
+    if (_grabandoAudio) {
+      await _detenerYEnviarAudio();
+    } else {
+      await _iniciarGrabacionAudio();
+    }
+  }
+
+  Future<void> _iniciarGrabacionAudio() async {
+    await _speech.stop();
+    await _tts.stop();
+    final permitido = await _recorder.hasPermission();
+    if (!permitido) {
+      _mostrarMensaje('Necesito permiso de micrófono para grabar el audio.');
+      return;
+    }
+    try {
+      _audioBytes = BytesBuilder(copy: false);
+      _segundosAudio = 0;
+      final stream = await _recorder.startStream(
+        const RecordConfig(
+          encoder: AudioEncoder.pcm16bits,
+          sampleRate: 16000,
+          numChannels: 1,
+          autoGain: true,
+          echoCancel: true,
+          noiseSuppress: true,
+        ),
+      );
+      _flujoAudio = stream.listen(_audioBytes.add);
+      _cronometroAudio = Timer.periodic(const Duration(seconds: 1), (_) {
+        if (mounted) setState(() => _segundosAudio++);
+      });
+      if (mounted) setState(() => _grabandoAudio = true);
+    } catch (_) {
+      _mostrarMensaje('No pude iniciar la grabación en este dispositivo.');
+    }
+  }
+
+  Future<void> _detenerYEnviarAudio() async {
+    if (!_grabandoAudio) return;
+    setState(() {
+      _grabandoAudio = false;
+      _subiendoAudio = true;
+    });
+    _cronometroAudio?.cancel();
+    await _recorder.stop();
+    await _flujoAudio?.cancel();
+    final pcm = _audioBytes.takeBytes();
+    if (pcm.isEmpty) {
+      if (mounted) setState(() => _subiendoAudio = false);
+      _mostrarMensaje('El audio quedó vacío. Intenta grabarlo otra vez.');
+      return;
+    }
+    try {
+      final wav = _crearWav(pcm, sampleRate: 16000, channels: 1);
+      final fecha = DateTime.now().millisecondsSinceEpoch;
+      final referencia = FirebaseStorage.instance
+          .ref()
+          .child('audios_asistente/${widget.usuario.id}/audio_$fecha.wav');
+      await referencia.putData(
+        wav,
+        SettableMetadata(
+          contentType: 'audio/wav',
+          customMetadata: <String, String>{
+            'emisorId': widget.usuario.id,
+            'emisorRol': widget.usuario.rol,
+          },
+        ),
+      );
+      final url = await referencia.getDownloadURL();
+      final db = FirebaseFirestore.instance;
+      final audioRef = db.collection('mensajes_audio').doc();
+      final batch = db.batch();
+      batch.set(audioRef, <String, dynamic>{
+        'emisorId': widget.usuario.id,
+        'emisorNombre': widget.usuario.nombre,
+        'emisorRol': widget.usuario.rol,
+        'audioUrl': url,
+        'duracionSegundos': _segundosAudio,
+        'destino': _esAdmin ? 'asistente' : 'administracion',
+        'origen': 'asistente_ia',
+        'creadoEn': FieldValue.serverTimestamp(),
+      });
+      if (!_esAdmin) {
+        batch.set(
+          db.collection('notificaciones').doc(),
+          NotificacionesService.datosAviso(
+            titulo: 'Nuevo audio de ${widget.usuario.nombre}',
+            mensaje: 'Envió un mensaje de voz desde el Asistente IA.',
+            tipo: 'audio',
+            rolesDestinatarios: const ['admin'],
+          ),
+        );
+      }
+      await batch.commit();
+      if (!mounted) return;
+      setState(() {
+        _subiendoAudio = false;
+        _mensajes.add(
+          _MensajeAsistente(
+            texto: 'Mensaje de audio',
+            esUsuario: true,
+            audioUrl: url,
+            duracionAudio: _segundosAudio,
+          ),
+        );
+        _mensajes.add(
+          _MensajeAsistente(
+            texto: _esAdmin
+                ? 'Audio guardado en la conversación.'
+                : 'Audio enviado. Administración recibió el aviso en la aplicación.',
+            esUsuario: false,
+          ),
+        );
+      });
+      _moverAlFinal();
+    } catch (_) {
+      if (mounted) setState(() => _subiendoAudio = false);
+      _mostrarMensaje('No pude subir el audio. Revisa tu conexión e inténtalo otra vez.');
+    }
+  }
+
+  Uint8List _crearWav(
+    Uint8List pcm, {
+    required int sampleRate,
+    required int channels,
+  }) {
+    const bitsPerSample = 16;
+    final byteRate = sampleRate * channels * bitsPerSample ~/ 8;
+    final blockAlign = channels * bitsPerSample ~/ 8;
+    final header = ByteData(44);
+    void texto(int offset, String value) {
+      final bytes = ascii.encode(value);
+      for (var i = 0; i < bytes.length; i++) {
+        header.setUint8(offset + i, bytes[i]);
+      }
+    }
+
+    texto(0, 'RIFF');
+    header.setUint32(4, 36 + pcm.length, Endian.little);
+    texto(8, 'WAVE');
+    texto(12, 'fmt ');
+    header.setUint32(16, 16, Endian.little);
+    header.setUint16(20, 1, Endian.little);
+    header.setUint16(22, channels, Endian.little);
+    header.setUint32(24, sampleRate, Endian.little);
+    header.setUint32(28, byteRate, Endian.little);
+    header.setUint16(32, blockAlign, Endian.little);
+    header.setUint16(34, bitsPerSample, Endian.little);
+    texto(36, 'data');
+    header.setUint32(40, pcm.length, Endian.little);
+    final resultado = BytesBuilder(copy: false)
+      ..add(header.buffer.asUint8List())
+      ..add(pcm);
+    return resultado.takeBytes();
+  }
+
+  Future<void> _reproducirAudio(String url) async {
+    if (_audioReproduciendo == url) {
+      await _audioPlayer.stop();
+      if (mounted) setState(() => _audioReproduciendo = null);
+      return;
+    }
+    await _audioPlayer.stop();
+    await _audioPlayer.play(UrlSource(url));
+    if (mounted) setState(() => _audioReproduciendo = url);
+  }
+
+  Future<void> _hablar(String texto) async {
+    await _tts.stop();
+    await _tts.speak(
+      texto
+          .replaceAll('•', '')
+          .replaceAll(RegExp(r'\n+'), '. ')
+          .replaceAll('_', ' '),
+    );
+  }
+
+  Future<void> _enviar(String texto) async {
+    final limpio = texto.trim();
+    if (limpio.isEmpty || _pensando) return;
+    await _speech.stop();
+    setState(() {
+      _escuchando = false;
+      _mensajes.add(_MensajeAsistente(texto: limpio, esUsuario: true));
+      _controller.clear();
+      _pensando = true;
+    });
+    _moverAlFinal();
+
+    String? respuesta;
+    if (_nubeDisponible != false) {
+      try {
+        respuesta = await _aiService.responder(
+          pregunta: limpio,
+          historial: _mensajes
+              .where((mensaje) => mensaje.audioUrl == null)
+              .toList(growable: false)
+              .reversed
+              .take(10)
+              .map(
+                (mensaje) => <String, String>{
+                  'rol': mensaje.esUsuario ? 'usuario' : 'asistente',
+                  'texto': mensaje.texto,
+                },
+              )
+              .toList(growable: false)
+              .reversed
+              .toList(growable: false),
+        );
+        if (respuesta != null) _nubeDisponible = true;
+      } catch (_) {
+        _nubeDisponible = false;
+      }
+    }
+    respuesta ??= _responderLocal(limpio);
+    if (!mounted) return;
+    setState(() {
+      _pensando = false;
+      _mensajes.add(
+        _MensajeAsistente(texto: respuesta!, esUsuario: false),
+      );
+    });
+    _moverAlFinal();
+    if (_leerRespuestas) await _hablar(respuesta);
+  }
+
+  String _responderLocal(String pregunta) {
+    final q = pregunta.toLowerCase();
+    if (!_esAdmin &&
+        (q.contains('cliente') ||
+            q.contains('cotiza') ||
+            q.contains('proyecto'))) {
+      return 'Por seguridad, tu perfil no consulta clientes, cotizaciones ni el panel administrativo de proyectos. Sí puedo decirte tus tareas asignadas, evidencias pendientes y herramientas disponibles.';
+    }
+    if (_esAdmin &&
+        (q.contains('resumen') ||
+            q.contains('estadíst') ||
+            q.contains('estadist'))) {
+      final activos = _proyectos
+          .where((proyecto) => proyecto['estatus'] == 'en_proceso')
+          .length;
+      final tareasPendientes = _actividades
+          .where((actividad) => actividad.estatus != 'completado')
+          .length;
+      final cotizacionesPendientes = _cotizaciones.where((cotizacion) {
+        final estado = cotizacion['estatus_cotizacion']
+            ?.toString()
+            .toLowerCase();
+        return estado == 'pendiente' || estado == 'en seguimiento';
+      }).length;
+      return 'Resumen administrativo de hoy:\n'
+          '• ${_proyectos.length} proyectos registrados; $activos en proceso.\n'
+          '• $tareasPendientes tareas abiertas.\n'
+          '• ${_clientes.length} clientes registrados.\n'
+          '• ${_cotizaciones.length} cotizaciones; $cotizacionesPendientes pendientes o en seguimiento.\n'
+          '• ${_solicitudes.where((s) => s['estatus'] == 'pendiente').length} solicitudes de almacén pendientes.';
+    }
+    if (_esAdmin && q.contains('cliente')) {
+      if (_clientes.isEmpty) return 'No hay clientes registrados.';
+      final lista = _clientes.take(10).map((cliente) {
+        final nombre = cliente['nombre']?.toString() ?? 'Sin nombre';
+        final telefono = cliente['telefono']?.toString() ?? '';
+        return '• $nombre${telefono.isEmpty ? '' : ' — $telefono'}';
+      }).join('\n');
+      return 'Hay ${_clientes.length} clientes registrados. Los primeros son:\n$lista';
+    }
+    if (_esAdmin && q.contains('cotiza')) {
+      if (_cotizaciones.isEmpty) return 'No hay cotizaciones registradas.';
+      final porEstado = <String, int>{};
+      double total = 0;
+      for (final cotizacion in _cotizaciones) {
+        final estado = cotizacion['estatus_cotizacion']?.toString() ?? 'Sin estado';
+        porEstado[estado] = (porEstado[estado] ?? 0) + 1;
+        final monto = cotizacion['monto_cotizado'];
+        if (monto is num) total += monto.toDouble();
+      }
+      final estados = porEstado.entries
+          .map((entry) => '• ${entry.key}: ${entry.value}')
+          .join('\n');
+      return 'Cotizaciones: ${_cotizaciones.length}. Monto acumulado: ${NumberFormat.currency(locale: 'es_MX', symbol: r'$').format(total)}.\n$estados';
+    }
+    if (_esAdmin && q.contains('proyecto')) {
+      final activos = _proyectos
+          .where((proyecto) => proyecto['estatus'] == 'en_proceso')
+          .toList(growable: false);
+      if (activos.isEmpty) return 'No aparecen proyectos activos en este momento.';
+      final nombres = activos.take(8).map((proyecto) {
+        return '• ${proyecto['titulo'] ?? 'Proyecto'} — en proceso';
+      }).join('\n');
+      return 'Hay ${activos.length} proyectos en proceso:\n$nombres';
+    }
+    if (q.contains('herramienta') ||
+        q.contains('inventario') ||
+        q.contains('disponible')) {
+      final disponibles = _insumos
+          .where((insumo) => insumo.cantidadDisponible > 0)
+          .toList(growable: false);
+      if (disponibles.isEmpty) {
+        return 'No encuentro herramientas con existencia disponible en el almacén.';
+      }
+      final lista = disponibles.take(12).map(
+        (insumo) =>
+            '• ${insumo.nombre}: ${insumo.cantidadDisponible} ${insumo.unidadMedida}',
+      ).join('\n');
+      return '$lista\n\nUsa el botón de herramienta junto al cuadro de texto para enviar la solicitud.';
+    }
+    if (q.contains('almac') || q.contains('solicitud')) {
+      final pendientes = _solicitudes
+          .where((solicitud) => solicitud['estatus'] == 'pendiente')
+          .toList(growable: false);
+      if (pendientes.isEmpty) return 'No hay solicitudes de almacén pendientes.';
+      final detalle = pendientes.take(6).map((solicitud) {
+        final nombre = solicitud['nombreInsumo']?.toString() ?? 'Artículo';
+        final cantidad = solicitud['cantidad']?.toString() ?? '1';
+        final trabajador = solicitud['trabajadorNombre']?.toString() ?? '';
+        return '• $nombre × $cantidad${trabajador.isEmpty ? '' : ' — $trabajador'}';
+      }).join('\n');
+      return 'Hay ${pendientes.length} solicitudes pendientes:\n$detalle';
+    }
+    if (q.contains('evidencia') || q.contains('comprobar')) {
+      final sinEvidencia = _actividades
+          .where(
+            (actividad) =>
+                actividad.estatus != 'completado' &&
+                actividad.totalEvidencias == 0,
+          )
+          .toList(growable: false);
+      if (sinEvidencia.isEmpty) {
+        return 'Todas tus tareas abiertas ya cuentan con alguna evidencia.';
+      }
+      return 'Falta evidencia en ${sinEvidencia.length} tareas:\n${_listaTareas(sinEvidencia)}';
+    }
+    if (q.contains('logro') || q.contains('insignia')) {
+      final completadas = _actividades
+          .where((actividad) => actividad.estatus == 'completado')
+          .length;
+      final evidencias = _actividades.fold<int>(
+        0,
+        (total, actividad) => total + actividad.totalEvidencias,
+      );
+      return 'Tu registro muestra $completadas tareas completadas y $evidencias evidencias. Revisa Reconocimientos para ver tus insignias.';
+    }
+    if (q.contains('hoy') ||
+        q.contains('qué hago') ||
+        q.contains('que hago') ||
+        q.contains('pendiente')) {
+      final deHoy = _actividades
+          .where(
+            (actividad) =>
+                _esParaHoy(actividad) && actividad.estatus != 'completado',
+          )
+          .toList(growable: false);
+      final vencidas = _actividades
+          .where(
+            (actividad) =>
+                actividad.estatus != 'completado' &&
+                actividad.fechaTermino.isBefore(_inicioDeHoy()),
+          )
+          .toList(growable: false);
+      if (deHoy.isEmpty && vencidas.isEmpty) {
+        return 'No hay tareas abiertas para hoy. Revisa el blog o confirma con tu encargado si existe una nueva asignación.';
+      }
+      final partes = <String>[];
+      if (vencidas.isNotEmpty) {
+        partes.add(
+          'Prioridad alta: ${vencidas.length} tareas vencidas:\n${_listaTareas(vencidas)}',
+        );
+      }
+      if (deHoy.isNotEmpty) {
+        partes.add('Para hoy:\n${_listaTareas(deHoy)}');
+      }
+      return partes.join('\n\n');
+    }
+
+    final pendientes = _actividades
+        .where((actividad) => actividad.estatus != 'completado')
+        .toList(growable: false);
+    if (_nubeDisponible == false) {
+      return 'No pude conectar con el motor generativo en este momento. Con los datos disponibles sí puedo ayudarte con tareas, evidencias, almacén${_esAdmin ? ', clientes, cotizaciones, proyectos y estadísticas' : ' y herramientas'}.';
+    }
+    if (pendientes.isEmpty) {
+      return 'No hay tareas pendientes. Pregúntame por almacén, evidencias${_esAdmin ? ', clientes, cotizaciones o proyectos' : ' o logros'}.';
+    }
+    return 'Hay ${pendientes.length} tareas pendientes:\n${_listaTareas(pendientes.take(6).toList())}';
+  }
+
   Future<void> _abrirSolicitudHerramienta() async {
     final disponibles = _insumos
         .where((insumo) => insumo.cantidadDisponible > 0)
         .toList(growable: false);
     if (disponibles.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No hay herramientas disponibles registradas.')),
-      );
+      _mostrarMensaje('No hay herramientas disponibles registradas.');
       return;
     }
     InsumoModel seleccionado = disponibles.first;
@@ -315,13 +986,13 @@ class _AsistenteIaScreenState extends State<AsistenteIaScreen> {
       isScrollControlled: true,
       backgroundColor: _tarjeta,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
       builder: (modalContext) => StatefulBuilder(
         builder: (context, setModalState) => Padding(
           padding: EdgeInsets.fromLTRB(
             20,
-            20,
+            22,
             20,
             MediaQuery.of(context).viewInsets.bottom + 24,
           ),
@@ -330,7 +1001,7 @@ class _AsistenteIaScreenState extends State<AsistenteIaScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'SOLICITAR DESDE EL ASISTENTE',
+                'SOLICITAR HERRAMIENTA',
                 style: GoogleFonts.montserrat(
                   color: Colors.white,
                   fontSize: 19,
@@ -341,7 +1012,9 @@ class _AsistenteIaScreenState extends State<AsistenteIaScreen> {
               DropdownButtonFormField<InsumoModel>(
                 initialValue: seleccionado,
                 isExpanded: true,
-                decoration: const InputDecoration(labelText: 'Herramienta disponible'),
+                decoration: const InputDecoration(
+                  labelText: 'Herramienta disponible',
+                ),
                 items: disponibles
                     .map(
                       (insumo) => DropdownMenuItem(
@@ -354,12 +1027,11 @@ class _AsistenteIaScreenState extends State<AsistenteIaScreen> {
                     )
                     .toList(growable: false),
                 onChanged: (value) {
-                  if (value != null) {
-                    setModalState(() {
-                      seleccionado = value;
-                      if (cantidad > seleccionado.cantidadDisponible) cantidad = 1;
-                    });
-                  }
+                  if (value == null) return;
+                  setModalState(() {
+                    seleccionado = value;
+                    if (cantidad > seleccionado.cantidadDisponible) cantidad = 1;
+                  });
                 },
               ),
               const SizedBox(height: 14),
@@ -368,10 +1040,18 @@ class _AsistenteIaScreenState extends State<AsistenteIaScreen> {
                   Text('Cantidad', style: GoogleFonts.inter(color: Colors.white70)),
                   const Spacer(),
                   IconButton(
-                    onPressed: cantidad > 1 ? () => setModalState(() => cantidad--) : null,
+                    onPressed: cantidad > 1
+                        ? () => setModalState(() => cantidad--)
+                        : null,
                     icon: const Icon(Icons.remove_circle_outline_rounded),
                   ),
-                  Text('$cantidad', style: GoogleFonts.montserrat(fontSize: 18, fontWeight: FontWeight.w900)),
+                  Text(
+                    '$cantidad',
+                    style: GoogleFonts.montserrat(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
                   IconButton(
                     onPressed: cantidad < seleccionado.cantidadDisponible
                         ? () => setModalState(() => cantidad++)
@@ -385,16 +1065,21 @@ class _AsistenteIaScreenState extends State<AsistenteIaScreen> {
                 width: double.infinity,
                 height: 52,
                 child: FilledButton.icon(
-                  style: FilledButton.styleFrom(backgroundColor: _acento),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: _acento,
+                    foregroundColor: Colors.black,
+                  ),
                   onPressed: enviando
                       ? null
                       : () async {
                           setModalState(() => enviando = true);
                           final db = FirebaseFirestore.instance;
-                          final solicitudRef = db.collection('solicitudes_herramientas').doc();
+                          final solicitudRef = db
+                              .collection('solicitudes_herramientas')
+                              .doc();
                           final avisoRef = db.collection('notificaciones').doc();
                           final batch = db.batch();
-                          batch.set(solicitudRef, {
+                          batch.set(solicitudRef, <String, dynamic>{
                             'proyectoId': 'general',
                             'proyectoNombre': 'Solicitud desde Asistente IA',
                             'trabajadorId': widget.usuario.id,
@@ -421,17 +1106,18 @@ class _AsistenteIaScreenState extends State<AsistenteIaScreen> {
                           );
                           await batch.commit();
                           if (modalContext.mounted) Navigator.pop(modalContext);
-                          if (mounted) {
-                            setState(() {
-                              _mensajes.add(
-                                _MensajeAsistente(
-                                  texto:
-                                      'Solicitud enviada: $cantidad × ${seleccionado.nombre}. Administración y almacén ya recibieron el aviso.',
-                                  esUsuario: false,
-                                ),
-                              );
-                            });
-                          }
+                          if (!mounted) return;
+                          final respuesta =
+                              'Solicitud enviada: $cantidad × ${seleccionado.nombre}. Administración y almacén recibieron el aviso.';
+                          setState(() {
+                            _mensajes.add(
+                              _MensajeAsistente(
+                                texto: respuesta,
+                                esUsuario: false,
+                              ),
+                            );
+                          });
+                          if (_leerRespuestas) _hablar(respuesta);
                         },
                   icon: const Icon(Icons.send_rounded),
                   label: const Text('ENVIAR SOLICITUD'),
@@ -444,124 +1130,6 @@ class _AsistenteIaScreenState extends State<AsistenteIaScreen> {
     );
   }
 
-  void _enviar(String texto) {
-    final limpio = texto.trim();
-    if (limpio.isEmpty) return;
-    setState(() {
-      _mensajes.add(_MensajeAsistente(texto: limpio, esUsuario: true));
-      _mensajes.add(
-        _MensajeAsistente(texto: _responder(limpio), esUsuario: false),
-      );
-      _controller.clear();
-    });
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!_scrollController.hasClients) return;
-      _scrollController.animateTo(
-        _scrollController.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 350),
-        curve: Curves.easeOut,
-      );
-    });
-  }
-
-  String _responder(String pregunta) {
-    final q = pregunta.toLowerCase();
-    if (q.contains('herramienta') || q.contains('inventario') || q.contains('disponible')) {
-      final disponibles = _insumos
-          .where((insumo) => insumo.cantidadDisponible > 0)
-          .toList(growable: false);
-      if (disponibles.isEmpty) {
-        return 'No encuentro herramientas con existencia disponible en el almacén.';
-      }
-      final lista = disponibles.take(12).map(
-        (insumo) =>
-            '• ${insumo.nombre}: ${insumo.cantidadDisponible} ${insumo.unidadMedida}',
-      ).join('\n');
-      return '$lista\n\nUsa el botón de herramienta junto al cuadro de texto para enviar la solicitud directamente.';
-    }
-    if (q.contains('almac') || q.contains('solicitud')) {
-      final pendientes = _solicitudes
-          .where((solicitud) => solicitud['estatus'] == 'pendiente')
-          .toList(growable: false);
-      if (pendientes.isEmpty) return 'No hay solicitudes de almacén pendientes.';
-      final detalle = pendientes.take(5).map((solicitud) {
-        final nombre = solicitud['nombreInsumo']?.toString() ?? 'Artículo';
-        final cantidad = solicitud['cantidad']?.toString() ?? '1';
-        final trabajador = solicitud['trabajadorNombre']?.toString() ?? '';
-        return '• $nombre × $cantidad${trabajador.isEmpty ? '' : ' — $trabajador'}';
-      }).join('\n');
-      return 'Hay ${pendientes.length} solicitudes pendientes:\n$detalle';
-    }
-    if (q.contains('proyecto')) {
-      final activos = _proyectos
-          .where((proyecto) => proyecto['estatus'] == 'en_proceso')
-          .toList(growable: false);
-      if (activos.isEmpty) return 'No aparecen proyectos activos en este momento.';
-      final nombres = activos
-          .take(6)
-          .map((proyecto) => '• ${proyecto['titulo'] ?? 'Proyecto'}')
-          .join('\n');
-      return 'Proyectos en proceso: ${activos.length}.\n$nombres';
-    }
-    if (q.contains('evidencia') || q.contains('comprobar')) {
-      final sinEvidencia = _actividades
-          .where(
-            (actividad) =>
-                actividad.estatus != 'completado' &&
-                actividad.totalEvidencias == 0,
-          )
-          .toList(growable: false);
-      if (sinEvidencia.isEmpty) {
-        return 'Todas tus tareas abiertas ya cuentan con alguna evidencia.';
-      }
-      return 'Falta evidencia en ${sinEvidencia.length} tareas:\n${_listaTareas(sinEvidencia)}';
-    }
-    if (q.contains('logro') || q.contains('insignia')) {
-      final completadas = _actividades
-          .where((actividad) => actividad.estatus == 'completado')
-          .length;
-      final evidencias = _actividades.fold<int>(
-        0,
-        (total, actividad) => total + actividad.totalEvidencias,
-      );
-      return 'Tu registro actual muestra $completadas tareas completadas y $evidencias evidencias. Revisa Reconocimientos para ver las insignias desbloqueadas.';
-    }
-    if (q.contains('hoy') || q.contains('qué hago') || q.contains('que hago')) {
-      final deHoy = _actividades
-          .where(
-            (actividad) =>
-                _esParaHoy(actividad) && actividad.estatus != 'completado',
-          )
-          .toList(growable: false);
-      final vencidas = _actividades
-          .where(
-            (actividad) =>
-                actividad.estatus != 'completado' &&
-                actividad.fechaTermino.isBefore(_inicioDeHoy()),
-          )
-          .toList(growable: false);
-      if (deHoy.isEmpty && vencidas.isEmpty) {
-        return 'No tienes tareas abiertas para hoy. Revisa el blog o confirma con tu encargado si hay una nueva asignación.';
-      }
-      final partes = <String>[];
-      if (vencidas.isNotEmpty) {
-        partes.add('Prioridad alta: ${vencidas.length} tareas vencidas:\n${_listaTareas(vencidas)}');
-      }
-      if (deHoy.isNotEmpty) {
-        partes.add('Para hoy:\n${_listaTareas(deHoy)}');
-      }
-      return partes.join('\n\n');
-    }
-
-    final pendientes = _actividades
-        .where((actividad) => actividad.estatus != 'completado')
-        .toList(growable: false);
-    if (pendientes.isEmpty) {
-      return 'No tienes tareas pendientes. Puedes preguntarme por almacén, proyectos, evidencias o logros.';
-    }
-    return 'Tienes ${pendientes.length} tareas pendientes:\n${_listaTareas(pendientes.take(6).toList())}';
-  }
-
   String _listaTareas(List<ActividadModel> tareas) {
     return tareas.take(6).map((actividad) {
       final fecha = DateFormat('dd MMM', 'es').format(actividad.fechaAsignada);
@@ -572,20 +1140,51 @@ class _AsistenteIaScreenState extends State<AsistenteIaScreen> {
   bool _esParaHoy(ActividadModel actividad) {
     final hoy = DateTime.now();
     final fecha = actividad.fechaAsignada;
-    return hoy.year == fecha.year && hoy.month == fecha.month && hoy.day == fecha.day;
+    return hoy.year == fecha.year &&
+        hoy.month == fecha.month &&
+        hoy.day == fecha.day;
   }
 
   DateTime _inicioDeHoy() {
     final ahora = DateTime.now();
     return DateTime(ahora.year, ahora.month, ahora.day);
   }
+
+  String _formatoDuracion(int segundos) {
+    final minutos = segundos ~/ 60;
+    final resto = segundos % 60;
+    return '$minutos:${resto.toString().padLeft(2, '0')}';
+  }
+
+  void _moverAlFinal() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_scrollController.hasClients) return;
+      _scrollController.animateTo(
+        _scrollController.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 350),
+        curve: Curves.easeOut,
+      );
+    });
+  }
+
+  void _mostrarMensaje(String mensaje) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(mensaje)));
+  }
 }
 
 class _MensajeAsistente {
   final String texto;
   final bool esUsuario;
+  final String? audioUrl;
+  final int? duracionAudio;
 
-  const _MensajeAsistente({required this.texto, required this.esUsuario});
+  const _MensajeAsistente({
+    required this.texto,
+    required this.esUsuario,
+    this.audioUrl,
+    this.duracionAudio,
+  });
 }
 
 class _Metrica extends StatelessWidget {
@@ -598,13 +1197,13 @@ class _Metrica extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 128,
+      width: 126,
       margin: const EdgeInsets.only(right: 10),
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(13),
       decoration: BoxDecoration(
-        color: const Color(0xFF171717),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: color.withOpacity(.35)),
+        color: _AsistenteIaScreenState._tarjeta,
+        borderRadius: BorderRadius.circular(19),
+        border: Border.all(color: color.withOpacity(.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -624,6 +1223,71 @@ class _Metrica extends StatelessWidget {
               fontSize: 10,
               fontWeight: FontWeight.w800,
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _BotonEntrada extends StatelessWidget {
+  final String tooltip;
+  final IconData icono;
+  final VoidCallback? onPressed;
+  final bool activo;
+
+  const _BotonEntrada({
+    required this.tooltip,
+    required this.icono,
+    required this.onPressed,
+    this.activo = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      tooltip: tooltip,
+      visualDensity: VisualDensity.compact,
+      style: IconButton.styleFrom(
+        backgroundColor: activo
+            ? _AsistenteIaScreenState._acento
+            : const Color(0xFF242424),
+        foregroundColor: activo ? Colors.black : Colors.white70,
+      ),
+      onPressed: onPressed,
+      icon: Icon(icono, size: 21),
+    );
+  }
+}
+
+class _BurbujaPensando extends StatelessWidget {
+  const _BurbujaPensando();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+      decoration: BoxDecoration(
+        color: _AsistenteIaScreenState._tarjeta,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Colors.white10),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const SizedBox(
+            width: 15,
+            height: 15,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: _AsistenteIaScreenState._acento,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Text(
+            'Analizando datos…',
+            style: GoogleFonts.inter(color: Colors.white54, fontSize: 12),
           ),
         ],
       ),

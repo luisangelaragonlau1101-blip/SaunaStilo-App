@@ -19,6 +19,7 @@ dependencies:
   cloud_firestore: ^6.5.0
   firebase_auth: ^6.5.2
   firebase_messaging: ^16.4.1
+  cloud_functions: ^6.4.0
   google_fonts: ^6.2.0
   provider: ^6.1.5+1
   intl: ^0.20.2
@@ -39,6 +40,9 @@ dependencies:
   simple_barcode_scanner: ^0.6.0
   audioplayers: ^6.8.1
   geolocator: ^14.0.3
+  speech_to_text: ^7.4.0
+  flutter_tts: ^4.2.5
+  record: ^7.1.1
 
 dev_dependencies:
   flutter_test:

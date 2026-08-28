@@ -13,6 +13,10 @@
 <string>Necesitamos acceso a la cámara para tomar fotos de las maderas.</string>
 <key>NSPhotoLibraryUsageDescription</key>
 <string>Necesitamos acceso a la galería para subir fotos de las maderas.</string>
+<key>NSMicrophoneUsageDescription</key>
+<string>Sauna Stilo usa el micrófono para dictar preguntas y enviar mensajes de audio.</string>
+<key>NSSpeechRecognitionUsageDescription</key>
+<string>Sauna Stilo convierte tu voz en texto para conversar con el asistente.</string>
 
 
 	<key>CADisableMinimumFrameDurationOnPhone</key>
