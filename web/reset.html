@@ -1,34 +1,32 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+  <base href="/SaunaStilo-App/">
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Sauna Stilo App</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#050505">
+  <title>Abriendo Sauna Stilo</title>
   <style>
-    html, body { height: 100%; margin: 0; }
-    body {
-      display: grid;
-      place-items: center;
-      background: #000;
-      color: #fff;
-      font: 600 18px system-ui, -apple-system, sans-serif;
-    }
+    html, body { margin: 0; min-height: 100%; background: #050505; color: #fff; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    body { display: grid; place-items: center; text-align: center; }
+    .mark { color: #d6a85f; font-size: 58px; }
+    h1 { margin: 12px 0; letter-spacing: 3px; font-size: 23px; }
+    p { color: #c9c5be; }
   </style>
 </head>
 <body>
-  <div>Abriendo Sauna Stilo…</div>
+  <main><div class="mark">♨</div><h1>SAUNA STILO</h1><p>Abriendo la aplicación…</p></main>
   <script>
-    (async () => {
-      if ('serviceWorker' in navigator) {
-        const registrations = await navigator.serviceWorker.getRegistrations();
-        await Promise.all(registrations.map((registration) => registration.unregister()));
-      }
-      if ('caches' in window) {
-        const keys = await caches.keys();
-        await Promise.all(keys.map((key) => caches.delete(key)));
-      }
+    // Retiramos registros antiguos sin bloquear el arranque ni borrar todos
+    // los archivos descargados cada vez que se abre este enlace.
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function (items) {
+        items.forEach(function (item) { item.unregister(); });
+      }).catch(function () {});
+    }
+    setTimeout(function () {
       location.replace('./?v=' + Date.now());
-    })();
+    }, 250);
   </script>
 </body>
 </html>
