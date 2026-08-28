@@ -40,7 +40,10 @@ jobs:
           enablement: true
 
       - name: Build web application
-        run: flutter build web --release --base-href /SaunaStilo-App/
+        run: flutter build web --release --base-href /SaunaStilo-App/ --pwa-strategy=none
+
+      - name: Add cache reset page
+        run: cp web/reset.html build/web/reset.html
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
