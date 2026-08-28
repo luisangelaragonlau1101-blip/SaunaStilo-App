@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
@@ -52,9 +54,7 @@ class SocialService {
         urls.add(await ref.getDownloadURL());
       }
 
-      final avisoRef = _db.collection('notificaciones').doc();
-      final batch = _db.batch();
-      batch.set(publicacionRef, {
+      await publicacionRef.set({
         'autorId': autor.id,
         'autorNombre': autor.nombre,
         'autorFotoUrl': autor.fotoUrl ?? '',
@@ -67,8 +67,7 @@ class SocialService {
         'comentariosCount': 0,
         'fecha': FieldValue.serverTimestamp(),
       });
-      batch.set(
-        avisoRef,
+      await _crearAvisoSeguro(
         NotificacionesService.datosAviso(
           titulo: autor.rol == AppRoles.admin
               ? 'Nuevo comunicado de Sauna Stilo'
@@ -80,7 +79,6 @@ class SocialService {
               : const ['admin'],
         ),
       );
-      await batch.commit();
     } catch (_) {
       for (final ruta in rutas) {
         try {
@@ -101,8 +99,6 @@ class SocialService {
     if (limpio.isEmpty) return;
     final postRef = _db.collection('publicaciones_sociales').doc(publicacionId);
     final comentarioRef = postRef.collection('comentarios').doc();
-    final avisoAutorRef = _db.collection('notificaciones').doc();
-    final avisoAdminRef = _db.collection('notificaciones').doc();
     final batch = _db.batch();
     batch.set(comentarioRef, {
       'autorId': autorComentario.id,
@@ -112,9 +108,18 @@ class SocialService {
       'fecha': FieldValue.serverTimestamp(),
     });
     batch.update(postRef, {'comentariosCount': FieldValue.increment(1)});
-    if (autorPublicacionId.isNotEmpty && autorPublicacionId != autorComentario.id) {
-      batch.set(
-        avisoAutorRef,
+    await batch.commit();
+    await _crearAvisoSeguro(
+      NotificacionesService.datosAviso(
+        titulo: 'Nuevo comentario en la comunidad',
+        mensaje: '${autorComentario.nombre}: $limpio',
+        tipo: 'social',
+        rolesDestinatarios: const ['todos'],
+      ),
+    );
+    if (autorPublicacionId.isNotEmpty &&
+        autorPublicacionId != autorComentario.id) {
+      await _crearAvisoSeguro(
         NotificacionesService.datosAviso(
           titulo: 'Nueva sugerencia en tu publicación',
           mensaje: '${autorComentario.nombre}: $limpio',
@@ -123,30 +128,103 @@ class SocialService {
         ),
       );
     }
-    if (autorComentario.rol != AppRoles.admin) {
-      batch.set(
-        avisoAdminRef,
+  }
+
+  Future<void> comentarAudio({
+    required String publicacionId,
+    required String autorPublicacionId,
+    required UserModel autorComentario,
+    required Uint8List wav,
+    required int duracionSegundos,
+  }) async {
+    final postRef = _db.collection('publicaciones_sociales').doc(publicacionId);
+    final comentarioRef = postRef.collection('comentarios').doc();
+    final ruta =
+        'comunidad/${autorComentario.id}/$publicacionId/comentarios/${comentarioRef.id}.wav';
+    final storageRef = _storage.ref(ruta);
+    await storageRef.putData(
+      wav,
+      SettableMetadata(
+        contentType: 'audio/wav',
+        customMetadata: <String, String>{
+          'autorId': autorComentario.id,
+          'duracionSegundos': '$duracionSegundos',
+        },
+      ),
+    );
+    try {
+      final audioUrl = await storageRef.getDownloadURL();
+      final batch = _db.batch();
+      batch.set(comentarioRef, {
+        'autorId': autorComentario.id,
+        'autorNombre': autorComentario.nombre,
+        'autorFotoUrl': autorComentario.fotoUrl ?? '',
+        'texto': '',
+        'audioUrl': audioUrl,
+        'audioRuta': ruta,
+        'duracionSegundos': duracionSegundos,
+        'fecha': FieldValue.serverTimestamp(),
+      });
+      batch.update(postRef, {'comentariosCount': FieldValue.increment(1)});
+      await batch.commit();
+      await _crearAvisoSeguro(
         NotificacionesService.datosAviso(
-          titulo: 'Nuevo comentario en la comunidad',
-          mensaje: '${autorComentario.nombre}: $limpio',
+          titulo: 'Nuevo audio en la comunidad',
+          mensaje: '${autorComentario.nombre} envió un comentario de voz.',
           tipo: 'social',
-          rolesDestinatarios: const ['admin'],
+          rolesDestinatarios: const ['todos'],
         ),
       );
+      if (autorPublicacionId.isNotEmpty &&
+          autorPublicacionId != autorComentario.id) {
+        await _crearAvisoSeguro(
+          NotificacionesService.datosAviso(
+            titulo: 'Nuevo audio en tu publicación',
+            mensaje: '${autorComentario.nombre} comentó con una nota de voz.',
+            tipo: 'social',
+            destinatarioId: autorPublicacionId,
+          ),
+        );
+      }
+    } catch (_) {
+      try {
+        await storageRef.delete();
+      } catch (_) {}
+      rethrow;
     }
-    await batch.commit();
   }
 
   Future<void> alternarMeGusta({
     required String publicacionId,
-    required String usuarioId,
+    required UserModel usuario,
+    required String autorPublicacionId,
     required bool yaLeGusta,
   }) async {
     await _db.collection('publicaciones_sociales').doc(publicacionId).update({
       'likesPor': yaLeGusta
-          ? FieldValue.arrayRemove([usuarioId])
-          : FieldValue.arrayUnion([usuarioId]),
+          ? FieldValue.arrayRemove([usuario.id])
+          : FieldValue.arrayUnion([usuario.id]),
     });
+    if (!yaLeGusta &&
+        autorPublicacionId.isNotEmpty &&
+        autorPublicacionId != usuario.id) {
+      await _crearAvisoSeguro(
+        NotificacionesService.datosAviso(
+          titulo: 'A alguien le gustó tu publicación',
+          mensaje: '${usuario.nombre} indicó que le gusta tu avance.',
+          tipo: 'social',
+          destinatarioId: autorPublicacionId,
+        ),
+      );
+    }
+  }
+
+  Future<void> _crearAvisoSeguro(Map<String, dynamic> datos) async {
+    try {
+      await _db.collection('notificaciones').add(datos);
+    } catch (_) {
+      // Una notificación nunca debe cancelar una publicación o comentario.
+    }
   }
 
   String seguimientoId(String seguidorId, String seguidoId) =>

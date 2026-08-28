@@ -55,15 +55,8 @@ class PushNotificationsService {
         );
       }
 
-      if (kIsWeb && _webVapidKey.isEmpty) {
-        return const PushActivationResult(
-          active: false,
-          message: 'Falta terminar el certificado web de Firebase.',
-        );
-      }
-
       final token = await _messaging.getToken(
-        vapidKey: kIsWeb ? _webVapidKey : null,
+        vapidKey: kIsWeb && _webVapidKey.isNotEmpty ? _webVapidKey : null,
         serviceWorkerScriptPath: kIsWeb
             ? Uri.base.resolve('firebase-messaging-sw.js').path
             : null,
@@ -83,13 +76,15 @@ class PushNotificationsService {
 
       return const PushActivationResult(
         active: true,
-        message: 'Notificaciones activadas con sonido.',
+        message: 'Notificaciones activadas con sonido, insignias y avisos en segundo plano.',
       );
     } catch (error) {
       debugPrint('[push] No se pudo activar FCM: $error');
-      return const PushActivationResult(
+      return PushActivationResult(
         active: false,
-        message: 'No se pudieron activar las notificaciones. Intenta nuevamente.',
+        message: kIsWeb
+            ? 'El navegador no entregó el permiso push. Abre la app desde su URL segura, permite notificaciones y vuelve a intentar.'
+            : 'No se pudieron activar las notificaciones. Revisa el permiso del sistema e intenta nuevamente.',
       );
     }
   }
@@ -110,14 +105,12 @@ class PushNotificationsService {
   Future<void> deactivateFor(String userId) async {
     try {
       String? token;
-      if (!kIsWeb || _webVapidKey.isNotEmpty) {
-        token = await _messaging.getToken(
-          vapidKey: kIsWeb ? _webVapidKey : null,
-          serviceWorkerScriptPath: kIsWeb
-              ? Uri.base.resolve('firebase-messaging-sw.js').path
-              : null,
-        );
-      }
+      token = await _messaging.getToken(
+        vapidKey: kIsWeb && _webVapidKey.isNotEmpty ? _webVapidKey : null,
+        serviceWorkerScriptPath: kIsWeb
+            ? Uri.base.resolve('firebase-messaging-sw.js').path
+            : null,
+      );
       if (token != null && token.isNotEmpty) {
         await _firestore.collection('usuarios').doc(userId).update({
           'fcmTokens': FieldValue.arrayRemove([token]),

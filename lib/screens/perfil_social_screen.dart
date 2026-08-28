@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 
 import '../models/actividad_model.dart';
 import '../models/user_model.dart';
@@ -34,6 +35,9 @@ class PerfilSocialScreen extends StatelessWidget {
         final nombre = data['nombre']?.toString() ?? 'Usuario';
         final rol = data['rol']?.toString() ?? AppRoles.trabajador;
         final foto = data['fotoUrl']?.toString() ?? '';
+        final cumpleanos = data['cumpleanos'] is Timestamp
+            ? (data['cumpleanos'] as Timestamp).toDate()
+            : null;
         return Scaffold(
           backgroundColor: Colors.black,
           appBar: AppBar(
@@ -62,30 +66,14 @@ class PerfilSocialScreen extends StatelessWidget {
                     final bd = bf is Timestamp ? bf.toDate() : DateTime(2000);
                     return bd.compareTo(ad);
                   });
-                  return ListView(
-                    padding: const EdgeInsets.fromLTRB(18, 8, 18, 100),
-                    children: [
-                      _cabecera(context, nombre, rol, foto),
-                      const SizedBox(height: 14),
-                      _metricas(actividades, posts.length),
-                      const SizedBox(height: 20),
-                      _sugerencias(context, nombre),
-                      const SizedBox(height: 22),
-                      Text(
-                        'AVANCES PUBLICADOS',
-                        style: GoogleFonts.inter(
-                          color: Colors.white54,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 1,
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      if (posts.isEmpty)
-                        _vacio('Aún no ha publicado avances.')
-                      else
-                        ...posts.map(_postResumen),
-                    ],
+                  return _contenidoPerfil(
+                    context: context,
+                    nombre: nombre,
+                    rol: rol,
+                    foto: foto,
+                    cumpleanos: cumpleanos,
+                    actividades: actividades,
+                    posts: posts,
                   );
                 },
               );
@@ -96,7 +84,80 @@ class PerfilSocialScreen extends StatelessWidget {
     );
   }
 
-  Widget _cabecera(BuildContext context, String nombre, String rol, String foto) {
+  Widget _contenidoPerfil({
+    required BuildContext context,
+    required String nombre,
+    required String rol,
+    required String foto,
+    required DateTime? cumpleanos,
+    required List<ActividadModel> actividades,
+    required List<QueryDocumentSnapshot<Map<String, dynamic>>> posts,
+  }) {
+    return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+      stream: FirebaseFirestore.instance.collection('proyectos').snapshots(),
+      builder: (context, proyectosSnapshot) {
+        final proyectos = proyectosSnapshot.data?.docs.where((doc) {
+              final data = doc.data();
+              final encargados = data['encargados'] is Iterable
+                  ? (data['encargados'] as Iterable)
+                      .map((item) => item.toString())
+                      .toList(growable: false)
+                  : <String>[];
+              return encargados.contains(perfilId) &&
+                  (data['fecha_salida_instalacion'] != null ||
+                      data['estatus']?.toString() == 'finalizado');
+            }).toList(growable: false) ??
+            <QueryDocumentSnapshot<Map<String, dynamic>>>[];
+        return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+          stream: FirebaseFirestore.instance.collection('clientes').snapshots(),
+          builder: (context, clientesSnapshot) {
+            final clientes = <String, Map<String, dynamic>>{
+              for (final doc in clientesSnapshot.data?.docs ??
+                  <QueryDocumentSnapshot<Map<String, dynamic>>>[])
+                doc.id: doc.data(),
+            };
+            return ListView(
+              padding: const EdgeInsets.fromLTRB(18, 8, 18, 100),
+              children: [
+                _cabecera(context, nombre, rol, foto, cumpleanos),
+                const SizedBox(height: 14),
+                _metricas(actividades, posts.length, proyectos.length),
+                const SizedBox(height: 20),
+                _insignias(actividades, proyectos.length),
+                const SizedBox(height: 22),
+                _instalaciones(proyectos, clientes),
+                const SizedBox(height: 20),
+                _sugerencias(context, nombre),
+                const SizedBox(height: 22),
+                Text(
+                  'AVANCES PUBLICADOS',
+                  style: GoogleFonts.inter(
+                    color: Colors.white54,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 1,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                if (posts.isEmpty)
+                  _vacio('Aún no ha publicado avances.')
+                else
+                  ...posts.map(_postResumen),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _cabecera(
+    BuildContext context,
+    String nombre,
+    String rol,
+    String foto,
+    DateTime? cumpleanos,
+  ) {
     final social = SocialService();
     return Container(
       padding: const EdgeInsets.all(22),
@@ -135,6 +196,13 @@ class PerfilSocialScreen extends StatelessWidget {
             rol == AppRoles.admin ? 'ADMINISTRACIÓN SAUNA STILO' : rol.toUpperCase(),
             style: GoogleFonts.inter(color: Colors.white60, fontSize: 11),
           ),
+          if (cumpleanos != null) ...[
+            const SizedBox(height: 6),
+            Text(
+              '🎂 ${DateFormat('d MMMM', 'es').format(cumpleanos)}',
+              style: GoogleFonts.inter(color: Colors.white70, fontSize: 11),
+            ),
+          ],
           if (!_esPropio) ...[
             const SizedBox(height: 15),
             StreamBuilder<bool>(
@@ -163,23 +231,31 @@ class PerfilSocialScreen extends StatelessWidget {
     );
   }
 
-  Widget _metricas(List<ActividadModel> actividades, int publicaciones) {
+  Widget _metricas(
+    List<ActividadModel> actividades,
+    int publicaciones,
+    int instalaciones,
+  ) {
     final completadas = actividades.where((a) => a.estatus == 'completado').length;
     final evidencias = actividades.fold<int>(0, (total, a) => total + a.totalEvidencias);
-    return Row(
+    return GridView.count(
+      crossAxisCount: 2,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      mainAxisSpacing: 8,
+      crossAxisSpacing: 8,
+      childAspectRatio: 2.35,
       children: [
         _metrica('TERMINADAS', completadas),
-        const SizedBox(width: 8),
         _metrica('EVIDENCIAS', evidencias),
-        const SizedBox(width: 8),
+        _metrica('INSTALACIONES', instalaciones),
         _metrica('PUBLICACIONES', publicaciones),
       ],
     );
   }
 
   Widget _metrica(String titulo, int valor) {
-    return Expanded(
-      child: Container(
+    return Container(
         padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 5),
         decoration: BoxDecoration(
           color: const Color(0xFF171717),
@@ -197,7 +273,147 @@ class PerfilSocialScreen extends StatelessWidget {
             ),
           ],
         ),
-      ),
+    );
+  }
+
+  Widget _insignias(List<ActividadModel> actividades, int instalaciones) {
+    final completadas = actividades.where((item) => item.estatus == 'completado').toList();
+    final evidencias = actividades.fold<int>(0, (total, item) => total + item.totalEvidencias);
+    final puntuales = completadas.where((item) {
+      return item.completadoEn != null &&
+          !item.completadoEn!.isAfter(item.fechaTermino);
+    }).length;
+    final logros = <(String, IconData, Color)>[];
+    if (completadas.isNotEmpty) {
+      logros.add(('Primera misión', Icons.flag_rounded, const Color(0xFF00E676)));
+    }
+    if (completadas.length >= 5) {
+      logros.add(('Cumplidor', Icons.task_alt_rounded, const Color(0xFF00B0FF)));
+    }
+    if (evidencias >= 10) {
+      logros.add(('Evidencia impecable', Icons.verified_rounded, const Color(0xFF8B5CF6)));
+    }
+    if (puntuales >= 5) {
+      logros.add(('Siempre a tiempo', Icons.timer_rounded, const Color(0xFFFF9800)));
+    }
+    if (instalaciones >= 1) {
+      logros.add(('Instalador en campo', Icons.location_on_rounded, const Color(0xFF70E1D0)));
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'LOGROS E INSIGNIAS',
+          style: GoogleFonts.inter(
+            color: Colors.white54,
+            fontSize: 12,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 1,
+          ),
+        ),
+        const SizedBox(height: 10),
+        if (logros.isEmpty)
+          _vacio('Completa tareas con evidencia para desbloquear insignias.')
+        else
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: logros.map((logro) {
+              return Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                decoration: BoxDecoration(
+                  color: logro.$3.withOpacity(.13),
+                  borderRadius: BorderRadius.circular(13),
+                  border: Border.all(color: logro.$3.withOpacity(.35)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(logro.$2, color: logro.$3, size: 17),
+                    const SizedBox(width: 6),
+                    Text(
+                      logro.$1,
+                      style: GoogleFonts.inter(
+                        color: Colors.white,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }).toList(growable: false),
+          ),
+      ],
+    );
+  }
+
+  Widget _instalaciones(
+    List<QueryDocumentSnapshot<Map<String, dynamic>>> proyectos,
+    Map<String, Map<String, dynamic>> clientes,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'LUGARES E INSTALACIONES',
+          style: GoogleFonts.inter(
+            color: Colors.white54,
+            fontSize: 12,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 1,
+          ),
+        ),
+        const SizedBox(height: 10),
+        if (proyectos.isEmpty)
+          _vacio('Todavía no hay instalaciones registradas en este perfil.')
+        else
+          ...proyectos.take(8).map((doc) {
+            final data = doc.data();
+            final cliente = clientes[data['id_cliente']?.toString()] ?? const <String, dynamic>{};
+            final fechaRaw = data['fecha_salida_instalacion'];
+            final fecha = fechaRaw is Timestamp
+                ? DateFormat('d MMM yyyy', 'es').format(fechaRaw.toDate())
+                : 'Fecha por confirmar';
+            final direccion = cliente['direccion']?.toString().trim() ?? '';
+            return Container(
+              margin: const EdgeInsets.only(bottom: 9),
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: const Color(0xFF171717),
+                borderRadius: BorderRadius.circular(17),
+                border: Border.all(color: const Color(0xFF70E1D0).withOpacity(.18)),
+              ),
+              child: Row(
+                children: [
+                  const CircleAvatar(
+                    backgroundColor: Color(0x1F70E1D0),
+                    child: Icon(Icons.location_on_rounded, color: Color(0xFF70E1D0)),
+                  ),
+                  const SizedBox(width: 11),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          data['titulo']?.toString() ?? 'Instalación Sauna Stilo',
+                          style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w800),
+                        ),
+                        Text(
+                          direccion.isEmpty ? 'Ubicación interna del proyecto' : direccion,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: GoogleFonts.inter(color: Colors.white54, fontSize: 11),
+                        ),
+                        Text(fecha, style: GoogleFonts.inter(color: Colors.white30, fontSize: 10)),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
+      ],
     );
   }
 

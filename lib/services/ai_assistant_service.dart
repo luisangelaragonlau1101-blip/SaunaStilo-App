@@ -9,6 +9,7 @@ class AiAssistantService {
   Future<String?> responder({
     required String pregunta,
     required List<Map<String, String>> historial,
+    List<String> imagenes = const <String>[],
   }) async {
     final callable = _functions.httpsCallable(
       'saunaAssistant',
@@ -17,6 +18,7 @@ class AiAssistantService {
     final result = await callable.call(<String, dynamic>{
       'pregunta': pregunta,
       'historial': historial.take(10).toList(growable: false),
+      'imagenes': imagenes.take(8).toList(growable: false),
     });
     final raw = result.data;
     if (raw is! Map) return null;

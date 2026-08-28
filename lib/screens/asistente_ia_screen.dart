@@ -8,6 +8,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:record/record.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
@@ -49,6 +50,8 @@ class _AsistenteIaScreenState extends State<AsistenteIaScreen> {
   List<Map<String, dynamic>> _clientes = <Map<String, dynamic>>[];
   List<Map<String, dynamic>> _cotizaciones = <Map<String, dynamic>>[];
   List<InsumoModel> _insumos = <InsumoModel>[];
+  List<UserModel> _equipo = <UserModel>[];
+  final List<XFile> _imagenesAdjuntas = <XFile>[];
 
   StreamSubscription<Uint8List>? _flujoAudio;
   BytesBuilder _audioBytes = BytesBuilder(copy: false);
@@ -85,9 +88,44 @@ class _AsistenteIaScreenState extends State<AsistenteIaScreen> {
 
   Future<void> _configurarVoz() async {
     await _tts.setLanguage('es-MX');
-    await _tts.setSpeechRate(.47);
-    await _tts.setPitch(1.0);
+    await _tts.setSpeechRate(.58);
+    await _tts.setPitch(.98);
     await _tts.setVolume(1.0);
+    await _tts.awaitSpeakCompletion(true);
+    try {
+      final rawVoices = await _tts.getVoices;
+      if (rawVoices is List) {
+        final voices = rawVoices
+            .whereType<Map>()
+            .map((voice) => Map<String, dynamic>.from(voice))
+            .where((voice) {
+              final locale = voice['locale']?.toString().toLowerCase() ?? '';
+              return locale.startsWith('es');
+            })
+            .toList(growable: true);
+        voices.sort((a, b) {
+          int score(Map<String, dynamic> voice) {
+            final value = '${voice['name']} ${voice['locale']}'.toLowerCase();
+            var total = value.contains('es-mx') ? 6 : 0;
+            if (value.contains('natural') || value.contains('neural')) total += 5;
+            if (value.contains('premium') || value.contains('enhanced')) total += 4;
+            return total;
+          }
+
+          return score(b).compareTo(score(a));
+        });
+        if (voices.isNotEmpty) {
+          final selected = voices.first;
+          final name = selected['name']?.toString();
+          final locale = selected['locale']?.toString();
+          if (name != null && locale != null) {
+            await _tts.setVoice({'name': name, 'locale': locale});
+          }
+        }
+      }
+    } catch (_) {
+      // Algunos navegadores no enumeran voces; conservamos es-MX del sistema.
+    }
   }
 
   void _escucharDatosPermitidos() {
@@ -132,6 +170,17 @@ class _AsistenteIaScreenState extends State<AsistenteIaScreen> {
             .toList(growable: true)
           ..sort((a, b) => a.nombre.compareTo(b.nombre));
         setState(() => _insumos = insumos);
+      }),
+    );
+
+    _suscripciones.add(
+      db.collection('usuarios').snapshots().listen((snapshot) {
+        if (!mounted) return;
+        setState(() {
+          _equipo = snapshot.docs
+              .map((doc) => UserModel.fromFirestore(doc))
+              .toList(growable: false);
+        });
       }),
     );
 
@@ -286,15 +335,23 @@ class _AsistenteIaScreenState extends State<AsistenteIaScreen> {
             'Clientes',
             'Cotizaciones',
             'Genera estadísticas',
+            'Próximos cumpleaños',
           ]
         : _esAlmacen
-        ? const ['Resumen de hoy', 'Pendientes', 'Almacén', 'Herramientas']
+        ? const [
+            'Resumen de hoy',
+            'Pendientes',
+            'Almacén',
+            'Herramientas',
+            'Próximos cumpleaños',
+          ]
         : const [
             '¿Qué hago hoy?',
             'Mis pendientes',
             'Herramientas',
             'Mis evidencias',
             'Mis logros',
+            'Próximos cumpleaños',
           ];
     return SizedBox(
       height: 50,
@@ -355,38 +412,7 @@ class _AsistenteIaScreenState extends State<AsistenteIaScreen> {
                     : Colors.white10,
               ),
             ),
-            child: mensaje.audioUrl != null
-                ? _burbujaAudio(mensaje)
-                : Row(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Flexible(
-                        child: Text(
-                          mensaje.texto,
-                          style: GoogleFonts.inter(
-                            color: Colors.white,
-                            height: 1.42,
-                          ),
-                        ),
-                      ),
-                      if (!mensaje.esUsuario) ...[
-                        const SizedBox(width: 4),
-                        InkWell(
-                          onTap: () => _hablar(mensaje.texto),
-                          borderRadius: BorderRadius.circular(20),
-                          child: const Padding(
-                            padding: EdgeInsets.all(5),
-                            child: Icon(
-                              Icons.volume_up_rounded,
-                              size: 17,
-                              color: Colors.white38,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
+            child: _contenidoMensaje(mensaje),
           ),
         );
       },
@@ -427,6 +453,71 @@ class _AsistenteIaScreenState extends State<AsistenteIaScreen> {
     );
   }
 
+  Widget _contenidoMensaje(_MensajeAsistente mensaje) {
+    if (mensaje.audioUrl != null) return _burbujaAudio(mensaje);
+    final imagenes = mensaje.imagenes ?? const <String>[];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (imagenes.isNotEmpty) ...[
+          SizedBox(
+            height: 150,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              shrinkWrap: true,
+              itemCount: imagenes.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 7),
+              itemBuilder: (_, index) => ClipRRect(
+                borderRadius: BorderRadius.circular(13),
+                child: Image.network(
+                  imagenes[index],
+                  width: 170,
+                  height: 150,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => const SizedBox(
+                    width: 170,
+                    child: Center(
+                      child: Icon(Icons.broken_image_rounded, color: Colors.white24),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          if (mensaje.texto.isNotEmpty) const SizedBox(height: 9),
+        ],
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Flexible(
+              child: Text(
+                mensaje.texto,
+                style: GoogleFonts.inter(color: Colors.white, height: 1.42),
+              ),
+            ),
+            if (!mensaje.esUsuario) ...[
+              const SizedBox(width: 4),
+              InkWell(
+                onTap: () => _hablar(mensaje.texto),
+                borderRadius: BorderRadius.circular(20),
+                child: const Padding(
+                  padding: EdgeInsets.all(5),
+                  child: Icon(
+                    Icons.volume_up_rounded,
+                    size: 17,
+                    color: Colors.white38,
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ],
+    );
+  }
+
   Widget _entradaMensaje() {
     return SafeArea(
       top: false,
@@ -439,6 +530,46 @@ class _AsistenteIaScreenState extends State<AsistenteIaScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            if (_imagenesAdjuntas.isNotEmpty)
+              SizedBox(
+                height: 72,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.only(bottom: 8),
+                  itemCount: _imagenesAdjuntas.length,
+                  separatorBuilder: (_, __) => const SizedBox(width: 7),
+                  itemBuilder: (_, index) => Stack(
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(11),
+                        child: FutureBuilder<Widget>(
+                          future: _previewImagenIa(_imagenesAdjuntas[index]),
+                          builder: (_, snapshot) => SizedBox(
+                            width: 64,
+                            height: 64,
+                            child: snapshot.data ??
+                                const ColoredBox(color: Colors.white10),
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        right: 1,
+                        top: 1,
+                        child: InkWell(
+                          onTap: () => setState(
+                            () => _imagenesAdjuntas.removeAt(index),
+                          ),
+                          child: const CircleAvatar(
+                            radius: 10,
+                            backgroundColor: Colors.black87,
+                            child: Icon(Icons.close_rounded, size: 12),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             if (_grabandoAudio || _subiendoAudio)
               Container(
                 margin: const EdgeInsets.only(bottom: 8),
@@ -485,6 +616,11 @@ class _AsistenteIaScreenState extends State<AsistenteIaScreen> {
                     icono: Icons.handyman_rounded,
                     onPressed: _abrirSolicitudHerramienta,
                   ),
+                _BotonEntrada(
+                  tooltip: 'Enviar fotografías a Sauna IA',
+                  icono: Icons.add_photo_alternate_rounded,
+                  onPressed: _pensando ? null : _seleccionarImagenesIa,
+                ),
                 _BotonEntrada(
                   tooltip: _escuchando ? 'Detener dictado' : 'Dictar pregunta',
                   icono: _escuchando ? Icons.mic_rounded : Icons.mic_none_rounded,
@@ -540,6 +676,46 @@ class _AsistenteIaScreenState extends State<AsistenteIaScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _seleccionarImagenesIa() async {
+    final fotos = await ImagePicker().pickMultiImage(imageQuality: 82);
+    if (fotos.isNotEmpty && mounted) {
+      setState(() => _imagenesAdjuntas.addAll(fotos));
+    }
+  }
+
+  Future<Widget> _previewImagenIa(XFile imagen) async {
+    return Image.memory(await imagen.readAsBytes(), fit: BoxFit.cover);
+  }
+
+  Future<List<String>> _subirImagenesIa(List<XFile> imagenes) async {
+    final urls = <String>[];
+    final momento = DateTime.now().millisecondsSinceEpoch;
+    for (var index = 0; index < imagenes.length; index++) {
+      final imagen = imagenes[index];
+      final nombre = imagen.name.replaceAll(RegExp(r'[^a-zA-Z0-9._-]+'), '_');
+      final ref = FirebaseStorage.instance.ref().child(
+        'asistente_imagenes/${widget.usuario.id}/${momento}_${index}_${nombre.isEmpty ? 'foto.jpg' : nombre}',
+      );
+      await ref.putData(
+        await imagen.readAsBytes(),
+        SettableMetadata(
+          contentType: _mimeImagen(imagen.name),
+          customMetadata: {'usuarioId': widget.usuario.id},
+        ),
+      );
+      urls.add(await ref.getDownloadURL());
+    }
+    return urls;
+  }
+
+  String _mimeImagen(String nombre) {
+    final limpio = nombre.toLowerCase();
+    if (limpio.endsWith('.png')) return 'image/png';
+    if (limpio.endsWith('.webp')) return 'image/webp';
+    if (limpio.endsWith('.heic')) return 'image/heic';
+    return 'image/jpeg';
   }
 
   Future<void> _alternarDictado() async {
@@ -762,22 +938,49 @@ class _AsistenteIaScreenState extends State<AsistenteIaScreen> {
   }
 
   Future<void> _enviar(String texto) async {
-    final limpio = texto.trim();
-    if (limpio.isEmpty || _pensando) return;
+    final adjuntas = List<XFile>.from(_imagenesAdjuntas);
+    final textoLimpio = texto.trim();
+    if ((textoLimpio.isEmpty && adjuntas.isEmpty) || _pensando) return;
+    final limpio = textoLimpio.isEmpty
+        ? 'Analiza estas fotografías y dime qué observas y qué acción recomiendas.'
+        : textoLimpio;
     await _speech.stop();
     setState(() {
       _escuchando = false;
-      _mensajes.add(_MensajeAsistente(texto: limpio, esUsuario: true));
       _controller.clear();
       _pensando = true;
     });
     _moverAlFinal();
+
+    List<String> imagenesUrls = const <String>[];
+    try {
+      if (adjuntas.isNotEmpty) imagenesUrls = await _subirImagenesIa(adjuntas);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _pensando = false);
+      _mostrarMensaje(
+        'No pude subir las fotografías. Revisa el permiso y la conexión.',
+      );
+      return;
+    }
+    if (!mounted) return;
+    setState(() {
+      _imagenesAdjuntas.clear();
+      _mensajes.add(
+        _MensajeAsistente(
+          texto: limpio,
+          esUsuario: true,
+          imagenes: imagenesUrls,
+        ),
+      );
+    });
 
     String? respuesta;
     if (_nubeDisponible != false) {
       try {
         respuesta = await _aiService.responder(
           pregunta: limpio,
+          imagenes: imagenesUrls,
           historial: _mensajes
               .where((mensaje) => mensaje.audioUrl == null)
               .toList(growable: false)
@@ -798,7 +1001,9 @@ class _AsistenteIaScreenState extends State<AsistenteIaScreen> {
         _nubeDisponible = false;
       }
     }
-    respuesta ??= _responderLocal(limpio);
+    respuesta ??= imagenesUrls.isNotEmpty
+        ? 'Recibí ${imagenesUrls.length} fotografías. El análisis visual inteligente no respondió en este momento; las imágenes sí quedaron adjuntas. Intenta de nuevo o describe qué parte debo revisar.'
+        : _responderLocal(limpio);
     if (!mounted) return;
     setState(() {
       _pensando = false;
@@ -812,6 +1017,32 @@ class _AsistenteIaScreenState extends State<AsistenteIaScreen> {
 
   String _responderLocal(String pregunta) {
     final q = pregunta.toLowerCase();
+    if (q.contains('cumple')) {
+      final conFecha = _equipo
+          .where((persona) => persona.cumpleanos != null)
+          .toList(growable: true);
+      if (conFecha.isEmpty) {
+        return 'Todavía no hay cumpleaños registrados en los perfiles del equipo.';
+      }
+      final hoy = DateTime.now();
+      int diasHasta(DateTime fecha) {
+        var siguiente = DateTime(hoy.year, fecha.month, fecha.day);
+        if (siguiente.isBefore(DateTime(hoy.year, hoy.month, hoy.day))) {
+          siguiente = DateTime(hoy.year + 1, fecha.month, fecha.day);
+        }
+        return siguiente.difference(DateTime(hoy.year, hoy.month, hoy.day)).inDays;
+      }
+
+      conFecha.sort(
+        (a, b) => diasHasta(a.cumpleanos!).compareTo(diasHasta(b.cumpleanos!)),
+      );
+      final lista = conFecha.take(8).map((persona) {
+        final fecha = persona.cumpleanos!;
+        final dias = diasHasta(fecha);
+        return '• ${persona.nombre}: ${DateFormat('d MMMM', 'es').format(fecha)}${dias == 0 ? ' — hoy' : ' — en $dias días'}';
+      }).join('\n');
+      return 'Próximos cumpleaños del equipo:\n$lista';
+    }
     if (!_esAdmin &&
         (q.contains('cliente') ||
             q.contains('cotiza') ||
@@ -1178,12 +1409,14 @@ class _MensajeAsistente {
   final bool esUsuario;
   final String? audioUrl;
   final int? duracionAudio;
+  final List<String>? imagenes;
 
   const _MensajeAsistente({
     required this.texto,
     required this.esUsuario,
     this.audioUrl,
     this.duracionAudio,
+    this.imagenes,
   });
 }
 

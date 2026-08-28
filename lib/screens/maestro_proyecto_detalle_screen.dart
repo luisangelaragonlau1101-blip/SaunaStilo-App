@@ -12,6 +12,7 @@ import '../models/proyecto_model.dart';
 import 'actividades_admin_screen.dart'; 
 import 'trabajador_control_herramientas_screen.dart'; 
 import 'crear_solicitud_salida_screen.dart';
+import 'proyecto_chat_screen.dart';
 
 // --- CLASE AUXILIAR PARA EL ESTADO INDIVIDUAL ---
 class _ItemEvaluacion {
@@ -511,6 +512,16 @@ Future<void> _marcarParaDevolucion(String solicitudId, Map<String, dynamic> data
             centerTitle: true,
             iconTheme: const IconThemeData(color: colorTextoPrimario),
             actions: [
+              IconButton(
+                tooltip: 'Chat y avances del proyecto',
+                icon: const Icon(Icons.forum_rounded, color: Color(0xFF70E1D0)),
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ProyectoChatScreen(proyecto: widget.proyecto),
+                  ),
+                ),
+              ),
               IconButton(
                 tooltip: 'Diagnóstico y tareas del día',
                 icon: const Icon(Icons.assignment_outlined, color: colorAcento),

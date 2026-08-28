@@ -45,6 +45,9 @@ class NotificacionesScreen extends StatelessWidget {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
+          if (snapshot.hasError) {
+            return const _EstadoError();
+          }
           final avisos = snapshot.data ?? const <NotificacionApp>[];
           if (avisos.isEmpty) {
             return _EstadoVacio(nombre: usuario.nombre);
@@ -148,6 +151,8 @@ class NotificacionesScreen extends StatelessWidget {
         return Icons.workspace_premium_rounded;
       case 'social':
         return Icons.forum_rounded;
+      case 'proyecto_chat':
+        return Icons.forum_rounded;
       default:
         return Icons.notifications_active_rounded;
     }
@@ -165,9 +170,49 @@ class NotificacionesScreen extends StatelessWidget {
         return const Color(0xFFFFDE21);
       case 'social':
         return const Color(0xFF00E5FF);
+      case 'proyecto_chat':
+        return const Color(0xFF70E1D0);
       default:
         return _acento;
     }
+  }
+}
+
+class _EstadoError extends StatelessWidget {
+  const _EstadoError();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.notifications_paused_rounded,
+              size: 68,
+              color: Colors.orangeAccent,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'No pudimos cargar los avisos',
+              style: GoogleFonts.montserrat(
+                color: Colors.white,
+                fontWeight: FontWeight.w800,
+                fontSize: 19,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Comprueba tu conexión. La pantalla se actualizará automáticamente cuando vuelva el servicio.',
+              textAlign: TextAlign.center,
+              style: GoogleFonts.inter(color: Colors.white54, height: 1.4),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 

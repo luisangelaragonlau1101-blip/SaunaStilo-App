@@ -6,6 +6,8 @@ import 'package:intl/intl.dart';
 
 import '../models/user_model.dart';
 import '../services/social_service.dart';
+import '../widgets/audio_message_player.dart';
+import '../widgets/audio_note_button.dart';
 import 'perfil_social_screen.dart';
 import 'perfiles_equipo_screen.dart';
 
@@ -67,6 +69,11 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator(color: _acento));
+          }
+          if (snapshot.hasError) {
+            return _errorCarga(
+              'No se pudo abrir la comunidad. Revisa tu conexión y vuelve a intentarlo.',
+            );
           }
           final posts = snapshot.data?.docs.toList(growable: true) ?? [];
           posts.sort((a, b) => _fecha(b.data()).compareTo(_fecha(a.data())));
@@ -228,7 +235,8 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
                 TextButton.icon(
                   onPressed: () => _social.alternarMeGusta(
                     publicacionId: doc.id,
-                    usuarioId: widget.usuario.id,
+                    usuario: widget.usuario,
+                    autorPublicacionId: autorId,
                     yaLeGusta: yaLeGusta,
                   ),
                   icon: Icon(
@@ -470,6 +478,11 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
                       itemBuilder: (_, index) {
                         final data = comentarios[index].data();
                         final autor = data['autorNombre']?.toString() ?? 'Usuario';
+                        final textoComentario = data['texto']?.toString() ?? '';
+                        final audioUrl = data['audioUrl']?.toString() ?? '';
+                        final duracion = data['duracionSegundos'] is num
+                            ? (data['duracionSegundos'] as num).toInt()
+                            : 0;
                         return ListTile(
                           contentPadding: EdgeInsets.zero,
                           leading: CircleAvatar(
@@ -480,9 +493,26 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
                             autor,
                             style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 13),
                           ),
-                          subtitle: Text(
-                            data['texto']?.toString() ?? '',
-                            style: GoogleFonts.inter(color: Colors.white60, height: 1.35),
+                          subtitle: Padding(
+                            padding: const EdgeInsets.only(top: 4),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                if (textoComentario.isNotEmpty)
+                                  Text(
+                                    textoComentario,
+                                    style: GoogleFonts.inter(
+                                      color: Colors.white60,
+                                      height: 1.35,
+                                    ),
+                                  ),
+                                if (audioUrl.isNotEmpty)
+                                  AudioMessagePlayer(
+                                    url: audioUrl,
+                                    durationSeconds: duracion,
+                                  ),
+                              ],
+                            ),
                           ),
                         );
                       },
@@ -512,18 +542,40 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
                         ),
                       ),
                       const SizedBox(width: 8),
+                      AudioNoteButton(
+                        onAudioReady: (wav, duracion) async {
+                          await _social.comentarAudio(
+                            publicacionId: publicacionId,
+                            autorPublicacionId: autorPublicacionId,
+                            autorComentario: widget.usuario,
+                            wav: wav,
+                            duracionSegundos: duracion,
+                          );
+                        },
+                      ),
                       IconButton.filled(
                         style: IconButton.styleFrom(backgroundColor: _acento, foregroundColor: Colors.black),
                         onPressed: () async {
                           final texto = controller.text.trim();
                           if (texto.isEmpty) return;
                           controller.clear();
-                          await _social.comentar(
-                            publicacionId: publicacionId,
-                            autorPublicacionId: autorPublicacionId,
-                            autorComentario: widget.usuario,
-                            texto: texto,
-                          );
+                          try {
+                            await _social.comentar(
+                              publicacionId: publicacionId,
+                              autorPublicacionId: autorPublicacionId,
+                              autorComentario: widget.usuario,
+                              texto: texto,
+                            );
+                          } catch (_) {
+                            if (!modalContext.mounted) return;
+                            ScaffoldMessenger.of(modalContext).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'No se pudo enviar el comentario. Intenta de nuevo.',
+                                ),
+                              ),
+                            );
+                          }
                         },
                         icon: const Icon(Icons.send_rounded),
                       ),
@@ -556,6 +608,26 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
             style: GoogleFonts.inter(color: Colors.white38),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _errorCarga(String mensaje) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(28),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.cloud_off_rounded, color: Colors.orangeAccent, size: 56),
+            const SizedBox(height: 14),
+            Text(
+              mensaje,
+              textAlign: TextAlign.center,
+              style: GoogleFonts.inter(color: Colors.white70, height: 1.4),
+            ),
+          ],
+        ),
       ),
     );
   }

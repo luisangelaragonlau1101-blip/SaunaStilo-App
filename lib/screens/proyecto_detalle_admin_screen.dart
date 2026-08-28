@@ -10,6 +10,7 @@ import '../models/proyecto_model.dart';
 import '../services/proyecto_service.dart';
 import 'actividades_admin_screen.dart'; 
 import 'gestionar_solicitudes_salida_screen.dart';
+import 'proyecto_chat_screen.dart';
 
 // --- CLASE AUXILIAR PARA LA VERIFICACIÓN DEL ALMACÉN ---
 class _ItemVerificacionAlmacen {
@@ -265,6 +266,16 @@ class _ProyectoDetalleAdminScreenState extends State<ProyectoDetalleAdminScreen>
               style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
             centerTitle: true,
             actions: [
+              IconButton(
+                tooltip: 'Chat y avances del proyecto',
+                icon: const Icon(Icons.forum_rounded, color: Color(0xFF70E1D0)),
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ProyectoChatScreen(proyecto: widget.proyecto),
+                  ),
+                ),
+              ),
               // --- INICIO DEL BOTÓN CON NOTIFICACIÓN ---
               StreamBuilder<QuerySnapshot>(
                 stream: FirebaseFirestore.instance

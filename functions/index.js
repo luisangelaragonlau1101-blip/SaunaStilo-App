@@ -50,6 +50,7 @@ exports.saunaAssistant = onCall(
       isAdmin,
     });
     const history = sanitizeHistory(request.data && request.data.historial);
+    const images = sanitizeImageUrls(request.data && request.data.imagenes);
     const scope = isAdmin
       ? 'administrador: proyectos, clientes, cotizaciones, tareas y almacén'
       : role === 'almacenista'
@@ -80,7 +81,19 @@ exports.saunaAssistant = onCall(
             role: item.rol === 'asistente' ? 'assistant' : 'user',
             content: item.texto,
           })),
-          { role: 'user', content: question },
+          {
+            role: 'user',
+            content: images.length
+              ? [
+                  { type: 'input_text', text: question },
+                  ...images.map((imageUrl) => ({
+                    type: 'input_image',
+                    image_url: imageUrl,
+                    detail: 'auto',
+                  })),
+                ]
+              : question,
+          },
         ],
       }),
     });
@@ -162,11 +175,11 @@ exports.sendSaunaStiloNotification = onDocumentCreated(
         },
         webpush: {
           notification: {
-            icon: '/SaunaStilo-App/icons/Icon-192.png',
-            badge: '/SaunaStilo-App/icons/Icon-192.png',
+            icon: '/icons/Icon-192.png',
+            badge: '/icons/Icon-192.png',
           },
           fcmOptions: {
-            link: `https://luisangelaragonlau1101-blip.github.io/SaunaStilo-App/?notification=${notificationId}`,
+            link: `https://sauna-stilo-app-web.vercel.app/?notification=${notificationId}`,
           },
         },
       });
@@ -252,10 +265,11 @@ async function buildAssistantContext({ db, uid, role, isAdmin }) {
         .where('trabajadorId', '==', uid)
         .limit(60);
 
-  const [activities, requests, inventory] = await Promise.all([
+  const [activities, requests, inventory, staff] = await Promise.all([
     activityQuery.get(),
     requestQuery.get(),
     db.collection('insumos_inventario').limit(160).get(),
+    db.collection(USERS_COLLECTION).limit(200).get(),
   ]);
 
   const context = {
@@ -298,6 +312,15 @@ async function buildAssistantContext({ db, uid, role, isAdmin }) {
             : data.cantidad_disponible,
         ),
         unidad: clean(data.unidadMedida || data.unidad_medida),
+      };
+    }),
+    equipo: staff.docs.map((doc) => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        nombre: clean(data.nombre),
+        rol: clean(data.rol),
+        cumpleanos: dateValue(data.cumpleanos),
       };
     }),
   };
@@ -361,6 +384,24 @@ function sanitizeHistory(raw) {
     rol: item && item.rol === 'asistente' ? 'asistente' : 'usuario',
     texto: clean(item && item.texto, 1200),
   })).filter((item) => item.texto);
+}
+
+function sanitizeImageUrls(raw) {
+  if (!Array.isArray(raw)) return [];
+  return raw.slice(0, 8).map((value) => {
+    try {
+      const url = new URL(String(value || ''));
+      const allowedHosts = new Set([
+        'firebasestorage.googleapis.com',
+        'storage.googleapis.com',
+      ]);
+      return url.protocol === 'https:' && allowedHosts.has(url.hostname)
+        ? url.toString()
+        : '';
+    } catch (_) {
+      return '';
+    }
+  }).filter(Boolean);
 }
 
 function extractResponseText(payload) {

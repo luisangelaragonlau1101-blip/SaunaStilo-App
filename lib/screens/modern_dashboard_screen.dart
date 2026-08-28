@@ -95,6 +95,7 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen> {
                   SliverToBoxAdapter(child: _cabecera()),
                   SliverToBoxAdapter(child: _saludo()),
                   SliverToBoxAdapter(child: _resumen(actividades)),
+                  if (!_esAdmin) SliverToBoxAdapter(child: _controlJornada()),
                   SliverToBoxAdapter(child: _semana()),
                   SliverToBoxAdapter(child: _agenda(actividades)),
                   SliverToBoxAdapter(child: _llamadaAsistente()),
@@ -342,6 +343,171 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen> {
         ],
       ),
     );
+  }
+
+  Widget _controlJornada() {
+    final ahora = DateTime.now();
+    final asistenciaId =
+        '${widget.usuario.id}_${DateFormat('yyyyMMdd').format(ahora)}';
+    final stream = FirebaseFirestore.instance
+        .collection('asistencias')
+        .doc(asistenciaId)
+        .snapshots();
+    return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+      stream: stream,
+      builder: (context, snapshot) {
+        final data = snapshot.data?.data() ?? const <String, dynamic>{};
+        final entrada = _horaAsistencia(data['horaEntrada']);
+        final salida = _horaAsistencia(data['horaSalida']);
+        final salidaComida = _horaAsistencia(data['salidaComidaReal']);
+        final regresoComida = _horaAsistencia(data['regresoComidaReal']);
+        final comidaEstado = data['estatusComida']?.toString() ?? 'ninguna';
+        final entradaLista = entrada != null;
+        final salidaLista = salida != null;
+        final comidaLista = regresoComida != null;
+        String accion = 'REGISTRAR ENTRADA';
+        String ayuda = 'El registro valida hora y ubicación.';
+        if (salidaLista) {
+          accion = 'VER MI JORNADA';
+          ayuda = 'Tu jornada de hoy quedó finalizada.';
+        } else if (comidaEstado == 'pendiente_aprobacion') {
+          accion = 'COMIDA PENDIENTE';
+          ayuda = 'Administración debe autorizar tu salida.';
+        } else if (comidaEstado == 'comiendo' ||
+            (salidaComida != null && regresoComida == null)) {
+          accion = 'REGISTRAR REGRESO';
+          ayuda = 'Registra tu regreso al terminar de comer.';
+        } else if (entradaLista && !comidaLista) {
+          accion = 'COMIDA Y SALIDA';
+          ayuda = 'No olvides registrar comida y fin de jornada.';
+        } else if (entradaLista) {
+          accion = 'REGISTRAR SALIDA';
+          ayuda = 'Registra tu salida antes de retirarte.';
+        }
+        return Container(
+          margin: const EdgeInsets.fromLTRB(20, 18, 20, 0),
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            color: const Color(0xFF101B19),
+            borderRadius: BorderRadius.circular(25),
+            border: Border.all(
+              color: const Color(0xFF70E1D0).withOpacity(.35),
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 42,
+                    height: 42,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF70E1D0).withOpacity(.13),
+                      borderRadius: BorderRadius.circular(13),
+                    ),
+                    child: const Icon(
+                      Icons.fingerprint_rounded,
+                      color: Color(0xFF70E1D0),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'CONTROL DE JORNADA',
+                          style: GoogleFonts.inter(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: .8,
+                          ),
+                        ),
+                        Text(
+                          ayuda,
+                          style: GoogleFonts.inter(
+                            color: Colors.white54,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 17),
+              Row(
+                children: [
+                  Expanded(
+                    child: _JornadaPaso(
+                      icono: Icons.login_rounded,
+                      titulo: 'Entrada',
+                      detalle: entrada ?? 'Pendiente',
+                      completado: entradaLista,
+                    ),
+                  ),
+                  const SizedBox(width: 7),
+                  Expanded(
+                    child: _JornadaPaso(
+                      icono: Icons.restaurant_rounded,
+                      titulo: 'Comida',
+                      detalle: regresoComida ??
+                          (salidaComida != null
+                              ? 'Fuera $salidaComida'
+                              : 'Pendiente'),
+                      completado: comidaLista,
+                      activo: comidaEstado == 'comiendo' ||
+                          comidaEstado == 'pendiente_aprobacion',
+                    ),
+                  ),
+                  const SizedBox(width: 7),
+                  Expanded(
+                    child: _JornadaPaso(
+                      icono: Icons.logout_rounded,
+                      titulo: 'Salida',
+                      detalle: salida ?? 'Pendiente',
+                      completado: salidaLista,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 15),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: const Color(0xFF70E1D0),
+                    foregroundColor: Colors.black,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                  onPressed: () => _abrir(
+                    TrabajadorAsistenciaScreen(trabajador: widget.usuario),
+                  ),
+                  icon: Icon(
+                    salidaLista
+                        ? Icons.receipt_long_rounded
+                        : Icons.touch_app_rounded,
+                  ),
+                  label: Text(
+                    accion,
+                    style: GoogleFonts.inter(fontWeight: FontWeight.w900),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  String? _horaAsistencia(dynamic value) {
+    if (value is! Timestamp) return null;
+    return DateFormat('HH:mm').format(value.toDate());
   }
 
   Widget _semana() {
@@ -866,6 +1032,64 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen> {
   DateTime _inicioDeHoy() {
     final hoy = DateTime.now();
     return DateTime(hoy.year, hoy.month, hoy.day);
+  }
+}
+
+class _JornadaPaso extends StatelessWidget {
+  final IconData icono;
+  final String titulo;
+  final String detalle;
+  final bool completado;
+  final bool activo;
+
+  const _JornadaPaso({
+    required this.icono,
+    required this.titulo,
+    required this.detalle,
+    required this.completado,
+    this.activo = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final color = completado
+        ? const Color(0xFF70E1D0)
+        : activo
+            ? const Color(0xFFFFD166)
+            : Colors.white38;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 11),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(.035),
+        borderRadius: BorderRadius.circular(15),
+        border: Border.all(color: color.withOpacity(.22)),
+      ),
+      child: Column(
+        children: [
+          Icon(icono, color: color, size: 18),
+          const SizedBox(height: 5),
+          Text(
+            titulo,
+            style: GoogleFonts.inter(
+              color: Colors.white70,
+              fontWeight: FontWeight.w700,
+              fontSize: 10,
+            ),
+          ),
+          const SizedBox(height: 3),
+          Text(
+            detalle,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: GoogleFonts.inter(
+              color: color,
+              fontWeight: FontWeight.w800,
+              fontSize: 9,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 

@@ -8,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import '../models/proyecto_model.dart';
 import 'gestionar_solicitudes_salida_screen.dart'; 
+import 'proyecto_chat_screen.dart';
 
 // --- CLASE AUXILIAR PARA LA VERIFICACIÓN DEL ALMACÉN ---
 class _ItemVerificacionAlmacen {
@@ -249,6 +250,18 @@ class _ProyectoDetalleAlmacenistaScreenState extends State<ProyectoDetalleAlmace
               style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
             centerTitle: true,
             iconTheme: const IconThemeData(color: Colors.white),
+            actions: [
+              IconButton(
+                tooltip: 'Chat y avances del proyecto',
+                icon: const Icon(Icons.forum_rounded, color: Color(0xFF70E1D0)),
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ProyectoChatScreen(proyecto: widget.proyecto),
+                  ),
+                ),
+              ),
+            ],
           ),
           body: SingleChildScrollView(
             padding: const EdgeInsets.all(20),

@@ -10,9 +10,9 @@
 </array>
 
 <key>NSCameraUsageDescription</key>
-<string>Necesitamos acceso a la cámara para tomar fotos de las maderas.</string>
+<string>Sauna Stilo usa la cámara para evidencias, publicaciones y videollamadas de proyectos.</string>
 <key>NSPhotoLibraryUsageDescription</key>
-<string>Necesitamos acceso a la galería para subir fotos de las maderas.</string>
+<string>Sauna Stilo usa la galería para adjuntar evidencias, avances y fotografías al asistente.</string>
 <key>NSMicrophoneUsageDescription</key>
 <string>Sauna Stilo usa el micrófono para dictar preguntas y enviar mensajes de audio.</string>
 <key>NSSpeechRecognitionUsageDescription</key>
