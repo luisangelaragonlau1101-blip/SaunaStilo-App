@@ -18,7 +18,9 @@
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="A new Flutter project.">
+  <meta name="description" content="Gestión de proyectos y equipo Sauna Stilo.">
+  <meta name="theme-color" content="#050505">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 
   <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
@@ -29,10 +31,37 @@
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png"/>
 
-  <title>saunastylo</title>
+  <title>Sauna Stilo</title>
   <link rel="manifest" href="manifest.json">
+  <style>
+    html, body { margin: 0; min-height: 100%; background: #050505; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    #sauna-boot {
+      position: fixed; inset: 0; z-index: 9999; display: flex;
+      align-items: center; justify-content: center; color: #fff;
+      background: radial-gradient(circle at 50% 36%, #252019 0, #0b0a09 36%, #050505 72%);
+      text-align: center; padding: 28px; box-sizing: border-box;
+    }
+    .sauna-boot-card { width: min(360px, 100%); }
+    .sauna-mark { color: #d6a85f; font-size: 54px; line-height: 1; }
+    .sauna-title { margin: 14px 0 26px; font-size: 24px; letter-spacing: 4px; font-weight: 800; }
+    .sauna-spinner { width: 34px; height: 34px; margin: 0 auto 18px; border-radius: 50%; border: 3px solid #39342d; border-top-color: #d6a85f; animation: sauna-spin .85s linear infinite; }
+    .sauna-status { color: #c9c5be; font-size: 15px; line-height: 1.5; }
+    #sauna-retry { display: none; margin: 20px auto 0; border: 0; border-radius: 999px; background: #d6a85f; color: #080706; padding: 12px 22px; font: inherit; font-weight: 700; cursor: pointer; }
+    @keyframes sauna-spin { to { transform: rotate(360deg); } }
+  </style>
 </head>
 <body>
+  <div id="sauna-boot" role="status" aria-live="polite">
+    <div class="sauna-boot-card">
+      <div class="sauna-mark">♨</div>
+      <div class="sauna-title">SAUNA STILO</div>
+      <div class="sauna-spinner" id="sauna-spinner"></div>
+      <div class="sauna-status" id="sauna-status">Cargando la aplicación…</div>
+      <button id="sauna-retry" type="button" onclick="location.reload()">Reintentar</button>
+    </div>
+  </div>
+  <noscript>Necesitas activar JavaScript para usar Sauna Stilo.</noscript>
   <!--
     You can customize the "flutter_bootstrap.js" script.
     This is useful to provide a custom configuration to the Flutter loader
@@ -41,6 +70,36 @@
     For more details:
     * https://docs.flutter.dev/platform-integration/web/initialization
   -->
+  <script>
+    (function () {
+      var boot = document.getElementById('sauna-boot');
+      var status = document.getElementById('sauna-status');
+      var spinner = document.getElementById('sauna-spinner');
+      var retry = document.getElementById('sauna-retry');
+      var finished = false;
+
+      function showHelp(message) {
+        if (finished) return;
+        status.textContent = message || 'La conexión está tardando más de lo normal.';
+        spinner.style.display = 'none';
+        retry.style.display = 'block';
+      }
+
+      window.addEventListener('flutter-first-frame', function () {
+        finished = true;
+        if (boot) boot.remove();
+      });
+      window.addEventListener('error', function () {
+        showHelp('No se pudo cargar Sauna Stilo. Revisa tu conexión y reintenta.');
+      });
+      window.addEventListener('unhandledrejection', function () {
+        showHelp('No se pudo iniciar Sauna Stilo. Pulsa Reintentar.');
+      });
+      setTimeout(function () {
+        showHelp('La red está tardando. Puedes esperar o pulsar Reintentar.');
+      }, 30000);
+    }());
+  </script>
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>
