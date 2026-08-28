@@ -1,0 +1,17 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    // Fotos, evidencias y audios son privados para el equipo autenticado.
+    // No se limita la cantidad de archivos por publicación o actividad.
+    match /{allPaths=**} {
+      allow read: if signedIn();
+      allow write: if signedIn()
+        && (request.resource == null || request.resource.size < 50 * 1024 * 1024);
+    }
+  }
+}

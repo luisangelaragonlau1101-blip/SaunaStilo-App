@@ -267,41 +267,24 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen> {
       return actividad.estatus != 'completado' &&
           actividad.fechaTermino.isBefore(_inicioDeHoy());
     }).length;
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20),
-      padding: const EdgeInsets.fromLTRB(18, 20, 18, 18),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(29),
-        gradient: const LinearGradient(
-          colors: [Color(0xFF211D17), Color(0xFF111111)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        border: Border.all(color: _oro.withOpacity(.25)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(.35),
-            blurRadius: 24,
-            offset: const Offset(0, 12),
-          ),
-        ],
-      ),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 6, 20, 10),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
               Text(
-                'TU OPERACIÓN HOY',
+                'OPERACIÓN DE HOY',
                 style: GoogleFonts.inter(
-                  color: Colors.white54,
-                  fontSize: 11,
+                  color: Colors.white70,
+                  fontSize: 10,
                   fontWeight: FontWeight.w800,
                   letterSpacing: 1.2,
                 ),
               ),
               const Spacer(),
-              const Icon(Icons.bolt_rounded, color: _lima, size: 19),
+              const Icon(Icons.circle, color: _lima, size: 7),
               Text(
                 ' EN VIVO',
                 style: GoogleFonts.inter(
@@ -312,7 +295,7 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: 16),
           Row(
             children: [
               Expanded(
@@ -340,6 +323,8 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen> {
               ),
             ],
           ),
+          const SizedBox(height: 18),
+          const Divider(height: 1, color: Colors.white12),
         ],
       ),
     );
@@ -806,47 +791,57 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen> {
           ),
           const SizedBox(height: 13),
           SizedBox(
-            height: 112,
+            height: 102,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               physics: const BouncingScrollPhysics(),
               padding: const EdgeInsets.symmetric(horizontal: 20),
               itemCount: acciones.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 11),
+              separatorBuilder: (_, __) => const SizedBox(width: 12),
               itemBuilder: (context, index) {
                 final accion = acciones[index];
                 return InkWell(
                   onTap: () => _abrir(accion.destino),
-                  borderRadius: BorderRadius.circular(25),
-                  child: Container(
-                    width: 146,
-                    padding: const EdgeInsets.all(15),
-                    decoration: BoxDecoration(
-                      color: _superficie,
-                      borderRadius: BorderRadius.circular(25),
-                      border: Border.all(color: Colors.white10),
-                    ),
+                  borderRadius: BorderRadius.circular(42),
+                  child: SizedBox(
+                    width: 76,
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Container(
-                          width: 38,
-                          height: 38,
+                          width: 68,
+                          height: 68,
+                          padding: const EdgeInsets.all(2.5),
                           decoration: BoxDecoration(
-                            color: accion.color.withOpacity(.13),
                             shape: BoxShape.circle,
+                            gradient: LinearGradient(
+                              colors: [accion.color, _oro, Colors.white],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
                           ),
-                          child: Icon(accion.icono, color: accion.color, size: 20),
+                          child: Container(
+                            decoration: const BoxDecoration(
+                              color: _fondo,
+                              shape: BoxShape.circle,
+                            ),
+                            margin: const EdgeInsets.all(2.5),
+                            child: Icon(
+                              accion.icono,
+                              color: Colors.white,
+                              size: 25,
+                            ),
+                          ),
                         ),
-                        const Spacer(),
+                        const SizedBox(height: 7),
                         Text(
                           accion.titulo,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.center,
                           style: GoogleFonts.inter(
                             color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w800,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ],
@@ -865,26 +860,18 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen> {
     final items = <_NavItem>[
       const _NavItem('Inicio', Icons.home_rounded),
       const _NavItem('Trabajo', Icons.construction_rounded),
-      const _NavItem('Comunidad', Icons.dynamic_feed_rounded),
+      const _NavItem('Comunidad', Icons.add_box_outlined),
       const _NavItem('IA', Icons.auto_awesome_rounded),
       const _NavItem('Perfil', Icons.person_rounded),
     ];
     return SafeArea(
-      minimum: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+      top: false,
       child: Container(
-        height: 72,
-        padding: const EdgeInsets.symmetric(horizontal: 7),
-        decoration: BoxDecoration(
-          color: const Color(0xF21A1A1A),
-          borderRadius: BorderRadius.circular(30),
-          border: Border.all(color: Colors.white12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(.55),
-              blurRadius: 28,
-              offset: const Offset(0, 12),
-            ),
-          ],
+        height: 62,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        decoration: const BoxDecoration(
+          color: Colors.black,
+          border: Border(top: BorderSide(color: Colors.white12)),
         ),
         child: Row(
           children: List.generate(items.length, (index) {
@@ -893,34 +880,39 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen> {
             return Expanded(
               child: InkWell(
                 onTap: () => _navegarInferior(index),
-                borderRadius: BorderRadius.circular(24),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 220),
-                  margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 2),
-                  decoration: BoxDecoration(
-                    color: seleccionado ? _lima : Colors.transparent,
-                    borderRadius: BorderRadius.circular(22),
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        item.icono,
-                        color: seleccionado ? Colors.black : Colors.white60,
-                        size: 23,
-                      ),
-                      const SizedBox(height: 3),
-                      Text(
-                        item.etiqueta,
-                        maxLines: 1,
-                        style: GoogleFonts.inter(
-                          color: seleccionado ? Colors.black : Colors.white54,
-                          fontSize: 8.5,
-                          fontWeight: FontWeight.w800,
+                customBorder: const CircleBorder(),
+                child: Center(
+                  child: index == 4
+                      ? Container(
+                          width: 29,
+                          height: 29,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: seleccionado ? Colors.white : Colors.white54,
+                              width: seleccionado ? 2 : 1,
+                            ),
+                            image: widget.usuario.fotoUrl?.isNotEmpty == true
+                                ? DecorationImage(
+                                    image: NetworkImage(widget.usuario.fotoUrl!),
+                                    fit: BoxFit.cover,
+                                  )
+                                : null,
+                          ),
+                          alignment: Alignment.center,
+                          child: widget.usuario.fotoUrl?.isNotEmpty == true
+                              ? null
+                              : Icon(
+                                  item.icono,
+                                  color: Colors.white,
+                                  size: 21,
+                                ),
+                        )
+                      : Icon(
+                          item.icono,
+                          color: Colors.white,
+                          size: seleccionado ? 29 : 27,
                         ),
-                      ),
-                    ],
-                  ),
                 ),
               ),
             );

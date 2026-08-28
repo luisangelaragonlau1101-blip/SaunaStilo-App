@@ -109,11 +109,7 @@ class Wrapper extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF000000),
-      body: Stack(
-        children: [
-          // 1. EL CONTENIDO DINÁMICO DE TU APP
-          Positioned.fill(
-            child: StreamBuilder<User?>(
+      body: StreamBuilder<User?>(
               stream: _authService.userStream,
               builder: (context, authSnapshot) {
                 Widget currentScreen;
@@ -179,34 +175,6 @@ class Wrapper extends StatelessWidget {
                 );
               },
             ),
-          ),
-
-          // 2. TU FIRMA FLOTANTE GLOBAL
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            child: IgnorePointer(
-              child: SafeArea(
-                child: Container(
-                  padding: const EdgeInsets.only(top: 20, bottom: 10),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.bottomCenter,
-                      end: Alignment.topCenter,
-                      colors: [
-                        Colors.black.withOpacity(0.9),
-                        Colors.transparent,
-                      ],
-                    ),
-                  ),
-                  child: const MjoyDreamsFooter(),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 }
@@ -2178,50 +2146,6 @@ class _AlmacenistaDashboardState extends State<AlmacenistaDashboard> {
           ),
         ],
       ),
-    );
-  }
-}
-
-class MjoyDreamsFooter extends StatelessWidget {
-  const MjoyDreamsFooter({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        const Icon(Icons.code_rounded, size: 14, color: Colors.white38),
-        const SizedBox(width: 6),
-        Text(
-          "creado por ",
-          style: GoogleFonts.inter(
-            color: Colors.white38,
-            fontSize: 12,
-            fontWeight: FontWeight.w400,
-            letterSpacing: 0.5,
-          ),
-        ),
-        ShaderMask(
-          shaderCallback: (bounds) => const LinearGradient(
-            colors: [
-              Color(0xFF00B0FF), // Tu tono azul neón
-              Color(0xFF8B5CF6), // Tu tono morado
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ).createShader(bounds),
-          child: Text(
-            "MJeann.devs",
-            style: GoogleFonts.inter(
-              color: Colors.white,
-              fontSize: 12,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 0.5,
-            ),
-          ),
-        ),
-      ],
     );
   }
 }

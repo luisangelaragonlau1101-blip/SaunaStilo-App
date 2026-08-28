@@ -39,6 +39,23 @@ class SocialService {
     final urls = <String>[];
     final rutas = <String>[];
     try {
+      // Validamos el permiso antes de transferir fotografías. Así el usuario
+      // recibe un error inmediato y no espera una carga que después se pierde.
+      await publicacionRef.set({
+        'autorId': autor.id,
+        'autorNombre': autor.nombre,
+        'autorFotoUrl': autor.fotoUrl ?? '',
+        'autorRol': autor.rol,
+        'texto': textoLimpio,
+        'imagenes': <String>[],
+        'rutasStorage': <String>[],
+        'tipo': tipo,
+        'likesPor': <String>[],
+        'comentariosCount': 0,
+        'estado': imagenes.isEmpty ? 'publicado' : 'subiendo',
+        'fecha': FieldValue.serverTimestamp(),
+      });
+
       for (var index = 0; index < imagenes.length; index++) {
         final imagen = imagenes[index];
         final bytes = await imagen.readAsBytes();
@@ -54,19 +71,13 @@ class SocialService {
         urls.add(await ref.getDownloadURL());
       }
 
-      await publicacionRef.set({
-        'autorId': autor.id,
-        'autorNombre': autor.nombre,
-        'autorFotoUrl': autor.fotoUrl ?? '',
-        'autorRol': autor.rol,
-        'texto': textoLimpio,
+      if (imagenes.isNotEmpty) {
+        await publicacionRef.update({
         'imagenes': urls,
         'rutasStorage': rutas,
-        'tipo': tipo,
-        'likesPor': <String>[],
-        'comentariosCount': 0,
-        'fecha': FieldValue.serverTimestamp(),
-      });
+          'estado': 'publicado',
+        });
+      }
       await _crearAvisoSeguro(
         NotificacionesService.datosAviso(
           titulo: autor.rol == AppRoles.admin
@@ -85,6 +96,9 @@ class SocialService {
           await _storage.ref(ruta).delete();
         } catch (_) {}
       }
+      try {
+        await publicacionRef.delete();
+      } catch (_) {}
       rethrow;
     }
   }

@@ -64,6 +64,7 @@ class _AsistenteIaScreenState extends State<AsistenteIaScreen> {
   bool _leerRespuestas = true;
   bool? _nubeDisponible;
   String? _audioReproduciendo;
+  double _velocidadVoz = .82;
 
   bool get _esAdmin => widget.usuario.rol == AppRoles.admin;
   bool get _esAlmacen => widget.usuario.rol == AppRoles.almacenista;
@@ -88,10 +89,10 @@ class _AsistenteIaScreenState extends State<AsistenteIaScreen> {
 
   Future<void> _configurarVoz() async {
     await _tts.setLanguage('es-MX');
-    await _tts.setSpeechRate(.58);
-    await _tts.setPitch(.98);
+    await _tts.setSpeechRate(_velocidadVoz);
+    await _tts.setPitch(1.0);
     await _tts.setVolume(1.0);
-    await _tts.awaitSpeakCompletion(true);
+    await _tts.awaitSpeakCompletion(false);
     try {
       final rawVoices = await _tts.getVoices;
       if (rawVoices is List) {
@@ -106,9 +107,18 @@ class _AsistenteIaScreenState extends State<AsistenteIaScreen> {
         voices.sort((a, b) {
           int score(Map<String, dynamic> voice) {
             final value = '${voice['name']} ${voice['locale']}'.toLowerCase();
-            var total = value.contains('es-mx') ? 6 : 0;
-            if (value.contains('natural') || value.contains('neural')) total += 5;
-            if (value.contains('premium') || value.contains('enhanced')) total += 4;
+            var total = value.contains('es-mx') ? 12 : 0;
+            if (value.contains('natural') || value.contains('neural')) total += 12;
+            if (value.contains('premium') || value.contains('enhanced')) total += 8;
+            if (value.contains('google') ||
+                value.contains('microsoft') ||
+                value.contains('siri') ||
+                value.contains('paulina') ||
+                value.contains('dalia') ||
+                value.contains('jorge')) {
+              total += 6;
+            }
+            if (value.contains('compact')) total -= 10;
             return total;
           }
 
@@ -244,26 +254,69 @@ class _AsistenteIaScreenState extends State<AsistenteIaScreen> {
         backgroundColor: _fondo,
         surfaceTintColor: Colors.transparent,
         titleSpacing: 8,
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        title: Row(
           children: [
-            Text(
-              'ASISTENTE SAUNA IA',
-              style: GoogleFonts.montserrat(
-                fontWeight: FontWeight.w900,
-                fontSize: 17,
+            Container(
+              width: 38,
+              height: 38,
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: LinearGradient(
+                  colors: [Color(0xFF8B5CF6), Color(0xFF00C2FF)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
               ),
+              child: const Icon(Icons.auto_awesome_rounded, size: 20),
             ),
-            Text(
-              _esAdmin ? 'Acceso administrativo verificado' : 'Acceso protegido por tu rol',
-              style: GoogleFonts.inter(
-                color: _esAdmin ? _verde : Colors.white54,
-                fontSize: 10,
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Sauna IA',
+                    style: GoogleFonts.inter(
+                      fontWeight: FontWeight.w900,
+                      fontSize: 16,
+                    ),
+                  ),
+                  Text(
+                    'En línea · voz natural ${_etiquetaVelocidad()}',
+                    style: GoogleFonts.inter(
+                      color: _verde,
+                      fontSize: 10,
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
         ),
         actions: [
+          PopupMenuButton<double>(
+            tooltip: 'Velocidad de voz',
+            initialValue: _velocidadVoz,
+            onSelected: _cambiarVelocidad,
+            itemBuilder: (_) => const [
+              PopupMenuItem(value: .68, child: Text('Voz normal · 1×')),
+              PopupMenuItem(value: .82, child: Text('Voz rápida · 1.25×')),
+              PopupMenuItem(value: .94, child: Text('Voz muy rápida · 1.5×')),
+            ],
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 5),
+                child: Text(
+                  _etiquetaVelocidad(),
+                  style: GoogleFonts.inter(
+                    color: Colors.white70,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ),
+          ),
           IconButton(
             tooltip: _leerRespuestas ? 'Desactivar voz' : 'Activar voz',
             onPressed: () {
@@ -929,12 +982,17 @@ class _AsistenteIaScreenState extends State<AsistenteIaScreen> {
 
   Future<void> _hablar(String texto) async {
     await _tts.stop();
-    await _tts.speak(
-      texto
-          .replaceAll('•', '')
-          .replaceAll(RegExp(r'\n+'), '. ')
-          .replaceAll('_', ' '),
-    );
+    var voz = texto
+        .replaceAll('•', '')
+        .replaceAll(RegExp(r'\n+'), '. ')
+        .replaceAll(RegExp(r'https?://\S+'), 'enlace')
+        .replaceAll('_', ' ')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
+    if (voz.length > 720) {
+      voz = '${voz.substring(0, 720)}. El resto está escrito en pantalla.';
+    }
+    await _tts.speak(voz);
   }
 
   Future<void> _enviar(String texto) async {
@@ -976,7 +1034,10 @@ class _AsistenteIaScreenState extends State<AsistenteIaScreen> {
     });
 
     String? respuesta;
-    if (_nubeDisponible != false) {
+    if (imagenesUrls.isEmpty && _debeResponderConDatosLocales(limpio)) {
+      respuesta = _responderLocal(limpio);
+    }
+    if (respuesta == null && _nubeDisponible != false) {
       try {
         respuesta = await _aiService.responder(
           pregunta: limpio,
@@ -985,7 +1046,7 @@ class _AsistenteIaScreenState extends State<AsistenteIaScreen> {
               .where((mensaje) => mensaje.audioUrl == null)
               .toList(growable: false)
               .reversed
-              .take(10)
+              .take(6)
               .map(
                 (mensaje) => <String, String>{
                   'rol': mensaje.esUsuario ? 'usuario' : 'asistente',
@@ -1012,7 +1073,49 @@ class _AsistenteIaScreenState extends State<AsistenteIaScreen> {
       );
     });
     _moverAlFinal();
-    if (_leerRespuestas) await _hablar(respuesta);
+    if (_leerRespuestas) unawaited(_hablar(respuesta));
+  }
+
+  bool _debeResponderConDatosLocales(String pregunta) {
+    final q = pregunta.toLowerCase();
+    const palabrasOperativas = <String>[
+      'cumple',
+      'resumen',
+      'estadíst',
+      'estadist',
+      'cliente',
+      'cotiza',
+      'proyecto',
+      'herramienta',
+      'inventario',
+      'disponible',
+      'almac',
+      'solicitud',
+      'evidencia',
+      'comprobar',
+      'logro',
+      'insignia',
+      'hoy',
+      'qué hago',
+      'que hago',
+      'pendiente',
+      'tarea',
+    ];
+    return palabrasOperativas.any(q.contains);
+  }
+
+  String _etiquetaVelocidad() {
+    if (_velocidadVoz >= .9) return '1.5×';
+    if (_velocidadVoz >= .78) return '1.25×';
+    return '1×';
+  }
+
+  Future<void> _cambiarVelocidad(double velocidad) async {
+    setState(() => _velocidadVoz = velocidad);
+    await _tts.setSpeechRate(velocidad);
+    if (_leerRespuestas) {
+      unawaited(_hablar('Velocidad de voz ${_etiquetaVelocidad()} activada.'));
+    }
   }
 
   String _responderLocal(String pregunta) {

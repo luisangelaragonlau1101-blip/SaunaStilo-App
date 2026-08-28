@@ -13,12 +13,12 @@ class AiAssistantService {
   }) async {
     final callable = _functions.httpsCallable(
       'saunaAssistant',
-      options: HttpsCallableOptions(timeout: const Duration(seconds: 55)),
+      options: HttpsCallableOptions(timeout: const Duration(seconds: 12)),
     );
     final result = await callable.call(<String, dynamic>{
       'pregunta': pregunta,
-      'historial': historial.take(10).toList(growable: false),
-      'imagenes': imagenes.take(8).toList(growable: false),
+      'historial': historial.take(6).toList(growable: false),
+      'imagenes': imagenes.take(4).toList(growable: false),
     });
     final raw = result.data;
     if (raw is! Map) return null;

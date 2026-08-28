@@ -1,0 +1,17 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    // Sauna Stilo es una red privada: ninguna información se expone sin
+    // iniciar sesión. Los permisos finos por rol siguen aplicándose en la app.
+    // Esta regla incluye las nuevas publicaciones, comentarios, seguimientos,
+    // chats de proyecto, mensajes de voz y notificaciones.
+    match /{document=**} {
+      allow read, write: if signedIn();
+    }
+  }
+}
