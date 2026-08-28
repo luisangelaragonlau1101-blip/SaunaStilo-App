@@ -107,6 +107,19 @@ class _ProyectoDetalleTrabajadorScreenState extends State<ProyectoDetalleTrabaja
     }
   }
 
+  void _abrirDiagnosticoYAvances() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ActividadesTrabajadorScreen(
+          proyectoId: widget.proyecto.id,
+          trabajadorId: currentUid,
+          tituloProyecto: widget.proyecto.titulo,
+        ),
+      ),
+    );
+  }
+
   // --- ABRE EL MODAL DE EVALUACIÓN CON FOTO POR PIEZA ---
   void _mostrarModalRecepcionKit(BuildContext context, String solicitudId, List articulos) {
     showModalBottomSheet(
@@ -514,19 +527,8 @@ class _ProyectoDetalleTrabajadorScreenState extends State<ProyectoDetalleTrabaja
                       offset: const Offset(4, -4),
                       child: const Icon(Icons.list_alt_rounded, color: Color(0xFF06B6D4), size: 28),
                     ),
-                    tooltip: 'Ver Actividades',
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => ActividadesTrabajadorScreen(
-                            proyectoId: widget.proyecto.id,
-                            trabajadorId: currentUid,
-                            tituloProyecto: widget.proyecto.titulo,
-                          ),
-                        ),
-                      );
-                    },
+                    tooltip: 'Diagnóstico y avances',
+                    onPressed: _abrirDiagnosticoYAvances,
                   );
                 },
               ),
@@ -539,6 +541,8 @@ class _ProyectoDetalleTrabajadorScreenState extends State<ProyectoDetalleTrabaja
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildStatusHeader(estatusActual),
+                const SizedBox(height: 12),
+                _buildDiagnosticoYAvancesCard(),
                 const SizedBox(height: 24),
                 
                 Text("DETALLES DEL PROYECTO", style: GoogleFonts.inter(color: Colors.white54, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1.1)),
@@ -621,6 +625,55 @@ class _ProyectoDetalleTrabajadorScreenState extends State<ProyectoDetalleTrabaja
           const SizedBox(width: 8),
           Text(estatusActual.replaceAll('_', ' ').toUpperCase(), style: GoogleFonts.inter(color: statusColor, fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: 1.0)),
         ],
+      ),
+    );
+  }
+
+  Widget _buildDiagnosticoYAvancesCard() {
+    const accentColor = Color(0xFF06B6D4);
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: _abrirDiagnosticoYAvances,
+        borderRadius: BorderRadius.circular(16),
+        child: Ink(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: accentColor.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: accentColor.withOpacity(0.45)),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.add_photo_alternate_outlined, color: accentColor, size: 30),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'MIS TAREAS Y EVIDENCIAS',
+                      style: GoogleFonts.inter(
+                        color: Colors.white,
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.6,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Reporta avances y entrega evidencia obligatoria',
+                      style: GoogleFonts.inter(color: Colors.white60, fontSize: 12),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right_rounded, color: accentColor),
+            ],
+          ),
+        ),
       ),
     );
   }

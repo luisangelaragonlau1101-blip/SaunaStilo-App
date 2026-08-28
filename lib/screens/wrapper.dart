@@ -985,13 +985,13 @@ class _ProyectoDuoCard extends StatelessWidget {
                                               style: GoogleFonts.inter(color: Colors.white54, fontSize: 12),
                                             ),
                                             const Spacer(),
-                                            if (act.evidenciaFotos.isNotEmpty)
+                                            if (act.totalEvidencias > 0)
                                               Row(
                                                 children: [
-                                                  const Icon(Icons.photo_library_rounded, color: Color(0xFF00B0FF), size: 14),
+                                                  const Icon(Icons.attach_file_rounded, color: Color(0xFF00B0FF), size: 14),
                                                   const SizedBox(width: 4),
                                                   Text(
-                                                    "${act.evidenciaFotos.length} fotos",
+                                                    "${act.totalEvidencias} evidencias",
                                                     style: GoogleFonts.inter(color: Color(0xFF00B0FF), fontSize: 11, fontWeight: FontWeight.bold),
                                                   )
                                                 ],

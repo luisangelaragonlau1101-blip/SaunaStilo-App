@@ -116,6 +116,19 @@ class _ProyectoDetalleMaestroScreenState extends State<ProyectoDetalleMaestroScr
     }
   }
 
+  void _abrirDiagnosticoYTareas(String estatusActual) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ActividadesProyectoScreen(
+          proyectoId: widget.proyecto.id,
+          estatusProyecto: estatusActual,
+          rolUsuario: 'maestro',
+        ),
+      ),
+    );
+  }
+
   void _mostrarModalRecepcionKit(BuildContext context, String solicitudId, List articulos) {
     showModalBottomSheet(
       context: context,
@@ -499,20 +512,9 @@ Future<void> _marcarParaDevolucion(String solicitudId, Map<String, dynamic> data
             iconTheme: const IconThemeData(color: colorTextoPrimario),
             actions: [
               IconButton(
-                tooltip: 'Ver Actividades',
+                tooltip: 'Diagnóstico y tareas del día',
                 icon: const Icon(Icons.assignment_outlined, color: colorAcento),
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => ActividadesProyectoScreen(
-                        proyectoId: widget.proyecto.id,
-                        estatusProyecto: estatusActual,
-                        rolUsuario: 'maestro', 
-                      ),
-                    ),
-                  );
-                },
+                onPressed: () => _abrirDiagnosticoYTareas(estatusActual),
               ),
               const SizedBox(width: 8), 
             ],
@@ -523,6 +525,8 @@ Future<void> _marcarParaDevolucion(String solicitudId, Map<String, dynamic> data
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildStatusHeader(estatusActual),
+                const SizedBox(height: 12),
+                _buildDiagnosticoYTareasCard(estatusActual),
                 const SizedBox(height: 24),
            
                 Text("DETALLES DEL PROYECTO", style: GoogleFonts.inter(color: colorTextoSecundario, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1.1)),
@@ -596,6 +600,53 @@ Future<void> _marcarParaDevolucion(String solicitudId, Map<String, dynamic> data
           const SizedBox(width: 8),
           Text(estatusActual.replaceAll('_', ' ').toUpperCase(), style: GoogleFonts.inter(color: statusColor, fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: 1.0)),
         ],
+      ),
+    );
+  }
+
+  Widget _buildDiagnosticoYTareasCard(String estatusActual) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => _abrirDiagnosticoYTareas(estatusActual),
+        borderRadius: BorderRadius.circular(16),
+        child: Ink(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: colorAcento.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: colorAcento.withOpacity(0.45)),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.assignment_turned_in_outlined, color: colorAcento, size: 30),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'DIAGNÓSTICO Y TAREAS DEL DÍA',
+                      style: GoogleFonts.inter(
+                        color: colorTextoPrimario,
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.6,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Asigna y revisa avances con evidencia',
+                      style: GoogleFonts.inter(color: colorTextoSecundario, fontSize: 12),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right_rounded, color: colorAcento),
+            ],
+          ),
+        ),
       ),
     );
   }

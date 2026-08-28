@@ -230,6 +230,19 @@ class _ProyectoDetalleAdminScreenState extends State<ProyectoDetalleAdminScreen>
     );
   }
 
+  void _abrirDiagnosticoYTareas(String estatusActual) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ActividadesProyectoScreen(
+          proyectoId: widget.proyecto.id,
+          estatusProyecto: estatusActual,
+          rolUsuario: 'admin',
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<DocumentSnapshot>(
@@ -283,20 +296,9 @@ class _ProyectoDetalleAdminScreenState extends State<ProyectoDetalleAdminScreen>
 
               // Ícono de enrutamiento a la pantalla de actividades
               IconButton(
-                tooltip: 'Ver Actividades',
+                tooltip: 'Diagnóstico y tareas del día',
                 icon: const Icon(Icons.assignment_outlined, color: Color(0xFFFFDE21)),
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => ActividadesProyectoScreen(
-                        proyectoId: widget.proyecto.id, 
-                        estatusProyecto: estatusActual, 
-                        rolUsuario: 'admin', 
-                      ),
-                    ),
-                  );
-                },
+                onPressed: () => _abrirDiagnosticoYTareas(estatusActual),
               ),
               const SizedBox(width: 8), 
             ],
@@ -307,6 +309,8 @@ class _ProyectoDetalleAdminScreenState extends State<ProyectoDetalleAdminScreen>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildStatusHeader(estatusActual),
+                const SizedBox(height: 12),
+                _buildDiagnosticoYTareasCard(estatusActual),
                 const SizedBox(height: 24),
                 Text("INFORMACIÓN FINANCIERA", style: GoogleFonts.inter(color: Colors.white54, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1.1)),
                 const SizedBox(height: 12),
@@ -348,6 +352,55 @@ class _ProyectoDetalleAdminScreenState extends State<ProyectoDetalleAdminScreen>
           const SizedBox(width: 8),
           Text(estatusActual.replaceAll('_', ' ').toUpperCase(), style: GoogleFonts.inter(color: statusColor, fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: 1.0)),
         ],
+      ),
+    );
+  }
+
+  Widget _buildDiagnosticoYTareasCard(String estatusActual) {
+    const accentColor = Color(0xFFFFDE21);
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => _abrirDiagnosticoYTareas(estatusActual),
+        borderRadius: BorderRadius.circular(16),
+        child: Ink(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: accentColor.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: accentColor.withOpacity(0.45)),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.assignment_turned_in_outlined, color: accentColor, size: 30),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'DIAGNÓSTICO Y TAREAS DEL DÍA',
+                      style: GoogleFonts.inter(
+                        color: Colors.white,
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.6,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Asigna y revisa avances con evidencia',
+                      style: GoogleFonts.inter(color: Colors.white60, fontSize: 12),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right_rounded, color: accentColor),
+            ],
+          ),
+        ),
       ),
     );
   }
