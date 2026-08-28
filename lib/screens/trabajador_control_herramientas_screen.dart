@@ -10,6 +10,7 @@ import '../models/proyecto_model.dart';
 import '../models/insumo_model.dart';
 import '../models/solicitud_herramienta_model.dart';
 import '../models/user_model.dart';
+import '../services/notificaciones_service.dart';
 
 class ControlHerramientasScreen extends StatefulWidget {
   final Proyecto? proyecto;
@@ -807,7 +808,21 @@ class _ControlHerramientasScreenState extends State<ControlHerramientasScreen> {
                           datosSolicitud['requiereCompra'] = true;
                         }
 
-                        await FirebaseFirestore.instance.collection('solicitudes_herramientas').add(datosSolicitud);
+                        final db = FirebaseFirestore.instance;
+                        final solicitudRef = db.collection('solicitudes_herramientas').doc();
+                        final avisoRef = db.collection('notificaciones').doc();
+                        final batch = db.batch();
+                        batch.set(solicitudRef, datosSolicitud);
+                        batch.set(
+                          avisoRef,
+                          NotificacionesService.datosAviso(
+                            titulo: 'Nueva solicitud de almacén',
+                            mensaje: '$nombreUsuario solicitó $cantidad × ${insumoSeleccionado!.nombre}',
+                            tipo: 'almacen',
+                            rolesDestinatarios: const ['admin', 'almacenista'],
+                          ),
+                        );
+                        await batch.commit();
                         if (context.mounted) Navigator.pop(context);
                       },
                       child: Text("Confirmar Solicitud", style: GoogleFonts.outfit(fontWeight: FontWeight.w700, fontSize: 16)),

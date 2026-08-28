@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import '../services/notificaciones_service.dart';
 
 class AdminSolicitudesHerramientasScreen extends StatefulWidget {
   const AdminSolicitudesHerramientasScreen({Key? key}) : super(key: key);
@@ -425,6 +426,18 @@ class _AdminSolicitudesHerramientasScreenState extends State<AdminSolicitudesHer
 
         transaction.update(docSolicitudRef, updates);
       });
+
+      final trabajadorId = data['trabajadorId']?.toString() ?? '';
+      if (trabajadorId.isNotEmpty) {
+        await FirebaseFirestore.instance.collection('notificaciones').add(
+          NotificacionesService.datosAviso(
+            titulo: 'Solicitud aprobada',
+            mensaje: '${data['nombreInsumo'] ?? 'Tu solicitud'} ya fue autorizada por almacén.',
+            tipo: 'almacen',
+            destinatarioId: trabajadorId,
+          ),
+        );
+      }
       
       if(mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -442,7 +455,26 @@ class _AdminSolicitudesHerramientasScreenState extends State<AdminSolicitudesHer
   }
 
   Future<void> _actualizarEstatus(String idSolicitud, String nuevoEstatus, Map<String, dynamic> data) async {
-    await FirebaseFirestore.instance.collection('solicitudes_herramientas').doc(idSolicitud).update({'estatus': nuevoEstatus});
+    final db = FirebaseFirestore.instance;
+    final solicitudRef = db.collection('solicitudes_herramientas').doc(idSolicitud);
+    final trabajadorId = data['trabajadorId']?.toString() ?? '';
+    final batch = db.batch();
+    batch.update(solicitudRef, {'estatus': nuevoEstatus});
+    if (trabajadorId.isNotEmpty) {
+      final avisoRef = db.collection('notificaciones').doc();
+      batch.set(
+        avisoRef,
+        NotificacionesService.datosAviso(
+          titulo: nuevoEstatus == 'rechazada'
+              ? 'Solicitud no autorizada'
+              : 'Solicitud actualizada',
+          mensaje: '${data['nombreInsumo'] ?? 'Tu solicitud'} cambió a $nuevoEstatus.',
+          tipo: 'almacen',
+          destinatarioId: trabajadorId,
+        ),
+      );
+    }
+    await batch.commit();
   }
 
  Future<void> _confirmarDevolucion(String idSolicitud, Map<String, dynamic> data) async {

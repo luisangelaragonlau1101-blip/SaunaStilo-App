@@ -28,6 +28,11 @@ import 'trabajador_tipos_madera.dart';
 import 'trabajador_cajita_herramientas_screen.dart'; 
 import 'admin_cajitas_screen.dart';
 import 'calendario_cumpleanos_screen.dart';
+import 'asistente_ia_screen.dart';
+import 'blog_interno_screen.dart';
+import 'notificaciones_screen.dart';
+import 'reconocimientos_screen.dart';
+import '../services/notificaciones_service.dart';
 
 // --- PANTALLAS DE ASISTENCIAS ---
 import 'trabajador_asistencia_screen.dart';
@@ -704,6 +709,10 @@ class _AdminDashboardState extends State<AdminDashboard> {
                     const _MenuCard(titulo: "NUEVA IDEA", icono: Icons.lightbulb_outline_rounded, color: Color(0xFFA78BFA), destino: IncubadoraIdeasScreen()),
                     const _MenuCard(titulo: "CAJITAS", icono: Icons.home_repair_service_rounded, color: Color(0xFFFF9800), destino: AdminCajitasScreen()),
                     _MenuCard(titulo: "RACHAS", icono: Icons.local_fire_department_rounded, color: const Color(0xFFFF5722), destino: AdminRachasScreen(adminUser: widget.adminUser)),
+                    _MenuCard(titulo: "ASISTENTE IA", icono: Icons.auto_awesome_rounded, color: colorMorado, destino: AsistenteIaScreen(usuario: widget.adminUser)),
+                    _AvisosMenuCard(usuario: widget.adminUser, color: colorCyan),
+                    _MenuCard(titulo: "RECONOCIMIENTOS", icono: Icons.workspace_premium_rounded, color: colorAmarillo, destino: ReconocimientosScreen(usuario: widget.adminUser)),
+                    _MenuCard(titulo: "BLOG INTERNO", icono: Icons.auto_stories_rounded, color: colorRosa, destino: BlogInternoScreen(usuario: widget.adminUser)),
                   ],
                 ),
                 const SizedBox(height: 30),
@@ -1076,6 +1085,34 @@ class _MenuCard extends StatelessWidget {
   }
 }
 
+class _AvisosMenuCard extends StatelessWidget {
+  final UserModel usuario;
+  final Color color;
+
+  const _AvisosMenuCard({required this.usuario, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<int>(
+      stream: NotificacionesService().noLeidosPara(
+        usuarioId: usuario.id,
+        rol: usuario.rol,
+      ),
+      builder: (context, snapshot) {
+        final pendientes = snapshot.data ?? 0;
+        return _MenuCard(
+          titulo: pendientes > 0 ? 'AVISOS ($pendientes)' : 'AVISOS',
+          icono: pendientes > 0
+              ? Icons.notifications_active_rounded
+              : Icons.notifications_none_rounded,
+          color: color,
+          destino: NotificacionesScreen(usuario: usuario),
+        );
+      },
+    );
+  }
+}
+
 
 // --- DASHBOARD UNIFICADO (MAESTRO Y TRABAJADOR) ---
 class OperativoDashboard extends StatefulWidget {
@@ -1422,6 +1459,25 @@ class _OperativoDashboardState extends State<OperativoDashboard> {
                       icono: Icons.forest_rounded, 
                       color: Color(0xFF8B5CF6), 
                       destino: CatalogoSaunasTrabajadorScreen() 
+                    ),
+                    _MenuCard(
+                      titulo: "ASISTENTE IA",
+                      icono: Icons.auto_awesome_rounded,
+                      color: const Color(0xFF8B5CF6),
+                      destino: AsistenteIaScreen(usuario: widget.usuario),
+                    ),
+                    _AvisosMenuCard(usuario: widget.usuario, color: colorCyan),
+                    _MenuCard(
+                      titulo: "MIS INSIGNIAS",
+                      icono: Icons.workspace_premium_rounded,
+                      color: colorAmarillo,
+                      destino: ReconocimientosScreen(usuario: widget.usuario),
+                    ),
+                    _MenuCard(
+                      titulo: "BLOG INTERNO",
+                      icono: Icons.auto_stories_rounded,
+                      color: const Color(0xFFFF3399),
+                      destino: BlogInternoScreen(usuario: widget.usuario),
                     ),
                   ],
                 ),
@@ -2053,6 +2109,10 @@ class _AlmacenistaDashboardState extends State<AlmacenistaDashboard> {
                     _MenuCard(titulo: "MI ASISTENCIA", icono: Icons.fingerprint_rounded, color: colorMorado, destino: TrabajadorAsistenciaScreen(trabajador: widget.usuario)),
                     _MenuCard(titulo: "MI RACHA", icono: Icons.local_fire_department_rounded, color: const Color(0xFFFF5722), destino: RachaAsistenciasScreen(usuario: widget.usuario, isAdmin: false)),
                     const _MenuCard(titulo: "CUMPLEAÑOS", icono: Icons.cake_rounded, color: colorAmarillo, destino: CalendarioCumpleanosScreen()),
+                    _MenuCard(titulo: "ASISTENTE IA", icono: Icons.auto_awesome_rounded, color: colorMorado, destino: AsistenteIaScreen(usuario: widget.usuario)),
+                    _AvisosMenuCard(usuario: widget.usuario, color: colorCyan),
+                    _MenuCard(titulo: "MIS INSIGNIAS", icono: Icons.workspace_premium_rounded, color: colorAmarillo, destino: ReconocimientosScreen(usuario: widget.usuario)),
+                    _MenuCard(titulo: "BLOG INTERNO", icono: Icons.auto_stories_rounded, color: colorRosa, destino: BlogInternoScreen(usuario: widget.usuario)),
                   ],
                 ),
                 const SizedBox(height: 100), // Aumentamos el padding para asegurar que la firma no tape el último elemento

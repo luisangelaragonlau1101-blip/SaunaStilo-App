@@ -4,6 +4,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 
 import '../models/actividad_model.dart';
 import '../models/evidencia_actividad_model.dart';
+import 'notificaciones_service.dart';
 
 class ActividadesService {
   final FirebaseFirestore _db;
@@ -33,9 +34,19 @@ class ActividadesService {
     try {
       final actividadRef = _actividadesRef.doc();
       final proyectoRef = _db.collection('proyectos').doc(actividad.proyectoId);
+      final avisoRef = _db.collection('notificaciones').doc();
       final batch = _db.batch();
       batch.set(actividadRef, actividad.toJson());
       batch.update(proyectoRef, {'estatus': 'en_proceso'});
+      batch.set(
+        avisoRef,
+        NotificacionesService.datosAviso(
+          titulo: 'Nueva tarea asignada',
+          mensaje: actividad.titulo,
+          tipo: 'tarea',
+          destinatarioId: actividad.asignadoATrabajadorId,
+        ),
+      );
       await batch.commit();
     } catch (e) {
       throw Exception('Error al crear la actividad: $e');
@@ -267,6 +278,18 @@ class ActividadesService {
         if (esCierre) {
           actualizaciones['estatus'] = 'completado';
           actualizaciones['completadoEn'] = FieldValue.serverTimestamp();
+          final avisoRef = _db.collection('notificaciones').doc();
+          transaction.set(
+            avisoRef,
+            NotificacionesService.datosAviso(
+              titulo: 'Tarea terminada',
+              mensaje: (dataActual['titulo'] is String)
+                  ? dataActual['titulo'] as String
+                  : 'Un trabajador terminó una actividad',
+              tipo: 'tarea',
+              rolesDestinatarios: const ['admin'],
+            ),
+          );
         } else if (estatusActual == 'pendiente') {
           actualizaciones['estatus'] = 'en_progreso';
           actualizaciones['iniciadoEn'] = FieldValue.serverTimestamp();
