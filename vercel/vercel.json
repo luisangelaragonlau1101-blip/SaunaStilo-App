@@ -6,6 +6,11 @@
       "source": "/SaunaStilo-App",
       "destination": "/",
       "permanent": false
+    },
+    {
+      "source": "/SaunaStilo-App/",
+      "destination": "/",
+      "permanent": false
     }
   ],
   "rewrites": [
