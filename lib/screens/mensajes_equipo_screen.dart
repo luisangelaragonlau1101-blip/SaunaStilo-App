@@ -575,11 +575,12 @@ class _ConversacionPrivadaScreenState
         withData: true,
       );
       for (final file in result) {
-        if (file.bytes == null) continue;
+        final bytes = await file.readAsBytes();
+        if (bytes.isEmpty) continue;
         _adjuntos.add(
           _Adjunto(
             nombre: file.name,
-            bytes: file.bytes!,
+            bytes: bytes,
             tipo: _tipoDeNombre(file.name),
             mime: _mime(file.name),
           ),
