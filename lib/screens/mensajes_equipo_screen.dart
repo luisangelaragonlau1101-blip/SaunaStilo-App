@@ -570,7 +570,7 @@ class _ConversacionPrivadaScreenState
         if (video != null) await _agregarXFile(video, 'video');
         return;
       }
-      final result = await FilePicker.platform.pickFiles(
+      final result = await FilePicker.pickFiles(
         allowMultiple: true,
         withData: true,
       );
@@ -612,7 +612,8 @@ class _ConversacionPrivadaScreenState
           bytes: item.bytes,
           fileName: item.nombre,
           contentType: item.mime,
-          folder: 'mensajes/$_conversationId/${ref.id}/$i_${item.nombre}',
+          folder:
+              'mensajes/$_conversationId/${ref.id}/${i}_${item.nombre}',
         );
         archivos.add({
           'url': upload.url,
