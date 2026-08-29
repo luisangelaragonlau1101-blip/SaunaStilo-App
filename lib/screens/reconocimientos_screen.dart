@@ -29,8 +29,24 @@ class ReconocimientosScreen extends StatelessWidget {
         stream: FirebaseFirestore.instance.collection('usuarios').snapshots(),
         builder: (context, usuariosSnapshot) {
           return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-            stream: FirebaseFirestore.instance.collection('actividades').snapshots(),
+            stream: usuario.rol == AppRoles.admin
+                ? FirebaseFirestore.instance.collection('actividades').snapshots()
+                : FirebaseFirestore.instance
+                      .collection('actividades')
+                      .where(
+                        'asignadoATrabajadorId',
+                        isEqualTo: usuario.id,
+                      )
+                      .snapshots(),
             builder: (context, actividadesSnapshot) {
+              if (usuariosSnapshot.hasError || actividadesSnapshot.hasError) {
+                return const Center(
+                  child: Text(
+                    'No se pudieron cargar los reconocimientos.',
+                    style: TextStyle(color: Colors.white70),
+                  ),
+                );
+              }
               if (!usuariosSnapshot.hasData || !actividadesSnapshot.hasData) {
                 return const Center(child: CircularProgressIndicator(color: _oro));
               }

@@ -13,6 +13,7 @@ import 'trabajador_control_herramientas_screen.dart';
 import 'actividades_trabajador_screen.dart'; 
 import 'crear_solicitud_salida_screen.dart'; 
 import 'proyecto_chat_screen.dart';
+import '../services/salida_instalacion_service.dart';
 
 // --- CLASE AUXILIAR PARA EL ESTADO INDIVIDUAL ---
 class _ItemEvaluacion {
@@ -43,7 +44,10 @@ class ProyectoDetalleTrabajadorScreen extends StatefulWidget {
 
 class _ProyectoDetalleTrabajadorScreenState extends State<ProyectoDetalleTrabajadorScreen> {
   final String currentUid = FirebaseAuth.instance.currentUser?.uid ?? '';
+  final SalidaInstalacionService _salidaInstalacionService =
+      SalidaInstalacionService();
   String trabajadorNombre = 'Trabajador';
+  bool _registrandoSalidaInstalacion = false;
 
   @override
   void initState() {
@@ -60,6 +64,86 @@ class _ProyectoDetalleTrabajadorScreenState extends State<ProyectoDetalleTrabaja
           trabajadorNombre = doc.data()?['nombre'] ?? 'Trabajador';
         });
       }
+    }
+  }
+
+  Future<void> _registrarSalidaInstalacion() async {
+    if (_registrandoSalidaInstalacion || currentUid.isEmpty) return;
+    final confirmar = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: const Color(0xFF1A1A1A),
+        icon: const Icon(
+          Icons.route_rounded,
+          color: Color(0xFFFF9800),
+          size: 38,
+        ),
+        title: Text(
+          '¿Saliste a instalar?',
+          textAlign: TextAlign.center,
+          style: GoogleFonts.montserrat(
+            color: Colors.white,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+        content: Text(
+          'Se guardará el proyecto y la hora oficial. Si ya diste permiso de ubicación, también se adjuntará al registro.',
+          textAlign: TextAlign.center,
+          style: GoogleFonts.inter(color: Colors.white60, height: 1.4),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFFFF9800),
+              foregroundColor: Colors.black,
+            ),
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('REGISTRAR SALIDA'),
+          ),
+        ],
+      ),
+    );
+    if (confirmar != true || !mounted) return;
+
+    setState(() => _registrandoSalidaInstalacion = true);
+    try {
+      final resultado = await _salidaInstalacionService.registrarSalida(
+        proyecto: widget.proyecto,
+        usuarioNombre: trabajadorNombre,
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: const Color(0xFF0F766E),
+          content: Text(
+            resultado.incluyoUbicacion
+                ? 'Salida registrada con hora y ubicación.'
+                : 'Salida registrada con hora oficial.',
+            style: GoogleFonts.inter(
+              color: Colors.white,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      final mensaje = error
+          .toString()
+          .replaceFirst('Bad state: ', '')
+          .replaceFirst('Exception: ', '');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.redAccent,
+          content: Text('No se pudo registrar: $mensaje'),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _registrandoSalidaInstalacion = false);
     }
   }
 
@@ -567,6 +651,8 @@ class _ProyectoDetalleTrabajadorScreenState extends State<ProyectoDetalleTrabaja
                 // --- 1. SALIDA DE INSTALACIÓN ---
                 Text("SALIDA A INSTALACIÓN", style: GoogleFonts.inter(color: Colors.orangeAccent, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1.1)),
                 const SizedBox(height: 12),
+                _buildSalidaInstalacionCard(estatusActual),
+                const SizedBox(height: 12),
                 Container(
                   width: double.infinity,
                   height: 56,
@@ -637,6 +723,136 @@ class _ProyectoDetalleTrabajadorScreenState extends State<ProyectoDetalleTrabaja
           Text(estatusActual.replaceAll('_', ' ').toUpperCase(), style: GoogleFonts.inter(color: statusColor, fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: 1.0)),
         ],
       ),
+    );
+  }
+
+  Widget _buildSalidaInstalacionCard(String estatusActual) {
+    return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+      stream: _salidaInstalacionService.historial(
+        proyectoId: widget.proyecto.id,
+        usuarioId: currentUid,
+      ),
+      builder: (context, snapshot) {
+        final registros = snapshot.data?.docs.toList(growable: true) ??
+            <QueryDocumentSnapshot<Map<String, dynamic>>>[];
+        registros.sort((a, b) {
+          final fechaA = a.data()['fecha'];
+          final fechaB = b.data()['fecha'];
+          final aDate = fechaA is Timestamp ? fechaA.toDate() : DateTime(2000);
+          final bDate = fechaB is Timestamp ? fechaB.toDate() : DateTime(2000);
+          return bDate.compareTo(aDate);
+        });
+        final ultima = registros.isEmpty ? null : registros.first.data();
+        final fecha = ultima?['fecha'];
+        final fechaTexto = fecha is Timestamp
+            ? DateFormat("d MMM, HH:mm", 'es').format(fecha.toDate())
+            : null;
+        final puedeRegistrar = estatusActual != 'finalizado' &&
+            widget.proyecto.encargados
+                .map((item) => item.toString())
+                .contains(currentUid);
+
+        return Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: const Color(0xFF21170F),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: const Color(0xFFFF9800).withOpacity(.45)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const CircleAvatar(
+                    backgroundColor: Color(0x26FF9800),
+                    child: Icon(Icons.pin_drop_rounded, color: Color(0xFFFFB74D)),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'REGISTRA TU VISITA',
+                          style: GoogleFonts.inter(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w900,
+                            fontSize: 13,
+                          ),
+                        ),
+                        Text(
+                          fechaTexto == null
+                              ? 'Aún no tienes salidas en este proyecto.'
+                              : 'Última salida: $fechaTexto · ${registros.length} en total',
+                          style: GoogleFonts.inter(
+                            color: Colors.white54,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: const Color(0xFFFF9800),
+                    foregroundColor: Colors.black,
+                    disabledBackgroundColor: Colors.white12,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                  onPressed: puedeRegistrar && !_registrandoSalidaInstalacion
+                      ? _registrarSalidaInstalacion
+                      : null,
+                  icon: _registrandoSalidaInstalacion
+                      ? const SizedBox.square(
+                          dimension: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.black,
+                          ),
+                        )
+                      : const Icon(Icons.departure_board_rounded),
+                  label: Text(
+                    _registrandoSalidaInstalacion
+                        ? 'REGISTRANDO…'
+                        : estatusActual == 'finalizado'
+                        ? 'PROYECTO FINALIZADO'
+                        : 'SALÍ A INSTALAR',
+                    style: GoogleFonts.inter(fontWeight: FontWeight.w900),
+                  ),
+                ),
+              ),
+              if (ultima?['ubicacionRegistrada'] == true) ...[
+                const SizedBox(height: 9),
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.gps_fixed_rounded,
+                      color: Color(0xFF70E1D0),
+                      size: 15,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      'La última salida incluye ubicación',
+                      style: GoogleFonts.inter(
+                        color: const Color(0xFF70E1D0),
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ],
+          ),
+        );
+      },
     );
   }
 

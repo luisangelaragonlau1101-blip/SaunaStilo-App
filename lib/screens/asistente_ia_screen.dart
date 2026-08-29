@@ -66,7 +66,7 @@ class _AsistenteIaScreenState extends State<AsistenteIaScreen> {
   bool _leerRespuestas = true;
   bool? _nubeDisponible;
   String? _audioReproduciendo;
-  double _velocidadVoz = kIsWeb ? 1.25 : .82;
+  double _velocidadVoz = kIsWeb ? 1.5 : .94;
 
   bool get _esAdmin => widget.usuario.rol == AppRoles.admin;
   bool get _esAlmacen => widget.usuario.rol == AppRoles.almacenista;
@@ -903,6 +903,7 @@ class _AsistenteIaScreenState extends State<AsistenteIaScreen> {
       if (!mounted) return;
       setState(() {
         _subiendoAudio = false;
+        _pensando = true;
         _mensajes.add(
           _MensajeAsistente(
             texto: 'Mensaje de audio',
@@ -911,18 +912,39 @@ class _AsistenteIaScreenState extends State<AsistenteIaScreen> {
             duracionAudio: _segundosAudio,
           ),
         );
+      });
+      _moverAlFinal();
+      String? respuesta;
+      try {
+        respuesta = await _aiService.responder(
+          pregunta:
+              'Escucha este mensaje de voz, identifica lo que necesito y respóndeme de forma útil y breve.',
+          audios: <String>[url],
+          historial: _historialParaIa(),
+        );
+        if (respuesta != null) _nubeDisponible = true;
+      } catch (_) {
+        _nubeDisponible = false;
+      }
+      final respuestaFinal = respuesta ?? (_esAdmin
+          ? 'El audio quedó guardado. El motor inteligente no pudo analizarlo en este momento.'
+          : 'Audio enviado. Administración recibió el aviso; el motor inteligente no pudo analizarlo en este momento.');
+      if (!mounted) return;
+      setState(() {
+        _pensando = false;
         _mensajes.add(
-          _MensajeAsistente(
-            texto: _esAdmin
-                ? 'Audio guardado en la conversación.'
-                : 'Audio enviado. Administración recibió el aviso en la aplicación.',
-            esUsuario: false,
-          ),
+          _MensajeAsistente(texto: respuestaFinal, esUsuario: false),
         );
       });
       _moverAlFinal();
+      if (_leerRespuestas) unawaited(_hablar(respuestaFinal));
     } catch (_) {
-      if (mounted) setState(() => _subiendoAudio = false);
+      if (mounted) {
+        setState(() {
+          _subiendoAudio = false;
+          _pensando = false;
+        });
+      }
       _mostrarMensaje('No pude subir el audio. Revisa tu conexión e inténtalo otra vez.');
     }
   }
@@ -1027,46 +1049,45 @@ class _AsistenteIaScreenState extends State<AsistenteIaScreen> {
     });
 
     String? respuesta;
-    if (imagenesUrls.isEmpty && _debeResponderConDatosLocales(limpio)) {
-      respuesta = _responderLocal(limpio);
+    try {
+      respuesta = await _aiService.responder(
+        pregunta: limpio,
+        imagenes: imagenesUrls,
+        historial: _historialParaIa(),
+      );
+      if (respuesta != null) _nubeDisponible = true;
+    } catch (_) {
+      _nubeDisponible = false;
     }
-    if (respuesta == null && _nubeDisponible != false) {
-      try {
-        respuesta = await _aiService.responder(
-          pregunta: limpio,
-          imagenes: imagenesUrls,
-          historial: _mensajes
-              .where((mensaje) => mensaje.audioUrl == null)
-              .toList(growable: false)
-              .reversed
-              .take(6)
-              .map(
-                (mensaje) => <String, String>{
-                  'rol': mensaje.esUsuario ? 'usuario' : 'asistente',
-                  'texto': mensaje.texto,
-                },
-              )
-              .toList(growable: false)
-              .reversed
-              .toList(growable: false),
-        );
-        if (respuesta != null) _nubeDisponible = true;
-      } catch (_) {
-        _nubeDisponible = false;
-      }
-    }
-    respuesta ??= imagenesUrls.isNotEmpty
+    final respuestaFinal = respuesta ?? (imagenesUrls.isNotEmpty
         ? 'Recibí ${imagenesUrls.length} fotografías. El análisis visual inteligente no respondió en este momento; las imágenes sí quedaron adjuntas. Intenta de nuevo o describe qué parte debo revisar.'
-        : _responderLocal(limpio);
+        : _responderLocal(limpio));
     if (!mounted) return;
     setState(() {
       _pensando = false;
       _mensajes.add(
-        _MensajeAsistente(texto: respuesta!, esUsuario: false),
+        _MensajeAsistente(texto: respuestaFinal, esUsuario: false),
       );
     });
     _moverAlFinal();
-    if (_leerRespuestas) unawaited(_hablar(respuesta));
+    if (_leerRespuestas) unawaited(_hablar(respuestaFinal));
+  }
+
+  List<Map<String, String>> _historialParaIa() {
+    return _mensajes
+        .where((mensaje) => mensaje.audioUrl == null)
+        .toList(growable: false)
+        .reversed
+        .take(10)
+        .map(
+          (mensaje) => <String, String>{
+            'rol': mensaje.esUsuario ? 'usuario' : 'asistente',
+            'texto': mensaje.texto,
+          },
+        )
+        .toList(growable: false)
+        .reversed
+        .toList(growable: false);
   }
 
   bool _debeResponderConDatosLocales(String pregunta) {

@@ -10,18 +10,17 @@ class AiAssistantService {
     required String pregunta,
     required List<Map<String, String>> historial,
     List<String> imagenes = const <String>[],
+    List<String> audios = const <String>[],
   }) async {
     final callable = _functions.httpsCallable(
       'saunaAssistant',
-      // Si el motor generativo todavía no está disponible, regresamos rápido
-      // a las respuestas operativas locales en vez de dejar al usuario
-      // esperando frente a la animación.
-      options: HttpsCallableOptions(timeout: const Duration(seconds: 4)),
+      options: HttpsCallableOptions(timeout: const Duration(seconds: 45)),
     );
     final result = await callable.call(<String, dynamic>{
       'pregunta': pregunta,
-      'historial': historial.take(6).toList(growable: false),
+      'historial': historial.take(10).toList(growable: false),
       'imagenes': imagenes.take(4).toList(growable: false),
+      'audios': audios.take(2).toList(growable: false),
     });
     final raw = result.data;
     if (raw is! Map) return null;

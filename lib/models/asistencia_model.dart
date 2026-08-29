@@ -48,7 +48,7 @@ class AsistenciaModel {
     this.ubicacionRegresoComidaValida = false,
     this.motivoFalta,
     this.evidenciaJustificacionUrl,
-    this.estatusJustificacion = 'sin_enviar',
+    this.estatusJustificacion = 'ninguna',
     this.observacionesTrabajador = '',
     this.observacionesAdmin = '',
     this.historialModificaciones,
@@ -78,7 +78,9 @@ class AsistenciaModel {
     return AsistenciaModel(
       id: doc.id,
       trabajadorId: data['trabajadorId'] ?? '',
-      fecha: (data['fecha'] as Timestamp).toDate(),
+      fecha: data['fecha'] is Timestamp
+          ? (data['fecha'] as Timestamp).toDate()
+          : DateTime.now(),
       horaEntrada: data['horaEntrada'] != null ? (data['horaEntrada'] as Timestamp).toDate() : null,
       horaSalida: data['horaSalida'] != null ? (data['horaSalida'] as Timestamp).toDate() : null,
       estatus: data['estatus'] ?? 'pendiente',
@@ -92,7 +94,11 @@ class AsistenciaModel {
       ubicacionRegresoComidaValida: data['ubicacionRegresoComidaValida'] ?? false,
       motivoFalta: data['motivoFalta'],
       evidenciaJustificacionUrl: data['evidenciaJustificacionUrl'],
-      estatusJustificacion: data['estatusJustificacion'] ?? 'sin_enviar',
+      estatusJustificacion:
+          (data['estatusJustificacion'] == null ||
+              data['estatusJustificacion'] == 'sin_enviar')
+          ? 'ninguna'
+          : data['estatusJustificacion'].toString(),
       observacionesTrabajador: data['observacionesTrabajador'] ?? '',
       observacionesAdmin: data['observacionesAdmin'] ?? '',
 

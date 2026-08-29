@@ -38,6 +38,13 @@ class PerfilSocialScreen extends StatelessWidget {
         final cumpleanos = data['cumpleanos'] is Timestamp
             ? (data['cumpleanos'] as Timestamp).toDate()
             : null;
+        final puedeVerOperacion =
+            usuarioActual.rol == AppRoles.admin || _esPropio;
+        final actividadesQuery = puedeVerOperacion
+            ? FirebaseFirestore.instance
+                  .collection('actividades')
+                  .where('asignadoATrabajadorId', isEqualTo: perfilId)
+            : null;
         return Scaffold(
           backgroundColor: Colors.black,
           appBar: AppBar(
@@ -45,11 +52,10 @@ class PerfilSocialScreen extends StatelessWidget {
             title: Text('PERFIL', style: GoogleFonts.montserrat(fontWeight: FontWeight.w900)),
           ),
           body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-            stream: FirebaseFirestore.instance.collection('actividades').snapshots(),
+            stream: actividadesQuery?.snapshots(),
             builder: (context, actividadesSnapshot) {
               final actividades = actividadesSnapshot.data?.docs
                       .map((doc) => ActividadModel.fromJson(doc.data(), doc.id))
-                      .where((actividad) => actividad.asignadoATrabajadorId == perfilId)
                       .toList(growable: false) ??
                   const <ActividadModel>[];
               return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
@@ -93,8 +99,15 @@ class PerfilSocialScreen extends StatelessWidget {
     required List<ActividadModel> actividades,
     required List<QueryDocumentSnapshot<Map<String, dynamic>>> posts,
   }) {
+    final puedeVerOperacion =
+        usuarioActual.rol == AppRoles.admin || _esPropio;
+    final proyectosQuery = puedeVerOperacion
+        ? FirebaseFirestore.instance
+              .collection('proyectos')
+              .where('encargados', arrayContains: perfilId)
+        : null;
     return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-      stream: FirebaseFirestore.instance.collection('proyectos').snapshots(),
+      stream: proyectosQuery?.snapshots(),
       builder: (context, proyectosSnapshot) {
         final proyectos = proyectosSnapshot.data?.docs.where((doc) {
               final data = doc.data();
@@ -109,43 +122,73 @@ class PerfilSocialScreen extends StatelessWidget {
             }).toList(growable: false) ??
             <QueryDocumentSnapshot<Map<String, dynamic>>>[];
         return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-          stream: usuarioActual.rol == AppRoles.admin
-              ? FirebaseFirestore.instance.collection('clientes').snapshots()
+          stream: puedeVerOperacion
+              ? FirebaseFirestore.instance
+                    .collection('salidas_instalacion')
+                    .where('usuarioId', isEqualTo: perfilId)
+                    .snapshots()
               : const Stream<QuerySnapshot<Map<String, dynamic>>>.empty(),
-          builder: (context, clientesSnapshot) {
-            final clientes = <String, Map<String, dynamic>>{
-              for (final doc in clientesSnapshot.data?.docs ??
-                  <QueryDocumentSnapshot<Map<String, dynamic>>>[])
-                doc.id: doc.data(),
-            };
-            return ListView(
-              padding: const EdgeInsets.fromLTRB(18, 8, 18, 100),
-              children: [
-                _cabecera(context, nombre, rol, foto, cumpleanos),
-                const SizedBox(height: 14),
-                _metricas(actividades, posts.length, proyectos.length),
-                const SizedBox(height: 20),
-                _insignias(actividades, proyectos.length),
-                const SizedBox(height: 22),
-                _instalaciones(proyectos, clientes),
-                const SizedBox(height: 20),
-                _sugerencias(context, nombre),
-                const SizedBox(height: 22),
-                Text(
-                  'AVANCES PUBLICADOS',
-                  style: GoogleFonts.inter(
-                    color: Colors.white54,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 1,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                if (posts.isEmpty)
-                  _vacio('Aún no ha publicado avances.')
-                else
-                  ...posts.map(_postResumen),
-              ],
+          builder: (context, salidasSnapshot) {
+            final salidas = salidasSnapshot.data?.docs.toList(growable: true) ??
+                <QueryDocumentSnapshot<Map<String, dynamic>>>[];
+            salidas.sort((a, b) {
+              final fechaA = a.data()['fecha'];
+              final fechaB = b.data()['fecha'];
+              final aDate = fechaA is Timestamp
+                  ? fechaA.toDate()
+                  : DateTime(2000);
+              final bDate = fechaB is Timestamp
+                  ? fechaB.toDate()
+                  : DateTime(2000);
+              return bDate.compareTo(aDate);
+            });
+            final totalInstalaciones =
+                salidas.isNotEmpty ? salidas.length : proyectos.length;
+            return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+              stream: usuarioActual.rol == AppRoles.admin
+                  ? FirebaseFirestore.instance.collection('clientes').snapshots()
+                  : const Stream<QuerySnapshot<Map<String, dynamic>>>.empty(),
+              builder: (context, clientesSnapshot) {
+                final clientes = <String, Map<String, dynamic>>{
+                  for (final doc in clientesSnapshot.data?.docs ??
+                      <QueryDocumentSnapshot<Map<String, dynamic>>>[])
+                    doc.id: doc.data(),
+                };
+                return ListView(
+                  padding: const EdgeInsets.fromLTRB(18, 8, 18, 100),
+                  children: [
+                    _cabecera(context, nombre, rol, foto, cumpleanos),
+                    const SizedBox(height: 14),
+                    _metricas(actividades, posts.length, totalInstalaciones),
+                    const SizedBox(height: 20),
+                    _insignias(actividades, totalInstalaciones),
+                    const SizedBox(height: 22),
+                    _instalaciones(
+                      proyectos,
+                      salidas,
+                      clientes,
+                      actividades,
+                    ),
+                    const SizedBox(height: 20),
+                    _sugerencias(context, nombre),
+                    const SizedBox(height: 22),
+                    Text(
+                      'AVANCES PUBLICADOS',
+                      style: GoogleFonts.inter(
+                        color: Colors.white54,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 1,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    if (posts.isEmpty)
+                      _vacio('Aún no ha publicado avances.')
+                    else
+                      ...posts.map(_postResumen),
+                  ],
+                );
+              },
             );
           },
         );
@@ -352,8 +395,12 @@ class PerfilSocialScreen extends StatelessWidget {
 
   Widget _instalaciones(
     List<QueryDocumentSnapshot<Map<String, dynamic>>> proyectos,
+    List<QueryDocumentSnapshot<Map<String, dynamic>>> salidas,
     Map<String, Map<String, dynamic>> clientes,
+    List<ActividadModel> actividades,
   ) {
+    final usaRegistrosNuevos = salidas.isNotEmpty;
+    final registros = usaRegistrosNuevos ? salidas : proyectos;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -367,17 +414,32 @@ class PerfilSocialScreen extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 10),
-        if (proyectos.isEmpty)
+        if (registros.isEmpty)
           _vacio('Todavía no hay instalaciones registradas en este perfil.')
         else
-          ...proyectos.take(8).map((doc) {
+          ...registros.take(8).map((doc) {
             final data = doc.data();
-            final cliente = clientes[data['id_cliente']?.toString()] ?? const <String, dynamic>{};
-            final fechaRaw = data['fecha_salida_instalacion'];
+            final proyectoId = usaRegistrosNuevos
+                ? data['proyectoId']?.toString() ?? ''
+                : doc.id;
+            final cliente = clientes[data['id_cliente']?.toString()] ??
+                const <String, dynamic>{};
+            final fechaRaw = usaRegistrosNuevos
+                ? data['fecha']
+                : data['fecha_salida_instalacion'];
             final fecha = fechaRaw is Timestamp
-                ? DateFormat('d MMM yyyy', 'es').format(fechaRaw.toDate())
+                ? DateFormat('d MMM yyyy · HH:mm', 'es')
+                    .format(fechaRaw.toDate())
                 : 'Fecha por confirmar';
             final direccion = cliente['direccion']?.toString().trim() ?? '';
+            var evidenciaUrl = '';
+            for (final actividad in actividades) {
+              if (actividad.proyectoId == proyectoId &&
+                  actividad.evidenciaFotos.isNotEmpty) {
+                evidenciaUrl = actividad.evidenciaFotos.first;
+                break;
+              }
+            }
             return Container(
               margin: const EdgeInsets.only(bottom: 9),
               padding: const EdgeInsets.all(14),
@@ -388,21 +450,52 @@ class PerfilSocialScreen extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  const CircleAvatar(
-                    backgroundColor: Color(0x1F70E1D0),
-                    child: Icon(Icons.location_on_rounded, color: Color(0xFF70E1D0)),
-                  ),
+                  if (evidenciaUrl.isNotEmpty)
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(24),
+                      child: Image.network(
+                        evidenciaUrl,
+                        width: 48,
+                        height: 48,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => const CircleAvatar(
+                          backgroundColor: Color(0x1F70E1D0),
+                          child: Icon(
+                            Icons.location_on_rounded,
+                            color: Color(0xFF70E1D0),
+                          ),
+                        ),
+                      ),
+                    )
+                  else
+                    const CircleAvatar(
+                      backgroundColor: Color(0x1F70E1D0),
+                      child: Icon(
+                        Icons.location_on_rounded,
+                        color: Color(0xFF70E1D0),
+                      ),
+                    ),
                   const SizedBox(width: 11),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          data['titulo']?.toString() ?? 'Instalación Sauna Stilo',
+                          usaRegistrosNuevos
+                              ? data['proyectoTitulo']?.toString() ??
+                                  'Instalación Sauna Stilo'
+                              : data['titulo']?.toString() ??
+                                  'Instalación Sauna Stilo',
                           style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w800),
                         ),
                         Text(
-                          direccion.isEmpty ? 'Ubicación interna del proyecto' : direccion,
+                          usaRegistrosNuevos
+                              ? data['ubicacionRegistrada'] == true
+                                  ? 'Salida confirmada con ubicación'
+                                  : 'Salida confirmada'
+                              : direccion.isEmpty
+                              ? 'Ubicación interna del proyecto'
+                              : direccion,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: GoogleFonts.inter(color: Colors.white54, fontSize: 11),

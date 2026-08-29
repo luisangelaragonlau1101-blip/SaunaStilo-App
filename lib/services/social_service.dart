@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../models/historia_social_model.dart';
 import '../models/user_model.dart';
 import 'media_upload_service.dart';
 import 'notificaciones_service.dart';
@@ -21,6 +22,94 @@ class SocialService {
   Stream<QuerySnapshot<Map<String, dynamic>>> publicaciones() =>
       _db.collection('publicaciones_sociales').snapshots();
 
+  Stream<List<HistoriaSocialModel>> historiasVigentes() => _db
+      .collection('historias_sociales')
+      .orderBy('creadaEn', descending: true)
+      .limit(80)
+      .snapshots()
+      .map((snapshot) {
+        final ahora = DateTime.now();
+        return snapshot.docs
+            .map(HistoriaSocialModel.fromFirestore)
+            .where(
+              (historia) =>
+                  historia.autorId.isNotEmpty &&
+                  historia.estaVigente(ahora) &&
+                  (historia.texto.isNotEmpty || historia.imagenUrl.isNotEmpty),
+            )
+            .toList(growable: false);
+      });
+
+  Future<void> crearHistoria({
+    required UserModel autor,
+    required String texto,
+    XFile? imagen,
+  }) async {
+    final textoLimpio = texto.trim();
+    if (textoLimpio.isEmpty && imagen == null) {
+      throw ArgumentError('Escribe una nota o agrega una fotografía.');
+    }
+    if (textoLimpio.length > 400) {
+      throw ArgumentError('La nota puede tener hasta 400 caracteres.');
+    }
+
+    final historiaRef = _db.collection('historias_sociales').doc();
+    MediaUploadResult? subida;
+    try {
+      if (imagen != null) {
+        final nombreSeguro = _nombreSeguro(imagen.name);
+        subida = await _media.upload(
+          bytes: await imagen.readAsBytes(),
+          fileName: nombreSeguro,
+          contentType: _tipoMime(imagen.name),
+          folder: 'historias/${autor.id}/${historiaRef.id}',
+        );
+      }
+
+      final creadaEn = DateTime.now();
+      await historiaRef.set({
+        'autorId': autor.id,
+        'autorNombre': autor.nombre,
+        'autorFotoUrl': autor.fotoUrl ?? '',
+        'autorRol': autor.rol,
+        'texto': textoLimpio,
+        'imagenUrl': subida?.url ?? '',
+        'imagenRuta': subida?.path ?? '',
+        'creadaEn': FieldValue.serverTimestamp(),
+        'expiraEn': Timestamp.fromDate(creadaEn.add(const Duration(hours: 24))),
+      });
+    } catch (_) {
+      if (subida != null) {
+        try {
+          await _media.delete(url: subida.url, path: subida.path);
+        } catch (_) {}
+      }
+      rethrow;
+    }
+  }
+
+  Future<void> eliminarHistoria({
+    required HistoriaSocialModel historia,
+    required UserModel solicitante,
+  }) async {
+    if (solicitante.rol != AppRoles.admin &&
+        historia.autorId != solicitante.id) {
+      throw StateError('Solo puedes eliminar tus propias historias.');
+    }
+    if (historia.autorId == solicitante.id &&
+        (historia.imagenUrl.isNotEmpty || historia.imagenRuta.isNotEmpty)) {
+      try {
+        await _media.delete(
+          url: historia.imagenUrl,
+          path: historia.imagenRuta,
+        );
+      } catch (_) {
+        // La historia debe poder ocultarse aunque su archivo ya no exista.
+      }
+    }
+    await _db.collection('historias_sociales').doc(historia.id).delete();
+  }
+
   Stream<QuerySnapshot<Map<String, dynamic>>> comentarios(String publicacionId) =>
       _db
           .collection('publicaciones_sociales')
@@ -32,15 +121,20 @@ class SocialService {
     required UserModel autor,
     required String texto,
     required List<XFile> imagenes,
+    List<XFile> videos = const <XFile>[],
     String tipo = 'avance',
   }) async {
     final textoLimpio = texto.trim();
-    if (textoLimpio.isEmpty && imagenes.isEmpty) {
-      throw ArgumentError('Escribe algo o agrega por lo menos una fotografía.');
+    if (textoLimpio.isEmpty && imagenes.isEmpty && videos.isEmpty) {
+      throw ArgumentError(
+        'Escribe algo o agrega por lo menos una foto o un video.',
+      );
     }
     final publicacionRef = _db.collection('publicaciones_sociales').doc();
-    final urls = <String>[];
-    final rutas = <String>[];
+    final urlsImagenes = <String>[];
+    final rutasImagenes = <String>[];
+    final urlsVideos = <String>[];
+    final rutasVideos = <String>[];
     final subidos = <MediaUploadResult>[];
     try {
       // Validamos el permiso antes de transferir fotografías. Así el usuario
@@ -53,10 +147,14 @@ class SocialService {
         'texto': textoLimpio,
         'imagenes': <String>[],
         'rutasStorage': <String>[],
+        'videos': <String>[],
+        'rutasVideosStorage': <String>[],
         'tipo': tipo,
         'likesPor': <String>[],
         'comentariosCount': 0,
-        'estado': imagenes.isEmpty ? 'publicado' : 'subiendo',
+        'estado': imagenes.isEmpty && videos.isEmpty
+            ? 'publicado'
+            : 'subiendo',
         'fecha': FieldValue.serverTimestamp(),
       });
 
@@ -73,29 +171,38 @@ class SocialService {
           folder: ruta,
         );
         subidos.add(resultado);
-        rutas.add(resultado.path);
-        urls.add(resultado.url);
+        rutasImagenes.add(resultado.path);
+        urlsImagenes.add(resultado.url);
       }
 
-      if (imagenes.isNotEmpty) {
+      for (var index = 0; index < videos.length; index++) {
+        final video = videos[index];
+        final bytes = await video.readAsBytes();
+        final nombreSeguro = _nombreSeguro(video.name);
+        final ruta =
+            'comunidad/${autor.id}/${publicacionRef.id}/videos/$index';
+        final resultado = await _media.upload(
+          bytes: bytes,
+          fileName: nombreSeguro,
+          contentType: _tipoMimeVideo(video.name, video.mimeType),
+          folder: ruta,
+        );
+        subidos.add(resultado);
+        rutasVideos.add(resultado.path);
+        urlsVideos.add(resultado.url);
+      }
+
+      if (imagenes.isNotEmpty || videos.isNotEmpty) {
         await publicacionRef.update({
-          'imagenes': urls,
-          'rutasStorage': rutas,
+          'imagenes': urlsImagenes,
+          'rutasStorage': rutasImagenes,
+          'videos': urlsVideos,
+          'rutasVideosStorage': rutasVideos,
           'estado': 'publicado',
         });
       }
-      await _crearAvisoSeguro(
-        NotificacionesService.datosAviso(
-          titulo: autor.rol == AppRoles.admin
-              ? 'Nuevo comunicado de Sauna Stilo'
-              : 'Nuevo avance en la comunidad',
-          mensaje: '${autor.nombre}: ${textoLimpio.isEmpty ? 'publicó fotografías' : textoLimpio}',
-          tipo: 'social',
-          rolesDestinatarios: autor.rol == AppRoles.admin
-              ? const ['todos']
-              : const ['admin'],
-        ),
-      );
+      // El backend crea un único aviso cuando la publicación queda lista.
+      // Evitamos duplicar notificaciones si hubo fotografías o videos.
     } catch (_) {
       for (final archivo in subidos.reversed) {
         try {
@@ -129,25 +236,7 @@ class SocialService {
     });
     batch.update(postRef, {'comentariosCount': FieldValue.increment(1)});
     await batch.commit();
-    await _crearAvisoSeguro(
-      NotificacionesService.datosAviso(
-        titulo: 'Nuevo comentario en la comunidad',
-        mensaje: '${autorComentario.nombre}: $limpio',
-        tipo: 'social',
-        rolesDestinatarios: const ['todos'],
-      ),
-    );
-    if (autorPublicacionId.isNotEmpty &&
-        autorPublicacionId != autorComentario.id) {
-      await _crearAvisoSeguro(
-        NotificacionesService.datosAviso(
-          titulo: 'Nueva sugerencia en tu publicación',
-          mensaje: '${autorComentario.nombre}: $limpio',
-          tipo: 'social',
-          destinatarioId: autorPublicacionId,
-        ),
-      );
-    }
+    // El trigger del backend publica un único aviso para el comentario.
   }
 
   Future<void> comentarAudio({
@@ -181,25 +270,7 @@ class SocialService {
       });
       batch.update(postRef, {'comentariosCount': FieldValue.increment(1)});
       await batch.commit();
-      await _crearAvisoSeguro(
-        NotificacionesService.datosAviso(
-          titulo: 'Nuevo audio en la comunidad',
-          mensaje: '${autorComentario.nombre} envió un comentario de voz.',
-          tipo: 'social',
-          rolesDestinatarios: const ['todos'],
-        ),
-      );
-      if (autorPublicacionId.isNotEmpty &&
-          autorPublicacionId != autorComentario.id) {
-        await _crearAvisoSeguro(
-          NotificacionesService.datosAviso(
-            titulo: 'Nuevo audio en tu publicación',
-            mensaje: '${autorComentario.nombre} comentó con una nota de voz.',
-            tipo: 'social',
-            destinatarioId: autorPublicacionId,
-          ),
-        );
-      }
+      // El trigger del backend publica un único aviso para el audio.
     } catch (_) {
       try {
         await _media.delete(url: archivo.url, path: archivo.path);
@@ -298,5 +369,26 @@ class SocialService {
     if (n.endsWith('.webp')) return 'image/webp';
     if (n.endsWith('.heic')) return 'image/heic';
     return 'image/jpeg';
+  }
+
+  static String _tipoMimeVideo(String nombre, String? mimeType) {
+    final detectado = mimeType?.split(';').first.trim().toLowerCase() ?? '';
+    if (detectado.startsWith('video/')) return detectado;
+    final n = nombre.toLowerCase();
+    if (n.endsWith('.webm')) return 'video/webm';
+    if (n.endsWith('.mov')) return 'video/quicktime';
+    if (n.endsWith('.m4v')) return 'video/x-m4v';
+    if (n.endsWith('.3gp')) return 'video/3gpp';
+    return 'video/mp4';
+  }
+
+  static String _resumenMultimedia(int fotos, int videos) {
+    if (fotos > 0 && videos > 0) return 'publicó fotos y videos';
+    if (videos > 0) {
+      return videos == 1 ? 'publicó un video' : 'publicó videos';
+    }
+    return fotos == 1
+        ? 'publicó una fotografía'
+        : 'publicó fotografías';
   }
 }

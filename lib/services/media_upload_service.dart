@@ -1,9 +1,7 @@
-import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
+import 'package:firebase_storage/firebase_storage.dart';
 
 class MediaUploadResult {
   final String url;
@@ -12,25 +10,23 @@ class MediaUploadResult {
   const MediaUploadResult({required this.url, required this.path});
 }
 
-/// Uploads user media directly to Vercel Blob using a short-lived, scoped URL.
-/// The permanent Blob credential stays in Vercel and is never shipped in the
-/// Flutter application.
+/// Stores authenticated user media directly in Firebase Storage.
+///
+/// Every object is kept below `media/<uid>/`, which lets this service verify
+/// ownership before deleting it and avoids depending on a separate upload API.
 class MediaUploadService {
   static const int maxBytesPerFile = 50 * 1024 * 1024;
-  static const String _productionOrigin =
-      'https://sauna-stilo-app-web.vercel.app';
 
   final FirebaseAuth _auth;
-  final http.Client _client;
-  final String? _originOverride;
+  final FirebaseStorage _storage;
+
+  static int _uploadSequence = 0;
 
   MediaUploadService({
     FirebaseAuth? auth,
-    http.Client? client,
-    String? origin,
+    FirebaseStorage? storage,
   }) : _auth = auth ?? FirebaseAuth.instance,
-       _client = client ?? http.Client(),
-       _originOverride = origin;
+       _storage = storage ?? FirebaseStorage.instance;
 
   Future<MediaUploadResult> upload({
     required Uint8List bytes,
@@ -47,108 +43,107 @@ class MediaUploadService {
       );
     }
 
-    final token = await _idToken();
-    final signResponse = await _client.post(
-      _endpoint(),
-      headers: <String, String>{
-        'authorization': 'Bearer $token',
-        'content-type': 'application/json',
-      },
-      body: jsonEncode(<String, dynamic>{
-        'action': 'sign-upload',
-        'fileName': fileName,
-        'contentType': contentType,
-        'folder': folder,
-        'size': bytes.length,
-      }),
-    );
-    final signData = _json(signResponse);
-    if (signResponse.statusCode < 200 || signResponse.statusCode >= 300) {
-      throw StateError(
-        signData['error']?.toString() ??
-            'No se pudo preparar la carga del archivo.',
-      );
-    }
+    final user = _requireUser();
+    final safeFolder = _safeFolder(folder);
+    final safeName = _safeFileName(fileName);
+    final uniquePart =
+        '${DateTime.now().microsecondsSinceEpoch}_${_uploadSequence++}';
+    final path = <String>[
+      'media',
+      user.uid,
+      if (safeFolder.isNotEmpty) safeFolder,
+      '${uniquePart}_$safeName',
+    ].join('/');
 
-    final uploadUrl = signData['uploadUrl']?.toString() ?? '';
-    if (uploadUrl.isEmpty) {
-      throw StateError('El servidor no devolvió una dirección de carga.');
-    }
-    final uploadResponse = await _client.put(
-      Uri.parse(uploadUrl),
-      headers: <String, String>{'content-type': contentType},
-      body: bytes,
+    final reference = _storage.ref(path);
+    final snapshot = await reference.putData(
+      bytes,
+      SettableMetadata(
+        contentType: _safeContentType(contentType),
+        customMetadata: <String, String>{
+          'ownerUid': user.uid,
+          'originalFileName': safeName,
+        },
+      ),
     );
-    final uploadData = _json(uploadResponse);
-    if (uploadResponse.statusCode < 200 || uploadResponse.statusCode >= 300) {
-      throw StateError(
-        uploadData['error']?.toString() ??
-            'No se pudo transferir el archivo.',
-      );
-    }
-
-    final url = uploadData['url']?.toString() ?? '';
-    final path = uploadData['pathname']?.toString() ??
-        signData['pathname']?.toString() ??
-        '';
-    if (url.isEmpty || path.isEmpty) {
-      throw StateError('La carga terminó sin una dirección válida.');
-    }
-    return MediaUploadResult(url: url, path: path);
+    final url = await snapshot.ref.getDownloadURL();
+    return MediaUploadResult(url: url, path: snapshot.ref.fullPath);
   }
 
   Future<void> delete({required String url, required String path}) async {
-    if (url.trim().isEmpty && path.trim().isEmpty) return;
-    final token = await _idToken();
-    final response = await _client.delete(
-      _endpoint(),
-      headers: <String, String>{
-        'authorization': 'Bearer $token',
-        'content-type': 'application/json',
-      },
-      body: jsonEncode(<String, dynamic>{
-        'action': 'delete',
-        'url': url,
-        'path': path,
-      }),
-    );
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      final data = _json(response);
-      throw StateError(
-        data['error']?.toString() ?? 'No se pudo eliminar el archivo.',
-      );
+    final cleanUrl = url.trim();
+    final cleanPath = path.trim().replaceFirst(RegExp(r'^/+'), '');
+    if (cleanUrl.isEmpty && cleanPath.isEmpty) return;
+
+    final user = _requireUser();
+    Reference? reference;
+
+    if (cleanPath.isNotEmpty) {
+      if (!_isOwnedPath(cleanPath, user.uid)) {
+        throw StateError('No tienes permiso para eliminar ese archivo.');
+      }
+      reference = _storage.ref(cleanPath);
     }
+
+    if (cleanUrl.isNotEmpty) {
+      final Reference urlReference;
+      try {
+        urlReference = _storage.refFromURL(cleanUrl);
+      } on Object {
+        throw ArgumentError('La dirección del archivo no es válida.');
+      }
+      if (!_isOwnedPath(urlReference.fullPath, user.uid)) {
+        throw StateError('No tienes permiso para eliminar ese archivo.');
+      }
+      if (reference != null && reference.fullPath != urlReference.fullPath) {
+        throw StateError('La dirección y la ruta del archivo no coinciden.');
+      }
+      reference = urlReference;
+    }
+
+    await reference!.delete();
   }
 
-  Future<String> _idToken() async {
+  User _requireUser() {
     final user = _auth.currentUser;
     if (user == null) {
       throw StateError('Inicia sesión para subir archivos.');
     }
-    final token = await user.getIdToken();
-    if (token == null || token.isEmpty) {
-      throw StateError('No se pudo validar tu sesión. Vuelve a iniciar sesión.');
-    }
-    return token;
+    return user;
   }
 
-  Uri _endpoint() {
-    final origin = _originOverride ??
-        (kIsWeb && Uri.base.host.endsWith('vercel.app')
-            ? Uri.base.origin
-            : _productionOrigin);
-    return Uri.parse('$origin/api/media');
+  static bool _isOwnedPath(String path, String uid) =>
+      path.startsWith('media/$uid/');
+
+  static String _safeFolder(String value) => value
+      .trim()
+      .split(RegExp(r'[/\\]+'))
+      .map(_safeFolderSegment)
+      .where((part) => part.isNotEmpty)
+      .take(8)
+      .join('/');
+
+  static String _safeFolderSegment(String value) {
+    var safe = value
+        .replaceAll(RegExp(r'[^a-zA-Z0-9_-]+'), '_')
+        .replaceAll(RegExp(r'_+'), '_')
+        .replaceAll(RegExp(r'^[_-]+|[_-]+$'), '');
+    if (safe.length > 60) safe = safe.substring(0, 60);
+    return safe;
   }
 
-  static Map<String, dynamic> _json(http.Response response) {
-    if (response.body.trim().isEmpty) return <String, dynamic>{};
-    try {
-      final decoded = jsonDecode(response.body);
-      return decoded is Map
-          ? Map<String, dynamic>.from(decoded)
-          : <String, dynamic>{};
-    } catch (_) {
-      return <String, dynamic>{};
-    }
+  static String _safeFileName(String value) {
+    var safe = value
+        .trim()
+        .replaceAll(RegExp(r'[^a-zA-Z0-9._-]+'), '_')
+        .replaceAll(RegExp(r'_+'), '_')
+        .replaceFirst(RegExp(r'^\.+'), '');
+    if (safe.length > 120) safe = safe.substring(safe.length - 120);
+    return safe.isEmpty ? 'archivo' : safe;
+  }
+
+  static String _safeContentType(String value) {
+    final normalized = value.split(';').first.trim().toLowerCase();
+    return normalized.isEmpty ? 'application/octet-stream' : normalized;
   }
 }

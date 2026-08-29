@@ -165,7 +165,7 @@ class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
                 style: const TextStyle(color: Colors.white),
                 cursorColor: colorMorado,
                 decoration: InputDecoration(
-                  hintText: "Nueva contraseña (mín. 6 caracteres)",
+                  hintText: "Nueva contraseña (mín. 8 caracteres)",
                   hintStyle: const TextStyle(color: Colors.white38),
                   focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: colorMorado)),
                   enabledBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Colors.white24)),
@@ -187,7 +187,7 @@ class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
                 TextButton(
                   onPressed: () async {
                     String nuevaContrasena = _passwordController.text.trim();
-                    if (nuevaContrasena.length >= 6) {
+                    if (nuevaContrasena.length >= 8) {
                       try {
                         await FirebaseAuth.instance.currentUser!.updatePassword(nuevaContrasena);
                         
@@ -204,7 +204,7 @@ class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
                       }
                     } else {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('La contraseña debe tener al menos 6 caracteres', style: TextStyle(color: Colors.white)), backgroundColor: Colors.orange),
+                        const SnackBar(content: Text('La contraseña debe tener al menos 8 caracteres', style: TextStyle(color: Colors.white)), backgroundColor: Colors.orange),
                       );
                     }
                   },

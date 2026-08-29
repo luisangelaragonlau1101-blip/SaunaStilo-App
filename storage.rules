@@ -6,12 +6,52 @@ service firebase.storage {
       return request.auth != null;
     }
 
-    // Fotos, evidencias y audios son privados para el equipo autenticado.
-    // No se limita la cantidad de archivos por publicación o actividad.
-    match /{allPaths=**} {
+    function role() {
+      return signedIn()
+        ? firestore.get(
+            /databases/(default)/documents/usuarios/$(request.auth.uid)
+          ).data.rol
+        : '';
+    }
+
+    function isWarehouse() {
+      return role() in ['admin', 'almacenista'];
+    }
+
+    // Contenido social, evidencias, perfiles y audios. La cantidad de archivos
+    // no se limita, pero cada objeto pertenece al usuario que lo subió.
+    match /media/{userId}/{allPaths=**} {
       allow read: if signedIn();
-      allow write: if signedIn()
-        && (request.resource == null || request.resource.size < 50 * 1024 * 1024);
+      allow create, update: if signedIn()
+        && request.auth.uid == userId
+        && request.resource.size <= 50 * 1024 * 1024;
+      allow delete: if signedIn() && request.auth.uid == userId;
+    }
+
+    // Compatibilidad temporal con módulos antiguos que aún usan rutas
+    // históricas de Firebase Storage.
+    match /{legacyRoot}/{allPaths=**} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.size <= 50 * 1024 * 1024
+        && ((legacyRoot in [
+          'justificaciones',
+          'recepciones_obra',
+          'devoluciones'
+        ]) || (isWarehouse() && legacyRoot in [
+          'insumos_inventario',
+          'recepciones_almacen',
+          'saunas_imagenes'
+        ]));
+      allow update, delete: if isWarehouse()
+        && legacyRoot in [
+          'insumos_inventario',
+          'justificaciones',
+          'recepciones_almacen',
+          'recepciones_obra',
+          'devoluciones',
+          'saunas_imagenes'
+        ];
     }
   }
 }

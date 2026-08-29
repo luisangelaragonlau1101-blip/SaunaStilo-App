@@ -1,9 +1,13 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
+import 'package:video_player/video_player.dart';
 
+import '../models/historia_social_model.dart';
 import '../models/user_model.dart';
 import '../services/social_service.dart';
 import '../widgets/audio_message_player.dart';
@@ -29,6 +33,21 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
   static const _naranja = Color(0xFFFF8A3D);
   static const _morado = Color(0xFF8B5CF6);
   final SocialService _social = SocialService();
+  Timer? _relojHistorias;
+
+  @override
+  void initState() {
+    super.initState();
+    _relojHistorias = Timer.periodic(const Duration(minutes: 1), (_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _relojHistorias?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -124,36 +143,27 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
   }
 
   Widget _historiasEquipo() {
-    return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-      stream: FirebaseFirestore.instance.collection('usuarios').snapshots(),
+    return StreamBuilder<List<HistoriaSocialModel>>(
+      stream: _social.historiasVigentes(),
       builder: (context, snapshot) {
-        final equipo = snapshot.data?.docs.toList(growable: true) ??
-            <QueryDocumentSnapshot<Map<String, dynamic>>>[];
-        equipo.sort((a, b) {
-          if (a.id == widget.usuario.id) return -1;
-          if (b.id == widget.usuario.id) return 1;
-          return (a.data()['nombre']?.toString() ?? '')
-              .compareTo(b.data()['nombre']?.toString() ?? '');
-        });
-        final visibles = equipo.take(18).toList(growable: false);
+        final ahora = DateTime.now();
+        final historias = snapshot.data
+                ?.where((historia) => historia.estaVigente(ahora))
+                .toList(growable: false) ??
+            const <HistoriaSocialModel>[];
         return SizedBox(
-          height: 116,
+          height: 120,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             physics: const BouncingScrollPhysics(),
             padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
-            itemCount: visibles.length,
+            itemCount: historias.length + 1,
             separatorBuilder: (_, __) => const SizedBox(width: 12),
             itemBuilder: (_, index) {
-              final persona = visibles[index];
-              final data = persona.data();
-              final nombre = data['nombre']?.toString().trim() ?? 'Equipo';
-              final foto = data['fotoUrl']?.toString() ?? '';
-              final esActual = persona.id == widget.usuario.id;
+              if (index == 0) return _botonCrearHistoria();
+              final historia = historias[index - 1];
               return InkWell(
-                onTap: esActual
-                    ? _crearPublicacion
-                    : () => _abrirPerfil(persona.id),
+                onTap: () => _abrirHistorias(historias, index - 1),
                 borderRadius: BorderRadius.circular(45),
                 child: SizedBox(
                   width: 72,
@@ -181,23 +191,23 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
                                 shape: BoxShape.circle,
                               ),
                               child: _avatar(
-                                nombre: nombre,
-                                foto: foto,
+                                nombre: historia.autorNombre,
+                                foto: historia.autorFotoUrl,
                                 radio: 30,
                               ),
                             ),
                           ),
-                          if (esActual)
+                          if (historia.texto.isNotEmpty)
                             const Positioned(
-                              right: -1,
-                              bottom: -1,
+                              right: 0,
+                              bottom: 0,
                               child: CircleAvatar(
-                                radius: 11,
-                                backgroundColor: Color(0xFF1689FF),
+                                radius: 10,
+                                backgroundColor: _morado,
                                 child: Icon(
-                                  Icons.add_rounded,
+                                  Icons.notes_rounded,
                                   color: Colors.white,
-                                  size: 17,
+                                  size: 12,
                                 ),
                               ),
                             ),
@@ -205,7 +215,7 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
                       ),
                       const SizedBox(height: 6),
                       Text(
-                        esActual ? 'Tu avance' : _primerNombre(nombre),
+                        _primerNombre(historia.autorNombre),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: GoogleFonts.inter(
@@ -225,6 +235,337 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
     );
   }
 
+  Widget _botonCrearHistoria() {
+    return InkWell(
+      onTap: _crearHistoria,
+      borderRadius: BorderRadius.circular(45),
+      child: SizedBox(
+        width: 72,
+        child: Column(
+          children: [
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Container(
+                  width: 69,
+                  height: 69,
+                  padding: const EdgeInsets.all(2),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white24),
+                  ),
+                  child: _avatar(
+                    nombre: widget.usuario.nombre,
+                    foto: widget.usuario.fotoUrl ?? '',
+                    radio: 30,
+                  ),
+                ),
+                const Positioned(
+                  right: -1,
+                  bottom: -1,
+                  child: CircleAvatar(
+                    radius: 11,
+                    backgroundColor: Color(0xFF1689FF),
+                    child: Icon(
+                      Icons.add_rounded,
+                      color: Colors.white,
+                      size: 17,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Tu historia',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: GoogleFonts.inter(
+                color: Colors.white,
+                fontSize: 10.5,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _crearHistoria() async {
+    final texto = TextEditingController();
+    XFile? imagen;
+    bool publicando = false;
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: _fondo,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (modalContext) => StatefulBuilder(
+        builder: (context, setModalState) => Padding(
+          padding: EdgeInsets.fromLTRB(
+            16,
+            8,
+            16,
+            MediaQuery.of(context).viewInsets.bottom + 18,
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 42,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.white24,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 13),
+                Row(
+                  children: [
+                    IconButton(
+                      onPressed: publicando
+                          ? null
+                          : () => Navigator.pop(modalContext),
+                      icon: const Icon(Icons.close_rounded),
+                    ),
+                    Expanded(
+                      child: Text(
+                        'Nueva historia o nota',
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.inter(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: publicando
+                          ? null
+                          : () async {
+                              if (texto.text.trim().isEmpty && imagen == null) {
+                                _snack(
+                                  modalContext,
+                                  'Escribe una nota o agrega una fotografía.',
+                                );
+                                return;
+                              }
+                              setModalState(() => publicando = true);
+                              try {
+                                await _social.crearHistoria(
+                                  autor: widget.usuario,
+                                  texto: texto.text,
+                                  imagen: imagen,
+                                );
+                                if (modalContext.mounted) {
+                                  Navigator.pop(modalContext);
+                                }
+                                if (mounted) {
+                                  _snack(
+                                    context,
+                                    'Historia compartida por 24 horas.',
+                                  );
+                                }
+                              } catch (error) {
+                                if (modalContext.mounted) {
+                                  setModalState(() => publicando = false);
+                                  _snack(
+                                    modalContext,
+                                    error is ArgumentError
+                                        ? error.message.toString()
+                                        : _mensajeError(error),
+                                  );
+                                }
+                              }
+                            },
+                      child: Text(
+                        'COMPARTIR',
+                        style: GoogleFonts.inter(
+                          color: const Color(0xFF5BA8FF),
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const Divider(color: _linea),
+                TextField(
+                  controller: texto,
+                  minLines: 3,
+                  maxLines: 7,
+                  maxLength: 400,
+                  autofocus: true,
+                  textCapitalization: TextCapitalization.sentences,
+                  style: GoogleFonts.inter(
+                    color: Colors.white,
+                    fontSize: 16,
+                    height: 1.4,
+                  ),
+                  decoration: const InputDecoration(
+                    hintText: 'Escribe una nota para el equipo…',
+                    hintStyle: TextStyle(color: Colors.white38),
+                    border: InputBorder.none,
+                    counterStyle: TextStyle(color: Colors.white38),
+                  ),
+                ),
+                if (imagen != null) ...[
+                  const SizedBox(height: 8),
+                  FutureBuilder<Widget>(
+                    future: _preview(imagen!),
+                    builder: (_, preview) => Stack(
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(18),
+                          child: AspectRatio(
+                            aspectRatio: 4 / 5,
+                            child: preview.data ??
+                                const ColoredBox(color: _superficie),
+                          ),
+                        ),
+                        Positioned(
+                          right: 8,
+                          top: 8,
+                          child: IconButton.filled(
+                            style: IconButton.styleFrom(
+                              backgroundColor: Colors.black87,
+                            ),
+                            onPressed: publicando
+                                ? null
+                                : () => setModalState(() => imagen = null),
+                            icon: const Icon(Icons.close_rounded),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 12),
+                Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(color: _linea),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: ListTile(
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                          ),
+                          leading: const Icon(Icons.photo_camera_outlined),
+                          title: const Text('Cámara'),
+                          onTap: publicando
+                              ? null
+                              : () => _elegirFotoHistoria(
+                                    modalContext: modalContext,
+                                    source: ImageSource.camera,
+                                    onSelected: (foto) => setModalState(
+                                      () => imagen = foto,
+                                    ),
+                                  ),
+                        ),
+                      ),
+                      Container(width: 1, height: 46, color: _linea),
+                      Expanded(
+                        child: ListTile(
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                          ),
+                          leading: const Icon(Icons.photo_library_outlined),
+                          title: const Text('Galería'),
+                          onTap: publicando
+                              ? null
+                              : () => _elegirFotoHistoria(
+                                    modalContext: modalContext,
+                                    source: ImageSource.gallery,
+                                    onSelected: (foto) => setModalState(
+                                      () => imagen = foto,
+                                    ),
+                                  ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (publicando) ...[
+                  const SizedBox(height: 18),
+                  const LinearProgressIndicator(
+                    color: Colors.white,
+                    backgroundColor: _linea,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Compartiendo con el equipo…',
+                    style: GoogleFonts.inter(
+                      color: Colors.white54,
+                      fontSize: 11,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+    texto.dispose();
+  }
+
+  Future<void> _elegirFotoHistoria({
+    required BuildContext modalContext,
+    required ImageSource source,
+    required ValueChanged<XFile> onSelected,
+  }) async {
+    try {
+      final foto = await ImagePicker().pickImage(
+        source: source,
+        imageQuality: 84,
+        maxWidth: 1800,
+        requestFullMetadata: false,
+      );
+      if (foto != null && modalContext.mounted) onSelected(foto);
+    } catch (error) {
+      if (modalContext.mounted) {
+        _snack(
+          modalContext,
+          source == ImageSource.camera
+              ? 'No se pudo abrir la cámara. Revisa su permiso.'
+              : 'No se pudo abrir la galería. Revisa su permiso.',
+        );
+      }
+    }
+  }
+
+  void _abrirHistorias(
+    List<HistoriaSocialModel> historias,
+    int indiceInicial,
+  ) {
+    final vigentes = historias
+        .where((historia) => historia.estaVigente(DateTime.now()))
+        .toList(growable: false);
+    if (vigentes.isEmpty) return;
+    Navigator.push(
+      context,
+      MaterialPageRoute<void>(
+        fullscreenDialog: true,
+        builder: (_) => _VisorHistoriasScreen(
+          historias: vigentes,
+          indiceInicial: indiceInicial.clamp(0, vigentes.length - 1).toInt(),
+          usuario: widget.usuario,
+          social: _social,
+        ),
+      ),
+    );
+  }
+
   Widget _publicacion(QueryDocumentSnapshot<Map<String, dynamic>> doc) {
     final data = doc.data();
     final autorId = data['autorId']?.toString() ?? '';
@@ -234,6 +575,12 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
     final texto = data['texto']?.toString() ?? '';
     final imagenes = data['imagenes'] is Iterable
         ? (data['imagenes'] as Iterable)
+            .map((e) => e.toString())
+            .where((url) => url.isNotEmpty)
+            .toList(growable: false)
+        : const <String>[];
+    final videos = data['videos'] is Iterable
+        ? (data['videos'] as Iterable)
             .map((e) => e.toString())
             .where((url) => url.isNotEmpty)
             .toList(growable: false)
@@ -332,8 +679,9 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
           ),
         ),
         if (imagenes.isNotEmpty)
-          _GaleriaPost(imagenes: imagenes, onOpen: _abrirFoto)
-        else if (texto.isNotEmpty)
+          _GaleriaPost(imagenes: imagenes, onOpen: _abrirFoto),
+        if (videos.isNotEmpty) _GaleriaVideosPost(videos: videos),
+        if (imagenes.isEmpty && videos.isEmpty && texto.isNotEmpty)
           Container(
             width: double.infinity,
             constraints: const BoxConstraints(minHeight: 190),
@@ -419,7 +767,8 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
                   ),
                 ),
               if (likes.isNotEmpty) const SizedBox(height: 7),
-              if (texto.isNotEmpty && imagenes.isNotEmpty)
+              if (texto.isNotEmpty &&
+                  (imagenes.isNotEmpty || videos.isNotEmpty))
                 Text.rich(
                   TextSpan(
                     children: [
@@ -469,11 +818,14 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
   Future<void> _crearPublicacion() async {
     final texto = TextEditingController();
     final imagenes = <XFile>[];
+    final videos = <XFile>[];
     bool publicando = false;
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
+      isDismissible: false,
+      enableDrag: false,
       backgroundColor: _fondo,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -530,6 +882,7 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
                                 setModalState: setModalState,
                                 texto: texto.text,
                                 imagenes: imagenes,
+                                videos: videos,
                                 onStart: () => publicando = true,
                                 onError: () => publicando = false,
                               ),
@@ -623,6 +976,63 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
                     ),
                   ),
                 ],
+                if (videos.isNotEmpty) ...[
+                  const SizedBox(height: 10),
+                  SizedBox(
+                    height: 76,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: videos.length,
+                      separatorBuilder: (_, __) => const SizedBox(width: 8),
+                      itemBuilder: (_, index) => Container(
+                        width: 190,
+                        padding: const EdgeInsets.fromLTRB(11, 8, 5, 8),
+                        decoration: BoxDecoration(
+                          color: _superficie,
+                          borderRadius: BorderRadius.circular(13),
+                          border: Border.all(color: _linea),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.play_circle_fill_rounded,
+                              color: Colors.white,
+                              size: 34,
+                            ),
+                            const SizedBox(width: 9),
+                            Expanded(
+                              child: Text(
+                                videos[index].name.isEmpty
+                                    ? 'Video ${index + 1}'
+                                    : videos[index].name,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: GoogleFonts.inter(
+                                  color: Colors.white70,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                            IconButton(
+                              tooltip: 'Quitar video',
+                              onPressed: publicando
+                                  ? null
+                                  : () => setModalState(
+                                        () => videos.removeAt(index),
+                                      ),
+                              icon: const Icon(
+                                Icons.close_rounded,
+                                color: Colors.white54,
+                                size: 18,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 18),
                 Container(
                   decoration: BoxDecoration(
@@ -682,6 +1092,54 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
                                 }
                               },
                       ),
+                      const Divider(height: 1, indent: 56, color: _linea),
+                      ListTile(
+                        leading: const Icon(
+                          Icons.videocam_outlined,
+                          color: Colors.white,
+                        ),
+                        title: const Text('Grabar video'),
+                        subtitle: const Text(
+                          'Hasta 50 MB por video',
+                          style: TextStyle(color: Colors.white38),
+                        ),
+                        trailing: const Icon(
+                          Icons.chevron_right_rounded,
+                          color: Colors.white38,
+                        ),
+                        onTap: publicando
+                            ? null
+                            : () => _seleccionarVideo(
+                                  source: ImageSource.camera,
+                                  modalContext: modalContext,
+                                  setModalState: setModalState,
+                                  videos: videos,
+                                ),
+                      ),
+                      const Divider(height: 1, indent: 56, color: _linea),
+                      ListTile(
+                        leading: const Icon(
+                          Icons.video_library_outlined,
+                          color: Colors.white,
+                        ),
+                        title: const Text('Elegir video de la galería'),
+                        subtitle: const Text(
+                          'Puedes agregar más de uno',
+                          style: TextStyle(color: Colors.white38),
+                        ),
+                        trailing: const Icon(
+                          Icons.chevron_right_rounded,
+                          color: Colors.white38,
+                        ),
+                        onTap: publicando
+                            ? null
+                            : () => _seleccionarVideo(
+                                  source: ImageSource.gallery,
+                                  modalContext: modalContext,
+                                  setModalState: setModalState,
+                                  videos: videos,
+                                ),
+                      ),
                     ],
                   ),
                 ),
@@ -693,7 +1151,7 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Publicando fotografías…',
+                    'Publicando contenido…',
                     style: GoogleFonts.inter(
                       color: Colors.white54,
                       fontSize: 11,
@@ -714,13 +1172,14 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
     required StateSetter setModalState,
     required String texto,
     required List<XFile> imagenes,
+    required List<XFile> videos,
     required VoidCallback onStart,
     required VoidCallback onError,
   }) async {
-    if (texto.trim().isEmpty && imagenes.isEmpty) {
+    if (texto.trim().isEmpty && imagenes.isEmpty && videos.isEmpty) {
       _snack(
         modalContext,
-        'Escribe algo o agrega por lo menos una fotografía.',
+        'Escribe algo o agrega por lo menos una foto o un video.',
       );
       return;
     }
@@ -730,6 +1189,7 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
         autor: widget.usuario,
         texto: texto,
         imagenes: imagenes,
+        videos: videos,
         tipo: widget.usuario.rol == AppRoles.admin
             ? 'comunicado'
             : 'avance',
@@ -737,9 +1197,40 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
       if (modalContext.mounted) Navigator.pop(modalContext);
       if (mounted) _snack(context, 'Publicación compartida con el equipo.');
     } catch (error) {
-      setModalState(onError);
       if (modalContext.mounted) {
+        setModalState(onError);
         _snack(modalContext, _mensajeError(error));
+      }
+    }
+  }
+
+  Future<void> _seleccionarVideo({
+    required ImageSource source,
+    required BuildContext modalContext,
+    required StateSetter setModalState,
+    required List<XFile> videos,
+  }) async {
+    try {
+      final video = await ImagePicker().pickVideo(
+        source: source,
+        maxDuration: const Duration(minutes: 10),
+      );
+      if (video == null) return;
+      if (await video.length() > 50 * 1024 * 1024) {
+        if (modalContext.mounted) {
+          _snack(modalContext, 'El video debe pesar menos de 50 MB.');
+        }
+        return;
+      }
+      if (modalContext.mounted) {
+        setModalState(() => videos.add(video));
+      }
+    } catch (_) {
+      if (modalContext.mounted) {
+        _snack(
+          modalContext,
+          'No se pudo abrir el video. Revisa los permisos de cámara y fotos.',
+        );
       }
     }
   }
@@ -830,7 +1321,7 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
                     if (comentarios.isEmpty) {
                       return Center(
                         child: Text(
-                          'Todavía no hay comentarios.\\nInicia la conversación.',
+                          'Todavía no hay comentarios.\nInicia la conversación.',
                           textAlign: TextAlign.center,
                           style: GoogleFonts.inter(
                             color: Colors.white38,
@@ -1128,7 +1619,7 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Publica fotografías, avances y comentarios para mantener conectado a todo el equipo.',
+            'Publica fotos, videos, avances y comentarios para mantener conectado a todo el equipo.',
             textAlign: TextAlign.center,
             style: GoogleFonts.inter(
               color: Colors.white54,
@@ -1184,6 +1675,11 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
   }
 
   String _mensajeError(Object? error, {bool lectura = false}) {
+    if (error is ArgumentError || error is StateError) {
+      return error
+          .toString()
+          .replaceFirst(RegExp(r'^(Invalid argument\(s\)?:|Bad state:)\s*'), '');
+    }
     if (error is FirebaseException && error.code == 'permission-denied') {
       return lectura
           ? 'Tu sesión todavía no tiene permiso para abrir la red social.'
@@ -1212,12 +1708,314 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
   static String _primerNombre(String nombre) {
     final limpio = nombre.trim();
     if (limpio.isEmpty) return 'Equipo';
-    return limpio.split(RegExp(r'\\s+')).first;
+    return limpio.split(RegExp(r'\s+')).first;
   }
 
   static DateTime _fecha(Map<String, dynamic> data) {
     final value = data['fecha'];
     return value is Timestamp ? value.toDate() : DateTime.now();
+  }
+}
+
+class _VisorHistoriasScreen extends StatefulWidget {
+  final List<HistoriaSocialModel> historias;
+  final int indiceInicial;
+  final UserModel usuario;
+  final SocialService social;
+
+  const _VisorHistoriasScreen({
+    required this.historias,
+    required this.indiceInicial,
+    required this.usuario,
+    required this.social,
+  });
+
+  @override
+  State<_VisorHistoriasScreen> createState() => _VisorHistoriasScreenState();
+}
+
+class _VisorHistoriasScreenState extends State<_VisorHistoriasScreen> {
+  late final PageController _paginas;
+  late List<HistoriaSocialModel> _historias;
+  late int _indice;
+  bool _eliminando = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _historias = List<HistoriaSocialModel>.from(widget.historias);
+    _indice = widget.indiceInicial;
+    _paginas = PageController(initialPage: _indice);
+  }
+
+  @override
+  void dispose() {
+    _paginas.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          PageView.builder(
+            controller: _paginas,
+            itemCount: _historias.length,
+            onPageChanged: (value) => setState(() => _indice = value),
+            itemBuilder: (_, index) => _contenido(_historias[index]),
+          ),
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(10, 8, 10, 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: List.generate(
+                      _historias.length,
+                      (index) => Expanded(
+                        child: Container(
+                          height: 3,
+                          margin: const EdgeInsets.symmetric(horizontal: 2),
+                          decoration: BoxDecoration(
+                            color: index <= _indice
+                                ? Colors.white
+                                : Colors.white30,
+                            borderRadius: BorderRadius.circular(3),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      _avatarHistoria(_historias[_indice]),
+                      const SizedBox(width: 9),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              _historias[_indice].autorNombre,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: GoogleFonts.inter(
+                                color: Colors.white,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w800,
+                                shadows: const [Shadow(blurRadius: 8)],
+                              ),
+                            ),
+                            Text(
+                              '${_tiempo(_historias[_indice].creadaEn)} · desaparece en ${_restante(_historias[_indice].expiraEn)}',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: GoogleFonts.inter(
+                                color: Colors.white70,
+                                fontSize: 10.5,
+                                shadows: const [Shadow(blurRadius: 8)],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (_puedeEliminar(_historias[_indice]))
+                        IconButton(
+                          tooltip: 'Eliminar historia',
+                          onPressed: _eliminando ? null : _confirmarEliminar,
+                          icon: _eliminando
+                              ? const SizedBox.square(
+                                  dimension: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : const Icon(
+                                  Icons.more_horiz_rounded,
+                                  color: Colors.white,
+                                ),
+                        ),
+                      IconButton(
+                        tooltip: 'Cerrar',
+                        onPressed: () => Navigator.pop(context),
+                        icon: const Icon(Icons.close_rounded, color: Colors.white),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _contenido(HistoriaSocialModel historia) {
+    final tieneImagen = historia.imagenUrl.isNotEmpty;
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        if (tieneImagen)
+          Image.network(
+            historia.imagenUrl,
+            fit: BoxFit.cover,
+            loadingBuilder: (_, child, progress) => progress == null
+                ? child
+                : const Center(
+                    child: CircularProgressIndicator(color: Colors.white),
+                  ),
+            errorBuilder: (_, __, ___) => const ColoredBox(
+              color: Color(0xFF171717),
+              child: Center(
+                child: Icon(
+                  Icons.broken_image_outlined,
+                  color: Colors.white54,
+                  size: 64,
+                ),
+              ),
+            ),
+          )
+        else
+          const DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Color(0xFF5B247A), Color(0xFF1B1331), Colors.black],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            ),
+          ),
+        const DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.black54, Colors.transparent, Colors.black87],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              stops: [0, .38, 1],
+            ),
+          ),
+        ),
+        if (historia.texto.isNotEmpty)
+          Align(
+            alignment: tieneImagen ? Alignment.bottomCenter : Alignment.center,
+            child: SafeArea(
+              top: false,
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(
+                  26,
+                  120,
+                  26,
+                  tieneImagen ? 62 : 110,
+                ),
+                child: Text(
+                  historia.texto,
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.montserrat(
+                    color: Colors.white,
+                    fontSize: tieneImagen ? 22 : 28,
+                    height: 1.3,
+                    fontWeight: FontWeight.w800,
+                    shadows: const [
+                      Shadow(color: Colors.black87, blurRadius: 12),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _avatarHistoria(HistoriaSocialModel historia) {
+    return CircleAvatar(
+      radius: 19,
+      backgroundColor: const Color(0xFF262626),
+      backgroundImage: historia.autorFotoUrl.isNotEmpty
+          ? NetworkImage(historia.autorFotoUrl)
+          : null,
+      child: historia.autorFotoUrl.isEmpty
+          ? Text(
+              historia.autorNombre.trim().isEmpty
+                  ? 'S'
+                  : historia.autorNombre.trim().characters.first.toUpperCase(),
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w800,
+              ),
+            )
+          : null,
+    );
+  }
+
+  bool _puedeEliminar(HistoriaSocialModel historia) =>
+      widget.usuario.rol == AppRoles.admin ||
+      historia.autorId == widget.usuario.id;
+
+  Future<void> _confirmarEliminar() async {
+    final historia = _historias[_indice];
+    final confirmar = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: const Color(0xFF171717),
+        title: const Text('¿Eliminar esta historia?'),
+        content: const Text('Dejará de aparecer inmediatamente para el equipo.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('CANCELAR'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('ELIMINAR'),
+          ),
+        ],
+      ),
+    );
+    if (confirmar != true || !mounted) return;
+
+    setState(() => _eliminando = true);
+    try {
+      await widget.social.eliminarHistoria(
+        historia: historia,
+        solicitante: widget.usuario,
+      );
+      if (!mounted) return;
+      _historias.removeAt(_indice);
+      if (_historias.isEmpty) {
+        Navigator.pop(context);
+        return;
+      }
+      if (_indice >= _historias.length) _indice = _historias.length - 1;
+      setState(() => _eliminando = false);
+      _paginas.jumpToPage(_indice);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _eliminando = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No se pudo eliminar la historia.')),
+      );
+    }
+  }
+
+  static String _tiempo(DateTime fecha) {
+    final diferencia = DateTime.now().difference(fecha);
+    if (diferencia.inMinutes < 1) return 'ahora';
+    if (diferencia.inHours < 1) return 'hace ${diferencia.inMinutes} min';
+    return 'hace ${diferencia.inHours} h';
+  }
+
+  static String _restante(DateTime expiraEn) {
+    final diferencia = expiraEn.difference(DateTime.now());
+    if (diferencia.inMinutes <= 1) return '1 min';
+    if (diferencia.inHours < 1) return '${diferencia.inMinutes} min';
+    return '${diferencia.inHours} h';
   }
 }
 
@@ -1320,6 +2118,159 @@ class _GaleriaPostState extends State<_GaleriaPost> {
             ),
         ],
       ),
+    );
+  }
+}
+
+class _GaleriaVideosPost extends StatelessWidget {
+  final List<String> videos;
+
+  const _GaleriaVideosPost({required this.videos});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        for (var index = 0; index < videos.length; index++) ...[
+          if (index > 0) const SizedBox(height: 2),
+          _VideoPost(
+            key: ValueKey<String>(videos[index]),
+            url: videos[index],
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _VideoPost extends StatefulWidget {
+  final String url;
+
+  const _VideoPost({super.key, required this.url});
+
+  @override
+  State<_VideoPost> createState() => _VideoPostState();
+}
+
+class _VideoPostState extends State<_VideoPost> {
+  late final VideoPlayerController _controller;
+  late final Future<void> _inicializacion;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = VideoPlayerController.networkUrl(Uri.parse(widget.url));
+    _inicializacion = _controller.initialize();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<void>(
+      future: _inicializacion,
+      builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return const AspectRatio(
+            aspectRatio: 16 / 9,
+            child: ColoredBox(
+              color: Color(0xFF121212),
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.videocam_off_outlined,
+                      color: Colors.white54,
+                      size: 48,
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      'No se pudo reproducir el video',
+                      style: TextStyle(color: Colors.white54),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }
+        if (snapshot.connectionState != ConnectionState.done) {
+          return const AspectRatio(
+            aspectRatio: 16 / 9,
+            child: ColoredBox(
+              color: Color(0xFF121212),
+              child: Center(
+                child: CircularProgressIndicator(
+                  color: Colors.white,
+                  strokeWidth: 2,
+                ),
+              ),
+            ),
+          );
+        }
+
+        final aspectRatio = _controller.value.aspectRatio > 0
+            ? _controller.value.aspectRatio
+            : 16 / 9;
+        return ColoredBox(
+          color: Colors.black,
+          child: AspectRatio(
+            aspectRatio: aspectRatio,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                VideoPlayer(_controller),
+                Center(
+                  child: IconButton.filled(
+                    tooltip: _controller.value.isPlaying
+                        ? 'Pausar video'
+                        : 'Reproducir video',
+                    style: IconButton.styleFrom(
+                      backgroundColor: Colors.black.withOpacity(.58),
+                      minimumSize: const Size.square(58),
+                    ),
+                    onPressed: () async {
+                      if (_controller.value.isPlaying) {
+                        await _controller.pause();
+                      } else {
+                        await _controller.play();
+                      }
+                      if (mounted) setState(() {});
+                    },
+                    icon: Icon(
+                      _controller.value.isPlaying
+                          ? Icons.pause_rounded
+                          : Icons.play_arrow_rounded,
+                      color: Colors.white,
+                      size: 33,
+                    ),
+                  ),
+                ),
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  child: VideoProgressIndicator(
+                    _controller,
+                    allowScrubbing: true,
+                    colors: const VideoProgressColors(
+                      playedColor: Color(0xFFFF2D7A),
+                      bufferedColor: Colors.white30,
+                      backgroundColor: Colors.white12,
+                    ),
+                    padding: const EdgeInsets.only(top: 10),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

@@ -18,11 +18,25 @@ class _UsuariosCrudScreenState extends State<UsuariosCrudScreen> {
   static const Color colorTarjeta = Color(0xFF1E1E1E);
   static const Color colorMorado = Color(0xFF8B5CF6);
 
+  Future<bool> _esAdministradorActual() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return false;
+
+    final perfil = await FirebaseFirestore.instance
+        .collection('usuarios')
+        .doc(uid)
+        .get();
+    return perfil.data()?['rol'] == 'admin';
+  }
+
   void _mostrarDialogoUsuario({UserModel? usuarioActual}) {
     bool esEdicion = usuarioActual != null;
     
     TextEditingController nombreCtrl = TextEditingController(text: esEdicion ? usuarioActual.nombre : '');
     TextEditingController correoCtrl = TextEditingController(text: esEdicion ? usuarioActual.correo : '');
+    TextEditingController passwordTemporalCtrl = TextEditingController();
+    bool ocultarPasswordTemporal = true;
+    String? errorPasswordTemporal;
     String rolSeleccionado = esEdicion ? usuarioActual.rol : 'trabajador'; 
     DateTime? fechaCumpleanos = esEdicion ? usuarioActual.cumpleanos : null;
     
@@ -64,6 +78,50 @@ class _UsuariosCrudScreenState extends State<UsuariosCrudScreen> {
                       decoration: const InputDecoration(labelText: "Correo Electrónico", labelStyle: TextStyle(color: Colors.white54), focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: colorMorado)), enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white24)))
                     ),
                     const SizedBox(height: 10),
+
+                    if (!esEdicion) ...[
+                      TextField(
+                        controller: passwordTemporalCtrl,
+                        obscureText: ocultarPasswordTemporal,
+                        autocorrect: false,
+                        enableSuggestions: false,
+                        style: const TextStyle(color: Colors.white),
+                        cursorColor: colorMorado,
+                        decoration: InputDecoration(
+                          labelText: "Contraseña temporal",
+                          helperText: "Mínimo 8 caracteres. Compártela de forma privada.",
+                          helperStyle: const TextStyle(color: Colors.white38),
+                          errorText: errorPasswordTemporal,
+                          labelStyle: const TextStyle(color: Colors.white54),
+                          focusedBorder: const UnderlineInputBorder(
+                            borderSide: BorderSide(color: colorMorado),
+                          ),
+                          enabledBorder: const UnderlineInputBorder(
+                            borderSide: BorderSide(color: Colors.white24),
+                          ),
+                          suffixIcon: IconButton(
+                            tooltip: ocultarPasswordTemporal
+                                ? 'Mostrar contraseña'
+                                : 'Ocultar contraseña',
+                            icon: Icon(
+                              ocultarPasswordTemporal
+                                  ? Icons.visibility_off
+                                  : Icons.visibility,
+                              color: Colors.white54,
+                            ),
+                            onPressed: () => setStateDialog(() {
+                              ocultarPasswordTemporal = !ocultarPasswordTemporal;
+                            }),
+                          ),
+                        ),
+                        onChanged: (_) {
+                          if (errorPasswordTemporal != null) {
+                            setStateDialog(() => errorPasswordTemporal = null);
+                          }
+                        },
+                      ),
+                      const SizedBox(height: 10),
+                    ],
                     
                     TextField(
                       controller: fechaCtrl,
@@ -159,6 +217,27 @@ class _UsuariosCrudScreenState extends State<UsuariosCrudScreen> {
                 TextButton(
                   onPressed: () async {
                     if (nombreCtrl.text.isEmpty || correoCtrl.text.isEmpty) return;
+                    if (!esEdicion && passwordTemporalCtrl.text.length < 8) {
+                      setStateDialog(() {
+                        errorPasswordTemporal =
+                            'La contraseña debe tener al menos 8 caracteres';
+                      });
+                      return;
+                    }
+
+                    if (!await _esAdministradorActual()) {
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'Solo la cuenta administradora puede crear usuarios o asignar roles.',
+                            ),
+                            backgroundColor: Colors.redAccent,
+                          ),
+                        );
+                      }
+                      return;
+                    }
 
                     final usuarioData = UserModel(
                       id: esEdicion ? usuarioActual.id : '',
@@ -179,6 +258,10 @@ class _UsuariosCrudScreenState extends State<UsuariosCrudScreen> {
                       trabajaSabados: trabajaSabados,
                     );
 
+                    FirebaseApp? tempApp;
+                    User? usuarioAuthCreado;
+                    bool perfilCreado = false;
+
                     try {
                       if (esEdicion) {
                         await FirebaseFirestore.instance
@@ -186,30 +269,39 @@ class _UsuariosCrudScreenState extends State<UsuariosCrudScreen> {
                             .doc(usuarioActual.id)
                             .update(usuarioData.toFirestore());
                       } else {
-                        FirebaseApp tempApp = await Firebase.initializeApp(
-                          name: 'AppTemporalCreacion',
+                        tempApp = await Firebase.initializeApp(
+                          name: 'AppTemporalCreacion_${DateTime.now().microsecondsSinceEpoch}',
                           options: Firebase.app().options,
                         );
 
                         UserCredential cred = await FirebaseAuth.instanceFor(app: tempApp)
                             .createUserWithEmailAndPassword(
                           email: correoCtrl.text.trim(),
-                          password: "1234567",
+                          password: passwordTemporalCtrl.text,
                         );
+                        usuarioAuthCreado = cred.user;
 
                         await FirebaseFirestore.instance
                             .collection('usuarios')
                             .doc(cred.user!.uid)
                             .set(usuarioData.toFirestore());
-
-                        await tempApp.delete();
+                        perfilCreado = true;
                       }
                       
                       if (mounted) Navigator.pop(context);
                     } catch (e) {
+                      if (!perfilCreado && usuarioAuthCreado != null) {
+                        try {
+                          await usuarioAuthCreado.delete();
+                        } catch (_) {
+                          // La cuenta incompleta se podrá limpiar desde Firebase Auth.
+                        }
+                      }
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(content: Text('Error: $e')),
                       );
+                    } finally {
+                      await tempApp?.delete();
                     }
                   },
                   child: Text('Guardar', style: GoogleFonts.inter(color: colorMorado, fontWeight: FontWeight.bold)),

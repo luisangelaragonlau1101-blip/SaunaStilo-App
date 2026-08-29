@@ -26,12 +26,312 @@ service cloud.firestore {
       return isAdmin() || role() == 'almacenista';
     }
 
-    function isBootstrapAdmin(userId) {
+    function toolPath(toolId) {
+      return /databases/$(database)/documents/cajitas_inventario/$(toolId);
+    }
+
+    function transferPath(transferId) {
+      return /databases/$(database)/documents/traspasos_inventario/$(transferId);
+    }
+
+    function startsOwnToolTransfer(toolId) {
+      let transferId = request.resource.data.traspaso_pendiente_id;
+      let transfer = getAfter(transferPath(transferId)).data;
+      let originalOwner = resource.data.get('propietario_original_id', '');
+      return signedIn()
+        && resource.data.trabajador_actual_id == request.auth.uid
+        && resource.data.estado == 'asignado'
+        && request.resource.data.estado == 'en_transito'
+        && transferId is string
+        && transferId.size() > 0
+        && request.resource.data.traspaso_destino_id is string
+        && request.resource.data.traspaso_destino_id != request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'estado',
+          'traspaso_pendiente_id',
+          'traspaso_destino_id'
+        ])
+        && transfer.herramienta_id == toolId
+        && transfer.origen_usuario_id == request.auth.uid
+        && transfer.destino_usuario_id == request.resource.data.traspaso_destino_id
+        && transfer.estado == 'pendiente'
+        && ((originalOwner == '' && transfer.tipo == 'prestamo')
+          || (originalOwner != ''
+            && transfer.tipo == 'devolucion'
+            && transfer.destino_usuario_id == originalOwner));
+    }
+
+    function acceptsAssignedToolTransfer(toolId) {
+      let transferId = resource.data.get(
+        'traspaso_pendiente_id',
+        request.resource.data.ultimo_traspaso_id
+      );
+      let transfer = getAfter(transferPath(transferId)).data;
+      let originalOwner = resource.data.get('propietario_original_id', '');
+      let isReturn = originalOwner != '' && originalOwner == request.auth.uid;
+      return signedIn()
+        && resource.data.estado == 'en_transito'
+        && transfer.destino_usuario_id == request.auth.uid
+        && request.resource.data.estado == 'asignado'
+        && request.resource.data.trabajador_actual_id == request.auth.uid
+        && request.resource.data.trabajador_actual_nombre == get(userPath()).data.nombre
+        && !('traspaso_pendiente_id' in request.resource.data)
+        && !('traspaso_destino_id' in request.resource.data)
+        && request.resource.data.ultimo_traspaso_id == transferId
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'trabajador_actual_id',
+          'trabajador_actual_nombre',
+          'estado',
+          'propietario_original_id',
+          'propietario_original_nombre',
+          'traspaso_pendiente_id',
+          'traspaso_destino_id',
+          'ultimo_traspaso_id'
+        ])
+        && transfer.herramienta_id == toolId
+        && transfer.destino_usuario_id == request.auth.uid
+        && transfer.estado == 'completado'
+        && transfer.confirmado_por == request.auth.uid
+        && (isReturn
+          ? (!('propietario_original_id' in request.resource.data)
+            && !('propietario_original_nombre' in request.resource.data))
+          : (originalOwner == ''
+            && request.resource.data.propietario_original_id == transfer.origen_usuario_id
+            && request.resource.data.propietario_original_nombre == transfer.origen_usuario_nombre));
+    }
+
+    function rejectsAssignedToolTransfer(toolId) {
+      let transferId = resource.data.get(
+        'traspaso_pendiente_id',
+        request.resource.data.ultimo_traspaso_id
+      );
+      let transfer = getAfter(transferPath(transferId)).data;
+      return signedIn()
+        && resource.data.estado == 'en_transito'
+        && transfer.destino_usuario_id == request.auth.uid
+        && request.resource.data.estado == 'asignado'
+        && request.resource.data.trabajador_actual_id == resource.data.trabajador_actual_id
+        && !('traspaso_pendiente_id' in request.resource.data)
+        && !('traspaso_destino_id' in request.resource.data)
+        && request.resource.data.ultimo_traspaso_id == transferId
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'estado',
+          'traspaso_pendiente_id',
+          'traspaso_destino_id',
+          'ultimo_traspaso_id'
+        ])
+        && transfer.herramienta_id == toolId
+        && transfer.destino_usuario_id == request.auth.uid
+        && transfer.estado == 'rechazado'
+        && transfer.confirmado_por == request.auth.uid;
+    }
+
+    function isValidWorkerToolUpdate(toolId) {
+      return signedIn()
+        && (request.resource.data.get('estado', '') == 'en_transito'
+          ? startsOwnToolTransfer(toolId)
+          : ((resource.data.get('estado', '') == 'en_transito'
+              && request.resource.data.get('estado', '') == 'asignado')
+            ? (request.resource.data.get('trabajador_actual_id', '') == request.auth.uid
+              ? acceptsAssignedToolTransfer(toolId)
+              : rejectsAssignedToolTransfer(toolId))
+            : false));
+    }
+
+    function createsValidToolTransfer(transferId) {
+      let toolId = request.resource.data.herramienta_id;
+      let tool = get(toolPath(toolId)).data;
+      let updatedTool = getAfter(toolPath(toolId)).data;
+      let originalOwner = tool.get('propietario_original_id', '');
+      return signedIn()
+        && request.resource.data.keys().hasAll([
+          'herramienta_id',
+          'nombre_herramienta',
+          'origen_usuario_id',
+          'origen_usuario_nombre',
+          'destino_usuario_id',
+          'destino_usuario_nombre',
+          'participantes',
+          'tipo',
+          'estado',
+          'fecha_creacion'
+        ])
+        && request.resource.data.keys().hasOnly([
+          'herramienta_id',
+          'nombre_herramienta',
+          'origen_usuario_id',
+          'origen_usuario_nombre',
+          'destino_usuario_id',
+          'destino_usuario_nombre',
+          'participantes',
+          'tipo',
+          'estado',
+          'fecha_creacion'
+        ])
+        && tool.trabajador_actual_id == request.auth.uid
+        && tool.estado == 'asignado'
+        && request.resource.data.nombre_herramienta == tool.nombre
+        && request.resource.data.origen_usuario_id == request.auth.uid
+        && request.resource.data.origen_usuario_nombre == get(userPath()).data.nombre
+        && request.resource.data.destino_usuario_id is string
+        && request.resource.data.destino_usuario_id != request.auth.uid
+        && request.resource.data.destino_usuario_nombre ==
+          get(/databases/$(database)/documents/usuarios/$(request.resource.data.destino_usuario_id)).data.nombre
+        && request.resource.data.participantes == [
+          request.auth.uid,
+          request.resource.data.destino_usuario_id
+        ]
+        && request.resource.data.estado == 'pendiente'
+        && request.resource.data.fecha_creacion == request.time
+        && updatedTool.estado == 'en_transito'
+        && updatedTool.traspaso_pendiente_id == transferId
+        && updatedTool.traspaso_destino_id == request.resource.data.destino_usuario_id
+        && ((originalOwner == '' && request.resource.data.tipo == 'prestamo')
+          || (originalOwner != ''
+            && request.resource.data.tipo == 'devolucion'
+            && request.resource.data.destino_usuario_id == originalOwner));
+    }
+
+    function resolvesOwnToolTransfer(transferId) {
+      let toolId = resource.data.herramienta_id;
+      let tool = get(toolPath(toolId)).data;
+      let updatedTool = getAfter(toolPath(toolId)).data;
+      let accepted = request.resource.data.get('estado', '') == 'completado';
+      let expectedType = tool.get('propietario_original_id', '') == ''
+        ? 'prestamo'
+        : 'devolucion';
+      return signedIn()
+        && resource.data.estado == 'pendiente'
+        && resource.data.destino_usuario_id == request.auth.uid
+        && request.resource.data.confirmado_por == request.auth.uid
+        && request.resource.data.participantes == [
+          resource.data.origen_usuario_id,
+          resource.data.destino_usuario_id
+        ]
+        && request.resource.data.tipo == expectedType
+        && request.resource.data.estado in ['completado', 'rechazado']
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(
+          accepted
+            ? [
+                'estado',
+                'fecha_aceptacion',
+                'confirmado_por',
+                'participantes',
+                'tipo'
+              ]
+            : [
+                'estado',
+                'fecha_rechazo',
+                'confirmado_por',
+                'participantes',
+                'tipo'
+              ]
+        )
+        && (accepted
+          ? (request.resource.data.estado == 'completado'
+            && request.resource.data.fecha_aceptacion == request.time
+            && updatedTool.estado == 'asignado'
+            && updatedTool.trabajador_actual_id == request.auth.uid)
+          : (request.resource.data.estado == 'rechazado'
+            && request.resource.data.fecha_rechazo == request.time
+            && updatedTool.estado == 'asignado'
+            && updatedTool.trabajador_actual_id == resource.data.origen_usuario_id))
+        && updatedTool.ultimo_traspaso_id == transferId
+        && !('traspaso_pendiente_id' in updatedTool)
+        && !('traspaso_destino_id' in updatedTool);
+    }
+
+    function isSafeOwnProfileUpdate(userId) {
       return signedIn()
         && request.auth.uid == userId
-        && request.auth.token.email == 'luisangel.aragon.lau1101@gmail.com'
-        && request.resource.data.correo == request.auth.token.email
-        && request.resource.data.rol == 'admin';
+        && request.resource.data.rol == resource.data.rol
+        && request.resource.data.correo == resource.data.correo
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'nombre',
+          'cumpleanos',
+          'fotoUrl',
+          'fotoRuta',
+          'fcmTokens',
+          'pushActualizadoEn',
+          'pushPlataforma',
+          'bio',
+          'redesSociales'
+        ]);
+    }
+
+    function isSafeNotificationCreate() {
+      return signedIn()
+        && request.resource.data.creadoPor == request.auth.uid
+        && request.resource.data.destinatarioId != 'todos'
+        && request.resource.data.rolesDestinatarios is list
+        && request.resource.data.rolesDestinatarios.hasOnly([
+          'admin',
+          'almacenista'
+        ]);
+    }
+
+    function isValidAttendanceCreate(attendanceId) {
+      let data = request.resource.data;
+      return signedIn()
+        && attendanceId.matches(request.auth.uid + '_[0-9]{8}')
+        && data.keys().hasAll([
+          'id',
+          'trabajadorId',
+          'fecha',
+          'estatus',
+          'estatusComida',
+          'ubicacionValida',
+          'motivoFalta',
+          'estatusJustificacion'
+        ])
+        && data.keys().hasOnly([
+          'id',
+          'trabajadorId',
+          'fecha',
+          'estatus',
+          'estatusComida',
+          'ubicacionValida',
+          'motivoFalta',
+          'evidenciaJustificacionUrl',
+          'estatusJustificacion'
+        ])
+        && data.id == attendanceId
+        && data.trabajadorId == request.auth.uid
+        && data.fecha is timestamp
+        && data.fecha >= request.time - duration.value(90, 'd')
+        && data.fecha <= request.time + duration.value(1, 'd')
+        && data.estatus == 'falta'
+        && data.estatusComida == 'ninguna'
+        && data.ubicacionValida == false
+        && data.motivoFalta is string
+        && data.motivoFalta.size() > 0
+        && data.motivoFalta.size() <= 2000
+        && data.get('evidenciaJustificacionUrl', '') is string
+        && data.get('evidenciaJustificacionUrl', '').size() <= 4096
+        && data.estatusJustificacion == 'pendiente_revision';
+    }
+
+    function submitsOwnJustification() {
+      return request.resource.data.get('estatusJustificacion', '') ==
+          'pendiente_revision'
+        && request.resource.data.get('motivoFalta', '') is string
+        && request.resource.data.get('motivoFalta', '').size() > 0
+        && request.resource.data.get('motivoFalta', '').size() <= 2000
+        && request.resource.data.get('evidenciaJustificacionUrl', '') is string
+        && request.resource.data.get('evidenciaJustificacionUrl', '').size() <= 4096
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'motivoFalta',
+          'evidenciaJustificacionUrl',
+          'estatusJustificacion'
+        ]);
+    }
+
+    function updatesOwnAttendanceNotes() {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+        'observacionesTrabajador'
+      ])
+        && request.resource.data.observacionesTrabajador is string
+        && request.resource.data.observacionesTrabajador.size() <= 2000;
     }
 
     function assignedToProject(projectId) {
@@ -49,16 +349,8 @@ service cloud.firestore {
 
     match /usuarios/{userId} {
       allow read: if signedIn();
-      allow create: if isAdmin() || isBootstrapAdmin(userId)
-        || (signedIn()
-          && request.auth.uid == userId
-          && request.resource.data.correo == request.auth.token.email
-          && request.resource.data.rol == 'trabajador');
-      allow update: if isAdmin()
-        || (signedIn()
-          && request.auth.uid == userId
-          && request.resource.data.rol == resource.data.rol
-          && request.resource.data.correo == resource.data.correo);
+      allow create: if isAdmin();
+      allow update: if isAdmin() || isSafeOwnProfileUpdate(userId);
       allow delete: if isAdmin();
 
       match /sugerencias/{suggestionId} {
@@ -107,10 +399,68 @@ service cloud.firestore {
         allow create: if signedIn()
           && assignedToProject(projectId)
           && request.resource.data.autorId == request.auth.uid;
-        allow update: if signedIn() && assignedToProject(projectId);
+        allow update: if signedIn()
+          && assignedToProject(projectId)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'likesPor'
+          ]);
         allow delete: if isAdmin()
           || (signedIn() && resource.data.autorId == request.auth.uid);
       }
+    }
+
+    // Registro inmutable de las salidas a instalación. La hora siempre la
+    // impone Firestore y solo puede registrar un integrante del proyecto.
+    match /salidas_instalacion/{checkInId} {
+      allow read: if signedIn()
+        && (isAdmin()
+          || resource.data.usuarioId == request.auth.uid
+          || assignedToProject(resource.data.proyectoId));
+      allow create: if signedIn()
+        && request.resource.data.keys().hasAll([
+          'proyectoId',
+          'proyectoTitulo',
+          'usuarioId',
+          'usuarioNombre',
+          'fecha',
+          'ubicacionRegistrada',
+          'origen'
+        ])
+        && request.resource.data.keys().hasOnly([
+          'proyectoId',
+          'proyectoTitulo',
+          'usuarioId',
+          'usuarioNombre',
+          'fecha',
+          'ubicacionRegistrada',
+          'ubicacion',
+          'precisionMetros',
+          'origen'
+        ])
+        && request.resource.data.usuarioId == request.auth.uid
+        && request.resource.data.proyectoId is string
+        && assignedToProject(request.resource.data.proyectoId)
+        && request.resource.data.proyectoTitulo ==
+          get(/databases/$(database)/documents/proyectos/$(request.resource.data.proyectoId)).data.titulo
+        && request.resource.data.usuarioNombre == get(userPath()).data.nombre
+        && request.resource.data.fecha == request.time
+        && request.resource.data.origen == 'proyecto'
+        && request.resource.data.ubicacionRegistrada is bool
+        && (request.resource.data.ubicacionRegistrada
+          ? (request.resource.data.keys().hasAll([
+              'ubicacion',
+              'precisionMetros'
+            ])
+            && request.resource.data.ubicacion is latlng
+            && request.resource.data.precisionMetros is number
+            && request.resource.data.precisionMetros >= 0
+            && request.resource.data.precisionMetros <= 10000)
+          : !request.resource.data.keys().hasAny([
+              'ubicacion',
+              'precisionMetros'
+            ]));
+      allow update: if false;
+      allow delete: if isAdmin();
     }
 
     match /actividades/{activityId} {
@@ -138,6 +488,63 @@ service cloud.firestore {
       match /avances/{progressId} {
         allow read, write: if signedIn() && assignedToActivity(activityId);
       }
+    }
+
+    // Historias y notas internas: solo el equipo autenticado puede verlas.
+    // La vigencia se fija al crear y no puede extenderse después.
+    match /historias_sociales/{storyId} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.keys().hasAll([
+          'autorId',
+          'autorNombre',
+          'autorFotoUrl',
+          'autorRol',
+          'texto',
+          'imagenUrl',
+          'imagenRuta',
+          'creadaEn',
+          'expiraEn'
+        ])
+        && request.resource.data.keys().hasOnly([
+          'autorId',
+          'autorNombre',
+          'autorFotoUrl',
+          'autorRol',
+          'texto',
+          'imagenUrl',
+          'imagenRuta',
+          'creadaEn',
+          'expiraEn'
+        ])
+        && request.resource.data.autorId == request.auth.uid
+        && request.resource.data.autorNombre == get(userPath()).data.nombre
+        && request.resource.data.autorRol == role()
+        && request.resource.data.autorFotoUrl is string
+        && request.resource.data.autorFotoUrl.size() <= 2048
+        && request.resource.data.texto is string
+        && request.resource.data.texto.size() <= 400
+        && request.resource.data.imagenUrl is string
+        && request.resource.data.imagenUrl.size() <= 4096
+        && request.resource.data.imagenRuta is string
+        && request.resource.data.imagenRuta.size() <= 512
+        && ((request.resource.data.imagenUrl.size() == 0
+              && request.resource.data.imagenRuta.size() == 0)
+          || (request.resource.data.imagenUrl.size() > 0
+              && request.resource.data.imagenRuta.matches(
+                'media/' + request.auth.uid + '/.*'
+              )))
+        && (request.resource.data.texto.size() > 0
+          || request.resource.data.imagenUrl.size() > 0)
+        && request.resource.data.creadaEn == request.time
+        && request.resource.data.expiraEn is timestamp
+        && request.resource.data.expiraEn >
+          request.time + duration.value(23, 'h')
+        && request.resource.data.expiraEn <
+          request.time + duration.value(25, 'h');
+      allow update: if false;
+      allow delete: if isAdmin()
+        || (signedIn() && resource.data.autorId == request.auth.uid);
     }
 
     match /publicaciones_sociales/{postId} {
@@ -197,22 +604,29 @@ service cloud.firestore {
 
     match /notificaciones/{notificationId} {
       allow read: if signedIn();
-      allow create: if signedIn()
-        && (request.resource.data.tipo != 'alarma_admin' || isAdmin());
+      allow create: if isAdmin() || isSafeNotificationCreate();
       allow update: if signedIn()
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
           'leidosPor'
-        ]);
+        ])
+        && resource.data.leidosPor is list
+        && request.resource.data.leidosPor is list
+        && request.resource.data.leidosPor.hasAll(resource.data.leidosPor)
+        && request.auth.uid in request.resource.data.leidosPor
+        && request.resource.data.leidosPor.size() <= resource.data.leidosPor.size() + 1;
       allow delete: if isAdmin();
     }
 
     match /asistencias/{attendanceId} {
       allow read: if isAdmin()
-        || (signedIn() && resource.data.usuarioId == request.auth.uid);
-      allow create: if signedIn()
-        && request.resource.data.usuarioId == request.auth.uid;
+        || (signedIn() && resource.data.trabajadorId == request.auth.uid);
+      allow create: if isAdmin() || isValidAttendanceCreate(attendanceId);
       allow update: if isAdmin()
-        || (signedIn() && resource.data.usuarioId == request.auth.uid);
+        || (signedIn()
+          && resource.data.trabajadorId == request.auth.uid
+          && request.resource.data.trabajadorId == resource.data.trabajadorId
+          && (submitsOwnJustification()
+            || updatesOwnAttendanceNotes()));
       allow delete: if isAdmin();
     }
 
@@ -246,11 +660,20 @@ service cloud.firestore {
     }
     match /cajitas_inventario/{documentId} {
       allow read: if signedIn();
-      allow write: if isWarehouse();
+      allow create, delete: if isWarehouse();
+      allow update: if isWarehouse()
+        || isValidWorkerToolUpdate(documentId);
     }
     match /traspasos_inventario/{documentId} {
-      allow read: if signedIn();
-      allow write: if isWarehouse();
+      allow read: if isWarehouse();
+      allow read: if signedIn()
+        && request.auth.uid in resource.data.get('participantes', []);
+      allow read: if signedIn()
+        && (resource.data.get('origen_usuario_id', '') == request.auth.uid
+          || resource.data.get('destino_usuario_id', '') == request.auth.uid);
+      allow create: if isWarehouse() || createsValidToolTransfer(documentId);
+      allow update: if isWarehouse() || resolvesOwnToolTransfer(documentId);
+      allow delete: if isWarehouse();
     }
     match /reparaciones_taller/{documentId} {
       allow read: if signedIn();

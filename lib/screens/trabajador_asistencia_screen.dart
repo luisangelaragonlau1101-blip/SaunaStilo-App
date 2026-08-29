@@ -35,6 +35,8 @@ class _TrabajadorAsistenciaScreenState extends State<TrabajadorAsistenciaScreen>
   String _mensajeGps = "Buscando señal GPS...";
   Color _colorGps = Colors.orangeAccent;
   bool _isGpsBuscando = true;
+  bool _registrandoEntrada = false;
+  bool _entradaConfirmada = false;
   
   // Coordenadas y configuración de la empresa
   final List<Map<String, dynamic>> _zonasEmpresa = [
@@ -57,7 +59,6 @@ class _TrabajadorAsistenciaScreenState extends State<TrabajadorAsistenciaScreen>
   @override
   void initState() {
     super.initState();
-    _asistenciaService.auditarYCerrarDiasAnteriores(widget.trabajador.id, widget.trabajador.horaSalida);
     _verificarEstadoGPSInicial();
     _escucharEstadoGPS();
   }
@@ -145,13 +146,20 @@ class _TrabajadorAsistenciaScreenState extends State<TrabajadorAsistenciaScreen>
           });
         }
 
-        if (estaAdentro) {
-           _asistenciaService.registrarEntradaAutomatica(
-             trabajadorId: widget.trabajador.id,
-             zonasPermitidas: _zonasEmpresa,
-             horaEntradaConfig: widget.trabajador.horaEntrada ?? '08:00',
-             toleranciaMinutos: widget.trabajador.toleranciaMinutos ?? 15,
-           );
+        if (estaAdentro && !_registrandoEntrada && !_entradaConfirmada) {
+          _registrandoEntrada = true;
+          _asistenciaService.registrarEntradaAutomatica(
+            trabajadorId: widget.trabajador.id,
+            zonasPermitidas: _zonasEmpresa,
+            horaEntradaConfig: widget.trabajador.horaEntrada ?? '08:00',
+            toleranciaMinutos: widget.trabajador.toleranciaMinutos ?? 15,
+          ).then((_) {
+            _entradaConfirmada = true;
+          }).catchError((_) {
+            // El radar continúa mostrando la ubicación aunque falle la red.
+          }).whenComplete(() {
+            _registrandoEntrada = false;
+          });
         }
       }
     });
@@ -480,19 +488,29 @@ class _TrabajadorAsistenciaScreenState extends State<TrabajadorAsistenciaScreen>
                               if (confirmar != true) return;
 
                               setState(() => _isLoading = true);
-                              Map<String, dynamic> resultado = await _asistenciaService.registrarSalida(
-                                trabajadorId: widget.trabajador.id,
-                                zonasPermitidas: _zonasEmpresa,
-                                horaSalidaOficial: widget.trabajador.horaSalida, 
-                              );
-                              setState(() => _isLoading = false);
-
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(resultado['mensaje']),
-                                  backgroundColor: resultado['exito'] ? Colors.green : Colors.redAccent,
-                                )
-                              );
+                              try {
+                                Map<String, dynamic> resultado = await _asistenciaService.registrarSalida(
+                                  trabajadorId: widget.trabajador.id,
+                                  zonasPermitidas: _zonasEmpresa,
+                                  horaSalidaOficial: widget.trabajador.horaSalida,
+                                );
+                                if (mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(resultado['mensaje']?.toString() ?? 'Salida registrada.'),
+                                      backgroundColor: resultado['exito'] == true ? Colors.green : Colors.redAccent,
+                                    ),
+                                  );
+                                }
+                              } catch (error) {
+                                if (mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text(error.toString()), backgroundColor: Colors.redAccent),
+                                  );
+                                }
+                              } finally {
+                                if (mounted) setState(() => _isLoading = false);
+                              }
                             },
                             icon: _isLoading 
                                 ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
@@ -586,8 +604,18 @@ class _TrabajadorAsistenciaScreenState extends State<TrabajadorAsistenciaScreen>
                               ),
                               onPressed: (asistencia?.estatusComida == 'ninguna' || asistencia?.estatusComida == null)
                                   ? () async {
-                                      await _asistenciaService.solicitarSalidaComida(widget.trabajador.id);
-                                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Solicitud de comida enviada al administrador")));
+                                      try {
+                                        await _asistenciaService.solicitarSalidaComida(widget.trabajador.id);
+                                        if (mounted) {
+                                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Solicitud de comida enviada al administrador")));
+                                        }
+                                      } catch (error) {
+                                        if (mounted) {
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            SnackBar(content: Text(error.toString()), backgroundColor: Colors.redAccent),
+                                          );
+                                        }
+                                      }
                                     }
                                   : null,
                               icon: const Icon(Icons.restaurant_rounded, size: 18),
@@ -605,16 +633,26 @@ class _TrabajadorAsistenciaScreenState extends State<TrabajadorAsistenciaScreen>
                               ),
                               onPressed: asistencia?.estatusComida == 'comiendo'
                                   ? () async {
-                                      Map<String, dynamic> resultado = await _asistenciaService.registrarRegresoComida(
-                                        trabajadorId: widget.trabajador.id,
-                                        zonasPermitidas: _zonasEmpresa,
-                                      );
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(
-                                          content: Text(resultado['mensaje']),
-                                          backgroundColor: resultado['exito'] ? Colors.green : Colors.redAccent,
-                                        )
-                                      );
+                                      try {
+                                        Map<String, dynamic> resultado = await _asistenciaService.registrarRegresoComida(
+                                          trabajadorId: widget.trabajador.id,
+                                          zonasPermitidas: _zonasEmpresa,
+                                        );
+                                        if (mounted) {
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            SnackBar(
+                                              content: Text(resultado['mensaje']?.toString() ?? 'Regreso registrado.'),
+                                              backgroundColor: resultado['exito'] == true ? Colors.green : Colors.redAccent,
+                                            ),
+                                          );
+                                        }
+                                      } catch (error) {
+                                        if (mounted) {
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            SnackBar(content: Text(error.toString()), backgroundColor: Colors.redAccent),
+                                          );
+                                        }
+                                      }
                                     }
                                   : null,
                               icon: const Icon(Icons.login_rounded, size: 18),

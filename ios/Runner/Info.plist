@@ -17,6 +17,8 @@
 <string>Sauna Stilo usa el micrófono para dictar preguntas y enviar mensajes de audio.</string>
 <key>NSSpeechRecognitionUsageDescription</key>
 <string>Sauna Stilo convierte tu voz en texto para conversar con el asistente.</string>
+<key>NSLocationWhenInUseUsageDescription</key>
+<string>Sauna Stilo usa tu ubicación al registrar una asistencia o salida a instalación.</string>
 
 
 	<key>CADisableMinimumFrameDurationOnPhone</key>

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
 import '../models/cajita_herramientas_model.dart';
 import '../services/cajita_herramientas_service.dart';
 import 'trabajador_control_herramientas_screen.dart'; 
@@ -56,6 +57,13 @@ class _TrabajadorCajitaHerramientasScreenState extends State<TrabajadorCajitaHer
           ],
         ),
         centerTitle: true,
+        actions: [
+          IconButton(
+            tooltip: 'Historial de préstamos',
+            onPressed: _mostrarHistorialTraspasos,
+            icon: const Icon(Icons.history_rounded, color: colorTextoPrimario),
+          ),
+        ],
       ),
       body: Column(
         children: [
@@ -93,6 +101,7 @@ final idSolicitud = solicitudes[index].id;
 
 final nombreHerramienta = solicitud['nombre_herramienta'] ?? 'Herramienta';
 final origenUsuarioNombre = solicitud['origen_usuario_nombre'] ?? 'Un compañero'; 
+final esDevolucion = solicitud['tipo'] == 'devolucion';
 
 
                       return Container(
@@ -119,7 +128,9 @@ final origenUsuarioNombre = solicitud['origen_usuario_nombre'] ?? 'Un compañero
                                 const SizedBox(width: 8),
                                 Expanded(
   child: Text(
-    '$origenUsuarioNombre te quiere prestar:', 
+    esDevolucion
+        ? '$origenUsuarioNombre te está devolviendo:'
+        : '$origenUsuarioNombre te quiere prestar:',
     style: GoogleFonts.inter(color: colorTextoSecundario, fontSize: 13),
   ),
 ),
@@ -384,6 +395,205 @@ final nombrePropietario = h.propietarioOriginalNombre ?? 'Un compañero';
           ),
         ],
       ),
+    );
+  }
+
+  void _mostrarHistorialTraspasos() {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: colorFondo,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: SizedBox(
+            height: MediaQuery.sizeOf(context).height * 0.72,
+            child: Column(
+              children: [
+                Container(
+                  margin: const EdgeInsets.symmetric(vertical: 12),
+                  width: 42,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.white24,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 4, 20, 16),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.fact_check_rounded, color: colorAcento),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Historial de herramientas',
+                              style: GoogleFonts.outfit(
+                                color: colorTextoPrimario,
+                                fontSize: 19,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            Text(
+                              'La confirmación del receptor queda como comprobante.',
+                              style: GoogleFonts.inter(
+                                color: colorTextoSecundario,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: StreamBuilder<QuerySnapshot>(
+                    stream: FirebaseFirestore.instance
+                        .collection('traspasos_inventario')
+                        .where(
+                          'participantes',
+                          arrayContains: widget.trabajadorId,
+                        )
+                        .limit(100)
+                        .snapshots(),
+                    builder: (context, snapshot) {
+                      if (snapshot.hasError) {
+                        return Center(
+                          child: Text(
+                            'No se pudo cargar el historial.',
+                            style: GoogleFonts.inter(color: colorRojo),
+                          ),
+                        );
+                      }
+                      if (!snapshot.hasData) {
+                        return const Center(
+                          child: CircularProgressIndicator(color: colorAcento),
+                        );
+                      }
+
+                      final movimientos = [...snapshot.data!.docs]
+                        ..sort((a, b) {
+                          final aData = a.data() as Map<String, dynamic>;
+                          final bData = b.data() as Map<String, dynamic>;
+                          final aFecha =
+                              aData['fecha_creacion'] as Timestamp?;
+                          final bFecha =
+                              bData['fecha_creacion'] as Timestamp?;
+                          return (bFecha?.millisecondsSinceEpoch ?? 0).compareTo(
+                            aFecha?.millisecondsSinceEpoch ?? 0,
+                          );
+                        });
+
+                      if (movimientos.isEmpty) {
+                        return Center(
+                          child: Text(
+                            'Aún no hay préstamos ni devoluciones.',
+                            style: GoogleFonts.inter(
+                              color: colorTextoSecundario,
+                            ),
+                          ),
+                        );
+                      }
+
+                      return ListView.separated(
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                        itemCount: movimientos.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: 10),
+                        itemBuilder: (context, index) {
+                          final data = movimientos[index].data()
+                              as Map<String, dynamic>;
+                          final soyOrigen =
+                              data['origen_usuario_id'] == widget.trabajadorId;
+                          final contraparte = soyOrigen
+                              ? data['destino_usuario_nombre']
+                              : data['origen_usuario_nombre'];
+                          final estado = (data['estado'] ?? 'pendiente').toString();
+                          final tipo = data['tipo'] == 'devolucion'
+                              ? 'Devolución'
+                              : 'Préstamo';
+                          final fecha = (data['fecha_aceptacion'] ??
+                              data['fecha_rechazo'] ??
+                              data['fecha_creacion']) as Timestamp?;
+                          final detalleEstado = switch (estado) {
+                            'completado' => 'Recibido y confirmado',
+                            'rechazado' => 'Rechazado por el destinatario',
+                            _ => 'Esperando confirmación',
+                          };
+                          final colorEstado = switch (estado) {
+                            'completado' => Colors.greenAccent,
+                            'rechazado' => colorRojo,
+                            _ => colorNaranja,
+                          };
+
+                          return Container(
+                            padding: const EdgeInsets.all(14),
+                            decoration: BoxDecoration(
+                              color: colorTarjeta,
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(color: Colors.white10),
+                            ),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Icon(
+                                  data['tipo'] == 'devolucion'
+                                      ? Icons.assignment_return_rounded
+                                      : Icons.handshake_rounded,
+                                  color: colorEstado,
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        (data['nombre_herramienta'] ??
+                                                'Herramienta')
+                                            .toString(),
+                                        style: GoogleFonts.inter(
+                                          color: colorTextoPrimario,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 3),
+                                      Text(
+                                        '$tipo ${soyOrigen ? 'a' : 'de'} ${contraparte ?? 'Compañero'}',
+                                        style: GoogleFonts.inter(
+                                          color: colorTextoSecundario,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 7),
+                                      Text(
+                                        '$detalleEstado${fecha == null ? '' : ' · ${DateFormat('dd/MM/yyyy HH:mm').format(fecha.toDate())}'}',
+                                        style: GoogleFonts.inter(
+                                          color: colorEstado,
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 

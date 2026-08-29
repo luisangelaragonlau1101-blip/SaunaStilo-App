@@ -37,25 +37,4 @@ class AuthService {
     return null;
   }
 
-  // Registrar un usuario nuevo (Opcional por si quieres probar la creación desde la app hoy)
-  Future<void> registerUser({
-    required String email,
-    required String password,
-    required String nombre,
-    required String rol,
-    DateTime? cumpleanos,
-  }) async {
-    UserCredential res = await _auth.createUserWithEmailAndPassword(email: email, password: password);
-    
-    UserModel nuevoUsuario = UserModel(
-      id: res.user!.uid,
-      nombre: nombre,
-      correo: email,
-      rol: rol,
-      cumpleanos: cumpleanos,
-      fechaRegistro: DateTime.now(),
-    );
-
-    await _db.collection('usuarios').doc(res.user!.uid).set(nuevoUsuario.toFirestore());
-  }
 }

@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import '../models/notificacion_model.dart';
 
@@ -84,6 +85,7 @@ class NotificacionesService {
       'destinatarioId': destinatarioId,
       'rolesDestinatarios': rolesDestinatarios,
       'leidosPor': <String>[],
+      'creadoPor': FirebaseAuth.instance.currentUser?.uid ?? '',
       'fecha': FieldValue.serverTimestamp(),
     };
   }
