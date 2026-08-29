@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import 'package:audioplayers/audioplayers.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -65,7 +66,7 @@ class _AsistenteIaScreenState extends State<AsistenteIaScreen> {
   bool _leerRespuestas = true;
   bool? _nubeDisponible;
   String? _audioReproduciendo;
-  double _velocidadVoz = .94;
+  double _velocidadVoz = kIsWeb ? 1.25 : .82;
 
   bool get _esAdmin => widget.usuario.rol == AppRoles.admin;
   bool get _esAlmacen => widget.usuario.rol == AppRoles.almacenista;
@@ -299,10 +300,10 @@ class _AsistenteIaScreenState extends State<AsistenteIaScreen> {
             tooltip: 'Velocidad de voz',
             initialValue: _velocidadVoz,
             onSelected: _cambiarVelocidad,
-            itemBuilder: (_) => const [
-              PopupMenuItem(value: .68, child: Text('Voz normal · 1×')),
-              PopupMenuItem(value: .82, child: Text('Voz rápida · 1.25×')),
-              PopupMenuItem(value: .94, child: Text('Voz muy rápida · 1.5×')),
+            itemBuilder: (_) => [
+              PopupMenuItem(value: kIsWeb ? 1.0 : .68, child: const Text('Voz natural · 1×')),
+              PopupMenuItem(value: kIsWeb ? 1.25 : .82, child: const Text('Voz ágil · 1.25×')),
+              PopupMenuItem(value: kIsWeb ? 1.5 : .94, child: const Text('Voz rápida · 1.5×')),
             ],
             child: Center(
               child: Padding(
@@ -1097,6 +1098,11 @@ class _AsistenteIaScreenState extends State<AsistenteIaScreen> {
   }
 
   String _etiquetaVelocidad() {
+    if (kIsWeb) {
+      if (_velocidadVoz >= 1.45) return '1.5×';
+      if (_velocidadVoz >= 1.2) return '1.25×';
+      return '1×';
+    }
     if (_velocidadVoz >= .9) return '1.5×';
     if (_velocidadVoz >= .78) return '1.25×';
     return '1×';

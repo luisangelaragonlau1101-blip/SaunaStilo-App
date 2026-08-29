@@ -109,7 +109,9 @@ class PerfilSocialScreen extends StatelessWidget {
             }).toList(growable: false) ??
             <QueryDocumentSnapshot<Map<String, dynamic>>>[];
         return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-          stream: FirebaseFirestore.instance.collection('clientes').snapshots(),
+          stream: usuarioActual.rol == AppRoles.admin
+              ? FirebaseFirestore.instance.collection('clientes').snapshots()
+              : const Stream<QuerySnapshot<Map<String, dynamic>>>.empty(),
           builder: (context, clientesSnapshot) {
             final clientes = <String, Map<String, dynamic>>{
               for (final doc in clientesSnapshot.data?.docs ??

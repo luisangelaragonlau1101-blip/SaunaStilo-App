@@ -19,6 +19,7 @@ import 'configuracion_screen.dart';
 import 'incubadora_ideas_screen.dart';
 import 'inventario_admin_screen.dart';
 import 'inventario_trabajador_screen.dart';
+import 'mensajes_equipo_screen.dart';
 import 'notificaciones_screen.dart';
 import 'perfil_social_screen.dart';
 import 'proyectos_admin_screen.dart';
@@ -158,6 +159,13 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen> {
               );
             },
           ),
+          if (_esAdmin) ...[
+            const SizedBox(width: 8),
+            _BotonCabecera(
+              icono: Icons.campaign_rounded,
+              onTap: _mostrarAlarmaAdmin,
+            ),
+          ],
           const SizedBox(width: 8),
           _BotonCabecera(
             icono: Icons.tune_rounded,
@@ -402,7 +410,7 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'CONTROL DE JORNADA',
+                          'REGISTRA TUS TIEMPOS',
                           style: GoogleFonts.inter(
                             color: Colors.white,
                             fontWeight: FontWeight.w900,
@@ -410,7 +418,7 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen> {
                           ),
                         ),
                         Text(
-                          ayuda,
+                          '$ayuda  ·  Comida: 15:00',
                           style: GoogleFonts.inter(
                             color: Colors.white54,
                             fontSize: 11,
@@ -576,6 +584,16 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen> {
                 ),
               ),
               const Spacer(),
+              IconButton(
+                tooltip: 'Mensajes del equipo',
+                onPressed: () => _abrir(
+                  MensajesEquipoScreen(usuario: widget.usuario),
+                ),
+                icon: const Icon(
+                  Icons.mark_unread_chat_alt_rounded,
+                  color: Color(0xFF70E1D0),
+                ),
+              ),
               TextButton(
                 onPressed: () => _abrir(_pantallaTrabajo()),
                 child: const Text('VER TODO'),
@@ -925,6 +943,7 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen> {
   List<_AccionDashboard> _acciones() {
     if (_esAdmin) {
       return <_AccionDashboard>[
+        _AccionDashboard('Mensajes', Icons.chat_bubble_rounded, const Color(0xFF70E1D0), MensajesEquipoScreen(usuario: widget.usuario)),
         const _AccionDashboard('Inventario', Icons.inventory_2_rounded, Color(0xFF72D6FF), InventarioAdminScreen()),
         const _AccionDashboard('Clientes', Icons.groups_rounded, Color(0xFFFF8FAB), AdminClientesScreen()),
         const _AccionDashboard('Ventas', Icons.point_of_sale_rounded, Color(0xFFFFD166), VentasScreen()),
@@ -942,6 +961,7 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen> {
     }
     if (_esAlmacen) {
       return <_AccionDashboard>[
+        _AccionDashboard('Mensajes', Icons.chat_bubble_rounded, const Color(0xFF70E1D0), MensajesEquipoScreen(usuario: widget.usuario)),
         const _AccionDashboard('Inventario', Icons.inventory_2_rounded, Color(0xFF72D6FF), InventarioAdminScreen()),
         const _AccionDashboard('Proyectos', Icons.construction_rounded, Color(0xFFB9F56A), ProyectosAlmacenistaScreen()),
         const _AccionDashboard('Cajitas', Icons.home_repair_service_rounded, Color(0xFFFFA45B), AdminCajitasScreen()),
@@ -953,6 +973,7 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen> {
       ];
     }
     return <_AccionDashboard>[
+      _AccionDashboard('Mensajes', Icons.chat_bubble_rounded, const Color(0xFF70E1D0), MensajesEquipoScreen(usuario: widget.usuario)),
       _AccionDashboard('Proyectos', Icons.construction_rounded, const Color(0xFFB9F56A), ProyectosTrabajadorScreen(esMaestro: _esMaestro)),
       _AccionDashboard('Asistencia', Icons.fingerprint_rounded, const Color(0xFF70E1D0), TrabajadorAsistenciaScreen(trabajador: widget.usuario)),
       const _AccionDashboard('Inventario', Icons.inventory_2_rounded, Color(0xFF72D6FF), InventarioTrabajadorScreen()),
@@ -997,6 +1018,94 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen> {
         );
         return;
     }
+  }
+
+  Future<void> _mostrarAlarmaAdmin() async {
+    final snapshot = await FirebaseFirestore.instance
+        .collection('usuarios')
+        .orderBy('nombre')
+        .get();
+    if (!mounted) return;
+    final personas = snapshot.docs
+        .map(UserModel.fromFirestore)
+        .where((user) => user.id != widget.usuario.id)
+        .toList(growable: false);
+    var destino = 'todos';
+    final confirmado = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          backgroundColor: const Color(0xFF151515),
+          title: const Row(
+            children: [
+              Icon(Icons.campaign_rounded, color: Color(0xFFFF8E8E)),
+              SizedBox(width: 10),
+              Expanded(child: Text('Alarma del administrador')),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'El teléfono seleccionado recibirá un aviso urgente con sonido para reunión o llamado.',
+                style: TextStyle(color: Colors.white70),
+              ),
+              const SizedBox(height: 18),
+              DropdownButtonFormField<String>(
+                initialValue: destino,
+                decoration: const InputDecoration(labelText: 'Enviar a'),
+                items: [
+                  const DropdownMenuItem(
+                    value: 'todos',
+                    child: Text('Todo el equipo'),
+                  ),
+                  ...personas.map(
+                    (persona) => DropdownMenuItem(
+                      value: persona.id,
+                      child: Text(persona.nombre),
+                    ),
+                  ),
+                ],
+                onChanged: (value) =>
+                    setDialogState(() => destino = value ?? 'todos'),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('CANCELAR'),
+            ),
+            FilledButton.icon(
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFFFF8E8E),
+                foregroundColor: Colors.black,
+              ),
+              onPressed: () => Navigator.pop(dialogContext, true),
+              icon: const Icon(Icons.notifications_active_rounded),
+              label: const Text('ACTIVAR ALARMA'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (confirmado != true) return;
+    await FirebaseFirestore.instance.collection('notificaciones').add(
+      NotificacionesService.datosAviso(
+        titulo: '🔔 Llamado de administración',
+        mensaje: 'Ángel solicita que te presentes o revises la aplicación ahora.',
+        tipo: 'alarma_admin',
+        destinatarioId: destino,
+      ),
+    );
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Alarma enviada con sonido.'),
+        backgroundColor: Color(0xFFB9F56A),
+      ),
+    );
   }
 
   void _abrir(Widget destino) {

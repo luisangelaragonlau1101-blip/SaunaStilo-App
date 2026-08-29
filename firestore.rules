@@ -170,8 +170,35 @@ service cloud.firestore {
         || (signedIn() && resource.data.seguidorId == request.auth.uid);
     }
 
+    match /conversaciones/{conversationId} {
+      allow read: if signedIn()
+        && resource.data.participantes is list
+        && request.auth.uid in resource.data.participantes;
+      allow create: if signedIn()
+        && request.resource.data.participantes is list
+        && request.auth.uid in request.resource.data.participantes
+        && request.resource.data.participantes.size() == 2;
+      allow update: if signedIn()
+        && resource.data.participantes is list
+        && request.auth.uid in resource.data.participantes
+        && request.resource.data.participantes == resource.data.participantes;
+      allow delete: if isAdmin();
+
+      match /mensajes/{messageId} {
+        allow read: if signedIn()
+          && request.auth.uid in get(/databases/$(database)/documents/conversaciones/$(conversationId)).data.participantes;
+        allow create: if signedIn()
+          && request.auth.uid in get(/databases/$(database)/documents/conversaciones/$(conversationId)).data.participantes
+          && request.resource.data.autorId == request.auth.uid;
+        allow update, delete: if isAdmin()
+          || (signedIn() && resource.data.autorId == request.auth.uid);
+      }
+    }
+
     match /notificaciones/{notificationId} {
-      allow read, create: if signedIn();
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && (request.resource.data.tipo != 'alarma_admin' || isAdmin());
       allow update: if signedIn()
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
           'leidosPor'

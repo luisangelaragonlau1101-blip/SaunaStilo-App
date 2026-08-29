@@ -1,6 +1,7 @@
 const { setGlobalOptions } = require('firebase-functions/v2');
 const { onDocumentCreated } = require('firebase-functions/v2/firestore');
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
+const { onSchedule } = require('firebase-functions/v2/scheduler');
 const { defineSecret } = require('firebase-functions/params');
 const { initializeApp } = require('firebase-admin/app');
 const { getFirestore, FieldValue } = require('firebase-admin/firestore');
@@ -203,6 +204,90 @@ exports.sendSaunaStiloNotification = onDocumentCreated(
     await removeInvalidTokens({ invalidTokens, tokenOwners });
   },
 );
+
+exports.reminderEntrada = onSchedule(
+  { schedule: '0 9 * * 1-6', timeZone: 'America/Mexico_City' },
+  async () => createWorkdayReminders({
+    type: 'entrada',
+    title: '¡Buenos días! 👋',
+    body: 'Registra tu entrada en Sauna Stilo para comenzar tu jornada.',
+  }),
+);
+
+exports.reminderComida = onSchedule(
+  { schedule: '0 15 * * 1-6', timeZone: 'America/Mexico_City' },
+  async () => createWorkdayReminders({
+    type: 'comida',
+    title: 'Ey, ya es tu hora de comida 🍽️',
+    body: 'Registra tu salida a comer. Al volver, registra también tu regreso.',
+  }),
+);
+
+exports.reminderSalida = onSchedule(
+  { schedule: '0 19 * * 1-6', timeZone: 'America/Mexico_City' },
+  async () => createWorkdayReminders({
+    type: 'salida',
+    title: 'Tu jornada terminó ✅',
+    body: 'Antes de retirarte, recuerda registrar tu salida.',
+  }),
+);
+
+exports.reminderAusencias = onSchedule(
+  { schedule: '30 9 * * 1-6', timeZone: 'America/Mexico_City' },
+  async () => {
+    const db = getFirestore();
+    const dateKey = mexicoDateKey();
+    const users = await db.collection(USERS_COLLECTION).get();
+    await Promise.all(users.docs.map(async (user) => {
+      const data = user.data() || {};
+      if (String(data.rol || '').toLowerCase() === 'admin') return;
+      const attendance = await db
+        .collection('asistencias')
+        .doc(`${user.id}_${dateKey}`)
+        .get();
+      if (attendance.exists && attendance.data().horaEntrada) return;
+      await db.collection('notificaciones').doc(`ausencia_${dateKey}_${user.id}`).set({
+        titulo: 'Te extrañamos en Sauna Stilo',
+        mensaje: 'Aún no aparece tu entrada de hoy. Regístrala o avisa a administración si necesitas apoyo.',
+        tipo: 'asistencia_ausente',
+        destinatarioId: user.id,
+        rolesDestinatarios: [],
+        leidosPor: [],
+        fecha: FieldValue.serverTimestamp(),
+      }, { merge: true });
+    }));
+  },
+);
+
+async function createWorkdayReminders({ type, title, body }) {
+  const db = getFirestore();
+  const dateKey = mexicoDateKey();
+  const users = await db.collection(USERS_COLLECTION).get();
+  await Promise.all(users.docs.map((user) => {
+    const data = user.data() || {};
+    if (String(data.rol || '').toLowerCase() === 'admin') return null;
+    return db.collection('notificaciones').doc(`jornada_${type}_${dateKey}_${user.id}`).set({
+      titulo: title,
+      mensaje: body,
+      tipo: `asistencia_${type}`,
+      destinatarioId: user.id,
+      rolesDestinatarios: [],
+      leidosPor: [],
+      fecha: FieldValue.serverTimestamp(),
+    }, { merge: true });
+  }));
+}
+
+function mexicoDateKey() {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Mexico_City',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(new Date());
+  const value = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return `${value.year}${value.month}${value.day}`;
+}
 
 async function resolveRecipients({ targetUserId, targetRoles }) {
   const db = getFirestore();

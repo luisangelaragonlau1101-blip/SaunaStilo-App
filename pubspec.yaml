@@ -54,13 +54,16 @@ dev_dependencies:
 # --- CONFIGURACIÓN DEL ÍCONO (Android) ---
 flutter_launcher_icons:
   android: true
-  ios: false
-  image_path: "assets/logo_saunastilo_2.png"
+  ios: true
+  image_path: "assets/logo_saunastilo_icon.png"
+  adaptive_icon_background: "#000000"
+  adaptive_icon_foreground: "assets/logo_saunastilo_icon.png"
 
 # --- LOGO Y ASSETS ---
 flutter:
   uses-material-design: true
   assets:
     - assets/logo_saunastilo.png
+    - assets/logo_saunastilo_icon.png
     - assets/sounds/beep.ogg
     - assets/logo_saunastilo_2.png

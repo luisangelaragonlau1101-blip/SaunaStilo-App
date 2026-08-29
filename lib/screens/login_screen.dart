@@ -313,24 +313,6 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
                 ),
-                const SizedBox(height: 14),
-                TextButton.icon(
-                  onPressed: _isLoading ? null : _crearAdministradorInicial,
-                  icon: const Icon(Icons.admin_panel_settings_outlined),
-                  label: Text(
-                    'CREAR MI ACCESO ADMINISTRADOR',
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.cinzel(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.8,
-                    ),
-                  ),
-                  style: TextButton.styleFrom(
-                    foregroundColor: colorAcento,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                  ),
-                ),
               ],
             ),
           ),
