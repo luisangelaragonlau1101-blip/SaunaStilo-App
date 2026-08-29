@@ -574,7 +574,7 @@ class _ConversacionPrivadaScreenState
         allowMultiple: true,
         withData: true,
       );
-      for (final file in result?.files ?? const <PlatformFile>[]) {
+      for (final file in result) {
         if (file.bytes == null) continue;
         _adjuntos.add(
           _Adjunto(
