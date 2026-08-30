@@ -49,6 +49,7 @@ jobs:
           cp build/web/flutter_bootstrap.js "build/web/flutter_bootstrap.${VERSION}.js"
           sed -i "s/main.dart.js/main.${VERSION}.dart.js/g" "build/web/flutter_bootstrap.${VERSION}.js"
           sed -i "s/flutter_bootstrap.js/flutter_bootstrap.${VERSION}.js/g" build/web/index.html
+          sed -i "s/__SAUNA_BUILD_VERSION__/${VERSION}/g" build/web/index.html
 
       - name: Add cache reset page
         run: cp web/reset.html build/web/reset.html
