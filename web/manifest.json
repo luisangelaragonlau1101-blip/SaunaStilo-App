@@ -1,9 +1,9 @@
 {
     "name": "Sauna Stilo",
     "short_name": "Sauna Stilo",
-    "id": "/",
-    "start_url": "/",
-    "scope": "/",
+    "id": "/SaunaStilo-App/",
+    "start_url": "/SaunaStilo-App/",
+    "scope": "/SaunaStilo-App/",
     "display": "standalone",
     "background_color": "#050505",
     "theme_color": "#050505",
