@@ -16,10 +16,9 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isLoading = false;
   bool _obscureText = true;
 
-  // Paleta de colores oficial basada en el logo
-  static const Color colorFondo = Colors.black;
-  static const Color colorTextoPrimario = Color(0xFFFDFDFD); // Blanco marfil del logo
-  static const Color colorAcento = Color(0xFFC0C0C0); // Gris plateado sutil
+  static const Color colorFondo = Color(0xFF050505);
+  static const Color colorTextoPrimario = Color(0xFFF8F8F6);
+  static const Color colorAcento = Color(0xFFD6A85F);
   static const Color colorError = Colors.redAccent;
 
   @override
@@ -78,131 +77,218 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: colorFondo, // Fondo negro azabache
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(30.0),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // INTEGRACIÓN DEL LOGO OFICIAL
-                Image.asset(
-                  'assets/logo_saunastilo.png',
-                  height: 170, 
-                ),
-                const SizedBox(height: 30),
-                
-                Text(
-                  'CONTROL DE PRODUCCIÓN Y PERSONAL',
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.cinzel( // Tipografía Serif clásica para el título
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                    color: colorTextoPrimario,
-                    letterSpacing: 2.0,
-                  ),
-                ),
-      
-                const SizedBox(height: 20),
-
-                // CAMPO DE CORREO 
-                TextFormField(
-                  controller: _emailController,
-                  style: const TextStyle(color: colorTextoPrimario), // Texto blanco al escribir
-                  keyboardType: TextInputType.emailAddress,
-                  decoration: InputDecoration(
-                    labelText: 'CORREO ELECTRÓNICO',
-                    labelStyle: const TextStyle(color: colorAcento),
-                    prefixIcon: const Icon(Icons.email_outlined, color: colorAcento),
-                    enabledBorder: OutlineInputBorder( // Borde plateado sutil
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: const BorderSide(color: colorAcento, width: 1),
-                    ),
-                    focusedBorder: OutlineInputBorder( // Borde blanco brillante al seleccionar
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: const BorderSide(color: colorTextoPrimario, width: 2),
-                    ),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Por favor ingresa tu correo';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 20),
-
-                // CAMPO DE CONTRASEÑA
-                TextFormField(
-                  controller: _passwordController,
-                  style: const TextStyle(color: colorTextoPrimario),
-                  obscureText: _obscureText,
-                  decoration: InputDecoration(
-                    labelText: 'CONTRASEÑA',
-                    labelStyle: const TextStyle(color: colorAcento),
-                    prefixIcon: const Icon(Icons.lock_outline_rounded, color: colorAcento),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _obscureText ? Icons.visibility_off : Icons.visibility,
-                        color: colorAcento,
-                      ),
-                      onPressed: () => setState(() => _obscureText = !_obscureText),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: const BorderSide(color: colorAcento, width: 1),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: const BorderSide(color: colorTextoPrimario, width: 2),
-                    ),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Por favor ingresa tu contraseña';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 40),
-
-                // BOTÓN DE INGRESAR ESTILO SÓLIDO Y ELEGANTE
-                ElevatedButton(
-                  onPressed: _isLoading ? null : _login,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: colorTextoPrimario, // Botón blanco marfil
-                    foregroundColor: colorFondo, // Texto negro azabache
-                    padding: const EdgeInsets.symmetric(vertical: 18),
-                    elevation: 5,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  child: _isLoading
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(
-                            color: colorFondo,
-                            strokeWidth: 2,
-                      ),
-                    )
-                      : Text(
-                          'INICIAR SESIÓN',
-                          style: GoogleFonts.cinzel( // Tipografía Serif para el botón
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 1.0,
+      backgroundColor: colorFondo,
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: RadialGradient(
+            center: Alignment(0, -0.65),
+            radius: 1.15,
+            colors: [Color(0xFF29231B), Color(0xFF0A0908), colorFondo],
+          ),
+        ),
+        child: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(22, 28, 22, 34),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 470),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Image.asset('assets/logo_saunastilo.png', height: 142),
+                      const SizedBox(height: 20),
+                      Center(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 7),
+                          decoration: BoxDecoration(
+                            color: colorAcento.withOpacity(0.12),
+                            borderRadius: BorderRadius.circular(999),
+                            border: Border.all(color: colorAcento.withOpacity(0.42)),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.auto_awesome_rounded, color: colorAcento, size: 16),
+                              const SizedBox(width: 7),
+                              Text(
+                                'NUEVA VERSIÓN',
+                                style: GoogleFonts.inter(
+                                  color: colorAcento,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: 1.2,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
+                      ),
+                      const SizedBox(height: 18),
+                      Text(
+                        'Todo Sauna Stilo,\nen un solo lugar.',
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.inter(
+                          color: colorTextoPrimario,
+                          fontSize: 29,
+                          height: 1.08,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.7,
+                        ),
+                      ),
+                      const SizedBox(height: 9),
+                      Text(
+                        'Equipo · Proyectos · Comunidad · Inteligencia artificial',
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.inter(color: Colors.white54, fontSize: 13, height: 1.4),
+                      ),
+                      const SizedBox(height: 26),
+                      Container(
+                        padding: const EdgeInsets.all(18),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF11100F).withOpacity(0.94),
+                          borderRadius: BorderRadius.circular(26),
+                          border: Border.all(color: Colors.white.withOpacity(0.11)),
+                          boxShadow: const [
+                            BoxShadow(color: Colors.black54, blurRadius: 30, offset: Offset(0, 18)),
+                          ],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            TextFormField(
+                              controller: _emailController,
+                              style: const TextStyle(color: colorTextoPrimario),
+                              keyboardType: TextInputType.emailAddress,
+                              textInputAction: TextInputAction.next,
+                              autofillHints: const [AutofillHints.email],
+                              decoration: _inputDecoration(
+                                label: 'Correo electrónico',
+                                icon: Icons.alternate_email_rounded,
+                              ),
+                              validator: (value) => value == null || value.trim().isEmpty
+                                  ? 'Ingresa tu correo electrónico'
+                                  : null,
+                            ),
+                            const SizedBox(height: 14),
+                            TextFormField(
+                              controller: _passwordController,
+                              style: const TextStyle(color: colorTextoPrimario),
+                              obscureText: _obscureText,
+                              textInputAction: TextInputAction.done,
+                              autofillHints: const [AutofillHints.password],
+                              onFieldSubmitted: (_) {
+                                if (!_isLoading) _login();
+                              },
+                              decoration: _inputDecoration(
+                                label: 'Contraseña',
+                                icon: Icons.lock_outline_rounded,
+                                suffix: IconButton(
+                                  icon: Icon(
+                                    _obscureText
+                                        ? Icons.visibility_off_outlined
+                                        : Icons.visibility_outlined,
+                                    color: Colors.white54,
+                                  ),
+                                  onPressed: () => setState(() => _obscureText = !_obscureText),
+                                ),
+                              ),
+                              validator: (value) => value == null || value.isEmpty
+                                  ? 'Ingresa tu contraseña'
+                                  : null,
+                            ),
+                            const SizedBox(height: 18),
+                            FilledButton(
+                              onPressed: _isLoading ? null : _login,
+                              style: FilledButton.styleFrom(
+                                backgroundColor: colorTextoPrimario,
+                                foregroundColor: colorFondo,
+                                disabledBackgroundColor: Colors.white24,
+                                minimumSize: const Size.fromHeight(56),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(17),
+                                ),
+                              ),
+                              child: _isLoading
+                                  ? const SizedBox(
+                                      height: 22,
+                                      width: 22,
+                                      child: CircularProgressIndicator(
+                                        color: colorFondo,
+                                        strokeWidth: 2.4,
+                                      ),
+                                    )
+                                  : Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Text(
+                                          'Entrar a mi espacio',
+                                          style: GoogleFonts.inter(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w800,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 9),
+                                        const Icon(Icons.arrow_forward_rounded, size: 20),
+                                      ],
+                                    ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 18),
+                      Text(
+                        'SAUNA STILO · OPERACIONES 2.0',
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.inter(
+                          color: Colors.white38,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 1.45,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ],
+              ),
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  InputDecoration _inputDecoration({
+    required String label,
+    required IconData icon,
+    Widget? suffix,
+  }) {
+    final border = OutlineInputBorder(
+      borderRadius: BorderRadius.circular(17),
+      borderSide: BorderSide(color: Colors.white.withOpacity(0.12)),
+    );
+    return InputDecoration(
+      labelText: label,
+      labelStyle: GoogleFonts.inter(color: Colors.white54, fontSize: 14),
+      prefixIcon: Icon(icon, color: colorAcento, size: 21),
+      suffixIcon: suffix,
+      filled: true,
+      fillColor: Colors.white.withOpacity(0.045),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+      enabledBorder: border,
+      border: border,
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(17),
+        borderSide: const BorderSide(color: colorAcento, width: 1.4),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(17),
+        borderSide: const BorderSide(color: colorError),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(17),
+        borderSide: const BorderSide(color: colorError, width: 1.4),
       ),
     );
   }
