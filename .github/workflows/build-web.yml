@@ -52,7 +52,9 @@ jobs:
           sed -i "s/__SAUNA_BUILD_VERSION__/${VERSION}/g" build/web/index.html
 
       - name: Add cache reset page
-        run: cp web/reset.html build/web/reset.html
+        run: |
+          cp web/reset.html build/web/reset.html
+          cp web/flutter_service_worker.js build/web/flutter_service_worker.js
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
