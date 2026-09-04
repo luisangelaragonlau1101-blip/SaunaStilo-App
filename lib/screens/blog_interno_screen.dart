@@ -1,5 +1,4 @@
-µ¨¥zºè¯
-â¶)à²Ö§uªÝ¢ëiºÐk¢G§¦*^import 'dart:async';
+import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -1567,8 +1566,7 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
                     url,
                     fit: BoxFit.contain,
                     errorBuilder: (_, __, ___) => const Icon(
-                      Iconµ¨¥zºè¯
-â¶)à²Ö§uªÝ¢ëiºÐk¢G§¦*^s.broken_image_outlined,
+                      Icons.broken_image_outlined,
                       color: Colors.white38,
                       size: 70,
                     ),

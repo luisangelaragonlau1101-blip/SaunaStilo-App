@@ -854,7 +854,7 @@ class _AsistenteIaScreenState extends State<AsistenteIaScreen> {
     if (!_grabandoAudio) return;
     setState(() {
       _grabandoAudio = false;
-      _subiendoAudio = tµ¨¥Â¸­yêë¢°k¢G§¦*^rue;
+      _subiendoAudio = true;
     });
     _cronometroAudio?.cancel();
     await _recorder.stop();
