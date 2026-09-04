@@ -40,7 +40,17 @@ jobs:
           enablement: true
 
       - name: Build web application
-        run: flutter build web --release --base-href /SaunaStilo-App/ --pwa-strategy=none
+        run: |
+          set -o pipefail
+          flutter build web --release --base-href /SaunaStilo-App/ --pwa-strategy=none 2>&1 | tee build-output.log
+
+      - name: Upload build diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-build-diagnostics
+          path: build-output.log
+          retention-days: 1
 
       - name: Version web assets
         run: |
