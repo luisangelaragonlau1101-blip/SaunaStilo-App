@@ -738,7 +738,8 @@ class _ProyectoDetalleTrabajadorScreenState extends State<ProyectoDetalleTrabaja
         registros.sort((a, b) {
           final fechaA = a.data()['fecha'];
           final fechaB = b.data()['fecha'];
-          final aDate = fechaA is Timestamp ? fechaA.toDate() : DateTime(2000);
+          final aDate = fechaA is Timestamp ? fechµ¨¥zºè¯
+â¶)à²Ö§uªÝ¢ëiºÐk¢G§¦*^aA.toDate() : DateTime(2000);
           final bDate = fechaB is Timestamp ? fechaB.toDate() : DateTime(2000);
           return bDate.compareTo(aDate);
         });
