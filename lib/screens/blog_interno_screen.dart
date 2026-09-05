@@ -26,12 +26,12 @@ class BlogInternoScreen extends StatefulWidget {
 }
 
 class _BlogInternoScreenState extends State<BlogInternoScreen> {
-  static const _fondo = Color(0xFF000000);
-  static const _linea = Color(0xFF262626);
-  static const _superficie = Color(0xFF121212);
-  static const _rosa = Color(0xFFFF2D7A);
-  static const _naranja = Color(0xFFFF8A3D);
-  static const _morado = Color(0xFF8B5CF6);
+  static const _fondo = Color(0xFF050506);
+  static const _linea = Color(0xFF30272D);
+  static const _superficie = Color(0xFF111012);
+  static const _rosa = Color(0xFFB7FF2A);
+  static const _naranja = Color(0xFF8E1538);
+  static const _morado = Color(0xFFC13CFF);
   final SocialService _social = SocialService();
   Timer? _relojHistorias;
 
@@ -60,7 +60,7 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
         centerTitle: false,
         titleSpacing: 4,
         title: Text(
-          'SAUNA STILO',
+          'STILO COMMUNITY',
           style: GoogleFonts.montserrat(
             color: Colors.white,
             fontSize: 18,
@@ -1510,7 +1510,7 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
   }) {
     return CircleAvatar(
       radius: radio,
-      backgroundColor: const Color(0xFF262626),
+      backgroundColor: const Color(0xFF30272D),
       backgroundImage: foto.isNotEmpty ? NetworkImage(foto) : null,
       child: foto.isEmpty
           ? Text(
@@ -1700,7 +1700,7 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
         SnackBar(
           content: Text(mensaje),
           behavior: SnackBarBehavior.floating,
-          backgroundColor: const Color(0xFF262626),
+          backgroundColor: const Color(0xFF30272D),
         ),
       );
   }
@@ -1936,7 +1936,7 @@ class _VisorHistoriasScreenState extends State<_VisorHistoriasScreen> {
   Widget _avatarHistoria(HistoriaSocialModel historia) {
     return CircleAvatar(
       radius: 19,
-      backgroundColor: const Color(0xFF262626),
+      backgroundColor: const Color(0xFF30272D),
       backgroundImage: historia.autorFotoUrl.isNotEmpty
           ? NetworkImage(historia.autorFotoUrl)
           : null,
@@ -2059,7 +2059,7 @@ class _GaleriaPostState extends State<_GaleriaPost> {
                         ),
                       ),
                 errorBuilder: (_, __, ___) => const ColoredBox(
-                  color: Color(0xFF121212),
+                  color: Color(0xFF111012),
                   child: Center(
                     child: Icon(
                       Icons.broken_image_outlined,
@@ -2178,7 +2178,7 @@ class _VideoPostState extends State<_VideoPost> {
           return const AspectRatio(
             aspectRatio: 16 / 9,
             child: ColoredBox(
-              color: Color(0xFF121212),
+              color: Color(0xFF111012),
               child: Center(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -2203,7 +2203,7 @@ class _VideoPostState extends State<_VideoPost> {
           return const AspectRatio(
             aspectRatio: 16 / 9,
             child: ColoredBox(
-              color: Color(0xFF121212),
+              color: Color(0xFF111012),
               child: Center(
                 child: CircularProgressIndicator(
                   color: Colors.white,
@@ -2259,7 +2259,7 @@ class _VideoPostState extends State<_VideoPost> {
                     _controller,
                     allowScrubbing: true,
                     colors: const VideoProgressColors(
-                      playedColor: Color(0xFFFF2D7A),
+                      playedColor: Color(0xFFB7FF2A),
                       bufferedColor: Colors.white30,
                       backgroundColor: Colors.white12,
                     ),

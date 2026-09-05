@@ -1,0 +1,1 @@
+Verified visual scope: mode nocturno, intro con logo oficial, paleta vino/neón/violeta, dashboard, Comunidad y catálogo de accesos. La compilación, navegación por rol y verificación de navegador pasaron antes de este documento. IA/voz dependen de servicios externos y no forman parte de esta modificación visual.

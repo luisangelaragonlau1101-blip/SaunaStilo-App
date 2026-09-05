@@ -22,11 +22,11 @@ class FuturisticDashboardScreen extends StatefulWidget {
 
 class _FuturisticDashboardScreenState
     extends State<FuturisticDashboardScreen> {
-  static const _bg = Color(0xFF05070A);
-  static const _panel = Color(0xFF10151B);
-  static const _cyan = Color(0xFF86E9FF);
-  static const _mint = Color(0xFFA8F6D5);
-  static const _violet = Color(0xFFB8A7FF);
+  static const _bg = Color(0xFF050506);
+  static const _panel = Color(0xFF111012);
+  static const _cyan = Color(0xFFB7FF2A);
+  static const _mint = Color(0xFFC6FF68);
+  static const _violet = Color(0xFFC13CFF);
 
   final _search = TextEditingController();
   String _query = '';
@@ -137,7 +137,7 @@ class _FuturisticDashboardScreenState
               errorBuilder: (_, __, ___) => Row(
                 children: [
                   const Icon(
-                    Icons.local_fire_department_rounded,
+                    Icons.blur_on_rounded,
                     color: _cyan,
                   ),
                   const SizedBox(width: 6),
@@ -315,7 +315,7 @@ class _FuturisticDashboardScreenState
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(28),
         gradient: const LinearGradient(
-          colors: [Color(0xFF172530), Color(0xFF0C1117)],
+          colors: [Color(0xFF2B0B18), Color(0xFF120C12)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -463,7 +463,7 @@ class _FuturisticDashboardScreenState
       margin: const EdgeInsets.fromLTRB(18, 20, 18, 2),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF0C1817),
+        color: const Color(0xFF12180C),
         borderRadius: BorderRadius.circular(23),
         border: Border.all(color: _mint.withOpacity(.22)),
       ),
@@ -814,7 +814,7 @@ class _Metric extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFF10151B),
+        color: const Color(0xFF111012),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: color.withOpacity(.17)),
       ),
@@ -857,7 +857,7 @@ class _BottomItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = accent ?? (selected ? const Color(0xFF86E9FF) : Colors.white54);
+    final color = accent ?? (selected ? const Color(0xFFB7FF2A) : Colors.white54);
     return InkWell(
       borderRadius: BorderRadius.circular(17),
       onTap: onTap,
