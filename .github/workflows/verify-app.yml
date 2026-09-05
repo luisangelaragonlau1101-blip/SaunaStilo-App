@@ -15,6 +15,13 @@ jobs:
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
+      - name: Archive exact source
+        run: git archive --format=tar HEAD > source.tar
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-source
+          path: source.tar
+          retention-days: 3
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
