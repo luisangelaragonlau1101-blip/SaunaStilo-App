@@ -71,6 +71,33 @@ class NotificacionesService {
     }
   }
 
+  Future<String> enviarAlertaGeneral({
+    required String mensaje,
+  }) async {
+    final uid = FirebaseAuth.instance.currentUser?.uid ?? '';
+    if (uid.isEmpty) {
+      throw StateError('Debes iniciar sesión como administrador.');
+    }
+    final texto = mensaje.trim();
+    if (texto.isEmpty) {
+      throw ArgumentError('Escribe el motivo de la alerta.');
+    }
+    final ref = await _ref.add({
+      'titulo': '🚨 ALERTA GENERAL · SAUNA STILO',
+      'mensaje': texto.length > 420 ? texto.substring(0, 420) : texto,
+      'tipo': 'alarma_admin',
+      'destinatarioId': 'todos',
+      'rolesDestinatarios': <String>['todos'],
+      'leidosPor': <String>[],
+      'creadoPor': uid,
+      'fecha': FieldValue.serverTimestamp(),
+      'prioridad': 'critica',
+      'requiereAtencion': true,
+      'esLlamada': false,
+    });
+    return ref.id;
+  }
+
   static Map<String, dynamic> datosAviso({
     required String titulo,
     required String mensaje,
