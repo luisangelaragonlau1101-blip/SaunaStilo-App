@@ -8,8 +8,14 @@ class NotificacionesService {
   NotificacionesService({FirebaseFirestore? firestore}) : _db = firestore ?? FirebaseFirestore.instance;
   CollectionReference<Map<String, dynamic>> get _ref => _db.collection('notificaciones');
 
+  Query<Map<String, dynamic>> _visible(String uid, String rol) => _ref.where(Filter.or(
+    Filter('destinatarioId', isEqualTo: uid),
+    Filter('destinatarioId', isEqualTo: 'todos'),
+    Filter('rolesDestinatarios', arrayContainsAny: [rol, 'todos']),
+  ));
+
   Stream<List<NotificacionApp>> avisosPara({required String usuarioId, required String rol}) {
-    return _ref.snapshots().map((snapshot) {
+    return _visible(usuarioId, rol).snapshots().map((snapshot) {
       final avisos = snapshot.docs.map(NotificacionApp.fromDocument).where((aviso) => aviso.visiblePara(usuarioId: usuarioId, rol: rol)).toList(growable: true);
       avisos.sort((a, b) => b.fecha.compareTo(a.fecha));
       return avisos;
@@ -24,7 +30,7 @@ class NotificacionesService {
   }
 
   Future<void> marcarTodasLeidas({required String usuarioId, required String rol}) async {
-    final snapshot = await _ref.get();
+    final snapshot = await _visible(usuarioId, rol).get();
     final pendientes = snapshot.docs.map(NotificacionApp.fromDocument).where((aviso) => aviso.visiblePara(usuarioId: usuarioId, rol: rol) && !aviso.leidaPor(usuarioId)).toList(growable: false);
     const maximoPorLote = 400;
     for (var inicio = 0; inicio < pendientes.length; inicio += maximoPorLote) {

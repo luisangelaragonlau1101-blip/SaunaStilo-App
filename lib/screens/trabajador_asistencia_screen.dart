@@ -59,8 +59,9 @@ class _TrabajadorAsistenciaScreenState extends State<TrabajadorAsistenciaScreen>
   @override
   void initState() {
     super.initState();
-    _verificarEstadoGPSInicial();
-    _escucharEstadoGPS();
+    // History is read-only on entry; request location only from a user action.
+    _isGpsBuscando = false;
+    _mensajeGps = 'Toca recargar ubicación si necesitas validar tu posición.';
   }
 
   Future<void> _verificarEstadoGPSInicial() async {
@@ -146,21 +147,8 @@ class _TrabajadorAsistenciaScreenState extends State<TrabajadorAsistenciaScreen>
           });
         }
 
-        if (estaAdentro && !_registrandoEntrada && !_entradaConfirmada) {
-          _registrandoEntrada = true;
-          _asistenciaService.registrarEntradaAutomatica(
-            trabajadorId: widget.trabajador.id,
-            zonasPermitidas: _zonasEmpresa,
-            horaEntradaConfig: widget.trabajador.horaEntrada ?? '08:00',
-            toleranciaMinutos: widget.trabajador.toleranciaMinutos ?? 15,
-          ).then((_) {
-            _entradaConfirmada = true;
-          }).catchError((_) {
-            // El radar continúa mostrando la ubicación aunque falle la red.
-          }).whenComplete(() {
-            _registrandoEntrada = false;
-          });
-        }
+        // Attendance is recorded explicitly in Mi jornada, never by opening history.
+
       }
     });
   }
@@ -422,7 +410,7 @@ class _TrabajadorAsistenciaScreenState extends State<TrabajadorAsistenciaScreen>
                       ),
                       const SizedBox(height: 16),
                       Text(
-                        asistencia != null ? "Asistencia Registrada" : "Sin registro de entrada",
+                        asistencia?.horaEntrada != null ? "Asistencia Registrada" : "Sin registro de entrada",
                         style: GoogleFonts.montserrat(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
                       ),
                       const SizedBox(height: 8),
@@ -430,7 +418,7 @@ class _TrabajadorAsistenciaScreenState extends State<TrabajadorAsistenciaScreen>
                       Text(
                         asistencia?.horaEntrada != null 
                             ? "Entrada: ${_formatearHoraEmpresa(asistencia!.horaEntrada)} (${asistencia.estatus.toUpperCase()})"
-                            : "Acércate a la empresa para registrar tu asistencia automáticamente.",
+                            : "Abre Inicio → Jornada para registrar tu entrada.",
                         style: GoogleFonts.inter(fontSize: 13, color: Colors.white70),
                       ),
 

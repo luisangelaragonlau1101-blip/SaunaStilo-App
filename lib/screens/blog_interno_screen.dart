@@ -72,7 +72,7 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
           IconButton(
             tooltip: 'Nueva publicación',
             onPressed: _crearPublicacion,
-            icon: const Icon(Icons.add_box_outlined, size: 27),
+            icon: const Icon(Icons.add_circle_outline_rounded, size: 27),
           ),
           IconButton(
             tooltip: 'Notificaciones',
@@ -725,7 +725,7 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
                 tooltip: 'Comentar',
                 onPressed: () => _abrirComentarios(doc.id, autorId),
                 icon: const Icon(
-                  Icons.mode_comment_outlined,
+                  Icons.chat_bubble_outline_rounded,
                   color: Colors.white,
                   size: 26,
                 ),
@@ -734,7 +734,7 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
                 tooltip: 'Enviar sugerencia',
                 onPressed: () => _abrirComentarios(doc.id, autorId),
                 icon: const Icon(
-                  Icons.send_outlined,
+                  Icons.near_me_outlined,
                   color: Colors.white,
                   size: 26,
                 ),

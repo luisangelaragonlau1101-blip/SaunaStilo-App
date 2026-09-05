@@ -181,8 +181,8 @@ class AiAssistantService {
       final messages = historial
           .skip(historial.length > 8 ? historial.length - 8 : 0)
           .map((message) => <String, String>{
-                'role': message['role'] == 'assistant' ? 'assistant' : 'user',
-                'content': message['content']?.toString() ?? '',
+                'role': (message['role'] == 'assistant' || message['rol'] == 'asistente') ? 'assistant' : 'user',
+                'content': (message['content'] ?? message['texto'])?.toString() ?? '',
               })
           .where((message) => message['content']!.trim().isNotEmpty)
           .toList(growable: true);
@@ -220,7 +220,7 @@ class AiAssistantService {
       return AiAssistantResponse(
         respuesta: answer,
         modelo: decoded['identity']?.toString() ?? 'Online Smart · Sauna Stilo',
-        usoInternet: true,
+        usoInternet: decoded['usoInternet'] == true,
         fuentes: const <AiAssistantSource>[],
       );
     } on AiAssistantException {

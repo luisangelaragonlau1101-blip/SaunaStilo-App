@@ -69,6 +69,9 @@ class _PersonalMessageOverlayState extends State<PersonalMessageOverlay> with Wi
           try { await _audio.setReleaseMode(ReleaseMode.loop); await _audio.play(AssetSource('sounds/urgent_alarm.ogg'), volume: 1); } catch (_) {}
           _stop?.cancel(); _stop = Timer(const Duration(seconds: 20), () => _audio.stop());
         }
+        if (!call) {
+          try { await _audio.setReleaseMode(ReleaseMode.release); await _audio.play(AssetSource('sounds/beep.ogg'), volume: 1); } catch (_) {}
+        }
         final result = await showDialog<String>(context: context, builder: (c) => AlertDialog(
           backgroundColor: const Color(0xFF130C10),
           icon: Icon(call ? Icons.phone_in_talk_rounded : Icons.mark_chat_unread_outlined, color: const Color(0xFFB7FF2A), size: 34),

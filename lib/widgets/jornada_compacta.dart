@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:intl/intl.dart';
 import '../models/user_model.dart';
-import '../screens/trabajador_asistencia_screen.dart';
+import '../screens/jornada_screen.dart';
 
 String mexicoDayKey(DateTime now) => DateFormat('yyyyMMdd').format(now.toUtc().subtract(const Duration(hours: 6)));
 
@@ -93,7 +93,7 @@ class _JornadaCompactaState extends State<JornadaCompacta> {
         const SizedBox(height: 14),
         Row(children: [Expanded(child: FilledButton.icon(onPressed: !ready || _busy || entered ? null : () => _register('entrada'), icon: const Icon(Icons.login_rounded), label: const Text('Entrada'))), const SizedBox(width: 10), Expanded(child: OutlinedButton.icon(onPressed: !ready || _busy || !entered || left ? null : () => _register('salida'), icon: const Icon(Icons.logout_rounded), label: const Text('Salida')))]),
         if (_busy) const Padding(padding: EdgeInsets.only(top: 10), child: LinearProgressIndicator()),
-        TextButton(onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => TrabajadorAsistenciaScreen(trabajador: widget.usuario))), child: const Text('Comida, historial y detalles de jornada')),
+        TextButton(onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => JornadaScreen(usuario: widget.usuario))), child: const Text('Comida, historial y detalles de jornada')),
       ]));
     },
   );

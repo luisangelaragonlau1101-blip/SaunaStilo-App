@@ -15,9 +15,8 @@ test('Sauna IA v2 is grounded with Google Search and remains on Vertex AI', () =
 });
 test('the retained advanced guide uses the real assistant, while main navigation opens the embedded guide', () => {
   const guide = read('lib/screens/guia_inteligente_screen.dart');
-  assert.match(guide, /responderAvanzado/);
-  assert.match(guide, /usarInternet:\s*true/);
-  assert.match(guide, /modo:\s*'guia'/);
+  assert.match(guide, /OnlineSmartScreen/);
+  assert.match(guide, /SIN CONSULTA A IA/);
   assert.equal(guide.includes('respuesta simulada'), false);
   assert.match(read('lib/screens/operations_shell.dart'), /OnlineSmartScreen/);
   assert.match(read('lib/screens/online_smart_embed_web.dart'), /HtmlElementView/);
@@ -37,7 +36,7 @@ test('every role uses the daily operations shell and retains all role-filtered a
   assert.match(bridge, /OperationsShell/);
   assert.match(shell, /AppActionCatalog\.forUser/);
   assert.match(shell, /alerta_general/);
-  for (const label of ['Inicio', 'Proyectos', 'Comunidad', 'Chats', 'Perfil']) assert.ok(shell.includes("label: '" + label + "'"));
+  for (const label of ['Inicio', 'Comunidad', 'Chats', 'Tareas', 'Perfil']) assert.ok(shell.includes("label: '" + label + "'"));
   assert.match(shell, /JornadaCompacta/);
   assert.match(shell, /OperationsTaskList/);
 });

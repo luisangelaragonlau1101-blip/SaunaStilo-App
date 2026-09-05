@@ -8,6 +8,7 @@ import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'package:url_launcher/url_launcher.dart';
 
 import '../models/user_model.dart';
+import 'online_smart_screen.dart';
 import '../services/ai_assistant_service.dart';
 import '../services/app_action_catalog.dart';
 import '../services/custom_voice_service.dart';
@@ -23,11 +24,11 @@ class GuiaInteligenteScreen extends StatefulWidget {
 }
 
 class _GuiaInteligenteScreenState extends State<GuiaInteligenteScreen> {
-  static const _bg = Color(0xFF05070A);
-  static const _panel = Color(0xFF11161C);
-  static const _cyan = Color(0xFF86E9FF);
-  static const _mint = Color(0xFFA8F6D5);
-  static const _violet = Color(0xFFB8A7FF);
+  static const _bg = Colors.black;
+  static const _panel = Color(0xFF111111);
+  static const _cyan = Color(0xFFB7FF2A);
+  static const _mint = Color(0xFFC6FF68);
+  static const _violet = Color(0xFFB82B55);
 
   final _controller = TextEditingController();
   final _scroll = ScrollController();
@@ -51,7 +52,7 @@ class _GuiaInteligenteScreenState extends State<GuiaInteligenteScreen> {
     _messages.add(
       const _GuideMessage(
         text:
-            'Soy tu Guía de Sauna Stilo. Dime qué quieres hacer y te indico dónde entrar y qué tocar. Si tu duda necesita información actual, también puedo consultar Internet.',
+            'Soy tu Guía de Sauna Stilo. Dime qué quieres hacer y te indico dónde entrar y qué tocar. Para otras preguntas abriré Online Smart dentro de la aplicación.',
         user: false,
       ),
     );
@@ -104,7 +105,7 @@ class _GuiaInteligenteScreenState extends State<GuiaInteligenteScreen> {
                     ),
                   ),
                   Text(
-                    'APP + INTERNET · SEGÚN TU ROL',
+                    'MANUAL DE USO · SEGÚN TU ROL',
                     style: GoogleFonts.inter(
                       color: _mint,
                       fontSize: 9,
@@ -138,6 +139,7 @@ class _GuiaInteligenteScreenState extends State<GuiaInteligenteScreen> {
       body: Column(
         children: [
           _status(),
+          TextButton.icon(onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => OnlineSmartScreen(usuario: widget.usuario))), icon: const Icon(Icons.auto_awesome_outlined), label: const Text('Conversar con Online Smart')),
           SizedBox(height: 48, child: ListView(
             scrollDirection: Axis.horizontal, padding: const EdgeInsets.symmetric(horizontal: 14),
             children: ['¿Cómo registro mi jornada?', '¿Dónde pido una herramienta?', '¿Cómo envío un mensaje?', '¿Cómo grabo mi voz?'].map((q) => Padding(
@@ -167,7 +169,7 @@ class _GuiaInteligenteScreenState extends State<GuiaInteligenteScreen> {
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              'Te guía dentro de la app y puede usar información actual de Internet sin ampliar los permisos de tu cuenta.',
+              'Pasos de uso sin conexión al motor de IA. Para otras preguntas, abre Online Smart; tus permisos no cambian.',
               style: GoogleFonts.inter(
                 color: Colors.white60,
                 fontSize: 10.7,
@@ -459,25 +461,10 @@ class _GuiaInteligenteScreenState extends State<GuiaInteligenteScreen> {
         if (_speak) unawaited(_speakText(help));
         return;
       }
-      final response = await _ai.responderAvanzado(
-        pregunta: question,
-        historial: _history(),
-        usarInternet: true,
-        modo: 'guia',
-      );
+      // For questions outside the offline manual, open the working embedded guide.
       if (!mounted) return;
-      setState(() {
-        _thinking = false;
-        _messages.add(
-          _GuideMessage(
-            text: response.respuesta,
-            user: false,
-            sources: response.fuentes,
-          ),
-        );
-      });
-      _moveToEnd();
-      if (_speak) unawaited(_speakText(response.respuesta));
+      setState(() => _thinking = false);
+      await Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => OnlineSmartScreen(usuario: widget.usuario)));
     } catch (error) {
       if (!mounted) return;
       setState(() {

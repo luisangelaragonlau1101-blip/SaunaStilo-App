@@ -9,6 +9,7 @@ import '../services/actividades_service.dart';
 import 'proyecto_chat_screen.dart';
 import 'proyectos_admin_screen.dart';
 import 'proyectos_trabajador_screen.dart';
+import 'modal_asignar_actividades.dart';
 
 class ProjectWorkspaceScreen extends StatelessWidget {
   final UserModel usuario;
@@ -32,7 +33,7 @@ class ProjectWorkspaceScreen extends StatelessWidget {
           const SizedBox(height: 14),
           Wrap(spacing: 10, runSpacing: 10, children: [
             FilledButton.icon(icon: const Icon(Icons.forum_outlined), label: const Text('Grupo y evidencias'), onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => ProyectoChatScreen(proyecto: project)))),
-            if (admin || usuario.rol == AppRoles.maestro) OutlinedButton.icon(icon: const Icon(Icons.add_task_rounded), label: const Text('Asignar actividad'), onPressed: () => showModalBottomSheet<void>(context: context, isScrollControlled: true, useSafeArea: true, builder: (_) => ProjectTaskComposer(usuario: usuario, proyecto: project))),
+            if (admin || usuario.rol == AppRoles.maestro) OutlinedButton.icon(icon: const Icon(Icons.add_task_rounded), label: const Text('Asignar actividad'), onPressed: () => showModalBottomSheet<void>(context: context, isScrollControlled: true, useSafeArea: true, builder: (_) => ModalAsignarActividad(proyectoId: project.id, rolUsuario: usuario.rol))),
           ]),
         ]))),
       ]);

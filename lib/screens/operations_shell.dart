@@ -13,12 +13,13 @@ import 'mensajes_equipo_screen.dart';
 import 'perfil_social_screen.dart';
 import 'online_smart_screen.dart';
 import 'project_workspace_screen.dart';
+import 'equipo_tareas_screen.dart';
 
 const operationsDestinations = <NavigationDestination>[
   NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home_rounded), label: 'Inicio'),
-  NavigationDestination(icon: Icon(Icons.workspaces_outline), selectedIcon: Icon(Icons.workspaces_rounded), label: 'Proyectos'),
   NavigationDestination(icon: Icon(Icons.auto_awesome_mosaic_outlined), selectedIcon: Icon(Icons.auto_awesome_mosaic_rounded), label: 'Comunidad'),
   NavigationDestination(icon: Icon(Icons.forum_outlined), selectedIcon: Icon(Icons.forum_rounded), label: 'Chats'),
+  NavigationDestination(icon: Icon(Icons.assignment_outlined), selectedIcon: Icon(Icons.assignment_rounded), label: 'Tareas'),
   NavigationDestination(icon: Icon(Icons.person_outline_rounded), selectedIcon: Icon(Icons.person_rounded), label: 'Perfil'),
 ];
 
@@ -38,9 +39,9 @@ class _OperationsShellState extends State<OperationsShell> {
     if (oldWidget.usuario.id != widget.usuario.id || oldWidget.usuario.rol != widget.usuario.rol) _index = 0;
   }
   Widget _page(int index) => _pages.putIfAbsent(index, () => switch (index) {
-    1 => ProjectWorkspaceScreen(usuario: widget.usuario),
-    2 => BlogInternoScreen(usuario: widget.usuario),
-    3 => MensajesEquipoScreen(usuario: widget.usuario),
+    1 => BlogInternoScreen(usuario: widget.usuario),
+    2 => MensajesEquipoScreen(usuario: widget.usuario),
+    3 => EquipoTareasScreen(usuario: widget.usuario),
     4 => PerfilSocialScreen(usuarioActual: widget.usuario, perfilId: widget.usuario.id),
     _ => _OperationsHome(usuario: widget.usuario, onTab: (i) => setState(() => _index = i)),
   });
@@ -70,16 +71,17 @@ class _OperationsHomeState extends State<_OperationsHome> {
   String _search = '';
   bool _all = false;
   void _open(AppAction action) {
-    if (action.id == 'proyectos') { widget.onTab(1); return; }
-    if (action.id == 'comunidad') { widget.onTab(2); return; }
-    if (action.id == 'mensajes') { widget.onTab(3); return; }
+    if (action.id == 'proyectos') { Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => ProjectWorkspaceScreen(usuario: widget.usuario))); return; }
+    if (action.id == 'comunidad') { widget.onTab(1); return; }
+    if (action.id == 'mensajes') { widget.onTab(2); return; }
+    if (action.id == 'tareas') { widget.onTab(3); return; }
     if (action.id == 'perfil') { widget.onTab(4); return; }
     Navigator.of(context).push(MaterialPageRoute<void>(builder: action.id == 'ia' || action.id == 'guia' ? (_) => OnlineSmartScreen(usuario: widget.usuario, modoGuia: action.id == 'guia') : action.builder));
   }
   @override
   Widget build(BuildContext context) {
     final actions = AppActionCatalog.forUser(widget.usuario);
-    final quick = actions.where((a) => ['inventario', 'racha', 'rachas', 'ia', 'asistencias'].contains(a.id)).toList();
+    final quick = actions.where((a) => ['proyectos', 'asistencia', 'inventario', 'racha', 'rachas', 'ia', 'asistencias'].contains(a.id)).toList();
     final alerts = actions.where((a) => a.id == 'alerta_general').toList();
     return SafeArea(bottom: false, child: ListView(padding: const EdgeInsets.fromLTRB(18, 12, 18, 24), children: [
       Row(children: [Image.asset('assets/logo_saunastilo.png', width: 130, height: 48, fit: BoxFit.contain), const Spacer(), for (final id in ['avisos', 'configuracion']) IconButton(tooltip: actions.firstWhere((a) => a.id == id).title, onPressed: () => _open(actions.firstWhere((a) => a.id == id)), icon: Icon(id == 'avisos' ? Icons.notifications_none_rounded : Icons.tune_rounded))]),
@@ -91,10 +93,10 @@ class _OperationsHomeState extends State<_OperationsHome> {
       if (alerts.isNotEmpty) Padding(padding: const EdgeInsets.only(bottom: 14), child: OutlinedButton.icon(style: OutlinedButton.styleFrom(foregroundColor: const Color(0xFFFF647A), backgroundColor: const Color(0xFF240B12), side: const BorderSide(color: Color(0xFF8E1538)), minimumSize: const Size.fromHeight(54)), onPressed: () => _open(alerts.first), icon: const Icon(Icons.campaign_rounded), label: const Text('ALERTA GENERAL · TODO EL EQUIPO', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800)))),
       JornadaCompacta(usuario: widget.usuario),
       const SizedBox(height: 16),
-      Row(children: [const Expanded(child: Text('Mis tareas', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800))), TextButton(onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => Scaffold(appBar: AppBar(title: const Text('Mis tareas y actividades')), body: SingleChildScrollView(padding: const EdgeInsets.all(18), child: OperationsTaskList(usuario: widget.usuario))))), child: const Text('Ver todas'))]),
+      Row(children: [const Expanded(child: Text('Mis tareas', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800))), TextButton(onPressed: () => widget.onTab(3), child: const Text('Ver todas'))]),
       OperationsTaskList(usuario: widget.usuario, compact: true),
       const SizedBox(height: 16),
-      FilledButton.icon(onPressed: () => widget.onTab(3), icon: const Icon(Icons.contact_phone_outlined), label: const Text('Llamar o escribir a una persona'), style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(52))),
+      FilledButton.icon(onPressed: () => widget.onTab(2), icon: const Icon(Icons.contact_phone_outlined), label: const Text('Llamar o escribir a una persona'), style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(52))),
       const SizedBox(height: 16),
       Wrap(spacing: 8, runSpacing: 8, children: quick.map((a) => ActionChip(avatar: Icon(a.id == 'ia' ? Icons.auto_awesome_outlined : a.icon, size: 18, color: a.id == 'ia' ? const Color(0xFFC13CFF) : const Color(0xFFB7FF2A)), label: Text(a.id == 'ia' ? 'Online Smart' : a.title), onPressed: () => _open(a))).toList()),
       const SizedBox(height: 20),

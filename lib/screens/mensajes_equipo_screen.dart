@@ -153,7 +153,7 @@ class _ConversacionPrivadaScreenState extends State<ConversacionPrivadaScreen> {
     try { final images = await ImagePicker().pickMultiImage(); for (final image in images) { final bytes = await image.readAsBytes(); _addFile(image.name, bytes); } if (mounted) setState(() {}); } catch (_) { _notice('No se pudieron leer las fotografías seleccionadas.'); }
   }
   Future<void> _pickFiles() async {
-    try { final result = await FilePicker.platform.pickFiles(allowMultiple: true, withData: true); for (final file in result?.files ?? <PlatformFile>[]) { if (file.bytes == null) { _notice('No se pudo leer ${file.name}.'); continue; } _addFile(file.name, file.bytes!); } if (mounted) setState(() {}); } catch (_) { _notice('No se pudieron leer los archivos seleccionados.'); }
+    try { final files = await FilePicker.pickFiles(allowMultiple: true); for (final file in files) { if (!mounted) return; if (await file.length() > 16 * 1024 * 1024) { _notice('Cada archivo debe pesar menos de 16 MB.'); continue; } final bytes = await file.readAsBytes(); if (!mounted) return; _addFile(file.name, bytes); } if (mounted) setState(() {}); } catch (_) { _notice('No se pudieron leer los archivos seleccionados.'); }
   }
   void _addFile(String name, Uint8List bytes) {
     if (!mounted) return;
