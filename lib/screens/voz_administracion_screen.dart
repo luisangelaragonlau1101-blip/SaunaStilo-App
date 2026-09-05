@@ -9,7 +9,6 @@ import 'package:record/record.dart';
 
 import '../models/user_model.dart';
 import '../services/custom_voice_service.dart';
-import '../services/media_upload_service.dart';
 
 class VozAdministracionScreen extends StatefulWidget {
   final UserModel usuario;
@@ -33,7 +32,6 @@ class _VozAdministracionScreenState extends State<VozAdministracionScreen> {
       'Soy el propietario de esta voz y doy mi consentimiento para que Google la utilice para crear un modelo de voz sintética.';
 
   final _voice = CustomVoiceService();
-  final _media = MediaUploadService();
   final _recorder = AudioRecorder();
   final _player = AudioPlayer();
 
@@ -194,7 +192,7 @@ class _VozAdministracionScreenState extends State<VozAdministracionScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'TU VOZ. TODA LA APP.',
+                  'TU VOZ · IA Y GUÍA',
                   style: GoogleFonts.inter(
                     color: _cyan,
                     fontSize: 9.5,
@@ -242,7 +240,7 @@ class _VozAdministracionScreenState extends State<VozAdministracionScreen> {
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-              status?.message ?? 'Consultando estado de la voz…',
+              status?.message ?? (_message != null ? 'Servicio de voz pendiente de activación.' : 'Consultando estado de la voz…'),
               style: GoogleFonts.inter(
                 color: Colors.white70,
                 fontSize: 11.5,
@@ -308,7 +306,7 @@ class _VozAdministracionScreenState extends State<VozAdministracionScreen> {
             child: Text(
               script,
               style: GoogleFonts.inter(
-                color: Colors.white78,
+                color: const Color(0xC7FFFFFF),
                 fontSize: 12.2,
                 height: 1.45,
                 fontStyle: FontStyle.italic,
@@ -350,7 +348,7 @@ class _VozAdministracionScreenState extends State<VozAdministracionScreen> {
                 const SizedBox(width: 8),
                 IconButton.filledTonal(
                   tooltip: 'Escuchar grabación',
-                  onPressed: () => _player.play(BytesSource(bytes)),
+                  onPressed: _recording != null || _busy ? null : () => _player.play(BytesSource(bytes, mimeType: 'audio/wav')),
                   icon: const Icon(Icons.play_arrow_rounded),
                 ),
               ],
@@ -481,7 +479,9 @@ class _VozAdministracionScreenState extends State<VozAdministracionScreen> {
   }
 
   Future<void> _startRecording(_VoiceSlot slot) async {
+    if (_recording != null || _busy) return;
     final allowed = await _recorder.hasPermission();
+    if (!mounted) return;
     if (!allowed) {
       setState(() {
         _message = 'Activa el permiso de micrófono para grabar tu voz.';
@@ -524,17 +524,19 @@ class _VozAdministracionScreenState extends State<VozAdministracionScreen> {
   Future<void> _stopRecording() async {
     final slot = _recording;
     if (slot == null) return;
+    _recording = null; // Prevent double stop from the timer and button.
     _timer?.cancel();
     await _recorder.stop();
     await _stream?.cancel();
-    final pcm = _bytes.takeBytes();
+    final raw = _bytes.takeBytes();
+    final pcm = raw.length > 480000 ? Uint8List.sublistView(raw, 0, 480000) : raw;
     final wav = pcm.isEmpty
         ? null
         : _createWav(pcm, sampleRate: 24000, channels: 1);
     if (!mounted) return;
     setState(() {
       _recording = null;
-      if (wav == null || wav.length < 8000) {
+      if (wav == null || wav.length < 144044) {
         _message =
             'La grabación quedó demasiado corta. Graba de nuevo acercándote a 10 segundos.';
       } else if (slot == _VoiceSlot.consent) {
@@ -551,25 +553,12 @@ class _VozAdministracionScreenState extends State<VozAdministracionScreen> {
     if (consent == null || reference == null || _busy) return;
     setState(() {
       _busy = true;
-      _message = 'Subiendo las dos grabaciones de forma segura…';
+      _message = 'Enviando las grabaciones al servicio de voz; no se publican en archivos compartidos…';
     });
     try {
-      final stamp = DateTime.now().millisecondsSinceEpoch;
-      final consentUpload = await _media.upload(
-        bytes: consent,
-        fileName: 'consentimiento_$stamp.wav',
-        contentType: 'audio/wav',
-        folder: 'voz_administracion/consentimiento',
-      );
-      final referenceUpload = await _media.upload(
-        bytes: reference,
-        fileName: 'referencia_$stamp.wav',
-        contentType: 'audio/wav',
-        folder: 'voz_administracion/referencia',
-      );
       final status = await _voice.enroll(
-        consentUrl: consentUpload.url,
-        referenceUrl: referenceUpload.url,
+        consentBase64: base64Encode(consent),
+        referenceBase64: base64Encode(reference),
         languageCode: 'es-US',
       );
       if (!mounted) return;
@@ -604,7 +593,7 @@ class _VozAdministracionScreenState extends State<VozAdministracionScreen> {
           'La voz está configurada, pero el servicio de síntesis todavía no está disponible.',
         );
       }
-      await _player.play(BytesSource(audio.bytes));
+      await _player.play(BytesSource(audio.bytes, mimeType: audio.mimeType));
       if (mounted) setState(() => _message = 'Prueba generada correctamente.');
     } catch (error) {
       if (mounted) {

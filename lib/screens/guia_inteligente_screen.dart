@@ -11,6 +11,7 @@ import '../models/user_model.dart';
 import '../services/ai_assistant_service.dart';
 import '../services/app_action_catalog.dart';
 import '../services/custom_voice_service.dart';
+import '../services/local_guide.dart';
 
 class GuiaInteligenteScreen extends StatefulWidget {
   final UserModel usuario;
@@ -40,6 +41,7 @@ class _GuiaInteligenteScreenState extends State<GuiaInteligenteScreen> {
   bool _thinking = false;
   bool _listening = false;
   bool _speak = true;
+  int _speechRequest = 0;
 
   @override
   void initState() {
@@ -57,6 +59,7 @@ class _GuiaInteligenteScreenState extends State<GuiaInteligenteScreen> {
 
   @override
   void dispose() {
+    _speechRequest++;
     _controller.dispose();
     _scroll.dispose();
     _speech.cancel();
@@ -120,6 +123,7 @@ class _GuiaInteligenteScreenState extends State<GuiaInteligenteScreen> {
             onPressed: () {
               setState(() => _speak = !_speak);
               if (!_speak) {
+                _speechRequest++;
                 _player.stop();
                 _tts.stop();
               }
@@ -134,6 +138,11 @@ class _GuiaInteligenteScreenState extends State<GuiaInteligenteScreen> {
       body: Column(
         children: [
           _status(),
+          SizedBox(height: 48, child: ListView(
+            scrollDirection: Axis.horizontal, padding: const EdgeInsets.symmetric(horizontal: 14),
+            children: ['¿Cómo registro mi jornada?', '¿Dónde pido una herramienta?', '¿Cómo envío un mensaje?', '¿Cómo grabo mi voz?'].map((q) => Padding(
+              padding: const EdgeInsets.only(right: 8), child: ActionChip(label: Text(q), onPressed: _thinking ? null : () => _ask(q)))).toList(),
+          )),
           _modules(actions),
           const Divider(height: 1, color: Colors.white10),
           Expanded(child: _conversation()),
@@ -439,6 +448,17 @@ class _GuiaInteligenteScreenState extends State<GuiaInteligenteScreen> {
     });
     _moveToEnd();
     try {
+      final help = LocalGuide.answer(question, widget.usuario.rol);
+      if (help != null) {
+        if (!mounted) return;
+        setState(() {
+          _thinking = false;
+          _messages.add(_GuideMessage(text: 'GUÍA DE USO · SIN CONSULTA A IA\n\n$help', user: false));
+        });
+        _moveToEnd();
+        if (_speak) unawaited(_speakText(help));
+        return;
+      }
       final response = await _ai.responderAvanzado(
         pregunta: question,
         historial: _history(),
@@ -490,6 +510,7 @@ class _GuiaInteligenteScreenState extends State<GuiaInteligenteScreen> {
   }
 
   Future<void> _toggleDictation() async {
+    _speechRequest++;
     if (_listening) {
       await _speech.stop();
       if (mounted) setState(() => _listening = false);
@@ -508,7 +529,11 @@ class _GuiaInteligenteScreenState extends State<GuiaInteligenteScreen> {
         if (mounted) setState(() => _listening = false);
       },
     );
-    if (!available) return;
+    if (!available) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No hay dictado disponible. Revisa el permiso de micrófono o escribe tu pregunta.')));
+      return;
+    }
+    if (!mounted) return;
     setState(() => _listening = true);
     await _speech.listen(
       localeId: 'es_MX',
@@ -527,6 +552,7 @@ class _GuiaInteligenteScreenState extends State<GuiaInteligenteScreen> {
   }
 
   Future<void> _speakText(String text) async {
+    final request = ++_speechRequest;
     final clean = text
         .replaceAll(RegExp(r'https?://\S+'), 'enlace')
         .replaceAll(RegExp(r'\s+'), ' ')
@@ -539,14 +565,18 @@ class _GuiaInteligenteScreenState extends State<GuiaInteligenteScreen> {
     await _tts.stop();
     try {
       final audio = await _voice.synthesize(spoken);
+      if (!mounted || request != _speechRequest) return;
       if (audio != null) {
-        await _player.play(BytesSource(audio.bytes));
+        await _player.play(BytesSource(audio.bytes, mimeType: audio.mimeType));
         return;
       }
     } catch (_) {
       // El TTS del dispositivo sigue siendo el respaldo si la voz no está lista.
     }
-    await _tts.speak(spoken);
+    if (!mounted || request != _speechRequest) return;
+    try { await _tts.speak(spoken); } catch (_) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('La voz no pudo reproducirse. La respuesta permanece en pantalla.')));
+    }
   }
 
   Future<void> _openSource(String value) async {

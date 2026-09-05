@@ -52,13 +52,21 @@ class AppAction {
   });
 
   bool matches(String query) {
-    final value = query.trim().toLowerCase();
+    final value = _normalize(query);
     if (value.isEmpty) return true;
-    return <String>[title, subtitle, ...keywords]
-        .join(' ')
-        .toLowerCase()
-        .contains(value);
+    final haystack = _normalize(<String>[title, subtitle, ...keywords].join(' '));
+    return value.split(RegExp(r'\s+')).every(haystack.contains);
   }
+}
+
+String _normalize(String text) {
+  const accented = 'áéíóúüñ';
+  const plain = 'aeiouun';
+  var value = text.trim().toLowerCase();
+  for (var i = 0; i < accented.length; i++) {
+    value = value.replaceAll(accented[i], plain[i]);
+  }
+  return value;
 }
 
 class AppActionCatalog {

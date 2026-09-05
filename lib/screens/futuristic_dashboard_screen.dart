@@ -95,9 +95,15 @@ class _FuturisticDashboardScreenState
                     _aiHero(all),
                     _sectionTitle('Acciones inmediatas', '1 toque'),
                     _grid(featured),
-                    _pulse(activities),
+                    if (snapshot.hasError)
+                      const Padding(padding: EdgeInsets.all(18), child: Text(
+                        'No pudimos consultar las actividades. Los accesos siguen disponibles; revisa la conexión y tus permisos.',
+                        style: TextStyle(color: Colors.orangeAccent)))
+                    else if (snapshot.connectionState == ConnectionState.waiting)
+                      const Padding(padding: EdgeInsets.all(18), child: LinearProgressIndicator())
+                    else _pulse(activities),
                     if (!_admin) _workCard(all),
-                    _today(activities),
+                    if (snapshot.hasData && !snapshot.hasError) _today(activities),
                     ConexionPanel(usuario: widget.usuario),
                   ],
                   _sectionTitle(
@@ -196,7 +202,7 @@ class _FuturisticDashboardScreenState
           ),
           const SizedBox(width: 6),
           Text(
-            'LIVE',
+            'STILO',
             style: GoogleFonts.inter(
               color: _mint,
               fontSize: 9,
@@ -243,7 +249,7 @@ class _FuturisticDashboardScreenState
                 ? 'Toda la operación, más fácil de encontrar y controlar.'
                 : 'Tu trabajo de hoy, sin perderte entre pantallas.',
             style: GoogleFonts.inter(
-              color: Colors.white48,
+              color: const Color(0x7AFFFFFF),
               fontSize: 11.5,
             ),
           ),
@@ -412,7 +418,7 @@ class _FuturisticDashboardScreenState
         children: [
           _sectionTitle(
             _admin ? 'Pulso de operación' : 'Tu pulso',
-            'en vivo',
+            'actividades visibles',
             padding: EdgeInsets.zero,
           ),
           const SizedBox(height: 11),
@@ -480,7 +486,7 @@ class _FuturisticDashboardScreenState
                 Text(
                   'Entrada · comida · regreso · salida',
                   style: GoogleFonts.inter(
-                    color: Colors.white48,
+                    color: const Color(0x7AFFFFFF),
                     fontSize: 10.5,
                   ),
                 ),
@@ -629,11 +635,11 @@ class _FuturisticDashboardScreenState
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       itemCount: actions.length,
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: MediaQuery.sizeOf(context).width >= 1000 ? 4 : (MediaQuery.sizeOf(context).width >= 650 ? 3 : 2),
         crossAxisSpacing: 9,
         mainAxisSpacing: 9,
-        childAspectRatio: 1.55,
+        mainAxisExtent: 125.0 + (MediaQuery.textScalerOf(context).scale(14) - 14).clamp(0, 60).toDouble(),
       ),
       itemBuilder: (_, index) {
         final action = actions[index];
@@ -826,7 +832,7 @@ class _Metric extends StatelessWidget {
           const SizedBox(height: 3),
           Text(
             label,
-            style: GoogleFonts.inter(color: Colors.white48, fontSize: 9.5),
+            style: GoogleFonts.inter(color: const Color(0x7AFFFFFF), fontSize: 9.5),
           ),
         ],
       ),

@@ -48,6 +48,8 @@ class CustomVoiceService {
       : _functions = FirebaseFunctions.instanceFor(region: 'us-central1');
 
   final FirebaseFunctions _functions;
+  AdminVoiceStatus? _cachedStatus;
+  DateTime? _statusTime;
 
   Future<AdminVoiceStatus> status() async {
     try {
@@ -61,15 +63,17 @@ class CustomVoiceService {
       if (raw is! Map) {
         throw const CustomVoiceException('No se pudo leer el estado de la voz.');
       }
-      return AdminVoiceStatus.fromMap(Map<String, dynamic>.from(raw));
+      _cachedStatus = AdminVoiceStatus.fromMap(Map<String, dynamic>.from(raw));
+      _statusTime = DateTime.now();
+      return _cachedStatus!;
     } on FirebaseFunctionsException catch (error) {
       throw CustomVoiceException(_messageFor(error));
     }
   }
 
   Future<AdminVoiceStatus> enroll({
-    required String consentUrl,
-    required String referenceUrl,
+    required String consentBase64,
+    required String referenceBase64,
     String languageCode = 'es-US',
   }) async {
     try {
@@ -79,8 +83,8 @@ class CustomVoiceService {
             options: HttpsCallableOptions(timeout: const Duration(seconds: 90)),
           )
           .call(<String, dynamic>{
-            'consentUrl': consentUrl,
-            'referenceUrl': referenceUrl,
+            'consentBase64': consentBase64,
+            'referenceBase64': referenceBase64,
             'languageCode': languageCode,
           });
       final raw = result.data;
@@ -89,7 +93,9 @@ class CustomVoiceService {
           'El servidor no confirmó la creación de la voz.',
         );
       }
-      return AdminVoiceStatus.fromMap(Map<String, dynamic>.from(raw));
+      _cachedStatus = AdminVoiceStatus.fromMap(Map<String, dynamic>.from(raw));
+      _statusTime = DateTime.now();
+      return _cachedStatus!;
     } on FirebaseFunctionsException catch (error) {
       throw CustomVoiceException(_messageFor(error));
     }
@@ -107,7 +113,9 @@ class CustomVoiceService {
       if (raw is! Map) {
         throw const CustomVoiceException('No se pudo actualizar la voz.');
       }
-      return AdminVoiceStatus.fromMap(Map<String, dynamic>.from(raw));
+      _cachedStatus = AdminVoiceStatus.fromMap(Map<String, dynamic>.from(raw));
+      _statusTime = DateTime.now();
+      return _cachedStatus!;
     } on FirebaseFunctionsException catch (error) {
       throw CustomVoiceException(_messageFor(error));
     }
@@ -117,6 +125,10 @@ class CustomVoiceService {
     final clean = text.trim();
     if (clean.isEmpty) return null;
     try {
+      if (_statusTime == null || DateTime.now().difference(_statusTime!).inSeconds > 60) {
+        await status().timeout(const Duration(seconds: 5));
+      }
+      if (_cachedStatus?.enabled != true) return null;
       final result = await _functions
           .httpsCallable(
             'synthesizeAdminVoice',
@@ -147,7 +159,8 @@ class CustomVoiceService {
     return switch (error.code) {
       'unauthenticated' => 'Inicia sesión para usar la voz de Sauna Stilo.',
       'permission-denied' =>
-        'Solo administración puede configurar la voz oficial.',
+        'No tienes permiso para esta operación de voz.',
+      'not-found' => 'El servicio de voz todavía no está publicado en Firebase.',
       'failed-precondition' =>
         'La voz personalizada todavía no está habilitada en Google Cloud para este proyecto.',
       'resource-exhausted' =>

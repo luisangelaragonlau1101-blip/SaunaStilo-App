@@ -46,6 +46,7 @@ class _AsistenteIaScreenState extends State<AsistenteIaScreen> {
   bool _thinking = false;
   bool _listening = false;
   bool _speak = true;
+  int _speechRequest = 0;
   bool? _online;
 
   bool get _admin => widget.usuario.rol == AppRoles.admin;
@@ -69,6 +70,7 @@ class _AsistenteIaScreenState extends State<AsistenteIaScreen> {
 
   @override
   void dispose() {
+    _speechRequest++;
     _controller.dispose();
     _scroll.dispose();
     _speech.cancel();
@@ -110,10 +112,10 @@ class _AsistenteIaScreenState extends State<AsistenteIaScreen> {
                   ),
                   Text(
                     _online == true
-                        ? 'IA + INTERNET · CONECTADA'
+                        ? 'RESPUESTA IA VERIFICADA'
                         : _online == false
                             ? 'SIN CONEXIÓN · REINTENTA'
-                            : 'IA + INTERNET · LISTA',
+                            : 'CONEXIÓN POR VERIFICAR',
                     style: GoogleFonts.inter(
                       color: _online == false ? Colors.redAccent : _mint,
                       fontSize: 9,
@@ -154,6 +156,7 @@ class _AsistenteIaScreenState extends State<AsistenteIaScreen> {
             onPressed: () {
               setState(() => _speak = !_speak);
               if (!_speak) {
+                _speechRequest++;
                 _player.stop();
                 _tts.stop();
               }
@@ -521,7 +524,7 @@ class _AsistenteIaScreenState extends State<AsistenteIaScreen> {
   Future<void> _pickImages() async {
     final images = await _picker.pickMultiImage(imageQuality: 82);
     if (images.isNotEmpty && mounted) {
-      setState(() => _pendingImages.addAll(images.take(4)));
+      setState(() => _pendingImages.addAll(images.take(4 - _pendingImages.length)));
     }
   }
 
@@ -554,6 +557,10 @@ class _AsistenteIaScreenState extends State<AsistenteIaScreen> {
 
   Future<void> _send(String value) async {
     final question = value.trim();
+    if (question.length > 2500) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('La pregunta admite hasta 2500 caracteres.')));
+      return;
+    }
     if (_thinking || (question.isEmpty && _pendingImages.isEmpty)) return;
     await _speech.stop();
     final images = List<XFile>.from(_pendingImages);
@@ -602,6 +609,8 @@ class _AsistenteIaScreenState extends State<AsistenteIaScreen> {
       setState(() {
         _thinking = false;
         _online = false;
+        _controller.text = question;
+        if (_pendingImages.isEmpty) _pendingImages.addAll(images);
         _messages.add(
           _AiMessage(
             text: error is AiAssistantException
@@ -630,6 +639,7 @@ class _AsistenteIaScreenState extends State<AsistenteIaScreen> {
   }
 
   Future<void> _toggleDictation() async {
+    _speechRequest++;
     if (_listening) {
       await _speech.stop();
       if (mounted) setState(() => _listening = false);
@@ -648,7 +658,11 @@ class _AsistenteIaScreenState extends State<AsistenteIaScreen> {
         if (mounted) setState(() => _listening = false);
       },
     );
-    if (!available) return;
+    if (!available) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No hay dictado disponible. Revisa el permiso de micrófono o escribe tu pregunta.')));
+      return;
+    }
+    if (!mounted) return;
     setState(() => _listening = true);
     await _speech.listen(
       localeId: 'es_MX',
@@ -667,6 +681,7 @@ class _AsistenteIaScreenState extends State<AsistenteIaScreen> {
   }
 
   Future<void> _speakText(String text) async {
+    final request = ++_speechRequest;
     final clean = text
         .replaceAll(RegExp(r'https?://\S+'), 'enlace')
         .replaceAll(RegExp(r'\s+'), ' ')
@@ -679,14 +694,18 @@ class _AsistenteIaScreenState extends State<AsistenteIaScreen> {
     await _tts.stop();
     try {
       final audio = await _voice.synthesize(spoken);
+      if (!mounted || request != _speechRequest) return;
       if (audio != null) {
-        await _player.play(BytesSource(audio.bytes));
+        await _player.play(BytesSource(audio.bytes, mimeType: audio.mimeType));
         return;
       }
     } catch (_) {
       // La voz del dispositivo permanece como respaldo si la personalizada falla.
     }
-    await _tts.speak(spoken);
+    if (!mounted || request != _speechRequest) return;
+    try { await _tts.speak(spoken); } catch (_) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('La voz no pudo reproducirse. La respuesta permanece en pantalla.')));
+    }
   }
 
   Future<void> _openSource(String value) async {

@@ -39,29 +39,18 @@ async function getVoiceStatus(db) {
 async function enrollVoice({
   db,
   uid,
-  consentUrl,
-  referenceUrl,
+  consentBytes,
+  referenceBytes,
   languageCode,
   projectId,
   bucket,
   HttpsError,
-  ownsMedia,
 }) {
   await requireAdmin(db, uid, HttpsError);
   if (!['es-US', 'es-ES'].includes(languageCode)) {
     throw new HttpsError('invalid-argument', 'El idioma de voz no es compatible.');
   }
-  if (!ownsMedia([consentUrl, referenceUrl], uid, bucket)) {
-    throw new HttpsError(
-      'permission-denied',
-      'Las grabaciones deben pertenecer a la cuenta administradora actual.',
-    );
-  }
-
-  const [consentBytes, referenceBytes] = await Promise.all([
-    downloadAudio(consentUrl),
-    downloadAudio(referenceUrl),
-  ]);
+  await reserveVoiceRequest(db, uid, HttpsError);
   const accessToken = await cloudAccessToken();
   const response = await fetch(
     'https://texttospeech.googleapis.com/v1beta1/voices:generateVoiceCloningKey',
@@ -104,8 +93,8 @@ async function enrollVoice({
       enabled: true,
       provider: 'chirp3-instant-custom-voice',
       createdBy: uid,
-      consentUrl,
-      referenceUrl,
+      consentConfirmed: true,
+      consentVersion: 'google-es-2026',
       updatedAt: FieldValue.serverTimestamp(),
     },
     { merge: true },
@@ -139,7 +128,7 @@ async function synthesizeVoice({ db, uid, text, projectId, HttpsError }) {
   const data = snapshot.exists ? snapshot.data() || {} : {};
   const key = String(data.voiceCloningKey || '').trim();
   if (!key || data.enabled === false) {
-    return { available: false, mimeType: 'audio/mpeg', audioBase64: '' };
+    return { available: false, mimeType: 'audio/wav', audioBase64: '' };
   }
 
   const accessToken = await cloudAccessToken();
@@ -158,7 +147,7 @@ async function synthesizeVoice({ db, uid, text, projectId, HttpsError }) {
           language_code: String(data.languageCode || 'es-US'),
           voice_clone: { voice_cloning_key: key },
         },
-        audioConfig: { audioEncoding: 'MP3', speakingRate: 1.02 },
+        audioConfig: { audioEncoding: 'LINEAR16', speakingRate: 1.02 },
       }),
       signal: AbortSignal.timeout(35000),
     },
@@ -169,26 +158,7 @@ async function synthesizeVoice({ db, uid, text, projectId, HttpsError }) {
   if (!audio) {
     throw new HttpsError('unavailable', 'El servicio de voz no devolvió audio.');
   }
-  return { available: true, mimeType: 'audio/mpeg', audioBase64: audio };
-}
-
-async function downloadAudio(url) {
-  const response = await fetch(url, {
-    redirect: 'error',
-    signal: AbortSignal.timeout(15000),
-  });
-  if (!response.ok) {
-    throw new Error(`No se pudo descargar la grabación (${response.status}).`);
-  }
-  const announced = Number(response.headers.get('content-length') || 0);
-  if (announced > MAX_AUDIO_BYTES) {
-    throw new Error('La grabación excede el tamaño permitido.');
-  }
-  const buffer = Buffer.from(await response.arrayBuffer());
-  if (!buffer.length || buffer.length > MAX_AUDIO_BYTES) {
-    throw new Error('La grabación está vacía o es demasiado grande.');
-  }
-  return buffer;
+  return { available: true, mimeType: 'audio/wav', audioBase64: audio };
 }
 
 async function cloudAccessToken() {
@@ -250,12 +220,12 @@ function providerError(status, payload, HttpsError) {
   if (status === 400) {
     return new HttpsError(
       'invalid-argument',
-      message || 'La grabación no cumple los requisitos del proveedor de voz.',
+      'La grabación no cumple los requisitos del proveedor de voz; revisa el consentimiento, duración y formato.',
     );
   }
   return new HttpsError(
     'unavailable',
-    message || 'El proveedor de voz no está disponible en este momento.',
+    'El proveedor de voz no está disponible en este momento.',
   );
 }
 

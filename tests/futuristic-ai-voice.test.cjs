@@ -9,7 +9,8 @@ const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 test('Sauna IA v2 is grounded with Google Search and remains on Vertex AI', () => {
   const backend = read('functions/assistant-v2.js');
   assert.match(backend, /vertexai:\s*true/);
-  assert.match(backend, /googleSearch:\s*\{\}/);
+  assert.match(read('functions/web-context.js'), /googleSearch:\s*\{\}/);
+  assert.match(backend, /retrieveWebContext/);
   assert.match(backend, /extractWebSources/);
   assert.match(backend, /usarInternet/);
 });

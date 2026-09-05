@@ -1,7 +1,7 @@
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { getFirestore } = require('firebase-admin/firestore');
 const base = require('./index');
-const { ownedMediaUrls } = require('./assistant-policy');
+const { decodeVoiceWav } = require('./voice-audio');
 const { saunaAssistantV2 } = require('./assistant-v2');
 const {
   getVoiceStatus,
@@ -28,21 +28,16 @@ const enrollAdminVoice = onCall(
   async (request) => {
     const uid = request.auth && request.auth.uid;
     if (!uid) throw new HttpsError('unauthenticated', 'Debes iniciar sesión.');
-    const consentUrl = safeMediaUrl(request.data && request.data.consentUrl);
-    const referenceUrl = safeMediaUrl(
-      request.data && request.data.referenceUrl,
-    );
-    if (!consentUrl || !referenceUrl) {
-      throw new HttpsError(
-        'invalid-argument',
-        'Las dos grabaciones son obligatorias.',
-      );
-    }
+    const db = getFirestore();
+    const profile = await db.collection('usuarios').doc(uid).get();
+    if (!profile.exists || profile.data().rol !== 'admin') throw new HttpsError('permission-denied', 'Solo administración puede configurar la voz.');
+    const consentBytes = decodeVoiceWav(request.data && request.data.consentBase64, HttpsError);
+    const referenceBytes = decodeVoiceWav(request.data && request.data.referenceBase64, HttpsError);
     return enrollVoice({
       db: getFirestore(),
       uid,
-      consentUrl,
-      referenceUrl,
+      consentBytes,
+      referenceBytes,
       languageCode: ['es-US', 'es-ES'].includes(
         request.data && request.data.languageCode,
       )
@@ -51,7 +46,6 @@ const enrollAdminVoice = onCall(
       projectId: GOOGLE_CLOUD_PROJECT,
       bucket: STORAGE_BUCKET,
       HttpsError,
-      ownsMedia: ownedMediaUrls,
     });
   },
 );
@@ -75,6 +69,8 @@ const synthesizeAdminVoice = onCall(
   async (request) => {
     const uid = request.auth && request.auth.uid;
     if (!uid) throw new HttpsError('unauthenticated', 'Debes iniciar sesión.');
+    const profile = await getFirestore().collection('usuarios').doc(uid).get();
+    if (!profile.exists || !['admin', 'maestro', 'almacenista', 'trabajador'].includes(profile.data().rol)) throw new HttpsError('permission-denied', 'Tu perfil no tiene acceso al servicio de voz.');
     return synthesizeVoice({
       db: getFirestore(),
       uid,
@@ -84,29 +80,6 @@ const synthesizeAdminVoice = onCall(
     });
   },
 );
-
-function safeMediaUrl(value) {
-  try {
-    const url = new URL(String(value || ''));
-    if (url.protocol !== 'https:') return '';
-    const firebasePrefix = `/v0/b/${STORAGE_BUCKET}/o/`;
-    if (
-      url.hostname === 'firebasestorage.googleapis.com' &&
-      url.pathname.startsWith(firebasePrefix)
-    ) {
-      return url.toString();
-    }
-    if (
-      url.hostname === 'storage.googleapis.com' &&
-      url.pathname.startsWith(`/${STORAGE_BUCKET}/`)
-    ) {
-      return url.toString();
-    }
-    return '';
-  } catch (_) {
-    return '';
-  }
-}
 
 module.exports = {
   ...base,
