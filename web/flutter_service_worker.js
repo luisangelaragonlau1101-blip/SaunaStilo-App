@@ -1,31 +1,9 @@
-// Retira el antiguo service worker de Flutter que podía dejar la aplicación
-// instalada atrapada en una compilación anterior.
-self.addEventListener('install', function () {
-  self.skipWaiting();
+// Retire only this legacy Flutter worker, preserving Firebase messaging.
+self.addEventListener('install', () => self.skipWaiting());
+self.addEventListener('activate', (event) => {
+  event.waitUntil((async () => {
+    // Current releases use versioned assets without a Flutter cache worker.
+    await self.registration.unregister();
+    // Do not erase other caches, unregister FCM, or reload open work forms.
+  })());
 });
-
-self.addEventListener('activate', function (event) {
-  event.waitUntil(
-    caches.keys()
-      .then(function (keys) {
-        return Promise.all(keys.map(function (key) {
-          return caches.delete(key);
-        }));
-      })
-      .then(function () {
-        return self.registration.unregister();
-      })
-      .then(function () {
-        return self.clients.claim();
-      })
-      .then(function () {
-        return self.clients.matchAll({ type: 'window' });
-      })
-      .then(function (clients) {
-        clients.forEach(function (client) {
-          client.navigate(client.url);
-        });
-      })
-  );
-});
-

@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'web_push_environment_stub.dart' if (dart.library.html) 'web_push_environment_web.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 
@@ -36,7 +38,9 @@ class PushNotificationsService {
 
   Future<PushActivationResult> activateFor(UserModel user) async {
     try {
-      await _messaging.setAutoInitEnabled(true);
+      final problem = pushEnvironmentProblem();
+      if (problem != null) return PushActivationResult(active: false, message: problem);
+      // Permission must be requested directly from the user's tap on iOS.
       final settings = await _messaging.requestPermission(
         alert: true,
         announcement: false,
@@ -57,6 +61,7 @@ class PushNotificationsService {
         );
       }
 
+      await _messaging.setAutoInitEnabled(true);
       final token = await _messaging.getToken(
         vapidKey: kIsWeb && _webVapidKey.isNotEmpty ? _webVapidKey : null,
         serviceWorkerScriptPath: kIsWeb
@@ -70,15 +75,18 @@ class PushNotificationsService {
         );
       }
 
-      await _saveToken(user: user, token: token);
+      await _saveToken(user: user, token: token).timeout(const Duration(seconds: 15));
       await _tokenRefreshSubscription?.cancel();
       _tokenRefreshSubscription = _messaging.onTokenRefresh.listen(
-        (newToken) => _saveToken(user: user, token: newToken),
+        (newToken) async {
+          try { await _saveToken(user: user, token: newToken); }
+          catch (_) { debugPrint('[push] Reintentar registro al volver a la app.'); }
+        },
       );
 
       return const PushActivationResult(
         active: true,
-        message: 'Notificaciones activadas con sonido, insignias y avisos en segundo plano.',
+        message: 'Dispositivo registrado. El sonido depende de los ajustes del teléfono. Prueba una llamada con la app en segundo plano para confirmar la entrega.',
       );
     } catch (error) {
       debugPrint('[push] No se pudo activar FCM: $error');
@@ -95,6 +103,7 @@ class PushNotificationsService {
     required UserModel user,
     required String token,
   }) async {
+    if (FirebaseAuth.instance.currentUser?.uid != user.id) return;
     await _firestore.collection('usuarios').doc(user.id).update({
       'fcmTokens': FieldValue.arrayUnion([token]),
       'pushActualizadoEn': FieldValue.serverTimestamp(),
@@ -105,7 +114,12 @@ class PushNotificationsService {
   }
 
   Future<void> deactivateFor(String userId) async {
+    await _tokenRefreshSubscription?.cancel();
+    _tokenRefreshSubscription = null;
     try {
+      final settings = await currentSettings();
+      if (settings.authorizationStatus != AuthorizationStatus.authorized &&
+          settings.authorizationStatus != AuthorizationStatus.provisional) return;
       String? token;
       token = await _messaging.getToken(
         vapidKey: kIsWeb && _webVapidKey.isNotEmpty ? _webVapidKey : null,

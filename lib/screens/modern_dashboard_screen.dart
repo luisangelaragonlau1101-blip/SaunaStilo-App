@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 
 import '../models/actividad_model.dart';
 import '../models/user_model.dart';
+import '../widgets/conexion_panel.dart';
 import '../services/notificaciones_service.dart';
 import 'admin_asistencias_screen.dart';
 import 'admin_cajitas_screen.dart';
@@ -100,6 +101,7 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen> {
                   SliverToBoxAdapter(child: _semana()),
                   SliverToBoxAdapter(child: _agenda(actividades)),
                   SliverToBoxAdapter(child: _llamadaAsistente()),
+                  SliverToBoxAdapter(child: ConexionPanel(usuario: widget.usuario)),
                   SliverToBoxAdapter(child: _accesos()),
                   const SliverToBoxAdapter(child: SizedBox(height: 120)),
                 ],
@@ -745,7 +747,7 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'SAUNA IA · VOZ ACTIVA',
+                    'SAUNA IA · ASISTENTE',
                     style: GoogleFonts.inter(
                       color: _oro,
                       fontSize: 10,

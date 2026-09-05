@@ -1,37 +1,10 @@
 <!DOCTYPE html>
-<html lang="es">
-<head>
-  <base href="/SaunaStilo-App/">
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#050505">
-  <title>Abriendo Sauna Stilo</title>
-  <style>
-    html, body { margin: 0; min-height: 100%; background: #050505; color: #fff; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
-    body { display: grid; place-items: center; text-align: center; }
-    .mark { color: #d6a85f; font-size: 58px; }
-    h1 { margin: 12px 0; letter-spacing: 3px; font-size: 23px; }
-    p { color: #c9c5be; }
-  </style>
-</head>
-<body>
-  <main><div class="mark">♨</div><h1>SAUNA STILO</h1><p>Abriendo la aplicación…</p></main>
-  <script>
-    (async function () {
-      try {
-        if ('serviceWorker' in navigator) {
-          const registrations = await navigator.serviceWorker.getRegistrations();
-          await Promise.all(registrations.map((registration) => registration.unregister()));
-        }
-        if ('caches' in window) {
-          const keys = await caches.keys();
-          await Promise.all(keys.map((key) => caches.delete(key)));
-        }
-        localStorage.removeItem('sauna-stilo-build-version');
-      } finally {
-        location.replace('./?actualizada=' + Date.now());
-      }
-    }());
-  </script>
-</body>
-</html>
+<html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Sauna Stilo · Recuperar acceso</title>
+<style>body{margin:0;min-height:100vh;display:grid;place-content:center;background:#080c12;color:#eff4fa;font:17px system-ui;text-align:center;padding:24px}h1{letter-spacing:.15em}p{max-width:420px;color:#b7c6d6}a{color:#cde3ff}</style></head>
+<body><h1>SAUNA STILO</h1><p>Actualizando los archivos de la aplicación. Tu sesión y tus permisos de notificación se conservan.</p><a href="./">Volver a la aplicación</a>
+<script src="sauna-maintenance.js"></script><script>
+SaunaMaintenance.repair(new URL('./', location.href).href).catch(function(){}).finally(function(){
+  try { localStorage.removeItem('sauna-stilo-build-version'); } catch (_) {}
+  location.replace('./?actualizada=' + Date.now());
+});
+</script></body></html>

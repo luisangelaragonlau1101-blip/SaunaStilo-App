@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../models/notificacion_model.dart';
+import '../screens/notificaciones_screen.dart';
 import '../models/user_model.dart';
 import '../services/notificaciones_service.dart';
 import '../services/push_notifications_service.dart';
@@ -24,7 +25,9 @@ class AvisosSonoros extends StatefulWidget {
   State<AvisosSonoros> createState() => _AvisosSonorosState();
 }
 
-class _AvisosSonorosState extends State<AvisosSonoros> {
+class _AvisosSonorosState extends State<AvisosSonoros> with WidgetsBindingObserver {
+  StreamSubscription<RemoteMessage>? _openedSubscription;
+  final Set<String> _openedIds = <String>{};
   final AudioPlayer _player = AudioPlayer();
   final NotificacionesService _notificacionesService =
       NotificacionesService();
@@ -39,9 +42,18 @@ class _AvisosSonorosState extends State<AvisosSonoros> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _openedSubscription = FirebaseMessaging.onMessageOpenedApp.listen((message) => _openNotice(message.data['notificationId']?.toString()));
     _escuchar();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _preparePushNotifications();
+      if (kIsWeb) {
+        _openNotice(Uri.base.queryParameters['notification']);
+      } else {
+        FirebaseMessaging.instance.getInitialMessage().then((message) {
+          if (message != null) _openNotice(message.data['notificationId']?.toString());
+        }).catchError((Object _) {});
+      }
     });
   }
 
@@ -57,6 +69,16 @@ class _AvisosSonorosState extends State<AvisosSonoros> {
     }
   }
 
+  void _openNotice(String? id) {
+    if (!mounted || id == null || id.isEmpty || !_openedIds.add(id)) return;
+    Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => NotificacionesScreen(usuario: widget.usuario)));
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) _preparePushNotifications();
+  }
+
   Future<void> _preparePushNotifications() async {
     if (!mounted || _configurandoPush) return;
     _configurandoPush = true;
@@ -66,7 +88,7 @@ class _AvisosSonorosState extends State<AvisosSonoros> {
           settings.authorizationStatus == AuthorizationStatus.authorized ||
           settings.authorizationStatus == AuthorizationStatus.provisional;
 
-      if (authorized || !kIsWeb) {
+      if (authorized) {
         final result = await _pushService.activateFor(widget.usuario);
         if (!result.active && mounted) {
           _showPushAction(result.message);
@@ -76,6 +98,8 @@ class _AvisosSonorosState extends State<AvisosSonoros> {
           'Activa las notificaciones para recibir tareas y solicitudes aunque la app esté cerrada.',
         );
       }
+    } catch (_) {
+      // Unsupported browser or temporary network failure must not break startup.
     } finally {
       _configurandoPush = false;
     }
@@ -325,6 +349,8 @@ class _AvisosSonorosState extends State<AvisosSonoros> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _openedSubscription?.cancel();
     _subscription?.cancel();
     _pushService.dispose();
     _alarmaActiva = false;
