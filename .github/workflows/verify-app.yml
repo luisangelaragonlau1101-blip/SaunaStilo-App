@@ -1,0 +1,48 @@
+name: Verify application
+on:
+  push:
+    branches: [fix/2026-09-push-ai]
+  pull_request:
+    branches: [main]
+permissions:
+  contents: read
+concurrency:
+  group: verify-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  source-and-backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Archive tracked source for review
+        run: git archive --format=tar HEAD > source.tar
+      - uses: actions/upload-artifact@v4
+        with:
+          name: reviewed-source
+          path: source.tar
+          retention-days: 3
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --check functions/index.js
+      - name: Run notification regression tests when present
+        run: |
+          if [ -d tests ]; then node --test tests/*.test.cjs; fi
+  flutter-web:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - name: Compile existing web application
+        run: flutter build web --release --base-href /SaunaStilo-App/ --pwa-strategy=none
+      - name: Upload verified web bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: verified-web
+          path: build/web
+          retention-days: 3
