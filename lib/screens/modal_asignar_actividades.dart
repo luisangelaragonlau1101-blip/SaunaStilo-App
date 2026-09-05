@@ -72,10 +72,13 @@ class _ModalAsignarActividadState extends State<ModalAsignarActividad> {
         query = query.where('rol', isEqualTo: 'trabajador');
       }
 
+      final project = await FirebaseFirestore.instance.collection('proyectos').doc(widget.proyectoId).get();
+      final members = List<String>.from(project.data()?['encargados'] ?? const []);
       var snapshot = await query.get();
 
       List<Map<String, dynamic>> temp = [];
       for (var doc in snapshot.docs) {
+        if (widget.rolUsuario != 'admin' && !members.contains(doc.id)) continue;
         var data = doc.data() as Map<String, dynamic>;
         String nombre = data['Nombre'] ?? data['nombre'] ?? 'Sin nombre';
         String rolUsuarioBD = data['rol'] ?? 'trabajador';
@@ -120,7 +123,7 @@ class _ModalAsignarActividadState extends State<ModalAsignarActividad> {
         return Theme(
           data: ThemeData.dark().copyWith(
             colorScheme: const ColorScheme.dark(
-              primary: Color(0xFFFFDE21),
+              primary: Color(0xFFB7FF2A),
               onPrimary: Colors.black,
               surface: Color(0xFF1E1E1E),
               onSurface: Colors.white,
@@ -161,7 +164,7 @@ class _ModalAsignarActividadState extends State<ModalAsignarActividad> {
         return Theme(
           data: ThemeData.dark().copyWith(
             colorScheme: const ColorScheme.dark(
-              primary: Color(0xFFFFDE21),
+              primary: Color(0xFFB7FF2A),
               onPrimary: Colors.black,
               surface: Color(0xFF1E1E1E),
               onSurface: Colors.white,
@@ -187,7 +190,7 @@ class _ModalAsignarActividadState extends State<ModalAsignarActividad> {
         return Theme(
           data: ThemeData.dark().copyWith(
             colorScheme: const ColorScheme.dark(
-              primary: Color(0xFFFFDE21),
+              primary: Color(0xFFB7FF2A),
               onPrimary: Colors.black,
               surface: Color(0xFF1E1E1E),
               onSurface: Colors.white,
@@ -252,14 +255,14 @@ class _ModalAsignarActividadState extends State<ModalAsignarActividad> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFFDE21).withOpacity(0.08),
+                  color: const Color(0xFFB7FF2A).withOpacity(0.08),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFFFDE21).withOpacity(0.25)),
+                  border: Border.all(color: const Color(0xFFB7FF2A).withOpacity(0.25)),
                 ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(Icons.fact_check_outlined, color: Color(0xFFFFDE21), size: 20),
+                    const Icon(Icons.fact_check_outlined, color: Color(0xFFB7FF2A), size: 20),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Column(
@@ -268,7 +271,7 @@ class _ModalAsignarActividadState extends State<ModalAsignarActividad> {
                           Text(
                             'TAREA DIARIA · DIAGNÓSTICO',
                             style: GoogleFonts.inter(
-                              color: const Color(0xFFFFDE21),
+                              color: const Color(0xFFB7FF2A),
                               fontSize: 11,
                               fontWeight: FontWeight.bold,
                               letterSpacing: 0.8,
@@ -297,7 +300,7 @@ class _ModalAsignarActividadState extends State<ModalAsignarActividad> {
                   filled: true,
                   fillColor: const Color(0xFF121212),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFFFDE21))),
+                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFB7FF2A))),
                 ),
                 validator: (value) => value!.isEmpty ? 'Requerido' : null,
               ),
@@ -314,14 +317,14 @@ class _ModalAsignarActividadState extends State<ModalAsignarActividad> {
                   filled: true,
                   fillColor: const Color(0xFF121212),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFFFDE21))),
+                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFB7FF2A))),
                 ),
                 validator: (value) => value!.isEmpty ? 'Requerido' : null,
               ),
               const SizedBox(height: 15),
 
               _cargandoTrabajadores
-                  ? const Center(child: CircularProgressIndicator(color: Color(0xFFFFDE21)))
+                  ? const Center(child: CircularProgressIndicator(color: Color(0xFFB7FF2A)))
                   : DropdownButtonFormField<String>(
                       value: _trabajadores.any((t) => t['id'] == _trabajadorSeleccionadoId) ? _trabajadorSeleccionadoId : null,
                       dropdownColor: const Color(0xFF1E1E1E),
@@ -333,7 +336,7 @@ class _ModalAsignarActividadState extends State<ModalAsignarActividad> {
                         filled: true,
                         fillColor: const Color(0xFF121212),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFFFDE21))),
+                        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFB7FF2A))),
                       ),
                       items: _trabajadores.isEmpty 
                           ? null 
@@ -367,7 +370,7 @@ class _ModalAsignarActividadState extends State<ModalAsignarActividad> {
                 width: double.infinity,
                 child: OutlinedButton.icon(
                   onPressed: () => _seleccionarDiaTarea(context),
-                  icon: const Icon(Icons.today_outlined, size: 18, color: Color(0xFFFFDE21)),
+                  icon: const Icon(Icons.today_outlined, size: 18, color: Color(0xFFB7FF2A)),
                   label: Text(
                     DateFormat('dd MMM yyyy').format(_fechaAsignada),
                     style: GoogleFonts.inter(color: Colors.white70),
@@ -390,7 +393,7 @@ class _ModalAsignarActividadState extends State<ModalAsignarActividad> {
                   Expanded(
                     child: OutlinedButton.icon(
                       onPressed: () => _seleccionarFecha(context),
-                      icon: const Icon(Icons.calendar_today, size: 18, color: Color(0xFFFFDE21)),
+                      icon: const Icon(Icons.calendar_today, size: 18, color: Color(0xFFB7FF2A)),
                       label: Text(_fechaLimite == null
                           ? 'Fecha Límite'
                           : DateFormat('dd MMM yyyy').format(_fechaLimite!),
@@ -406,7 +409,7 @@ class _ModalAsignarActividadState extends State<ModalAsignarActividad> {
                   Expanded(
                     child: OutlinedButton.icon(
                       onPressed: () => _seleccionarHora(context),
-                      icon: const Icon(Icons.access_time, size: 18, color: Color(0xFFFFDE21)),
+                      icon: const Icon(Icons.access_time, size: 18, color: Color(0xFFB7FF2A)),
                       label: Text(_horaLimite == null
                           ? 'Hora Límite'
                           : _horaLimite!.format(context),
@@ -427,7 +430,7 @@ class _ModalAsignarActividadState extends State<ModalAsignarActividad> {
                 height: 50,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFFFDE21),
+                    backgroundColor: const Color(0xFFB7FF2A),
                     foregroundColor: Colors.black,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
@@ -485,7 +488,7 @@ class _ModalAsignarActividadState extends State<ModalAsignarActividad> {
                       context: context,
                       barrierDismissible: false,
                       builder: (context) => const Center(
-                        child: CircularProgressIndicator(color: Color(0xFFFFDE21)),
+                        child: CircularProgressIndicator(color: Color(0xFFB7FF2A)),
                       ),
                     );
 
@@ -560,7 +563,7 @@ class _ModalAsignarActividadState extends State<ModalAsignarActividad> {
                       Navigator.pop(context);
                       messenger.showSnackBar(
                         const SnackBar(
-                          content: Text('Tarea diaria asignada y proyecto EN PROCESO'),
+                          content: Text('Tarea diaria asignada correctamente'),
                           backgroundColor: Colors.green,
                         ),
                       );

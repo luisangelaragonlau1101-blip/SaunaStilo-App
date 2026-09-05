@@ -11,6 +11,7 @@ import '../models/user_model.dart';
 import '../services/proyecto_chat_service.dart';
 import '../widgets/audio_message_player.dart';
 import '../widgets/audio_note_button.dart';
+import '../widgets/dictado_button.dart';
 
 class ProyectoChatScreen extends StatefulWidget {
   final Proyecto proyecto;
@@ -24,7 +25,7 @@ class ProyectoChatScreen extends StatefulWidget {
 class _ProyectoChatScreenState extends State<ProyectoChatScreen> {
   static const _fondo = Color(0xFF070706);
   static const _tarjeta = Color(0xFF171715);
-  static const _acento = Color(0xFFD6A85F);
+  static const _acento = Color(0xFFB82B55);
   final _controller = TextEditingController();
   final _chat = ProyectoChatService();
   final _picker = ImagePicker();
@@ -86,10 +87,11 @@ class _ProyectoChatScreenState extends State<ProyectoChatScreen> {
           ],
         ),
         actions: [
+          DictadoButton(controller: _controller, enabled: !_enviando),
           IconButton(
             tooltip: 'Llamada grupal',
             onPressed: _usuario == null ? null : () => _iniciarReunion(soloAudio: true),
-            icon: const Icon(Icons.call_rounded, color: Color(0xFF70E1D0)),
+            icon: const Icon(Icons.call_rounded, color: Color(0xFFB7FF2A)),
           ),
           IconButton(
             tooltip: 'Videollamada grupal',
@@ -202,14 +204,14 @@ class _ProyectoChatScreenState extends State<ProyectoChatScreen> {
         decoration: BoxDecoration(
           color: propio ? const Color(0xFF21332E) : _tarjeta,
           borderRadius: BorderRadius.circular(19),
-          border: Border.all(color: propio ? const Color(0xFF70E1D0).withOpacity(.24) : Colors.white10),
+          border: Border.all(color: propio ? const Color(0xFFB7FF2A).withOpacity(.24) : Colors.white10),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               nombre,
-              style: GoogleFonts.inter(color: propio ? const Color(0xFF70E1D0) : _acento, fontWeight: FontWeight.w800, fontSize: 11),
+              style: GoogleFonts.inter(color: propio ? const Color(0xFFB7FF2A) : _acento, fontWeight: FontWeight.w800, fontSize: 11),
             ),
             if (texto.isNotEmpty) ...[
               const SizedBox(height: 5),
@@ -241,7 +243,7 @@ class _ProyectoChatScreenState extends State<ProyectoChatScreen> {
             ],
             if (audioUrl.isNotEmpty) ...[
               const SizedBox(height: 8),
-              AudioMessagePlayer(url: audioUrl, durationSeconds: duracion, color: propio ? const Color(0xFF70E1D0) : _acento),
+              AudioMessagePlayer(url: audioUrl, durationSeconds: duracion, color: propio ? const Color(0xFFB7FF2A) : _acento),
             ],
             if (reunionUrl.isNotEmpty) ...[
               const SizedBox(height: 8),
@@ -348,7 +350,7 @@ class _ProyectoChatScreenState extends State<ProyectoChatScreen> {
               ),
             ),
             AudioNoteButton(
-              color: const Color(0xFF70E1D0),
+              color: const Color(0xFFB7FF2A),
               onAudioReady: (wav, duracion) => _chat.enviarAudio(
                 proyecto: widget.proyecto,
                 autor: _usuario!,

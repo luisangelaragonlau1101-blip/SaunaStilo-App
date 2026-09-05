@@ -12,8 +12,9 @@ import 'notificaciones_screen.dart';
 
 class FuturisticDashboardScreen extends StatefulWidget {
   final UserModel usuario;
+  final bool embedded;
 
-  const FuturisticDashboardScreen({super.key, required this.usuario});
+  const FuturisticDashboardScreen({super.key, required this.usuario, this.embedded = false});
 
   @override
   State<FuturisticDashboardScreen> createState() =>
@@ -68,10 +69,7 @@ class _FuturisticDashboardScreenState
             final visible = all
                 .where((action) => action.matches(_query))
                 .toList(growable: false);
-            final featured = all
-                .where((action) => action.primary)
-                .take(6)
-                .toList(growable: false);
+            final featured = ['alerta_general', 'asistencia', 'tareas', 'mensajes', 'proyectos', 'racha', 'rachas', 'ia'].expand((id) => all.where((a) => a.id == id)).toList(growable: false);
 
             return RefreshIndicator(
               color: _cyan,
@@ -86,14 +84,14 @@ class _FuturisticDashboardScreenState
                 physics: const AlwaysScrollableScrollPhysics(
                   parent: BouncingScrollPhysics(),
                 ),
-                padding: const EdgeInsets.only(bottom: 120),
+                padding: EdgeInsets.only(bottom: widget.embedded ? 24 : 120),
                 children: [
                   _topBar(),
                   _identity(),
                   _searchBar(all),
                   if (_query.isEmpty) ...[
-                    _aiHero(all),
-                    _sectionTitle('Acciones inmediatas', '1 toque'),
+                    if (!_admin) _workCard(all),
+                    _sectionTitle('Tu día, a un toque', 'Accesos directos'),
                     _grid(featured),
                     if (snapshot.hasError)
                       const Padding(padding: EdgeInsets.all(18), child: Text(
@@ -102,8 +100,8 @@ class _FuturisticDashboardScreenState
                     else if (snapshot.connectionState == ConnectionState.waiting)
                       const Padding(padding: EdgeInsets.all(18), child: LinearProgressIndicator())
                     else _pulse(activities),
-                    if (!_admin) _workCard(all),
                     if (snapshot.hasData && !snapshot.hasError) _today(activities),
+                    _aiHero(all),
                     ConexionPanel(usuario: widget.usuario),
                   ],
                   _sectionTitle(
@@ -117,7 +115,7 @@ class _FuturisticDashboardScreenState
           },
         ),
       ),
-      bottomNavigationBar: _bottomBar(),
+      bottomNavigationBar: widget.embedded ? null : _bottomBar(),
     );
   }
 

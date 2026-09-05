@@ -36,9 +36,11 @@ test('all-team alert remains restricted to administration in server and UI', () 
   assert.match(screen, /enviarAlertaGeneral/);
 });
 
-test('foreground alarm uses the urgent local sound asset', () => {
+test('foreground alarm has a single owner and uses the urgent local sound', () => {
+  const receiver = fs.readFileSync(path.join(__dirname, '../lib/widgets/avisos_sonoros.dart'), 'utf8');
   const push = fs.readFileSync(path.join(__dirname, '../lib/services/push_notifications_service.dart'), 'utf8');
-  assert.match(push, /message\.data\['type'\] == 'alarma_admin'/);
-  assert.match(push, /sounds\/urgent_alarm\.ogg/);
-  assert.match(push, /ReleaseMode\.loop/);
+  assert.match(receiver, /aviso.tipo == 'alarma_admin'/);
+  assert.match(receiver, /sounds\/urgent_alarm\.ogg/);
+  assert.match(receiver, /ReleaseMode\.loop/);
+  assert.doesNotMatch(push, /onMessage\.listen/);
 });

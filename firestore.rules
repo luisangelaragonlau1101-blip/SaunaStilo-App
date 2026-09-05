@@ -463,13 +463,46 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    function projectMaster(projectId) {
+      return signedIn() && role() == 'maestro'
+        && projectId is string && assignedToProject(projectId);
+    }
+    function validMasterTask() {
+      let d = request.resource.data;
+      let project = get(/databases/$(database)/documents/proyectos/$(d.proyectoId)).data;
+      return projectMaster(d.proyectoId)
+        && d.keys().hasOnly(['proyectoId','titulo','descripcion','asignadoATrabajadorId','fechaInicio','fechaTermino','fechaAsignada','completadoEn','estatus','observacionesAdmin','comentariosTrabajador','evidenciaFotos','historialEventos','evidenciasCount','cantidadEvidencias','ultimoAvance','requiereEvidencia','creadoPor','creadoEn'])
+        && d.creadoPor == request.auth.uid && d.creadoEn == request.time
+        && d.titulo is string && d.titulo.size() > 0 && d.titulo.size() <= 250
+        && d.descripcion is string && d.descripcion.size() <= 5000
+        && d.asignadoATrabajadorId is string && d.asignadoATrabajadorId in project.encargados
+        && d.fechaInicio is timestamp && d.fechaAsignada is timestamp && d.fechaTermino is timestamp
+        && d.fechaTermino > d.fechaInicio && d.estatus == 'pendiente'
+        && d.requiereEvidencia == true && d.evidenciasCount == 0 && d.cantidadEvidencias == 0
+        && d.evidenciaFotos == [] && d.historialEventos == []
+        && d.completadoEn == null && d.ultimoAvance == null
+        && d.observacionesAdmin == '' && d.comentariosTrabajador == '';
+    }
+    function editsOwnMasterTask() {
+      let d = request.resource.data;
+      return projectMaster(resource.data.proyectoId)
+        && resource.data.get('creadoPor', '') == request.auth.uid
+        && resource.data.estatus != 'completado'
+        && d.diff(resource.data).affectedKeys().hasOnly(['titulo','descripcion','asignadoATrabajadorId','fechaTermino','fechaAsignada'])
+        && d.titulo is string && d.titulo.size() > 0 && d.titulo.size() <= 250
+        && d.descripcion is string && d.descripcion.size() <= 5000
+        && d.asignadoATrabajadorId in get(/databases/$(database)/documents/proyectos/$(resource.data.proyectoId)).data.encargados
+        && d.fechaTermino is timestamp && d.fechaTermino > resource.data.fechaInicio;
+    }
+
     match /actividades/{activityId} {
       allow read: if signedIn()
         && (isAdmin()
           || resource.data.asignadoATrabajadorId == request.auth.uid
           || assignedToProject(resource.data.proyectoId));
-      allow create, delete: if isAdmin();
-      allow update: if isAdmin()
+      allow create: if isAdmin() || validMasterTask();
+      allow delete: if isAdmin();
+      allow update: if isAdmin() || editsOwnMasterTask()
         || (signedIn()
           && resource.data.asignadoATrabajadorId == request.auth.uid
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
@@ -602,10 +635,16 @@ service cloud.firestore {
       }
     }
 
+    function notificationVisible(data) {
+      return signedIn() && (data.get('destinatarioId', '') == request.auth.uid
+        || data.get('destinatarioId', '') == 'todos'
+        || data.get('rolesDestinatarios', []).hasAny([role(), 'todos']));
+    }
+
     match /notificaciones/{notificationId} {
-      allow read: if signedIn();
+      allow read: if notificationVisible(resource.data);
       allow create: if isAdmin() || isSafeNotificationCreate();
-      allow update: if signedIn()
+      allow update: if notificationVisible(resource.data)
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
           'leidosPor'
         ])

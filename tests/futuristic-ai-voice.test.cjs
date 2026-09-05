@@ -2,7 +2,6 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
-
 const root = path.join(__dirname, '..');
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 
@@ -14,15 +13,14 @@ test('Sauna IA v2 is grounded with Google Search and remains on Vertex AI', () =
   assert.match(backend, /extractWebSources/);
   assert.match(backend, /usarInternet/);
 });
-
-test('the guide uses the real advanced assistant with internet enabled', () => {
+test('the retained advanced guide uses the real assistant, while main navigation opens the embedded guide', () => {
   const guide = read('lib/screens/guia_inteligente_screen.dart');
-  assert.match(guide, /responderAvanzado/);
-  assert.match(guide, /usarInternet:\s*true/);
-  assert.match(guide, /modo:\s*'guia'/);
+  assert.match(guide, /OnlineSmartScreen/);
+  assert.match(guide, /SIN CONSULTA A IA/);
   assert.equal(guide.includes('respuesta simulada'), false);
+  assert.match(read('lib/screens/operations_shell.dart'), /OnlineSmartScreen/);
+  assert.match(read('lib/screens/online_smart_embed_web.dart'), /HtmlElementView/);
 });
-
 test('official voice enrollment requires the exact Spanish consent and keeps cloning key off Flutter client', () => {
   const server = read('functions/voice-service.js');
   const client = read('lib/services/custom_voice_service.dart');
@@ -32,15 +30,16 @@ test('official voice enrollment requires the exact Spanish consent and keeps clo
   assert.match(server, /text:synthesize/);
   assert.equal(client.includes('voiceCloningKey'), false);
 });
-
-test('every role is routed through the new futuristic command center', () => {
+test('every role uses the daily operations shell and retains all role-filtered actions including alert', () => {
   const bridge = read('lib/screens/modern_dashboard_screen.dart');
-  const dashboard = read('lib/screens/futuristic_dashboard_screen.dart');
-  assert.match(bridge, /FuturisticDashboardScreen/);
-  assert.match(dashboard, /AppActionCatalog\.forUser/);
-  assert.match(dashboard, /¿A dónde quieres entrar\?/);
+  const shell = read('lib/screens/operations_shell.dart');
+  assert.match(bridge, /OperationsShell/);
+  assert.match(shell, /AppActionCatalog\.forUser/);
+  assert.match(shell, /alerta_general/);
+  for (const label of ['Inicio', 'Comunidad', 'Chats', 'Tareas', 'Perfil']) assert.ok(shell.includes("label: '" + label + "'"));
+  assert.match(shell, /JornadaCompacta/);
+  assert.match(shell, /OperationsTaskList/);
 });
-
 test('administration has a voice studio while other roles remain role-filtered', () => {
   const catalog = read('lib/services/app_action_catalog.dart');
   const studio = read('lib/screens/voz_administracion_screen.dart');
@@ -50,13 +49,8 @@ test('administration has a voice studio while other roles remain role-filtered',
   assert.match(studio, /_VoiceSlot\.consent/);
   assert.match(studio, /_VoiceSlot\.reference/);
 });
-
-test('new Firebase entrypoint preserves old functions and adds AI and voice services', () => {
+test('Firebase entrypoint preserves old functions and adds scoped team services', () => {
   const app = read('functions/app.js');
-  const pkg = JSON.parse(read('functions/package.json'));
-  assert.equal(pkg.main, 'app.js');
-  assert.match(app, /\.\.\.base/);
-  assert.match(app, /saunaAssistantV2/);
-  assert.match(app, /enrollAdminVoice/);
-  assert.match(app, /synthesizeAdminVoice/);
+  assert.equal(JSON.parse(read('functions/package.json')).main, 'app.js');
+  for (const name of ['...base','saunaAssistantV2','enrollAdminVoice','synthesizeAdminVoice','assignProjectActivity','repeatWorkdayReminders']) assert.ok(app.includes(name));
 });

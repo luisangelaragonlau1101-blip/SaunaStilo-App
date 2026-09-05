@@ -3,6 +3,7 @@ const { getFirestore } = require('firebase-admin/firestore');
 const base = require('./index');
 const { decodeVoiceWav } = require('./voice-audio');
 const { saunaAssistantV2 } = require('./assistant-v2');
+const { assignProjectActivity, repeatWorkdayReminders } = require('./team-operations');
 const {
   getVoiceStatus,
   enrollVoice,
@@ -88,4 +89,6 @@ module.exports = {
   enrollAdminVoice,
   setAdminVoiceEnabled,
   synthesizeAdminVoice,
+  assignProjectActivity,
+  repeatWorkdayReminders,
 };

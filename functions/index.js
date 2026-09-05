@@ -10,6 +10,7 @@ const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 const { getMessaging } = require('firebase-admin/messaging');
 const { generationConfig, assistantFailure, reserveAssistantRequest, ownedMediaUrls } = require('./assistant-policy');
 const { buildPushPayload } = require('./push-payload');
+const { reminderSlot } = require('./reminder-policy');
 
 initializeApp();
 setGlobalOptions({ region: 'us-central1', maxInstances: 10 });
@@ -185,10 +186,6 @@ exports.updateAttendance = onCall(
     }
 
     if (action === 'entrada') {
-      const existing = await attendanceRef.get();
-      if (existing.exists && existing.data().horaEntrada) {
-        return { exito: true, yaRegistrada: true, mensaje: 'Tu entrada ya estaba registrada.' };
-      }
       const parts = mexicoDateTimeParts(now);
       const schedule = parseClock(profileData.horaEntrada, 9, 0);
       const tolerance = Math.max(0, Math.min(120, safeNumber(profileData.toleranciaMinutos ?? 11)));
@@ -196,7 +193,11 @@ exports.updateAttendance = onCall(
       const status = currentMinutes > schedule.hour * 60 + schedule.minute + tolerance
         ? 'retardo'
         : 'a_tiempo';
-      await attendanceRef.set({
+      let already = false;
+      await db.runTransaction(async transaction => {
+        const existing = await transaction.get(attendanceRef);
+        if (existing.exists && existing.data().horaEntrada) { already = true; return; }
+        transaction.set(attendanceRef, {
         trabajadorId: uid,
         fecha: FieldValue.serverTimestamp(),
         horaEntrada: FieldValue.serverTimestamp(),
@@ -218,7 +219,9 @@ exports.updateAttendance = onCall(
         historialModificaciones: [],
         listaBonos: [],
         listaMultas: [],
-      }, { merge: false });
+        }, { merge: true });
+      });
+      if (already) return { exito: true, yaRegistrada: true, mensaje: 'Tu entrada ya estaba registrada.' };
       return {
         exito: true,
         estatus: status,
@@ -485,7 +488,7 @@ async function writeSocialPostNotification(postId, data) {
 }
 
 exports.reminderEntrada = onSchedule(
-  { schedule: '0 9 * * 1-6', timeZone: 'America/Mexico_City' },
+  { schedule: '*/15 * * * 1-6', timeZone: 'America/Mexico_City' },
   async () => createWorkdayReminders({
     type: 'entrada',
     title: '¡Buenos días! 👋',
@@ -494,7 +497,7 @@ exports.reminderEntrada = onSchedule(
 );
 
 exports.reminderComida = onSchedule(
-  { schedule: '0 15 * * 1-6', timeZone: 'America/Mexico_City' },
+  { schedule: '*/15 * * * 1-6', timeZone: 'America/Mexico_City' },
   async () => createWorkdayReminders({
     type: 'comida',
     title: 'Ey, ya es tu hora de comida 🍽️',
@@ -503,7 +506,7 @@ exports.reminderComida = onSchedule(
 );
 
 exports.reminderSalida = onSchedule(
-  { schedule: '0 19 * * 1-6', timeZone: 'America/Mexico_City' },
+  { schedule: '*/15 * * * 1-6', timeZone: 'America/Mexico_City' },
   async () => createWorkdayReminders({
     type: 'salida',
     title: 'Tu jornada terminó ✅',
@@ -561,30 +564,18 @@ async function createWorkdayReminders({ type, title, body }) {
       .doc(`${user.id}_${dateKey}`)
       .get();
     const attendanceData = attendance.exists ? attendance.data() || {} : {};
-    if (type === 'entrada' && attendanceData.horaEntrada) return null;
-    if (
-      type === 'comida' &&
-      (!attendanceData.horaEntrada ||
-        attendanceData.salidaComidaSolicitada ||
-        attendanceData.salidaComidaReal)
-    ) {
-      return null;
-    }
-    if (
-      type === 'salida' &&
-      (!attendanceData.horaEntrada || attendanceData.horaSalida)
-    ) {
-      return null;
-    }
-    return db.collection('notificaciones').doc(`jornada_${type}_${dateKey}_${user.id}`).set({
+    const reminder = reminderSlot({ type, user: data, attendance: attendanceData });
+    if (!reminder) return null;
+    return db.collection('notificaciones').doc(`jornada_${type}_${reminder.dateKey}_${user.id}_${reminder.slot}`).create({
       titulo: title,
       mensaje: body,
       tipo: `asistencia_${type}`,
+      ruta: '/asistencia',
       destinatarioId: user.id,
       rolesDestinatarios: [],
       leidosPor: [],
       fecha: FieldValue.serverTimestamp(),
-    }, { merge: true });
+    }).catch(error => { if (error.code !== 6 && error.code !== 'already-exists') throw error; });
   }));
 }
 
