@@ -1,0 +1,17 @@
+name: Service readiness
+on:
+  push:
+    branches: [fix/intro-online-smart]
+    paths: [.github/workflows/service-readiness.yml]
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Read unauthenticated endpoint status without creating data
+        run: |
+          for name in updateAttendance sendSaunaStiloNotification saunaAssistantV2; do
+            code=$(curl --max-time 12 -s -o /tmp/service-check -w '%{http_code}' -X POST -H 'Content-Type: application/json' -d '{"data":{}}' "https://us-central1-saunastiloapp-17e15.cloudfunctions.net/$name")
+            echo "$name unauthenticated status=$code"
+          done
