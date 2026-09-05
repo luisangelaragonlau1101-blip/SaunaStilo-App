@@ -13,17 +13,8 @@ jobs:
   verify:
     runs-on: ubuntu-latest
     timeout-minutes: 25
-    permissions:
-      contents: write
     steps:
       - uses: actions/checkout@v4
-      - name: Apply Sauna Stilo brand palette once
-        if: github.event_name == 'push' && github.ref == 'refs/heads/feat/night-neon-wine-theme'
-        run: |
-          if [ -f tools/apply_brand_theme.py ]; then
-            python3 tools/apply_brand_theme.py
-            git diff --check
-          fi
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -47,21 +38,9 @@ jobs:
           npm install --prefix /tmp/sauna-browser --no-audit --no-fund playwright
           python3 -m http.server 8177 --directory build/web >/tmp/sauna-http.log 2>&1 &
           NODE_PATH=/tmp/sauna-browser/node_modules SAUNA_URL=http://127.0.0.1:8177/ node tools/browser-smoke.cjs
-      - name: Commit verified visual pass to feature branch
-        if: github.event_name == 'push' && github.ref == 'refs/heads/feat/night-neon-wine-theme'
-        run: |
-          if ! git diff --quiet; then
-            git add lib/screens/futuristic_dashboard_screen.dart lib/screens/blog_interno_screen.dart lib/services/app_action_catalog.dart
-            git rm -f tools/apply_brand_theme.py .maintenance/night-theme-note.txt
-            git config user.name 'github-actions[bot]'
-            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-            git commit -m 'ui: apply Sauna Stilo wine neon night identity'
-            git push origin HEAD:feat/night-neon-wine-theme
-          fi
       - name: Record tested source
         run: |
           git rev-parse HEAD > build/web/reviewed-source-sha.txt
-          git archive --format=tar HEAD > source.tar
       - uses: actions/upload-artifact@v4
         if: always()
         with:
