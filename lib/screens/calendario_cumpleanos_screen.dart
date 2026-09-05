@@ -1,256 +1,54 @@
-import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:table_calendar/table_calendar.dart';
-import 'package:google_fonts/google_fonts.dart';
-import '../models/user_model.dart'; // <-- Asegúrate de que la ruta sea correcta
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import '../models/user_model.dart';
+import '../services/team_profile_helpers.dart';
+import 'perfil_social_screen.dart';
 
 class CalendarioCumpleanosScreen extends StatefulWidget {
-  const CalendarioCumpleanosScreen({Key? key}) : super(key: key);
-
+  const CalendarioCumpleanosScreen({super.key});
   @override
   State<CalendarioCumpleanosScreen> createState() => _CalendarioCumpleanosScreenState();
 }
-
 class _CalendarioCumpleanosScreenState extends State<CalendarioCumpleanosScreen> {
-  late final ValueNotifier<List<UserModel>> _selectedEvents;
-  CalendarFormat _calendarFormat = CalendarFormat.month;
-  DateTime _focusedDay = DateTime.now();
-  DateTime? _selectedDay;
-  
-  // Ahora el mapa guarda directamente objetos UserModel
-  Map<DateTime, List<UserModel>> _cumpleanos = {};
-  bool _isLoading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _selectedDay = _focusedDay;
-    _selectedEvents = ValueNotifier(_getEventsForDay(_selectedDay!));
-    _cargarCumpleanos();
-  }
-
-  @override
-  void dispose() {
-    _selectedEvents.dispose();
-    super.dispose();
-  }
-
-  Future<void> _cargarCumpleanos() async {
-    try {
-      final snapshot = await FirebaseFirestore.instance.collection('usuarios').get();
-      final Map<DateTime, List<UserModel>> nuevosCumples = {};
-      final int anioActual = DateTime.now().year;
-
-      for (var doc in snapshot.docs) {
-        // Usamos tu factory para convertir el documento a UserModel
-        final usuario = UserModel.fromFirestore(doc);
-        
-        if (usuario.cumpleanos != null) {
-          DateTime fechaNac = usuario.cumpleanos!;
-          
-          // Proyectamos el cumpleaños al año actual (y al próximo)
-          DateTime cumpleEsteAnio = DateTime(anioActual, fechaNac.month, fechaNac.day);
-          DateTime cumpleProximoAnio = DateTime(anioActual + 1, fechaNac.month, fechaNac.day);
-
-          // Agregamos el usuario a la fecha de este año
-          if (nuevosCumples[cumpleEsteAnio] != null) {
-            nuevosCumples[cumpleEsteAnio]!.add(usuario);
-          } else {
-            nuevosCumples[cumpleEsteAnio] = [usuario];
-          }
-
-          // Agregamos el usuario a la fecha del próximo año
-          if (nuevosCumples[cumpleProximoAnio] != null) {
-            nuevosCumples[cumpleProximoAnio]!.add(usuario);
-          } else {
-            nuevosCumples[cumpleProximoAnio] = [usuario];
-          }
-        }
-      }
-
-      setState(() {
-        _cumpleanos = nuevosCumples;
-        _isLoading = false;
-        _selectedEvents.value = _getEventsForDay(_selectedDay!);
-      });
-    } catch (e) {
-      setState(() => _isLoading = false);
-      debugPrint("Error al cargar cumpleaños: $e");
-    }
-  }
-
-  List<UserModel> _getEventsForDay(DateTime day) {
-    final normalizedDay = DateTime(day.year, day.month, day.day);
-    return _cumpleanos[normalizedDay] ?? [];
-  }
-
-  void _onDaySelected(DateTime selectedDay, DateTime focusedDay) {
-    if (!isSameDay(_selectedDay, selectedDay)) {
-      setState(() {
-        _selectedDay = selectedDay;
-        _focusedDay = focusedDay;
-      });
-      _selectedEvents.value = _getEventsForDay(selectedDay);
-    }
-  }
-
+  String _search = '';
+  bool _monthOnly = false;
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF000000),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF1E1E1E),
-        elevation: 0,
-        title: Text(
-          "Cumpleaños del Equipo",
-          style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 18),
-        ),
-        centerTitle: true,
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: Color(0xFFFF3399)))
-          : Column(
-              children: [
-                const SizedBox(height: 10),
-                Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 16),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF1E1E1E),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: Colors.white.withOpacity(0.05)),
-                  ),
-                  child: TableCalendar<UserModel>(
-                    locale: 'es_ES',
-                    availableCalendarFormats: const {
-    CalendarFormat.month: 'Mes',
-    CalendarFormat.twoWeeks: '2 semanas',
-    CalendarFormat.week: 'Semana',
-  },
-                    firstDay: DateTime.now().subtract(const Duration(days: 365)),
-                    lastDay: DateTime.now().add(const Duration(days: 365)),
-                    focusedDay: _focusedDay,
-                    selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
-                    calendarFormat: _calendarFormat,
-                    eventLoader: _getEventsForDay,
-                    startingDayOfWeek: StartingDayOfWeek.monday,
-                    onDaySelected: _onDaySelected,
-                    onFormatChanged: (format) {
-                      if (_calendarFormat != format) {
-                        setState(() => _calendarFormat = format);
-                      }
-                    },
-                    onPageChanged: (focusedDay) {
-                      _focusedDay = focusedDay;
-                    },
-                    headerStyle: HeaderStyle(
-                      titleTextStyle: GoogleFonts.inter(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
-                      formatButtonVisible: true,
-                      formatButtonTextStyle: GoogleFonts.inter(color: Colors.white, fontSize: 12),
-                      formatButtonDecoration: BoxDecoration(
-                        border: Border.all(color: const Color(0xFFFF3399)),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      leftChevronIcon: const Icon(Icons.chevron_left, color: Colors.white),
-                      rightChevronIcon: const Icon(Icons.chevron_right, color: Colors.white),
-                    ),
-                    daysOfWeekStyle: DaysOfWeekStyle(
-                      weekdayStyle: GoogleFonts.inter(color: Colors.white70),
-                      weekendStyle: GoogleFonts.inter(color: const Color(0xFFFF3399)),
-                    ),
-                    calendarStyle: CalendarStyle(
-                      defaultTextStyle: GoogleFonts.inter(color: Colors.white),
-                      weekendTextStyle: GoogleFonts.inter(color: Colors.white70),
-                      outsideTextStyle: GoogleFonts.inter(color: Colors.white24),
-                      todayDecoration: BoxDecoration(
-                        color: const Color(0xFFFF3399).withOpacity(0.3),
-                        shape: BoxShape.circle,
-                      ),
-                      selectedDecoration: const BoxDecoration(
-                        color: Color(0xFFFF3399),
-                        shape: BoxShape.circle,
-                      ),
-                      markerDecoration: const BoxDecoration(
-                        color: Color(0xFFFFDE21),
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                Expanded(
-                  child: ValueListenableBuilder<List<UserModel>>(
-                    valueListenable: _selectedEvents,
-                    builder: (context, value, _) {
-                      if (value.isEmpty) {
-                        return Center(
-                          child: Text(
-                            "Ningún cumpleaños en esta fecha.",
-                            style: GoogleFonts.inter(color: Colors.white38),
-                          ),
-                        );
-                      }
-                      return ListView.builder(
-                        itemCount: value.length,
-                        itemBuilder: (context, index) {
-                          final usuario = value[index];
-                          // Calculamos la edad usando la fecha real de nacimiento
-                          final int edad = DateTime.now().year - usuario.cumpleanos!.year;
-
-                          return Container(
-                            margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF121212),
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(color: const Color(0xFFFF3399).withOpacity(0.3)),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: const Color(0xFFFF3399).withOpacity(0.05),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 4),
-                                )
-                              ],
-                            ),
-                            child: Row(
-                              children: [
-                                CircleAvatar(
-                                  radius: 26,
-                                  backgroundColor: const Color(0xFFFF3399).withOpacity(0.2),
-                                  backgroundImage: (usuario.fotoUrl != null && usuario.fotoUrl!.isNotEmpty)
-                                    ? NetworkImage(usuario.fotoUrl!) 
-                                    : null,
-                                  child: (usuario.fotoUrl == null || usuario.fotoUrl!.isEmpty)
-                                    ? const Icon(Icons.cake_rounded, color: Color(0xFFFF3399))
-                                    : null,
-                                ),
-                                const SizedBox(width: 16),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        usuario.nombre,
-                                        style: GoogleFonts.inter(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        "${usuario.rol.toUpperCase()} • Cumple $edad años",
-                                        style: GoogleFonts.inter(color: Colors.white54, fontSize: 12),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                const Icon(Icons.celebration_rounded, color: Color(0xFFFFDE21), size: 28),
-                              ],
-                            ),
-                          );
-                        },
-                      );
-                    },
-                  ),
-                ),
-              ],
-            ),
-    );
+    final today = mexicoToday();
+    return Scaffold(backgroundColor: Colors.black, appBar: AppBar(title: const Text('Cumpleaños del equipo')), body: Column(children: [
+      Container(margin: const EdgeInsets.all(18), padding: const EdgeInsets.all(20), decoration: BoxDecoration(borderRadius: BorderRadius.circular(24), gradient: const LinearGradient(colors: [Color(0xFF35101E), Color(0xFF111012)])), child: const Row(children: [Icon(Icons.celebration_outlined, size: 35, color: Color(0xFFB7FF2A)), SizedBox(width: 15), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('Celebramos a nuestra gente', style: TextStyle(fontSize: 21, fontWeight: FontWeight.w800)), SizedBox(height: 5), Text('Fechas, intereses y detalles que nos unen.', style: TextStyle(color: Colors.white60))]))])),
+      Padding(padding: const EdgeInsets.symmetric(horizontal: 18), child: TextField(decoration: const InputDecoration(hintText: 'Buscar a una persona…', prefixIcon: Icon(Icons.search)), onChanged: (s) => setState(() => _search = s.trim().toLowerCase()))),
+      Padding(padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 9), child: Row(children: [ChoiceChip(label: const Text('Próximos'), selected: !_monthOnly, onSelected: (_) => setState(() => _monthOnly = false)), const SizedBox(width: 8), ChoiceChip(label: const Text('Este mes'), selected: _monthOnly, onSelected: (_) => setState(() => _monthOnly = true))])),
+      Expanded(child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(stream: FirebaseFirestore.instance.collection('usuarios').snapshots(), builder: (context, snapshot) {
+        if (snapshot.hasError) return const Center(child: Padding(padding: EdgeInsets.all(24), child: Text('No se pudo cargar el equipo. Revisa la conexión y los permisos.')));
+        if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+        final all = snapshot.data!.docs.where((d) => d.data()['activo'] != false && d.data()['cumpleanos'] is Timestamp).toList();
+        DateTime birth(QueryDocumentSnapshot<Map<String, dynamic>> d) => (d.data()['cumpleanos'] as Timestamp).toDate();
+        all.sort((a, b) { final cmp = nextTeamBirthday(birth(a), today).compareTo(nextTeamBirthday(birth(b), today)); return cmp != 0 ? cmp : (a.data()['nombre']?.toString() ?? '').compareTo(b.data()['nombre']?.toString() ?? ''); });
+        final people = all.where((d) => (d.data()['nombre']?.toString().toLowerCase() ?? '').contains(_search) && (!_monthOnly || birth(d).month == today.month)).toList();
+        if (people.isEmpty) return const Center(child: Padding(padding: EdgeInsets.all(25), child: Text('No hay cumpleaños en esta vista. Cada persona puede agregar su fecha desde Configuración.', textAlign: TextAlign.center)));
+        return ListView.builder(padding: const EdgeInsets.fromLTRB(18, 0, 18, 30), itemCount: people.length, itemBuilder: (c, i) {
+          final d = people[i]; final p = d.data(); final next = nextTeamBirthday(birth(d), today); final days = next.difference(today).inDays;
+          final name = p['nombre']?.toString() ?? 'Integrante'; final photo = p['fotoUrl']?.toString() ?? '';
+          final interests = profileTags(p['intereses']); final colors = profileTags(p['coloresFavoritos']);
+          return Card(margin: const EdgeInsets.only(bottom: 12), color: days == 0 ? const Color(0xFF2A1420) : const Color(0xFF111012), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22), side: BorderSide(color: days == 0 ? const Color(0xFFB7FF2A) : Colors.white12)), child: InkWell(borderRadius: BorderRadius.circular(22), onTap: () => _openProfile(d.id), child: Padding(padding: const EdgeInsets.all(17), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(children: [CircleAvatar(radius: 26, backgroundImage: photo.isEmpty ? null : NetworkImage(photo), child: photo.isEmpty ? const Icon(Icons.cake_outlined) : null), const SizedBox(width: 12), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(name, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800)), Text(DateFormat('d MMMM', 'es').format(birth(d)), style: const TextStyle(color: Colors.white60))])), Flexible(child: Text(days == 0 ? '¡HOY! 🎉' : days == 1 ? 'Mañana' : 'En $days días', textAlign: TextAlign.end, style: const TextStyle(color: Color(0xFFB7FF2A), fontWeight: FontWeight.w700)))]),
+            if (interests.isNotEmpty || colors.isNotEmpty) ...[const SizedBox(height: 10), Wrap(spacing: 6, runSpacing: 4, children: [for (final s in interests.take(4)) Chip(avatar: const Icon(Icons.favorite_border, size: 14), label: Text(s)), for (final s in colors.take(3)) Chip(avatar: const Icon(Icons.palette_outlined, size: 14), label: Text(s))])]
+            else const Padding(padding: EdgeInsets.only(top: 10), child: Text('Sus gustos todavía están por descubrir.', style: TextStyle(fontSize: 12, color: Colors.white38))),
+          ]))));
+        });
+      })),
+    ]));
+  }
+  Future<void> _openProfile(String id) async {
+    try {
+      final uid = FirebaseAuth.instance.currentUser?.uid;
+      if (uid == null) return;
+      final me = await FirebaseFirestore.instance.collection('usuarios').doc(uid).get();
+      if (!me.exists || !mounted) return;
+      await Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => PerfilSocialScreen(usuarioActual: UserModel.fromFirestore(me), perfilId: id)));
+    } catch (_) { if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No se pudo abrir el perfil.'))); }
   }
 }

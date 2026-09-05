@@ -6,6 +6,7 @@ import '../screens/mensajes_equipo_screen.dart';
 import '../screens/proyecto_chat_screen.dart';
 import '../screens/equipo_tareas_screen.dart';
 import '../screens/jornada_screen.dart';
+import '../screens/prestamos_equipo_screen.dart';
 
 class NotificationRouter {
   static Future<void> open(BuildContext context, UserModel user, String id) async {
@@ -27,6 +28,8 @@ class NotificationRouter {
         final contact = await db.collection('usuarios').doc(members.firstWhere((m) => m != user.id)).get();
         if (!contact.exists) throw StateError('La cuenta de contacto ya no existe.');
         destination = ConversacionPrivadaScreen(usuario: user, contacto: UserModel.fromFirestore(contact));
+      } else if (data['tipo'] == 'traspaso_herramienta') {
+        destination = PrestamosEquipoScreen(usuario: user);
       } else if (data['tipo'] == 'tarea') {
         destination = EquipoTareasScreen(usuario: user);
       } else if (projectId.isNotEmpty) {

@@ -35,7 +35,7 @@ class TeamContactService {
     }, SetOptions(merge: true));
   }
 
-  Future<bool> saveMessage({required UserModel user, required UserModel contact, required String messageId, required Map<String, dynamic> data, bool onScreen = true, bool call = false}) async {
+  Future<bool> saveMessage({required UserModel user, required UserModel contact, required String messageId, required Map<String, dynamic> data, bool onScreen = true, bool call = false, bool toolRequest = false}) async {
     await ensureConversation(user, contact);
     final ref = conversation(user, contact);
     final batch = db.batch();
@@ -51,7 +51,7 @@ class TeamContactService {
     try {
       await db.collection('notificaciones').doc('privado_$messageId').set(
         NotificacionesService.datosAviso(
-          titulo: call ? '${user.nombre} te llama' : 'Mensaje de ${user.nombre}',
+          titulo: call ? '${user.nombre} te llama' : toolRequest ? '${user.nombre} solicita herramienta' : 'Mensaje de ${user.nombre}',
           mensaje: call ? 'Abre el chat para entrar a la llamada.' : 'Abre tu conversación para leer el mensaje privado.',
           tipo: onScreen ? 'aviso_personal' : 'mensaje_privado',
           destinatarioId: contact.id,

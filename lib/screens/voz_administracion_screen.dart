@@ -9,6 +9,7 @@ import 'package:record/record.dart';
 
 import '../models/user_model.dart';
 import '../services/custom_voice_service.dart';
+import '../services/voice_capture_stub.dart' if (dart.library.js_interop) '../services/voice_capture_web.dart' as capture;
 
 class VozAdministracionScreen extends StatefulWidget {
   final UserModel usuario;
@@ -57,6 +58,7 @@ class _VozAdministracionScreenState extends State<VozAdministracionScreen> {
   @override
   void dispose() {
     _timer?.cancel();
+    unawaited(capture.disposeCapture());
     _stream?.cancel();
     _recorder.dispose();
     _player.dispose();
@@ -115,6 +117,7 @@ class _VozAdministracionScreenState extends State<VozAdministracionScreen> {
           _hero(),
           const SizedBox(height: 14),
           _statusCard(),
+          TextButton.icon(onPressed: _busy ? null : _loadStatus, icon: const Icon(Icons.refresh), label: const Text('Volver a comprobar servicio de voz')),
           const SizedBox(height: 14),
           _recordCard(
             slot: _VoiceSlot.consent,
@@ -348,7 +351,7 @@ class _VozAdministracionScreenState extends State<VozAdministracionScreen> {
                 const SizedBox(width: 8),
                 IconButton.filledTonal(
                   tooltip: 'Escuchar grabación',
-                  onPressed: _recording != null || _busy ? null : () => _player.play(BytesSource(bytes, mimeType: 'audio/wav')),
+                  onPressed: _recording != null || _busy ? null : () async { await _player.setPlaybackRate(1.0); await _player.play(BytesSource(bytes, mimeType: 'audio/wav')); },
                   icon: const Icon(Icons.play_arrow_rounded),
                 ),
               ],
@@ -480,71 +483,53 @@ class _VozAdministracionScreenState extends State<VozAdministracionScreen> {
 
   Future<void> _startRecording(_VoiceSlot slot) async {
     if (_recording != null || _busy) return;
-    final allowed = await _recorder.hasPermission();
-    if (!mounted) return;
-    if (!allowed) {
-      setState(() {
-        _message = 'Activa el permiso de micrófono para grabar tu voz.';
-      });
-      return;
-    }
-    await _player.stop();
+    setState(() { _busy = true; _message = null; });
     try {
-      _bytes = BytesBuilder(copy: false);
-      _seconds = 0;
-      final stream = await _recorder.startStream(
-        const RecordConfig(
-          encoder: AudioEncoder.pcm16bits,
-          sampleRate: 24000,
-          numChannels: 1,
-          autoGain: true,
-          echoCancel: true,
-          noiseSuppress: true,
-        ),
-      );
-      _stream = stream.listen(_bytes.add);
-      setState(() {
-        _recording = slot;
-        _message = null;
-      });
+      await _player.stop();
+      _bytes = BytesBuilder(copy: false); _seconds = 0;
+      if (capture.isWebCapture) {
+        await capture.beginCapture();
+      } else {
+        if (!await _recorder.hasPermission()) throw StateError('Permiso de micrófono denegado.');
+        final stream = await _recorder.startStream(const RecordConfig(encoder: AudioEncoder.pcm16bits, sampleRate: 24000, numChannels: 1, autoGain: true, echoCancel: true, noiseSuppress: true));
+        _stream = stream.listen(_bytes.add);
+      }
+      if (!mounted) { await capture.disposeCapture(); await _recorder.stop(); return; }
+      setState(() { _recording = slot; _busy = false; });
       _timer = Timer.periodic(const Duration(seconds: 1), (_) {
         if (!mounted) return;
         setState(() => _seconds++);
         if (_seconds >= 10) unawaited(_stopRecording());
       });
     } catch (_) {
-      if (mounted) {
-        setState(() {
-          _message = 'Este dispositivo no permitió iniciar la grabación.';
-        });
-      }
+      if (mounted) setState(() { _busy = false; _message = 'No se inició la grabación. Revisa el permiso de micrófono y vuelve a tocar Grabar.'; });
     }
   }
 
   Future<void> _stopRecording() async {
     final slot = _recording;
-    if (slot == null) return;
-    _recording = null; // Prevent double stop from the timer and button.
+    if (slot == null || _busy) return;
     _timer?.cancel();
-    await _recorder.stop();
-    await _stream?.cancel();
-    final raw = _bytes.takeBytes();
-    final pcm = raw.length > 480000 ? Uint8List.sublistView(raw, 0, 480000) : raw;
-    final wav = pcm.isEmpty
-        ? null
-        : _createWav(pcm, sampleRate: 24000, channels: 1);
-    if (!mounted) return;
-    setState(() {
-      _recording = null;
-      if (wav == null || wav.length < 144044) {
-        _message =
-            'La grabación quedó demasiado corta. Graba de nuevo acercándote a 10 segundos.';
-      } else if (slot == _VoiceSlot.consent) {
-        _consentAudio = wav;
+    setState(() { _recording = null; _busy = true; });
+    try {
+      final Uint8List wav;
+      if (capture.isWebCapture) {
+        wav = await capture.finishCapture();
       } else {
-        _referenceAudio = wav;
+        await _recorder.stop(); await _stream?.cancel();
+        final raw = _bytes.takeBytes();
+        final pcm = raw.length > 480000 ? Uint8List.sublistView(raw, 0, 480000) : raw;
+        wav = _createWav(pcm, sampleRate: 24000, channels: 1);
       }
-    });
+      if (wav.length < 144044 || wav.length > 480044) throw StateError('Duración inválida.');
+      if (!mounted) return;
+      setState(() {
+        if (slot == _VoiceSlot.consent) { _consentAudio = wav; } else { _referenceAudio = wav; }
+        _message = 'Grabación lista para escuchar a velocidad normal. Crear la voz requiere que el servicio de Google esté autorizado.';
+      });
+    } catch (_) {
+      if (mounted) setState(() => _message = 'No se guardó la muestra. Graba de 3 a 10 segundos y revisa que el micrófono esté permitido.');
+    } finally { if (mounted) setState(() => _busy = false); }
   }
 
   Future<void> _enroll() async {

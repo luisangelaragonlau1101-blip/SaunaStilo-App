@@ -101,7 +101,6 @@ class _FuturisticDashboardScreenState
                       const Padding(padding: EdgeInsets.all(18), child: LinearProgressIndicator())
                     else _pulse(activities),
                     if (snapshot.hasData && !snapshot.hasError) _today(activities),
-                    _aiHero(all),
                     ConexionPanel(usuario: widget.usuario),
                   ],
                   _sectionTitle(

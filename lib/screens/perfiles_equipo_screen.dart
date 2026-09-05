@@ -49,6 +49,7 @@ class _PerfilesEquipoScreenState extends State<PerfilesEquipoScreen> {
             child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
               stream: FirebaseFirestore.instance.collection('usuarios').snapshots(),
               builder: (context, snapshot) {
+                if (snapshot.hasError) return const Center(child: Text('No se pudo cargar el equipo. Revisa conexión y permisos.'));
                 if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
                 final usuarios = snapshot.data!.docs.where((doc) {
                   final nombre = doc.data()['nombre']?.toString().toLowerCase() ?? '';

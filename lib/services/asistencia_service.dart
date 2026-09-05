@@ -2,7 +2,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:intl/intl.dart'; 
-import 'dart:io';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:image_picker/image_picker.dart';
+import 'team_profile_helpers.dart';
 import 'package:firebase_storage/firebase_storage.dart'; 
 
 class AsistenciaService {
@@ -143,50 +145,46 @@ Future<void> enviarJustificacion({
   required String trabajadorId,
   required DateTime fechaAsistencia,
   required String motivo,
-  required String? evidenciaUrl, 
+  required String? evidenciaUrl,
 }) async {
-  String docId = "${trabajadorId}_${DateFormat('yyyyMMdd').format(fechaAsistencia)}";
-  String? urlDescarga;
-
-  // Fijamos la fecha a las 12:00 p.m. también aquí
-  DateTime fechaSinHora = DateTime(fechaAsistencia.year, fechaAsistencia.month, fechaAsistencia.day, 12, 0, 0);
-
-  if (evidenciaUrl != null && evidenciaUrl.isNotEmpty && !evidenciaUrl.startsWith('http')) {
-    try {
-      File archivoImagen = File(evidenciaUrl);
-      String nombreArchivo = 'justificaciones/${docId}_${DateTime.now().millisecondsSinceEpoch}.jpg';
-      Reference ref = FirebaseStorage.instance.ref().child(nombreArchivo);
-      await ref.putFile(archivoImagen);
-      urlDescarga = await ref.getDownloadURL();
-    } catch (e) {
-      print("Error al subir la imagen: $e");
+  final uid = FirebaseAuth.instance.currentUser?.uid;
+  final reason = motivo.trim();
+  final day = DateTime(fechaAsistencia.year, fechaAsistencia.month, fechaAsistencia.day);
+  if (uid != trabajadorId || reason.isEmpty || reason.length > 2000 || day.isAfter(mexicoToday())) {
+    throw StateError('Revisa la sesión, la fecha y el motivo (hasta 2000 caracteres).');
+  }
+  final docId = '${trabajadorId}_${DateFormat('yyyyMMdd').format(day)}';
+  String? savedUrl;
+  if (evidenciaUrl != null && evidenciaUrl.isNotEmpty) {
+    // XFile supports both native files and the blob URLs returned by Safari.
+    if (evidenciaUrl.startsWith('https://')) {
+      final reference = FirebaseStorage.instance.refFromURL(evidenciaUrl);
+      if (!reference.fullPath.startsWith('justification_evidence/$uid/')) throw StateError('La evidencia no pertenece a tu cuenta.');
+      savedUrl = evidenciaUrl;
+    } else {
+      final bytes = await XFile(evidenciaUrl).readAsBytes();
+      if (bytes.isEmpty || bytes.length > 5 * 1024 * 1024) throw StateError('La evidencia debe pesar menos de 5 MB.');
+      final png = bytes.length > 8 && bytes[0] == 137 && bytes[1] == 80 && bytes[2] == 78;
+      final jpeg = bytes.length > 3 && bytes[0] == 255 && bytes[1] == 216 && bytes[2] == 255;
+      final webp = bytes.length > 12 && bytes[0] == 82 && bytes[1] == 73 && bytes[8] == 87 && bytes[9] == 69;
+      if (!png && !jpeg && !webp) throw StateError('Usa una imagen JPG, PNG o WebP.');
+      final extension = png ? 'png' : webp ? 'webp' : 'jpg';
+      final ref = FirebaseStorage.instance.ref('justification_evidence/$uid/$docId/${DateTime.now().microsecondsSinceEpoch}.$extension');
+      await ref.putData(bytes, SettableMetadata(contentType: png ? 'image/png' : webp ? 'image/webp' : 'image/jpeg'));
+      savedUrl = await ref.getDownloadURL();
     }
-  } else {
-    urlDescarga = evidenciaUrl;
   }
-
-  DocumentReference docRef = _firestore.collection('asistencias').doc(docId);
-  DocumentSnapshot docSnap = await docRef.get();
-
-  Map<String, dynamic> datosJustificacion = {
-    'motivoFalta': motivo,
-    if (urlDescarga != null) 'evidenciaJustificacionUrl': urlDescarga, 
-    'estatusJustificacion': 'pendiente_revision',
-  };
-
-if (docSnap.exists) {
-    await docRef.update(datosJustificacion);
-  } else {
-    datosJustificacion.addAll({
-      'id': docId,
-      'trabajadorId': trabajadorId,
-      'fecha': Timestamp.fromDate(fechaSinHora),
-      'estatus': 'falta',
-      'estatusComida': 'ninguna',
-      'ubicacionValida': false,
-    });
-    await docRef.set(datosJustificacion);
-  }
+  final ref = _firestore.collection('asistencias').doc(docId);
+  await _firestore.runTransaction((transaction) async {
+    final record = await transaction.get(ref);
+    if (record.exists && record.data()?['estatusJustificacion'] == 'aprobada') throw StateError('Esta fecha ya tiene una justificación aprobada.');
+    final changes = <String, dynamic>{'motivoFalta': reason, 'estatusJustificacion': 'pendiente_revision', 'evidenciaJustificacionUrl': savedUrl ?? record.data()?['evidenciaJustificacionUrl']?.toString() ?? ''};
+    if (record.exists) {
+      transaction.update(ref, changes); // Never overwrite hours or attendance status.
+    } else {
+      transaction.set(ref, {...changes, 'id': docId, 'trabajadorId': trabajadorId, 'fecha': Timestamp.fromDate(DateTime.utc(day.year, day.month, day.day, 18)), 'estatus': 'falta', 'estatusComida': 'ninguna', 'ubicacionValida': false});
+    }
+  });
 }
 
   Future<void> actualizarObservaciones({
