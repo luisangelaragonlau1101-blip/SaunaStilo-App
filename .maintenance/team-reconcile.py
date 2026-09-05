@@ -18,6 +18,7 @@ replace('lib/screens/project_workspace_screen.dart',"import 'proyectos_trabajado
 replace('lib/screens/project_workspace_screen.dart',"builder: (_) => ProjectTaskComposer(usuario: usuario, proyecto: project)", "builder: (_) => ModalAsignarActividad(proyectoId: project.id, rolUsuario: usuario.rol)")
 replace('lib/widgets/jornada_compacta.dart', "import '../screens/trabajador_asistencia_screen.dart';", "import '../screens/jornada_screen.dart';")
 replace('lib/widgets/jornada_compacta.dart', "TrabajadorAsistenciaScreen(trabajador: widget.usuario)", "JornadaScreen(usuario: widget.usuario)")
+replace('lib/screens/mensajes_equipo_screen.dart', 'FilePicker.platform.pickFiles(', 'FilePicker.pickFiles(')
 # Only one popup/sound owner per personal notice. General alerts stay separate.
 replace('lib/widgets/avisos_sonoros.dart', "aviso.creadoPor != widget.usuario.id && DateTime.now()", "aviso.tipo != 'aviso_personal' && aviso.creadoPor != widget.usuario.id && DateTime.now()")
 replace('lib/widgets/personal_message_overlay.dart', "        final result = await showDialog<String>", "        if (!call) {\n          try { await _audio.setReleaseMode(ReleaseMode.release); await _audio.play(AssetSource('sounds/beep.ogg'), volume: 1); } catch (_) {}\n        }\n        final result = await showDialog<String>")
