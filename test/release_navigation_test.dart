@@ -2,9 +2,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:saunastilo/models/user_model.dart';
 import 'package:saunastilo/services/app_action_catalog.dart';
 import 'package:saunastilo/services/local_guide.dart';
+import 'operations_navigation_test.dart' as operations;
 
 UserModel user(String role) => UserModel(id: 'test-user', nombre: 'Prueba', correo: 'example@example.test', rol: role, fechaRegistro: DateTime(2026));
 void main() {
+  operations.main();
   test('Every supported role keeps the primary modules without duplicate IDs', () {
     for (final role in ['admin','almacenista','maestro','trabajador']) {
       final ids = AppActionCatalog.forUser(user(role)).map((a) => a.id).toList();
@@ -15,9 +17,9 @@ void main() {
   test('Private commercial modules and voice studio remain admin-only', () {
     for (final role in ['almacenista','maestro','trabajador']) {
       final ids=AppActionCatalog.forUser(user(role)).map((a)=>a.id);
-      for(final id in ['voz','clientes','cotizaciones','ventas']) {expect(ids, isNot(contains(id)));}
+      for(final id in ['voz','clientes','cotizaciones','ventas','alerta_general']) {expect(ids, isNot(contains(id)));}
     }
-    expect(AppActionCatalog.forUser(user('admin')).map((a)=>a.id),containsAll(['voz','clientes','cotizaciones','ventas']));
+    expect(AppActionCatalog.forUser(user('admin')).map((a)=>a.id),containsAll(['voz','clientes','cotizaciones','ventas','alerta_general']));
   });
   test('Search handles accents, case and more than one word', () {
     final actions=AppActionCatalog.forUser(user('admin'));
