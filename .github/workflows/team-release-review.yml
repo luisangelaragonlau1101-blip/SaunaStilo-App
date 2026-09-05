@@ -21,8 +21,10 @@ jobs:
           if [ -f .maintenance/team.part0 ]; then
             cat .maintenance/team.part0 .maintenance/team.part1 .maintenance/team.part2 | base64 --decode | gzip --decompress > /tmp/team.patch
             echo '77ccf5612f2a81a634ee51bae63caa25c6f9fc2d05dfa64cb8fae908aab2abc4  /tmp/team.patch' | sha256sum --check
-            git apply --check /tmp/team.patch
-            git apply /tmp/team.patch
+            # Keep the separately-added guide screen with its manual and reload controls.
+            test "$(git hash-object lib/screens/online_smart_screen.dart)" = '09bf740532c9f87d9769d06a6001648274f8c640'
+            git apply --exclude=lib/screens/online_smart_screen.dart --check /tmp/team.patch
+            git apply --exclude=lib/screens/online_smart_screen.dart /tmp/team.patch
             git diff --check
           fi
       - uses: actions/setup-node@v4
