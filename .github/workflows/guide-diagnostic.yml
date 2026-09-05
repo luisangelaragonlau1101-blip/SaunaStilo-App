@@ -1,0 +1,50 @@
+name: Guide diagnostic
+on:
+  push:
+    branches: [fix/team-final-reviewed-20260905]
+    paths: [.github/workflows/guide-diagnostic.yml]
+permissions:
+  contents: read
+jobs:
+  guide:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Inspect direct and embedded guide replies
+        run: |
+          npm install --prefix /tmp/guide --no-audit --no-fund playwright
+          mkdir -p guide-report
+          NODE_PATH=/tmp/guide/node_modules node <<'NODE'
+          const {chromium}=require('playwright'),fs=require('fs');
+          (async()=>{
+            const browser=await chromium.launch({executablePath:'/usr/bin/google-chrome',headless:true,args:['--no-sandbox']});
+            const report=[];
+            for(const embedded of [false,true]){
+              const page=await browser.newPage({viewport:{width:390,height:844}});const item={embedded,network:[],errors:[]};report.push(item);
+              page.on('pageerror',e=>item.errors.push(e.message));
+              page.on('response',async r=>{if(r.url().includes('/api/')||r.url().includes('__appdeploy')){let body='';try{if(r.request().method()==='POST')body=(await r.text()).slice(0,2500)}catch{}item.network.push({url:r.url().split('?')[0],status:r.status(),body})}});
+              page.on('requestfailed',r=>item.errors.push({url:r.url().split('?')[0],failure:r.failure()}));
+              const url='https://ollin-smart-vxs23c.v2.appdeploy.ai/?workspace=sauna-stilo&role=trabajador';
+              try{
+                if(embedded){await page.goto('https://sauna-stilo-app-web.vercel.app/',{waitUntil:'domcontentloaded'});await page.evaluate(url=>{const f=document.createElement('iframe');f.id='guide';f.src=url;f.setAttribute('sandbox','allow-scripts allow-same-origin allow-forms allow-popups');f.style.cssText='position:fixed;inset:0;width:100%;height:100%;z-index:2147483647';document.body.appendChild(f)},url)}else await page.goto(url,{waitUntil:'domcontentloaded'});
+                const scope=embedded?page.frameLocator('#guide'):page;
+                await scope.getByLabel('Pregunta a Online Smart').fill('¿Cómo encuentro mis tareas en Sauna Stilo?');
+                await scope.getByRole('button',{name:'Enviar pregunta',exact:true}).click();
+                await scope.locator('.sg-bubble.assistant,.sg-error').first().waitFor({timeout:52000});
+                item.text=await scope.locator('body').innerText();
+                await page.screenshot({path:'guide-report/'+(embedded?'embedded':'direct')+'.png'});
+              }catch(e){item.error=e.message;try{await page.screenshot({path:'guide-report/failure-'+embedded+'.png'})}catch{}}
+              await page.close();
+            }
+            await browser.close();fs.writeFileSync('guide-report/results.json',JSON.stringify(report,null,2));console.log(JSON.stringify(report,null,2));
+          })().catch(e=>{console.error(e.message);process.exitCode=1});
+          NODE
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: guide-diagnostic
+          path: guide-report
+          retention-days: 1
