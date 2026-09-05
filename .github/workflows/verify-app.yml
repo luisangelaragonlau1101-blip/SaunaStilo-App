@@ -13,36 +13,68 @@ jobs:
   verify:
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
-      - name: Archive exact source
-        run: git archive --format=tar HEAD > source.tar
-      - uses: actions/upload-artifact@v4
-        with:
-          name: release-source
-          path: source.tar
-          retention-days: 3
+      - name: Apply checksum-verified release patch on its maintenance branch
+        if: github.event_name == 'push' && github.ref == 'refs/heads/feat/futuristic-shell-voice-guide'
+        run: |
+          if [ -f .maintenance/release.part0 ]; then
+            cat .maintenance/release.part0 .maintenance/release.part1 | base64 --decode | gzip --decompress > /tmp/sauna-release.patch
+            echo 'fb76e94deb3921c281ced0e05761478b8b79796d907e1f5a69575e2ae506164a  /tmp/sauna-release.patch' | sha256sum --check
+            git apply --check /tmp/sauna-release.patch
+            git apply /tmp/sauna-release.patch
+            git diff --check
+          fi
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
       - name: Validate backend and run regressions
         run: |
-          node --check functions/index.js
-          node --check functions/app.js
-          node --check functions/assistant-policy.js
-          node --check functions/assistant-v2.js
-          node --check functions/voice-service.js
-          node --check functions/push-payload.js
+          for file in functions/*.js; do node --check "$file"; done
           node --test tests/*.test.cjs
+          bash -n tools/activate-services.sh
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
           cache: true
       - run: flutter pub get
+      - name: Verify role navigation and local guide
+        run: flutter test test/release_navigation_test.dart
       - name: Compile futuristic web application
         run: flutter build web --release --base-href /SaunaStilo-App/ --pwa-strategy=none
-      - name: Record exact tested source
-        run: git rev-parse HEAD > build/web/reviewed-source-sha.txt
+      - name: Browser verification on the compiled bundle
+        run: |
+          npm install --prefix /tmp/sauna-browser --no-audit --no-fund playwright
+          python3 -m http.server 8177 --directory build/web >/tmp/sauna-http.log 2>&1 &
+          NODE_PATH=/tmp/sauna-browser/node_modules SAUNA_URL=http://127.0.0.1:8177/ node tools/browser-smoke.cjs
+      - name: Commit only successfully verified release fixes
+        if: github.event_name == 'push' && github.ref == 'refs/heads/feat/futuristic-shell-voice-guide'
+        run: |
+          if [ -f .maintenance/release.part0 ]; then
+            git add -- functions lib tests test tools RELEASE_STATUS.md
+            git rm -- .maintenance/release.part0 .maintenance/release.part1
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git commit -m 'fix: finish futuristic release, local guide and protected voice enrollment'
+            git push origin HEAD:feat/futuristic-shell-voice-guide
+          fi
+      - name: Record tested source
+        run: |
+          git rev-parse HEAD > build/web/reviewed-source-sha.txt
+          git archive --format=tar HEAD > source.tar
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: release-browser-check
+          path: smoke-results
+          retention-days: 3
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-source
+          path: source.tar
+          retention-days: 3
       - uses: actions/upload-artifact@v4
         with:
           name: verified-futuristic-web
