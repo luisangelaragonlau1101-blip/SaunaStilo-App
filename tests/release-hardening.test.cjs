@@ -44,7 +44,11 @@ test('web request contains only the explicit question, no business history or re
 test('all Flutter custom whites are valid explicit colors', () => {
   for(const file of ['futuristic_dashboard_screen.dart','voz_administracion_screen.dart']) assert.doesNotMatch(fs.readFileSync('lib/screens/'+file,'utf8'),/Colors\.white(?:48|78)\b/);
 });
-test('assistant service still identifies absent backend rather than faking a response', () => {
-  assert.match(fs.readFileSync('lib/services/ai_assistant_service.dart','utf8'),/not-found/);
+test('assistant falls back to real Online Smart rather than faking a response', () => {
+  const service=fs.readFileSync('lib/services/ai_assistant_service.dart','utf8');
+  assert.match(service,/ollin-smart-vxs23c\.v2\.appdeploy\.ai\/api\/chat/);
+  assert.match(service,/_onlineSmartResponse/);
+  assert.match(service,/workspace': 'sauna-stilo/);
+  assert.doesNotMatch(service,/_responderLocal/);
   assert.match(fs.readFileSync('lib/screens/guia_inteligente_screen.dart','utf8'),/SIN CONSULTA A IA/);
 });

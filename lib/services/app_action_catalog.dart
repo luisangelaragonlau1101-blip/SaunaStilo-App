@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/user_model.dart';
+import '../screens/admin_alerta_general_screen.dart';
 import '../screens/admin_asistencias_screen.dart';
 import '../screens/admin_cajitas_screen.dart';
 import '../screens/admin_clientes_screen.dart';
@@ -168,6 +169,7 @@ class AppActionCatalog {
 
     if (admin) {
       actions.addAll(<AppAction>[
+        const AppAction(id: 'alerta_general', title: 'ALERTA GENERAL', subtitle: 'Llamar a todo el equipo ahora', icon: Icons.campaign_rounded, color: Color(0xFFFF536A), primary: true, keywords: ['alarma', 'alerta', 'todos', 'equipo', 'urgente', 'llamar a todos'], builder: _alertAll),
         const AppAction(id: 'proyectos', title: 'Proyectos', subtitle: 'Producción, avance y entregas', icon: Icons.architecture_rounded, color: _mint, primary: true, keywords: ['saunas', 'producción', 'entregas'], builder: _projectsAdmin),
         const AppAction(id: 'clientes', title: 'Clientes', subtitle: 'Directorio y seguimiento', icon: Icons.groups_2_rounded, color: _pink, builder: _clients),
         const AppAction(id: 'ventas', title: 'Ventas', subtitle: 'Operación comercial', icon: Icons.trending_up_rounded, color: _amber, builder: _sales),
@@ -212,6 +214,7 @@ class AppActionCatalog {
     return actions;
   }
 
+  static Widget _alertAll(BuildContext _) => const AdminAlertaGeneralScreen();
   static Widget _birthdays(BuildContext _) => const CalendarioCumpleanosScreen();
   static Widget _projectsAdmin(BuildContext _) => const ProyectosAdminScreen();
   static Widget _projectsWarehouse(BuildContext _) => const ProyectosAlmacenistaScreen();

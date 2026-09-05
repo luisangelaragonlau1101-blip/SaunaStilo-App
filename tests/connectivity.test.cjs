@@ -162,13 +162,15 @@ test('server-side assistant rate limit rejects the ninth call in one minute and 
   assert.equal(stored.dayCount,9);
 });
 
-test('AI outage does not call a canned-response generator and status is not permanently online', () => {
+test('AI outage uses real Online Smart fallback and never a canned local generator', () => {
   const screen=read('lib/screens/asistente_ia_screen.dart');
   assert.equal(screen.includes(': _responderLocal(limpio)'),false);
   assert.equal(screen.includes('En línea · voz natural'),false);
   const service=read('lib/services/ai_assistant_service.dart');
-  assert.match(service,/historial\.skip/);
-  assert.match(service,/seconds: 70/);
+  assert.match(service,/ollin-smart-vxs23c\.v2\.appdeploy\.ai\/api\/chat/);
+  assert.match(service,/workspace': 'sauna-stilo/);
+  assert.match(service,/_onlineSmartResponse/);
+  assert.match(service,/seconds: 28/);
 });
 
 test('manifest identity and reset navigation are relative to the installed app', () => {
