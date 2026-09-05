@@ -1,7 +1,7 @@
 name: Verify application
 on:
   push:
-    branches: [fix/2026-09-push-ai]
+    branches: [feat/futuristic-shell-voice-guide]
   pull_request:
     branches: [main]
 permissions:
@@ -12,16 +12,19 @@ concurrency:
 jobs:
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Validate backend and run connectivity regressions
+      - name: Validate backend and run regressions
         run: |
           node --check functions/index.js
+          node --check functions/app.js
           node --check functions/assistant-policy.js
+          node --check functions/assistant-v2.js
+          node --check functions/voice-service.js
           node --check functions/push-payload.js
           node --test tests/*.test.cjs
       - uses: subosito/flutter-action@v2
@@ -29,12 +32,12 @@ jobs:
           channel: stable
           cache: true
       - run: flutter pub get
-      - name: Compile the updated application
+      - name: Compile futuristic web application
         run: flutter build web --release --base-href /SaunaStilo-App/ --pwa-strategy=none
-      - name: Record the exact tested source
+      - name: Record exact tested source
         run: git rev-parse HEAD > build/web/reviewed-source-sha.txt
       - uses: actions/upload-artifact@v4
         with:
-          name: verified-web
+          name: verified-futuristic-web
           path: build/web
           retention-days: 3
