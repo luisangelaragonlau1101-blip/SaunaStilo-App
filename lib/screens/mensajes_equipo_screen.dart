@@ -150,10 +150,29 @@ class _ConversacionPrivadaScreenState extends State<ConversacionPrivadaScreen> {
     return Padding(padding: const EdgeInsets.only(top: 8), child: OutlinedButton.icon(onPressed: () => _openUrl(url), icon: Icon(f['tipo'] == 'video' ? Icons.play_circle_outline : Icons.description_outlined), label: Text(f['nombre']?.toString() ?? 'Abrir archivo', overflow: TextOverflow.ellipsis)));
   }
   Future<void> _pickImages() async {
-    try { final images = await ImagePicker().pickMultiImage(); for (final image in images) { final bytes = await image.readAsBytes(); _addFile(image.name, bytes); } if (mounted) setState(() {}); } catch (_) { _notice('No se pudieron leer las fotografías seleccionadas.'); }
+    if (_busy) return;
+    try {
+      final images = await ImagePicker().pickMultiImage();
+      for (final image in images) {
+        if (!mounted) return;
+        if (await image.length() > MediaUploadService.maxBytesPerFile) { _notice('${image.name} supera 50 MB.'); continue; }
+        _addFile(image.name, await image.readAsBytes());
+      }
+      if (mounted) setState(() {});
+    } catch (_) { _notice('No se pudieron leer las fotografías seleccionadas.'); }
   }
   Future<void> _pickFiles() async {
-    try { final result = await FilePicker.platform.pickFiles(allowMultiple: true, withData: true); for (final file in result?.files ?? <PlatformFile>[]) { if (file.bytes == null) { _notice('No se pudo leer ${file.name}.'); continue; } _addFile(file.name, file.bytes!); } if (mounted) setState(() {}); } catch (_) { _notice('No se pudieron leer los archivos seleccionados.'); }
+    if (_busy) return;
+    try {
+      final selected = await FilePicker.pickFiles();
+      for (final file in selected) {
+        if (!mounted) return;
+        if (await file.length() > MediaUploadService.maxBytesPerFile) { _notice('${file.name} supera 50 MB.'); continue; }
+        final bytes = await file.readAsBytes();
+        _addFile(file.name, bytes);
+      }
+      if (mounted) setState(() {});
+    } catch (_) { _notice('No se pudieron leer los archivos seleccionados.'); }
   }
   void _addFile(String name, Uint8List bytes) {
     if (!mounted) return;
