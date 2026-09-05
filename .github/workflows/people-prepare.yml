@@ -1,0 +1,74 @@
+name: Prepare people release
+on:
+  push:
+    branches: [feat/people-release-20260905]
+    paths:
+      - '.maintenance/people-plan-*.json'
+      - 'tools/apply-people-release.py'
+      - '.github/workflows/people-prepare.yml'
+permissions:
+  contents: write
+concurrency:
+  group: people-release-prepare
+  cancel-in-progress: true
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply exact reviewed source
+        run: python3 tools/apply-people-release.py
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate backend policies and new browser code
+        run: |
+          for file in functions/*.js web/voice-capture.js tools/people-*.cjs; do node --check "$file"; done
+          npm --prefix functions ci --ignore-scripts --no-audit --no-fund
+          node -e "require('./functions/app.js')"
+          node --test tests/*.test.cjs
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Check privacy and roles in isolated emulators
+        run: |
+          npm install --prefix /tmp/sauna-rules --no-audit --no-fund firebase firebase-tools @firebase/rules-unit-testing
+          NODE_PATH=/tmp/sauna-rules/node_modules /tmp/sauna-rules/node_modules/.bin/firebase emulators:exec --project demo-sauna-team --only firestore,storage 'NODE_PATH=/tmp/sauna-rules/node_modules node --test tools/security.test.cjs tools/people-security.test.cjs'
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - name: Verify navigation and profile interactions
+        run: flutter test test/release_navigation_test.dart test/team_workflows_test.dart test/people_release_test.dart
+      - name: Compile branded application
+        run: flutter build web --release --base-href /SaunaStilo-App/ --pwa-strategy=none
+      - name: Verify browser and audio duration and pitch
+        run: |
+          npm install --prefix /tmp/sauna-browser --no-audit --no-fund playwright
+          python3 -m http.server 8177 --directory build/web >/tmp/sauna-http.log 2>&1 &
+          NODE_PATH=/tmp/sauna-browser/node_modules SAUNA_URL=http://127.0.0.1:8177/ node tools/browser-smoke.cjs
+          NODE_PATH=/tmp/sauna-browser/node_modules SAUNA_URL=http://127.0.0.1:8177/ node tools/team-browser-smoke.cjs
+          NODE_PATH=/tmp/sauna-browser/node_modules node tools/people-browser-check.cjs
+      - name: Commit only verified source on the isolated branch
+        run: |
+          git rm .maintenance/people-plan-*.json tools/apply-people-release.py .github/workflows/people-prepare.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git diff --cached --stat
+          git commit -m 'feat: team badges, birthday lists, private justifications and normal-speed voice'
+          git push origin HEAD:refs/heads/feat/people-release-20260905
+          git rev-parse HEAD > build/web/reviewed-source-sha.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: people-release-check
+          path: smoke-results
+          retention-days: 3
+      - uses: actions/upload-artifact@v4
+        with:
+          name: people-verified-web
+          path: build/web
+          retention-days: 3
