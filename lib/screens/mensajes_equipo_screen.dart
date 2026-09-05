@@ -679,7 +679,7 @@ class _ConversacionPrivadaScreenState
   }
 
   Future<void> _iniciarReunion({required bool soloAudio}) async {
-    final room = 'SaunaStilo-${_conversationId.replaceAll(RegExp(r'[^A-Za-z0-9-]'), '-')}-${DateFormat('yyyyMMdd').format(DateTime.now())}';
+    final room = 'SaunaStilo-${_messages.doc().id}';
     final url = 'https://meet.jit.si/$room';
     await _messages.add({
       'autorId': widget.usuario.id,
@@ -692,11 +692,12 @@ class _ConversacionPrivadaScreenState
     });
     await _actualizarYNotificar(
       soloAudio ? 'Te está llamando.' : 'Inició una videollamada contigo.',
+      esLlamada: true,
     );
     await _abrir(url);
   }
 
-  Future<void> _actualizarYNotificar(String resumen) async {
+  Future<void> _actualizarYNotificar(String resumen, {bool esLlamada = false}) async {
     await _conversation.set({
       'participantes': [widget.usuario.id, widget.contacto.id],
       'ultimoMensaje': resumen,
@@ -708,7 +709,7 @@ class _ConversacionPrivadaScreenState
         mensaje: resumen,
         tipo: 'mensaje_privado',
         destinatarioId: widget.contacto.id,
-      ),
+      )..addAll({'esLlamada': esLlamada, 'conversacionId': _conversationId}),
     );
   }
 

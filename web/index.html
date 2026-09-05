@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
   <!--
     If you are serving your web app in a path other than the root, change the
@@ -15,6 +15,10 @@
     the `--base-href` argument provided to `flutter build`.
   -->
   <base href="$FLUTTER_BASE_HREF">
+  <script>
+    // The same bundle runs at Pages /SaunaStilo-App/ and at the existing proxy root.
+    if (location.pathname === '/') document.querySelector('base').setAttribute('href', '/');
+  </script>
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
@@ -25,7 +29,7 @@
   <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="saunastylo">
+  <meta name="apple-mobile-web-app-title" content="Sauna Stilo">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
 
   <!-- Favicon -->
@@ -39,15 +43,15 @@
     #sauna-boot {
       position: fixed; inset: 0; z-index: 9999; display: flex;
       align-items: center; justify-content: center; color: #fff;
-      background: radial-gradient(circle at 50% 36%, #252019 0, #0b0a09 36%, #050505 72%);
+      background: radial-gradient(circle at 50% 36%, #142131 0, #080c12 36%, #050505 72%);
       text-align: center; padding: 28px; box-sizing: border-box;
     }
     .sauna-boot-card { width: min(360px, 100%); }
-    .sauna-mark { color: #d6a85f; font-size: 54px; line-height: 1; }
+    .sauna-mark { color: #dce6f1; font-size: 54px; line-height: 1; }
     .sauna-title { margin: 14px 0 26px; font-size: 24px; letter-spacing: 4px; font-weight: 800; }
-    .sauna-spinner { width: 34px; height: 34px; margin: 0 auto 18px; border-radius: 50%; border: 3px solid #39342d; border-top-color: #d6a85f; animation: sauna-spin .85s linear infinite; }
-    .sauna-status { color: #c9c5be; font-size: 15px; line-height: 1.5; }
-    #sauna-retry { display: none; margin: 20px auto 0; border: 0; border-radius: 999px; background: #d6a85f; color: #080706; padding: 12px 22px; font: inherit; font-weight: 700; cursor: pointer; }
+    .sauna-spinner { width: 34px; height: 34px; margin: 0 auto 18px; border-radius: 50%; border: 3px solid #263343; border-top-color: #dce6f1; animation: sauna-spin .85s linear infinite; }
+    .sauna-status { color: #c1cbd7; font-size: 15px; line-height: 1.5; }
+    #sauna-retry { display: none; margin: 20px auto 0; border: 0; border-radius: 999px; background: #dce6f1; color: #080706; padding: 12px 22px; font: inherit; font-weight: 700; cursor: pointer; }
     @keyframes sauna-spin { to { transform: rotate(360deg); } }
   </style>
 </head>
@@ -62,40 +66,15 @@
     </div>
   </div>
   <noscript>Necesitas activar JavaScript para usar Sauna Stilo.</noscript>
+  <script src="sauna-maintenance.js"></script>
   <script>
-    // Elimina una sola vez los archivos de una compilación anterior. Algunas
-    // instalaciones de la app conservaron el antiguo service worker de Flutter
-    // y por eso seguían mostrando una versión desactualizada.
     (function () {
-      var buildVersion = '__SAUNA_BUILD_VERSION__';
-      var versionKey = 'sauna-stilo-build-version';
-      if (localStorage.getItem(versionKey) === buildVersion) return;
-
-      Promise.resolve()
-        .then(function () {
-          if (!('serviceWorker' in navigator)) return [];
-          return navigator.serviceWorker.getRegistrations();
-        })
-        .then(function (registrations) {
-          return Promise.all((registrations || []).map(function (registration) {
-            return registration.unregister();
-          }));
-        })
-        .then(function () {
-          if (!('caches' in window)) return [];
-          return caches.keys();
-        })
-        .then(function (keys) {
-          return Promise.all((keys || []).map(function (key) {
-            return caches.delete(key);
-          }));
-        })
-        .catch(function () {
-          // La limpieza no debe impedir que la aplicación abra.
-        })
-        .finally(function () {
-          localStorage.setItem(versionKey, buildVersion);
-        });
+      var version = '__SAUNA_BUILD_VERSION__';
+      var key = 'sauna-stilo-build-version';
+      try { if (localStorage.getItem(key) === version) return; } catch (_) {}
+      SaunaMaintenance.repair(document.baseURI)
+        .then(function () { try { localStorage.setItem(key, version); } catch (_) {} })
+        .catch(function () { /* Asset repair must not block login. */ });
     }());
   </script>
   <!--

@@ -63,10 +63,10 @@ class _AsistenteIaScreenState extends State<AsistenteIaScreen> {
   bool _grabandoAudio = false;
   bool _subiendoAudio = false;
   bool _pensando = false;
-  bool _leerRespuestas = true;
+  bool _leerRespuestas = false;
   bool? _nubeDisponible;
   String? _audioReproduciendo;
-  double _velocidadVoz = kIsWeb ? 1.5 : .94;
+  double _velocidadVoz = kIsWeb ? 1.0 : .68;
 
   bool get _esAdmin => widget.usuario.rol == AppRoles.admin;
   bool get _esAlmacen => widget.usuario.rol == AppRoles.almacenista;
@@ -284,7 +284,7 @@ class _AsistenteIaScreenState extends State<AsistenteIaScreen> {
                     ),
                   ),
                   Text(
-                    'En línea · voz natural ${_etiquetaVelocidad()}',
+                    _nubeDisponible == true ? 'Conexión IA verificada' : (_nubeDisponible == false ? 'IA sin conexión · reintenta' : 'Conexión por verificar'),
                     style: GoogleFonts.inter(
                       color: _verde,
                       fontSize: 10,
@@ -1049,6 +1049,7 @@ class _AsistenteIaScreenState extends State<AsistenteIaScreen> {
     });
 
     String? respuesta;
+    String? errorIa;
     try {
       respuesta = await _aiService.responder(
         pregunta: limpio,
@@ -1056,12 +1057,11 @@ class _AsistenteIaScreenState extends State<AsistenteIaScreen> {
         historial: _historialParaIa(),
       );
       if (respuesta != null) _nubeDisponible = true;
-    } catch (_) {
+    } catch (error) {
       _nubeDisponible = false;
+      errorIa = error is AiAssistantException ? error.message : 'La IA no respondió. Revisa tu conexión y vuelve a intentarlo.';
     }
-    final respuestaFinal = respuesta ?? (imagenesUrls.isNotEmpty
-        ? 'Recibí ${imagenesUrls.length} fotografías. El análisis visual inteligente no respondió en este momento; las imágenes sí quedaron adjuntas. Intenta de nuevo o describe qué parte debo revisar.'
-        : _responderLocal(limpio));
+    final respuestaFinal = respuesta ?? errorIa ?? 'La IA no devolvió una respuesta. Intenta de nuevo.';
     if (!mounted) return;
     setState(() {
       _pensando = false;

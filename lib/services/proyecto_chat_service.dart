@@ -152,6 +152,7 @@ class ProyectoChatService {
           ? 'Llamada grupal · ${proyecto.titulo}'
           : 'Videollamada grupal · ${proyecto.titulo}',
       mensaje: '${autor.nombre} inició la reunión. Entra desde el chat del proyecto.',
+      esLlamada: true,
     );
   }
 
@@ -173,6 +174,7 @@ class ProyectoChatService {
     required UserModel autor,
     required String titulo,
     required String mensaje,
+    bool esLlamada = false,
   }) async {
     final destinatarios = proyecto.encargados
         .map((item) => item.toString())
@@ -185,7 +187,7 @@ class ProyectoChatService {
           mensaje: mensaje,
           tipo: 'proyecto_chat',
           rolesDestinatarios: const ['admin'],
-        ),
+        )..addAll({'esLlamada': esLlamada, 'proyectoId': proyecto.id}),
       );
     } catch (_) {}
     for (final destinatario in destinatarios) {
@@ -196,7 +198,7 @@ class ProyectoChatService {
             mensaje: mensaje,
             tipo: 'proyecto_chat',
             destinatarioId: destinatario,
-          ),
+          )..addAll({'esLlamada': esLlamada, 'proyectoId': proyecto.id}),
         );
       } catch (_) {}
     }

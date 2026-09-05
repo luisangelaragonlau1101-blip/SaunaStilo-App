@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
 import '../models/notificacion_model.dart';
+import 'mensajes_equipo_screen.dart';
 import '../models/user_model.dart';
 import '../services/notificaciones_service.dart';
 
@@ -60,9 +61,12 @@ class NotificacionesScreen extends StatelessWidget {
               final aviso = avisos[index];
               final leida = aviso.leidaPor(usuario.id);
               return InkWell(
-                onTap: leida
-                    ? null
-                    : () => service.marcarLeida(aviso.id, usuario.id),
+                onTap: () async {
+                  if (!leida) await service.marcarLeida(aviso.id, usuario.id);
+                  if (aviso.tipo == 'mensaje_privado' && context.mounted) {
+                    Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => MensajesEquipoScreen(usuario: usuario)));
+                  }
+                },
                 borderRadius: BorderRadius.circular(20),
                 child: Container(
                   padding: const EdgeInsets.all(18),
