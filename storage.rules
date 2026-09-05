@@ -30,8 +30,15 @@ service firebase.storage {
 
     // Compatibilidad temporal con módulos antiguos que aún usan rutas
     // históricas de Firebase Storage.
+    match /justification_evidence/{userId}/{allPaths=**} {
+      allow read: if signedIn() && (request.auth.uid == userId || role() == 'admin');
+      allow create: if signedIn() && request.auth.uid == userId
+        && request.resource.size <= 5 * 1024 * 1024
+        && request.resource.contentType.matches('image/(jpeg|png|webp)');
+      allow delete: if signedIn() && (request.auth.uid == userId || role() == 'admin');
+    }
     match /{legacyRoot}/{allPaths=**} {
-      allow read: if signedIn();
+      allow read: if signedIn() && legacyRoot != 'justification_evidence';
       allow create: if signedIn()
         && request.resource.size <= 50 * 1024 * 1024
         && ((legacyRoot in [

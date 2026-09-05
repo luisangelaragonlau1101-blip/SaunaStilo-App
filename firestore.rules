@@ -246,6 +246,10 @@ service cloud.firestore {
         && request.auth.uid == userId
         && request.resource.data.rol == resource.data.rol
         && request.resource.data.correo == resource.data.correo
+        && request.resource.data.get('intereses', '') is string
+        && request.resource.data.get('intereses', '').size() <= 400
+        && request.resource.data.get('coloresFavoritos', '') is string
+        && request.resource.data.get('coloresFavoritos', '').size() <= 160
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
           'nombre',
           'cumpleanos',
@@ -255,6 +259,8 @@ service cloud.firestore {
           'pushActualizadoEn',
           'pushPlataforma',
           'bio',
+          'intereses',
+          'coloresFavoritos',
           'redesSociales'
         ]);
     }
@@ -312,7 +318,8 @@ service cloud.firestore {
     }
 
     function submitsOwnJustification() {
-      return request.resource.data.get('estatusJustificacion', '') ==
+      return resource.data.get('estatusJustificacion', '') != 'aprobada'
+        && request.resource.data.get('estatusJustificacion', '') ==
           'pendiente_revision'
         && request.resource.data.get('motivoFalta', '') is string
         && request.resource.data.get('motivoFalta', '').size() > 0
@@ -657,6 +664,10 @@ service cloud.firestore {
     }
 
     match /asistencias/{attendanceId} {
+      // A missing own day can be read transactionally without exposing another person's record.
+      allow get: if signedIn()
+        && !exists(/databases/$(database)/documents/asistencias/$(attendanceId))
+        && attendanceId.matches(request.auth.uid + '_[0-9]{8}');
       allow read: if isAdmin()
         || (signedIn() && resource.data.trabajadorId == request.auth.uid);
       allow create: if isAdmin() || isValidAttendanceCreate(attendanceId);

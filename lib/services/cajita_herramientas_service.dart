@@ -36,6 +36,7 @@ class CajitaInventarioProvider with ChangeNotifier {
     required String destinoId, 
     required String nombreHerramienta,
   }) async {
+    if (_cargando) return false;
     _setCargando(true);
     try {
       final currentUid = FirebaseAuth.instance.currentUser?.uid;
@@ -67,6 +68,9 @@ class CajitaInventarioProvider with ChangeNotifier {
         // Obtener nombres de los usuarios involucrados
         DocumentSnapshot origenSnap = await transaction.get(_db.collection('usuarios').doc(origenId));
         DocumentSnapshot destinoSnap = await transaction.get(_db.collection('usuarios').doc(destinoId));
+        if (!destinoSnap.exists || (destinoSnap.data() as Map<String, dynamic>)['activo'] == false) {
+          throw StateError('El compañero no tiene una cuenta activa.');
+        }
         
         String origenNombre = origenSnap.exists ? (origenSnap.data() as Map<String, dynamic>)['nombre'] ?? 'Compañero' : 'Compañero';
         String destinoNombre = destinoSnap.exists ? (destinoSnap.data() as Map<String, dynamic>)['nombre'] ?? 'Compañero' : 'Compañero';

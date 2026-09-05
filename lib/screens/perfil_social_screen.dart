@@ -7,6 +7,7 @@ import '../models/actividad_model.dart';
 import '../models/user_model.dart';
 import '../services/notificaciones_service.dart';
 import '../services/social_service.dart';
+import '../widgets/team_profile_details.dart';
 
 class PerfilSocialScreen extends StatelessWidget {
   final UserModel usuarioActual;
@@ -25,6 +26,8 @@ class PerfilSocialScreen extends StatelessWidget {
     return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
       stream: FirebaseFirestore.instance.collection('usuarios').doc(perfilId).snapshots(),
       builder: (context, perfilSnapshot) {
+        if (perfilSnapshot.hasError) return const Scaffold(body: Center(child: Text('No se pudo cargar el perfil. Revisa conexión y permisos.')));
+        if (perfilSnapshot.hasData && !perfilSnapshot.data!.exists) return const Scaffold(body: Center(child: Text('Este perfil ya no está disponible.')));
         final data = perfilSnapshot.data?.data();
         if (data == null) {
           return const Scaffold(
@@ -74,6 +77,7 @@ class PerfilSocialScreen extends StatelessWidget {
                   });
                   return _contenidoPerfil(
                     context: context,
+                    perfil: data,
                     nombre: nombre,
                     rol: rol,
                     foto: foto,
@@ -92,6 +96,7 @@ class PerfilSocialScreen extends StatelessWidget {
 
   Widget _contenidoPerfil({
     required BuildContext context,
+    required Map<String, dynamic> perfil,
     required String nombre,
     required String rol,
     required String foto,
@@ -158,6 +163,7 @@ class PerfilSocialScreen extends StatelessWidget {
                   padding: const EdgeInsets.fromLTRB(18, 8, 18, 100),
                   children: [
                     _cabecera(context, nombre, rol, foto, cumpleanos),
+                    TeamProfileDetails(usuarioActual: usuarioActual, perfilId: perfilId, data: perfil),
                     const SizedBox(height: 14),
                     _metricas(actividades, posts.length, totalInstalaciones),
                     const SizedBox(height: 20),

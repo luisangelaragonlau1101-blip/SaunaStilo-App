@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 
 import '../models/user_model.dart';
 import '../screens/equipo_tareas_screen.dart';
+import '../screens/perfiles_equipo_screen.dart';
+import '../screens/prestamos_equipo_screen.dart';
+import '../screens/justificar_falta_screen.dart';
 import '../screens/online_smart_screen.dart';
 import '../screens/jornada_screen.dart';
 import '../screens/admin_alerta_general_screen.dart';
@@ -87,6 +90,9 @@ class AppActionCatalog {
     final master = user.rol == AppRoles.maestro;
 
     final actions = <AppAction>[
+      AppAction(id: 'equipo', title: admin ? 'Administrar perfiles' : 'Nuestro equipo', subtitle: admin ? 'Otorgar insignias y agregar lugares de instalación' : 'Personas, intereses e instalaciones', icon: Icons.groups_outlined, color: _mint, keywords: const ['insignias', 'lugares', 'instalaciones', 'personas'], builder: (_) => PerfilesEquipoScreen(usuarioActual: user)),
+      AppAction(id: 'prestamos', title: 'Préstamos de herramienta', subtitle: 'Solicitar, prestar, recibir y devolver', icon: Icons.handyman_outlined, color: _mint, keywords: const ['compañero', 'cajita', 'herramientas'], builder: (_) => PrestamosEquipoScreen(usuario: user)),
+      if (!admin) AppAction(id: 'justificar', title: 'Justificar una falta', subtitle: 'Enviar motivo y consultar su revisión', icon: Icons.fact_check_outlined, color: _pink, keywords: const ['ausencia', 'justificación', 'falta'], builder: (_) => JustificarFaltaScreen(usuario: user)),
       AppAction(id: 'tareas', title: 'Mis tareas', subtitle: 'Actividades, avances y evidencias', icon: Icons.assignment_outlined, color: _mint, primary: true, keywords: const ['actividades', 'jornada', 'pendientes'], builder: (_) => EquipoTareasScreen(usuario: user)),
       AppAction(
         id: 'ia',
@@ -164,7 +170,7 @@ class AppActionCatalog {
       const AppAction(
         id: 'cumpleanos',
         title: 'Cumpleaños',
-        subtitle: 'Calendario del equipo',
+        subtitle: 'Lista de fechas, gustos y colores favoritos',
         icon: Icons.cake_rounded,
         color: Color(0xFFC94469),
         builder: _birthdays,

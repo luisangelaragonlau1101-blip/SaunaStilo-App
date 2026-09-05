@@ -3,7 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
-import 'dart:io';
+import 'dart:typed_data';
 import '../models/user_model.dart';
 import '../models/asistencia_model.dart';
 import '../services/asistencia_service.dart';
@@ -25,6 +25,7 @@ class _TrabajadorAsistenciaScreenState extends State<TrabajadorAsistenciaScreen>
   final TextEditingController _motivoFaltaController = TextEditingController();
   
   XFile? _evidenciaFile;
+  Uint8List? _evidenciaBytes;
   bool _isLoading = false;
   bool _isEnviandoJustificacion = false; 
 
@@ -218,7 +219,10 @@ class _TrabajadorAsistenciaScreenState extends State<TrabajadorAsistenciaScreen>
     final ImagePicker picker = ImagePicker();
     final XFile? image = await picker.pickImage(source: source, imageQuality: 80);
     if (image != null) {
+      final bytes = await image.readAsBytes();
+      if (!mounted) return;
       setState(() {
+        _evidenciaBytes = bytes;
         _evidenciaFile = image;
       });
     }
@@ -271,7 +275,7 @@ class _TrabajadorAsistenciaScreenState extends State<TrabajadorAsistenciaScreen>
               maxScale: 4,
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(12),
-                child: Image.file(File(_evidenciaFile!.path), fit: BoxFit.contain),
+                child: Image.memory(_evidenciaBytes!, fit: BoxFit.contain),
               ),
             ),
             Positioned(
@@ -780,7 +784,7 @@ class _TrabajadorAsistenciaScreenState extends State<TrabajadorAsistenciaScreen>
                                     borderRadius: BorderRadius.circular(12),
                                     border: Border.all(color: Colors.greenAccent.withOpacity(0.3), width: 2),
                                     image: DecorationImage(
-                                      image: FileImage(File(_evidenciaFile!.path)),
+                                      image: MemoryImage(_evidenciaBytes!),
                                       fit: BoxFit.cover,
                                     ),
                                   ),
@@ -848,7 +852,7 @@ class _TrabajadorAsistenciaScreenState extends State<TrabajadorAsistenciaScreen>
                               
                               _motivoFaltaController.clear();
                               setState(() {
-                                _evidenciaFile = null;
+                                _evidenciaFile = null; _evidenciaBytes = null;
                                 _isEnviandoJustificacion = false;
                               });
 

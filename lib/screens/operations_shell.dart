@@ -81,7 +81,7 @@ class _OperationsHomeState extends State<_OperationsHome> {
   @override
   Widget build(BuildContext context) {
     final actions = AppActionCatalog.forUser(widget.usuario);
-    final quick = actions.where((a) => ['proyectos', 'asistencia', 'inventario', 'racha', 'rachas', 'ia', 'asistencias'].contains(a.id)).toList();
+    final quick = actions.where((a) => ['proyectos', 'asistencia', 'inventario', 'racha', 'rachas', 'asistencias', 'prestamos', 'justificar', 'cumpleanos', 'equipo'].contains(a.id)).toList();
     final alerts = actions.where((a) => a.id == 'alerta_general').toList();
     return SafeArea(bottom: false, child: ListView(padding: const EdgeInsets.fromLTRB(18, 12, 18, 24), children: [
       Row(children: [Image.asset('assets/logo_saunastilo.png', width: 130, height: 48, fit: BoxFit.contain), const Spacer(), for (final id in ['avisos', 'configuracion']) IconButton(tooltip: actions.firstWhere((a) => a.id == id).title, onPressed: () => _open(actions.firstWhere((a) => a.id == id)), icon: Icon(id == 'avisos' ? Icons.notifications_none_rounded : Icons.tune_rounded))]),
