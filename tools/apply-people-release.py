@@ -27,6 +27,8 @@ for i in range(4):
             previous = start
         outputs[name] = ''.join(lines)
 
+name = 'lib/screens/justificar_falta_screen.dart'
+outputs[name] = outputs[name].replace("${p['motivoFalta']}" + chr(10) + '${', "${p['motivoFalta']}" + chr(92) + 'n${')
 mismatches = [name for name, value in outputs.items() if name in expected and hashlib.sha256(value.encode()).hexdigest() != expected[name]]
 if mismatches:
     Path('smoke-results').mkdir(exist_ok=True)
