@@ -1,7 +1,7 @@
 name: Verify application
 on:
   push:
-    branches: [fix/2026-09-push-ai]
+    branches: [feat/futuristic-shell-voice-guide]
   pull_request:
     branches: [main]
 permissions:
@@ -12,29 +12,50 @@ concurrency:
 jobs:
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Validate backend and run connectivity regressions
+      - name: Validate backend and run regressions
         run: |
-          node --check functions/index.js
-          node --check functions/assistant-policy.js
-          node --check functions/push-payload.js
+          for file in functions/*.js; do node --check "$file"; done
+          npm --prefix functions ci --ignore-scripts --no-audit --no-fund
+          node -e "require('./functions/app.js')"
           node --test tests/*.test.cjs
+          bash -n tools/activate-services.sh
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
           cache: true
       - run: flutter pub get
-      - name: Compile the updated application
+      - name: Verify role navigation and local guide
+        run: flutter test test/release_navigation_test.dart
+      - name: Compile futuristic web application
         run: flutter build web --release --base-href /SaunaStilo-App/ --pwa-strategy=none
-      - name: Record the exact tested source
-        run: git rev-parse HEAD > build/web/reviewed-source-sha.txt
+      - name: Browser verification on the compiled bundle
+        run: |
+          npm install --prefix /tmp/sauna-browser --no-audit --no-fund playwright
+          python3 -m http.server 8177 --directory build/web >/tmp/sauna-http.log 2>&1 &
+          NODE_PATH=/tmp/sauna-browser/node_modules SAUNA_URL=http://127.0.0.1:8177/ node tools/browser-smoke.cjs
+      - name: Record tested source
+        run: |
+          git rev-parse HEAD > build/web/reviewed-source-sha.txt
+          git archive --format=tar HEAD > source.tar
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: release-browser-check
+          path: smoke-results
+          retention-days: 3
       - uses: actions/upload-artifact@v4
         with:
-          name: verified-web
+          name: release-source
+          path: source.tar
+          retention-days: 3
+      - uses: actions/upload-artifact@v4
+        with:
+          name: verified-futuristic-web
           path: build/web
           retention-days: 3
