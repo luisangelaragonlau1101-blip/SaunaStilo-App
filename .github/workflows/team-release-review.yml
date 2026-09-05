@@ -37,6 +37,10 @@ jobs:
           node -e "require('./functions/app.js')"
           node --test tests/*.test.cjs
           bash -n tools/activate-services.sh
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
       - name: Test master and project permissions in an isolated emulator
         run: |
           npm install --prefix /tmp/sauna-rules --no-audit --no-fund firebase firebase-tools @firebase/rules-unit-testing
