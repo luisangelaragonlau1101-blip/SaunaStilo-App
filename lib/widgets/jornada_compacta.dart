@@ -72,10 +72,13 @@ class _JornadaCompactaState extends State<JornadaCompacta> {
     } finally { if (mounted) setState(() => _busy = false); }
   }
   @override
-  Widget build(BuildContext context) => StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-    stream: FirebaseFirestore.instance.collection('asistencias').doc('${widget.usuario.id}_$_day').snapshots(),
+  Widget build(BuildContext context) => StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+    // Query by ownership first. A direct read of a nonexistent attendance document
+    // fails the current resource-based rules and used to block a first entry.
+    stream: FirebaseFirestore.instance.collection('asistencias').where('trabajadorId', isEqualTo: widget.usuario.id).snapshots(),
     builder: (context, snapshot) {
-      final data = snapshot.data?.data() ?? <String, dynamic>{};
+      final records = (snapshot.data?.docs ?? []).where((d) => d.id == '${widget.usuario.id}_$_day');
+      final data = records.isEmpty ? <String, dynamic>{} : records.first.data();
       final entered = data['horaEntrada'] is Timestamp;
       final left = data['horaSalida'] is Timestamp;
       final ready = snapshot.hasData && !snapshot.hasError;
