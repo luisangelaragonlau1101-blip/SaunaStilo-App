@@ -1,35 +1,63 @@
-# Sauna Stilo · Servicios de IA y notificaciones
+# Sauna Stilo · IA, Guía, voz y notificaciones
 
-Proyecto existente: `saunastiloapp-17e15`; región: `us-central1`.
-El proveedor del asistente es Gemini mediante Google Cloud y `@google/genai`.
-NO se utiliza `OPENAI_API_KEY`. Nunca colocar claves privadas en Flutter, GitHub ni chats.
+Proyecto existente: `saunastiloapp-17e15`; región de Cloud Functions: `us-central1`.
 
-## Publicación por un administrador autorizado
+La aplicación conserva sus servicios actuales y agrega **Sauna IA v2**, **Guía Inteligente con Google Search** y **Estudio de Voz de Administración**. No colocar secretos ni claves de cuenta de servicio en Flutter, GitHub o chats.
 
-1. Confirmar el proyecto Firebase, facturación habilitada y API de IA correspondiente habilitada en Google Cloud.
-2. Comprobar la identidad de servicio que ejecuta `saunaAssistant`, su acceso al motor (Vertex AI User o permisos equivalentes mínimos), Firestore y el modelo configurado. No descargar claves de cuenta de servicio: usar la identidad de ejecución administrada.
-3. Desde esta carpeta: `npm ci`. El modelo predeterminado es `gemini-3.7-flash`; `GEMINI_MODEL` y `GOOGLE_CLOUD_LOCATION` se pueden configurar en el entorno del proyecto. No inventar un identificador de modelo.
-4. Desde la raíz del repositorio, con la sesión autorizada de Firebase CLI:
+## Sauna IA y Guía con Internet
+
+`saunaAssistantV2` utiliza `@google/genai` sobre Vertex AI. Cuando la app envía `usarInternet: true`, el servidor habilita la herramienta `googleSearch`. Los permisos de información interna no cambian por usar Internet: el servidor vuelve a leer el rol autenticado y construye solamente el contexto autorizado.
+
+La Guía usa el modo `guia` del mismo servicio y está orientada a indicar qué módulo abrir y qué pasos seguir. Los resultados de Google Search se devuelven como fuentes web para que la app pueda mostrar enlaces de consulta.
+
+El modelo puede configurarse con `GEMINI_MODEL`; el valor debe corresponder a un modelo realmente disponible para el proyecto. `GOOGLE_CLOUD_LOCATION` usa `global` por defecto.
+
+## Voz oficial de Administración
+
+El Estudio de Voz solo aparece para el rol `admin`. Graba dos archivos mono de hasta 10 segundos: consentimiento y muestra de referencia. El consentimiento en español debe decir exactamente:
+
+> Soy el propietario de esta voz y doy mi consentimiento para que Google la utilice para crear un modelo de voz sintética.
+
+El servidor usa Chirp 3 Instant Custom Voice de Cloud Text-to-Speech para solicitar una `voiceCloningKey` y guarda la configuración en Firestore. La aplicación Flutter no recibe la clave en sus respuestas. Para hablar, el cliente solicita audio a `synthesizeAdminVoice`; si la voz personalizada no está disponible, IA y Guía conservan como respaldo el TTS del dispositivo.
+
+**Importante:** Instant Custom Voice es un servicio de acceso restringido por Google. El código puede estar publicado correctamente y aun así devolver `failed-precondition` hasta que el proyecto esté autorizado para usar esa función.
+
+## Publicación por una cuenta autorizada
+
+1. Confirmar facturación y APIs necesarias en Google Cloud: Vertex AI y Cloud Text-to-Speech.
+2. Comprobar que la identidad administrada de ejecución tenga acceso mínimo a Vertex AI, Firestore y Text-to-Speech. No descargar claves JSON de cuenta de servicio.
+3. Desde `functions/`, ejecutar `npm ci`.
+4. Desde la raíz del repositorio, con Firebase CLI autenticado en el proyecto correcto:
 
 ```sh
-firebase deploy --project saunastiloapp-17e15 --only functions:saunaAssistant,functions:sendSaunaStiloNotification
+firebase deploy --project saunastiloapp-17e15 --only functions:saunaAssistantV2,functions:getAdminVoiceStatus,functions:enrollAdminVoice,functions:setAdminVoiceEnabled,functions:synthesizeAdminVoice,functions:sendSaunaStiloNotification
 ```
 
-El comando actualiza exclusivamente esos dos servicios. No publica las demás tareas programadas ni cambia reglas, usuarios o datos. La cuenta debe tener los permisos mínimos de despliegue correspondientes. Esta revisión del código NO prueba que los servicios ya estén desplegados.
+Este comando publica únicamente los servicios nombrados. No cambia usuarios, datos ni reglas de Firestore. Tener el código en GitHub no prueba que estas funciones ya estén desplegadas.
 
-## Verificación
+## Verificación obligatoria
 
-`node --test tests/*.test.cjs` desde la raíz valida las regresiones de receptor, caché y política del servidor con dobles de prueba. La compilación Flutter se valida con GitHub Actions.
+Desde la raíz:
 
-En la app, un usuario autenticado debe pulsar **Probar IA** y recibir una respuesta real. Comprobar después, con dos roles distintos, que un trabajador no puede consultar clientes/cotizaciones reservados. El servidor vuelve a comprobar el rol; los límites son 8 solicitudes/minuto y 150/día por usuario. Los adjuntos admitidos deben pertenecer a `media/<uid>/` del usuario autenticado. El contexto es una muestra limitada de registros, no todos los datos de la empresa.
+```sh
+node --test tests/*.test.cjs
+```
 
-Para push: instalar en inicio en iPhone, abrir desde el icono y pulsar **Activar avisos**. Con dos dispositivos/cuentas, probar mensaje y llamada: app abierta, segundo plano y pantalla bloqueada. Tocar la notificación debe abrir el buzón de la misma app; desde una notificación privada se accede a Mensajes. Repetir después de actualizar y de cerrar sesión/cambiar de usuario.
+GitHub Actions también ejecuta comprobaciones de sintaxis Node y compila Flutter Web en release.
 
-Una aceptación por FCM no confirma sonido/visualización. La app web no implementa PushKit/CallKit ni timbrado VoIP continuo; Enfoque, silencio, conectividad y permisos del sistema afectan la entrega. Las llamadas actuales son invitaciones a salas de reunión externas, no llamadas nativas. La compilación APK y las pruebas físicas Android/iPhone siguen siendo verificaciones separadas.
+Después del despliegue, probar en cuentas distintas:
 
-## Documentación primaria consultada
+- **Admin:** Sauna IA puede consultar proyectos/clientes/cotizaciones autorizados y mostrar fuentes web cuando use Internet.
+- **Trabajador:** Sauna IA y Guía no deben exponer clientes, cotizaciones ni datos administrativos.
+- **Guía:** preguntar dónde registrar asistencia, cómo pedir herramientas y una pregunta externa actual; las tres deben producir respuestas reales.
+- **Voz:** grabar consentimiento y muestra desde Administración, crear la voz, probarla y después escuchar una respuesta de IA y de Guía.
+- **Push:** con dos dispositivos, probar app abierta, segundo plano y pantalla bloqueada; repetir después de actualizar y después de cerrar/cambiar sesión.
 
+Una aceptación por FCM no garantiza sonido o visualización en todos los estados. Enfoque, silencio, permisos y restricciones del sistema siguen afectando la entrega; la PWA no equivale a PushKit/CallKit de una aplicación VoIP nativa.
+
+## Documentación primaria
+
+- https://cloud.google.com/vertex-ai/generative-ai/docs/samples/googlegenaisdk-tools-google-search-with-txt
+- https://cloud.google.com/text-to-speech/docs/chirp3-instant-custom-voice
 - https://firebase.google.com/docs/cloud-messaging/web/receive-messages
 - https://webkit.org/blog/13878/web-push-for-web-apps-on-ios-and-ipados/
-- https://ai.google.dev/gemini-api/docs/latest-model
-- https://googleapis.github.io/js-genai/
