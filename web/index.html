@@ -1,70 +1,37 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <!--
-    If you are serving your web app in a path other than the root, change the
-    href value below to reflect the base path you are serving from.
-
-    The path provided below has to start and end with a slash "/" in order for
-    it to work correctly.
-
-    For more details:
-    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
-
-    This is a placeholder for base href that will be replaced by the value of
-    the `--base-href` argument provided to `flutter build`.
-  -->
   <base href="$FLUTTER_BASE_HREF">
   <script>
-    // The same bundle runs at Pages /SaunaStilo-App/ and at the existing proxy root.
     if (location.pathname === '/') document.querySelector('base').setAttribute('href', '/');
   </script>
-
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
   <meta name="description" content="Gestión de proyectos y equipo Sauna Stilo.">
   <meta name="theme-color" content="#050505">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-
-  <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <meta name="apple-mobile-web-app-title" content="Sauna Stilo">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
-
-  <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png"/>
-
   <title>Sauna Stilo</title>
   <link rel="manifest" href="manifest.json">
   <style>
     html, body { margin: 0; min-height: 100%; background: #050505; }
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
-    #sauna-boot {
-      position: fixed; inset: 0; z-index: 9999; display: flex;
-      align-items: center; justify-content: center; color: #fff;
-      background: radial-gradient(circle at 50% 36%, #142131 0, #080c12 36%, #050505 72%);
-      text-align: center; padding: 28px; box-sizing: border-box;
-    }
-    .sauna-boot-card { width: min(360px, 100%); }
-    .sauna-mark { color: #dce6f1; font-size: 54px; line-height: 1; }
-    .sauna-title { margin: 14px 0 26px; font-size: 24px; letter-spacing: 4px; font-weight: 800; }
-    .sauna-spinner { width: 34px; height: 34px; margin: 0 auto 18px; border-radius: 50%; border: 3px solid #263343; border-top-color: #dce6f1; animation: sauna-spin .85s linear infinite; }
-    .sauna-status { color: #c1cbd7; font-size: 15px; line-height: 1.5; }
-    #sauna-retry { display: none; margin: 20px auto 0; border: 0; border-radius: 999px; background: #dce6f1; color: #080706; padding: 12px 22px; font: inherit; font-weight: 700; cursor: pointer; }
-    @keyframes sauna-spin { to { transform: rotate(360deg); } }
+    #sauna-boot { position: fixed; inset: 0; z-index: 9999; display: flex; align-items: center; justify-content: center; background: #050505; padding: 28px; box-sizing: border-box; }
+    .sauna-logo { width: min(210px, 58vw); max-height: 190px; object-fit: contain; filter: drop-shadow(0 0 28px rgba(142,21,56,.24)); animation: sauna-breathe 1.8s ease-in-out infinite alternate; }
+    #sauna-error { display: none; position: fixed; left: 20px; right: 20px; bottom: 34px; color: #fff; text-align: center; font-size: 13px; }
+    #sauna-retry { display: none; margin: 14px auto 0; border: 1px solid rgba(183,255,42,.55); border-radius: 999px; background: #111012; color: #b7ff2a; padding: 11px 20px; font: inherit; font-weight: 800; cursor: pointer; }
+    @keyframes sauna-breathe { from { opacity: .76; transform: scale(.985); } to { opacity: 1; transform: scale(1); } }
   </style>
 </head>
 <body>
-  <div id="sauna-boot" role="status" aria-live="polite">
-    <div class="sauna-boot-card">
-      <div class="sauna-mark">♨</div>
-      <div class="sauna-title">SAUNA STILO</div>
-      <div class="sauna-spinner" id="sauna-spinner"></div>
-      <div class="sauna-status" id="sauna-status">Cargando la aplicación…</div>
-      <button id="sauna-retry" type="button" onclick="location.reload()">Reintentar</button>
-    </div>
+  <div id="sauna-boot" role="status" aria-label="Abriendo Sauna Stilo">
+    <img class="sauna-logo" src="assets/assets/logo_saunastilo.png" alt="Sauna Stilo">
   </div>
+  <div id="sauna-error"><span id="sauna-status"></span><button id="sauna-retry" type="button" onclick="location.reload()">Reintentar</button></div>
   <noscript>Necesitas activar JavaScript para usar Sauna Stilo.</noscript>
   <script src="sauna-maintenance.js"></script>
   <script>
@@ -74,46 +41,30 @@
       try { if (localStorage.getItem(key) === version) return; } catch (_) {}
       SaunaMaintenance.repair(document.baseURI)
         .then(function () { try { localStorage.setItem(key, version); } catch (_) {} })
-        .catch(function () { /* Asset repair must not block login. */ });
+        .catch(function () {});
     }());
   </script>
-  <!--
-    You can customize the "flutter_bootstrap.js" script.
-    This is useful to provide a custom configuration to the Flutter loader
-    or to give the user feedback during the initialization process.
-
-    For more details:
-    * https://docs.flutter.dev/platform-integration/web/initialization
-  -->
   <script>
     (function () {
       var boot = document.getElementById('sauna-boot');
+      var errorBox = document.getElementById('sauna-error');
       var status = document.getElementById('sauna-status');
-      var spinner = document.getElementById('sauna-spinner');
       var retry = document.getElementById('sauna-retry');
       var finished = false;
-
       function showHelp(message) {
         if (finished) return;
-        status.textContent = message || 'La conexión está tardando más de lo normal.';
-        spinner.style.display = 'none';
+        status.textContent = message || 'No se pudo abrir Sauna Stilo.';
+        errorBox.style.display = 'block';
         retry.style.display = 'block';
       }
-
       window.addEventListener('flutter-first-frame', function () {
         finished = true;
         if (boot) boot.remove();
+        if (errorBox) errorBox.remove();
       });
-      window.addEventListener('error', function () {
-        showHelp('No se pudo cargar Sauna Stilo. Revisa tu conexión y reintenta.');
-      });
-      window.addEventListener('unhandledrejection', function () {
-        showHelp('No se pudo iniciar Sauna Stilo. Pulsa Reintentar.');
-      });
-      setTimeout(function () {
-        showHelp('La red está tardando. Puedes esperar o pulsar Reintentar.');
-      }, 30000);
-
+      window.addEventListener('error', function () { showHelp('No se pudo cargar Sauna Stilo. Revisa tu conexión.'); });
+      window.addEventListener('unhandledrejection', function () { showHelp('No se pudo iniciar Sauna Stilo.'); });
+      setTimeout(function () { showHelp('La red está tardando más de lo normal.'); }, 30000);
     }());
   </script>
   <script src="flutter_bootstrap.js" async></script>
