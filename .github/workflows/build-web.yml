@@ -1,47 +1,43 @@
 name: Build Web App
-
 on:
   workflow_dispatch:
   push:
-    branches:
-      - main
-
+    branches: [main]
 permissions:
   contents: read
   pages: write
   id-token: write
-
 concurrency:
   group: pages
   cancel-in-progress: true
-
 jobs:
   build-web:
     runs-on: ubuntu-latest
     timeout-minutes: 30
-
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
-
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
           channel: stable
           cache: true
-
       - name: Install dependencies
         run: flutter pub get
-
+      - name: Verify release navigation and backend policies
+        run: |
+          node --test tests/*.test.cjs
+          flutter test test/release_navigation_test.dart
       - name: Configure GitHub Pages
         id: pages
         uses: actions/configure-pages@v5
         with:
           enablement: true
-
       - name: Build web application
         run: flutter build web --release --base-href /SaunaStilo-App/ --pwa-strategy=none
-
       - name: Version web assets
         run: |
           VERSION="${GITHUB_SHA::8}"
@@ -50,19 +46,54 @@ jobs:
           sed -i "s/main.dart.js/main.${VERSION}.dart.js/g" "build/web/flutter_bootstrap.${VERSION}.js"
           sed -i "s/flutter_bootstrap.js/flutter_bootstrap.${VERSION}.js/g" build/web/index.html
           sed -i "s/__SAUNA_BUILD_VERSION__/${VERSION}/g" build/web/index.html
-
+          node -e "require('fs').writeFileSync('build/web/version.json', JSON.stringify({release:'3.0',commit:process.env.GITHUB_SHA,builtAt:new Date().toISOString()}))"
       - name: Add cache reset page
         run: |
           cp web/reset.html build/web/reset.html
           cp web/flutter_service_worker.js build/web/flutter_service_worker.js
-
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: build/web
-
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
         with:
           preview: false
+      - name: Inspect public release and unauthenticated service availability
+        continue-on-error: true
+        run: |
+          mkdir -p smoke-results
+          node <<'NODE'
+          const fs=require('fs');
+          (async()=>{
+            const report={expectedCommit:process.env.GITHUB_SHA,sites:[],services:[]};
+            for(const base of ['https://sauna-stilo-app-web.vercel.app/','https://luisangelaragonlau1101-blip.github.io/SaunaStilo-App/']) {
+              try {
+                const r=await fetch(base+'version.json?release='+process.env.GITHUB_SHA,{signal:AbortSignal.timeout(20000)});
+                const v=r.ok?await r.json():{};
+                report.sites.push({base,status:r.status,commit:v.commit||null,current:v.commit===process.env.GITHUB_SHA});
+              } catch(e){report.sites.push({base,current:false,error:e.name});}
+            }
+            for(const name of ['saunaAssistantV2','getAdminVoiceStatus','synthesizeAdminVoice']) {
+              try {
+                const r=await fetch('https://us-central1-saunastiloapp-17e15.cloudfunctions.net/'+name,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({data:{}}),signal:AbortSignal.timeout(15000)});
+                report.services.push({name,unauthenticatedHttpStatus:r.status});
+              } catch(e){report.services.push({name,error:e.name});}
+            }
+            fs.writeFileSync('smoke-results/deployment-status.json',JSON.stringify(report,null,2));
+            console.log(JSON.stringify(report,null,2));
+            if(!report.sites.every(s=>s.current))process.exitCode=1;
+          })().catch(e=>{console.error(e.name);process.exitCode=1;});
+          NODE
+      - name: Check existing public application in phone and desktop viewports
+        continue-on-error: true
+        run: |
+          npm install --prefix /tmp/sauna-browser --no-audit --no-fund playwright
+          NODE_PATH=/tmp/sauna-browser/node_modules node tools/browser-smoke.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: production-read-only-check
+          path: smoke-results
+          retention-days: 7
