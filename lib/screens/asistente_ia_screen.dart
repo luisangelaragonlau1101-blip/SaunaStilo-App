@@ -1,24 +1,19 @@
 import 'dart:async';
-import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:audioplayers/audioplayers.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:intl/intl.dart';
-import 'package:record/record.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
+import 'package:url_launcher/url_launcher.dart';
 
-import '../models/actividad_model.dart';
-import '../models/insumo_model.dart';
 import '../models/user_model.dart';
 import '../services/ai_assistant_service.dart';
+import '../services/custom_voice_service.dart';
 import '../services/media_upload_service.dart';
-import '../services/notificaciones_service.dart';
+import 'guia_inteligente_screen.dart';
+import 'voz_administracion_screen.dart';
 
 class AsistenteIaScreen extends StatefulWidget {
   final UserModel usuario;
@@ -30,246 +25,76 @@ class AsistenteIaScreen extends StatefulWidget {
 }
 
 class _AsistenteIaScreenState extends State<AsistenteIaScreen> {
-  static const _fondo = Color(0xFF050505);
-  static const _tarjeta = Color(0xFF171717);
-  static const _acento = Color(0xFFD6A85F);
-  static const _verde = Color(0xFFB9F56A);
+  static const _bg = Color(0xFF05070A);
+  static const _panel = Color(0xFF11161C);
+  static const _cyan = Color(0xFF86E9FF);
+  static const _mint = Color(0xFFA8F6D5);
+  static const _violet = Color(0xFFB8A7FF);
 
   final _controller = TextEditingController();
-  final _scrollController = ScrollController();
-  final _aiService = AiAssistantService();
+  final _scroll = ScrollController();
+  final _ai = AiAssistantService();
+  final _voice = CustomVoiceService();
   final _media = MediaUploadService();
-  final _speech = stt.SpeechToText();
   final _tts = FlutterTts();
-  final _recorder = AudioRecorder();
-  final _audioPlayer = AudioPlayer();
-  final List<StreamSubscription<dynamic>> _suscripciones = [];
-  final List<_MensajeAsistente> _mensajes = <_MensajeAsistente>[];
+  final _player = AudioPlayer();
+  final _speech = stt.SpeechToText();
+  final _picker = ImagePicker();
+  final _messages = <_AiMessage>[];
+  final _pendingImages = <XFile>[];
 
-  List<ActividadModel> _actividades = <ActividadModel>[];
-  List<Map<String, dynamic>> _solicitudes = <Map<String, dynamic>>[];
-  List<Map<String, dynamic>> _proyectos = <Map<String, dynamic>>[];
-  List<Map<String, dynamic>> _clientes = <Map<String, dynamic>>[];
-  List<Map<String, dynamic>> _cotizaciones = <Map<String, dynamic>>[];
-  List<InsumoModel> _insumos = <InsumoModel>[];
-  List<UserModel> _equipo = <UserModel>[];
-  final List<XFile> _imagenesAdjuntas = <XFile>[];
+  bool _thinking = false;
+  bool _listening = false;
+  bool _speak = true;
+  bool? _online;
 
-  StreamSubscription<Uint8List>? _flujoAudio;
-  BytesBuilder _audioBytes = BytesBuilder(copy: false);
-  Timer? _cronometroAudio;
-  int _segundosAudio = 0;
-  bool _escuchando = false;
-  bool _grabandoAudio = false;
-  bool _subiendoAudio = false;
-  bool _pensando = false;
-  bool _leerRespuestas = false;
-  bool? _nubeDisponible;
-  String? _audioReproduciendo;
-  double _velocidadVoz = kIsWeb ? 1.0 : .68;
-
-  bool get _esAdmin => widget.usuario.rol == AppRoles.admin;
-  bool get _esAlmacen => widget.usuario.rol == AppRoles.almacenista;
+  bool get _admin => widget.usuario.rol == AppRoles.admin;
+  bool get _warehouse => widget.usuario.rol == AppRoles.almacenista;
 
   @override
   void initState() {
     super.initState();
-    _configurarVoz();
-    _escucharDatosPermitidos();
-    _audioPlayer.onPlayerComplete.listen((_) {
-      if (mounted) setState(() => _audioReproduciendo = null);
-    });
-    _mensajes.add(
-      _MensajeAsistente(
-        texto: _esAdmin
-            ? 'Hola, ${widget.usuario.nombre}. Tengo acceso administrativo a proyectos, clientes, cotizaciones, tareas y almacén. Puedes pedirme resúmenes, estadísticas, borradores o prioridades y también puedo responderte con voz.'
-            : 'Hola, ${widget.usuario.nombre}. Te ayudo con tus tareas, evidencias, solicitudes y herramientas disponibles. Los datos privados de clientes, cotizaciones y proyectos administrativos permanecen protegidos para tu rol.',
-        esUsuario: false,
+    _tts.setLanguage('es-MX');
+    _tts.setSpeechRate(.72);
+    _tts.setPitch(1.0);
+    _messages.add(
+      _AiMessage(
+        text: _admin
+            ? 'Hola, ${widget.usuario.nombre}. Soy Sauna IA. Puedo ayudarte con la operación autorizada de la empresa y consultar Internet cuando necesites información actual. Mis respuestas pueden reproducirse con la voz oficial configurada por Administración.'
+            : 'Hola, ${widget.usuario.nombre}. Soy Sauna IA. Puedo ayudarte con tus tareas, herramientas, evidencias y dudas, respetando siempre los permisos de tu cuenta.',
+        user: false,
       ),
     );
   }
 
-  Future<void> _configurarVoz() async {
-    await _tts.setLanguage('es-MX');
-    await _tts.setSpeechRate(_velocidadVoz);
-    await _tts.setPitch(1.0);
-    await _tts.setVolume(1.0);
-    await _tts.awaitSpeakCompletion(false);
-    try {
-      final rawVoices = await _tts.getVoices;
-      if (rawVoices is List) {
-        final voices = rawVoices
-            .whereType<Map>()
-            .map((voice) => Map<String, dynamic>.from(voice))
-            .where((voice) {
-              final locale = voice['locale']?.toString().toLowerCase() ?? '';
-              return locale.startsWith('es');
-            })
-            .toList(growable: true);
-        voices.sort((a, b) {
-          int score(Map<String, dynamic> voice) {
-            final value = '${voice['name']} ${voice['locale']}'.toLowerCase();
-            var total = value.contains('es-mx') ? 12 : 0;
-            if (value.contains('natural') || value.contains('neural')) total += 12;
-            if (value.contains('premium') || value.contains('enhanced')) total += 8;
-            if (value.contains('google') ||
-                value.contains('microsoft') ||
-                value.contains('siri') ||
-                value.contains('paulina') ||
-                value.contains('dalia') ||
-                value.contains('jorge')) {
-              total += 6;
-            }
-            if (value.contains('compact')) total -= 10;
-            return total;
-          }
-
-          return score(b).compareTo(score(a));
-        });
-        if (voices.isNotEmpty) {
-          final selected = voices.first;
-          final name = selected['name']?.toString();
-          final locale = selected['locale']?.toString();
-          if (name != null && locale != null) {
-            await _tts.setVoice({'name': name, 'locale': locale});
-          }
-        }
-      }
-    } catch (_) {
-      // Algunos navegadores no enumeran voces; conservamos es-MX del sistema.
-    }
-  }
-
-  void _escucharDatosPermitidos() {
-    final db = FirebaseFirestore.instance;
-    final Query<Map<String, dynamic>> actividadesQuery = _esAdmin
-        ? db.collection('actividades')
-        : db
-              .collection('actividades')
-              .where('asignadoATrabajadorId', isEqualTo: widget.usuario.id);
-    _suscripciones.add(
-      actividadesQuery.snapshots().listen((snapshot) {
-        if (!mounted) return;
-        setState(() {
-          _actividades = snapshot.docs
-              .map((doc) => ActividadModel.fromJson(doc.data(), doc.id))
-              .toList(growable: false);
-        });
-      }),
-    );
-
-    final Query<Map<String, dynamic>> solicitudesQuery = (_esAdmin || _esAlmacen)
-        ? db.collection('solicitudes_herramientas')
-        : db
-              .collection('solicitudes_herramientas')
-              .where('trabajadorId', isEqualTo: widget.usuario.id);
-    _suscripciones.add(
-      solicitudesQuery.snapshots().listen((snapshot) {
-        if (!mounted) return;
-        setState(() {
-          _solicitudes = snapshot.docs
-              .map((doc) => <String, dynamic>{'id': doc.id, ...doc.data()})
-              .toList(growable: false);
-        });
-      }),
-    );
-
-    _suscripciones.add(
-      db.collection('insumos_inventario').snapshots().listen((snapshot) {
-        if (!mounted) return;
-        final insumos = snapshot.docs
-            .map((doc) => InsumoModel.fromFirestore(doc))
-            .toList(growable: true)
-          ..sort((a, b) => a.nombre.compareTo(b.nombre));
-        setState(() => _insumos = insumos);
-      }),
-    );
-
-    _suscripciones.add(
-      db.collection('usuarios').snapshots().listen((snapshot) {
-        if (!mounted) return;
-        setState(() {
-          _equipo = snapshot.docs
-              .map((doc) => UserModel.fromFirestore(doc))
-              .toList(growable: false);
-        });
-      }),
-    );
-
-    // Estas tres colecciones sensibles ni siquiera se consultan desde un
-    // dispositivo que no tenga rol administrador.
-    if (_esAdmin) {
-      _suscripciones.add(
-        db.collection('proyectos').snapshots().listen((snapshot) {
-          if (!mounted) return;
-          setState(() {
-            _proyectos = snapshot.docs
-                .map((doc) => <String, dynamic>{'id': doc.id, ...doc.data()})
-                .toList(growable: false);
-          });
-        }),
-      );
-      _suscripciones.add(
-        db.collection('clientes').snapshots().listen((snapshot) {
-          if (!mounted) return;
-          setState(() {
-            _clientes = snapshot.docs
-                .map((doc) => <String, dynamic>{'id': doc.id, ...doc.data()})
-                .toList(growable: false);
-          });
-        }),
-      );
-      _suscripciones.add(
-        db.collection('seguimiento_cotizaciones').snapshots().listen((snapshot) {
-          if (!mounted) return;
-          setState(() {
-            _cotizaciones = snapshot.docs
-                .map((doc) => <String, dynamic>{'id': doc.id, ...doc.data()})
-                .toList(growable: false);
-          });
-        }),
-      );
-    }
-  }
-
   @override
   void dispose() {
-    for (final suscripcion in _suscripciones) {
-      suscripcion.cancel();
-    }
-    _flujoAudio?.cancel();
-    _cronometroAudio?.cancel();
+    _controller.dispose();
+    _scroll.dispose();
     _speech.cancel();
     _tts.stop();
-    _recorder.dispose();
-    _audioPlayer.dispose();
-    _controller.dispose();
-    _scrollController.dispose();
+    _player.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _fondo,
+      backgroundColor: _bg,
       appBar: AppBar(
-        backgroundColor: _fondo,
+        backgroundColor: _bg,
         surfaceTintColor: Colors.transparent,
         titleSpacing: 8,
         title: Row(
           children: [
             Container(
-              width: 38,
-              height: 38,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: LinearGradient(
-                  colors: [Color(0xFF8B5CF6), Color(0xFF00C2FF)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(14),
+                gradient: const LinearGradient(colors: [_cyan, _violet]),
               ),
-              child: const Icon(Icons.auto_awesome_rounded, size: 20),
+              child: const Icon(Icons.auto_awesome_rounded, color: Colors.black),
             ),
             const SizedBox(width: 10),
             Expanded(
@@ -284,10 +109,16 @@ class _AsistenteIaScreenState extends State<AsistenteIaScreen> {
                     ),
                   ),
                   Text(
-                    _nubeDisponible == true ? 'Conexión IA verificada' : (_nubeDisponible == false ? 'IA sin conexión · reintenta' : 'Conexión por verificar'),
+                    _online == true
+                        ? 'IA + INTERNET · CONECTADA'
+                        : _online == false
+                            ? 'SIN CONEXIÓN · REINTENTA'
+                            : 'IA + INTERNET · LISTA',
                     style: GoogleFonts.inter(
-                      color: _verde,
-                      fontSize: 10,
+                      color: _online == false ? Colors.redAccent : _mint,
+                      fontSize: 9,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: .7,
                     ),
                   ),
                 ],
@@ -296,312 +127,324 @@ class _AsistenteIaScreenState extends State<AsistenteIaScreen> {
           ],
         ),
         actions: [
-          PopupMenuButton<double>(
-            tooltip: 'Velocidad de voz',
-            initialValue: _velocidadVoz,
-            onSelected: _cambiarVelocidad,
-            itemBuilder: (_) => [
-              PopupMenuItem(value: kIsWeb ? 1.0 : .68, child: const Text('Voz natural · 1×')),
-              PopupMenuItem(value: kIsWeb ? 1.25 : .82, child: const Text('Voz ágil · 1.25×')),
-              PopupMenuItem(value: kIsWeb ? 1.5 : .94, child: const Text('Voz rápida · 1.5×')),
-            ],
-            child: Center(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 5),
-                child: Text(
-                  _etiquetaVelocidad(),
-                  style: GoogleFonts.inter(
-                    color: Colors.white70,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
+          IconButton(
+            tooltip: 'Guía de la aplicación',
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => GuiaInteligenteScreen(usuario: widget.usuario),
               ),
             ),
+            icon: const Icon(Icons.explore_rounded, color: _mint),
           ),
+          if (_admin)
+            IconButton(
+              tooltip: 'Configurar mi voz',
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) =>
+                      VozAdministracionScreen(usuario: widget.usuario),
+                ),
+              ),
+              icon: const Icon(Icons.graphic_eq_rounded, color: _cyan),
+            ),
           IconButton(
-            tooltip: _leerRespuestas ? 'Desactivar voz' : 'Activar voz',
+            tooltip: _speak
+                ? 'Desactivar respuestas por voz'
+                : 'Activar respuestas por voz',
             onPressed: () {
-              setState(() => _leerRespuestas = !_leerRespuestas);
-              if (!_leerRespuestas) _tts.stop();
+              setState(() => _speak = !_speak);
+              if (!_speak) {
+                _player.stop();
+                _tts.stop();
+              }
             },
             icon: Icon(
-              _leerRespuestas
-                  ? Icons.volume_up_rounded
-                  : Icons.volume_off_rounded,
-              color: _leerRespuestas ? _acento : Colors.white38,
+              _speak ? Icons.volume_up_rounded : Icons.volume_off_rounded,
+              color: _speak ? _cyan : Colors.white38,
             ),
           ),
         ],
       ),
       body: Column(
         children: [
-          _resumenOperacion(),
-          _preguntasRapidas(),
+          _capabilityStrip(),
+          _quickPrompts(),
           const Divider(height: 1, color: Colors.white10),
-          Expanded(child: _listaMensajes()),
-          _entradaMensaje(),
+          Expanded(child: _conversation()),
+          _composer(),
         ],
       ),
     );
   }
 
-  Widget _resumenOperacion() {
-    final pendientes = _actividades
-        .where((actividad) => actividad.estatus != 'completado')
-        .length;
-    final hoy = _actividades.where(_esParaHoy).length;
-    final solicitudes = _solicitudes
-        .where((solicitud) => solicitud['estatus'] == 'pendiente')
-        .length;
-    return SizedBox(
-      height: 92,
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+  Widget _capabilityStrip() {
+    final label = _admin
+        ? 'Proyectos · Clientes · Cotizaciones · Almacén · Web'
+        : _warehouse
+            ? 'Inventario · Solicitudes · Tareas · Web'
+            : 'Tus tareas · Herramientas · Evidencias · Web';
+    return Container(
+      margin: const EdgeInsets.fromLTRB(14, 6, 14, 8),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0D171C),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: _cyan.withOpacity(.16)),
+      ),
+      child: Row(
         children: [
-          _Metrica(titulo: 'PARA HOY', valor: hoy, color: _verde),
-          _Metrica(
-            titulo: 'PENDIENTES',
-            valor: pendientes,
-            color: const Color(0xFFFFD166),
-          ),
-          _Metrica(
-            titulo: _esAdmin || _esAlmacen ? 'ALMACÉN' : 'SOLICITUDES',
-            valor: solicitudes,
-            color: const Color(0xFF72D6FF),
-          ),
-          if (_esAdmin)
-            _Metrica(
-              titulo: 'CLIENTES',
-              valor: _clientes.length,
-              color: const Color(0xFFFF8FAB),
+          const Icon(Icons.language_rounded, color: _cyan, size: 17),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: GoogleFonts.inter(
+                color: Colors.white60,
+                fontSize: 10.5,
+                fontWeight: FontWeight.w700,
+              ),
             ),
+          ),
+          const SizedBox(width: 7),
+          Container(
+            width: 7,
+            height: 7,
+            decoration: const BoxDecoration(
+              color: _mint,
+              shape: BoxShape.circle,
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _preguntasRapidas() {
-    final opciones = _esAdmin
-        ? const [
+  Widget _quickPrompts() {
+    final prompts = _admin
+        ? <String>[
             'Resumen ejecutivo',
+            '¿Qué urge hoy?',
             'Proyectos y estados',
-            'Clientes',
             'Cotizaciones',
-            'Genera estadísticas',
-            'Próximos cumpleaños',
+            'Busca en Internet',
           ]
-        : _esAlmacen
-        ? const [
-            'Resumen de hoy',
-            'Pendientes',
-            'Almacén',
-            'Herramientas',
-            'Próximos cumpleaños',
-          ]
-        : const [
-            '¿Qué hago hoy?',
-            'Mis pendientes',
-            'Herramientas',
-            'Mis evidencias',
-            'Mis logros',
-            'Próximos cumpleaños',
-          ];
+        : _warehouse
+            ? <String>[
+                '¿Qué falta hoy?',
+                'Herramientas',
+                'Inventario',
+                'Mis pendientes',
+                'Busca en Internet',
+              ]
+            : <String>[
+                '¿Qué hago hoy?',
+                'Mis pendientes',
+                'Herramientas',
+                'Mis evidencias',
+                'Busca en Internet',
+              ];
     return SizedBox(
-      height: 50,
+      height: 46,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-        itemCount: opciones.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 8),
-        itemBuilder: (context, index) => ActionChip(
-          backgroundColor: _tarjeta,
-          side: const BorderSide(color: Colors.white12),
-          avatar: index == 0
-              ? const Icon(Icons.auto_awesome_rounded, size: 16, color: _acento)
-              : null,
-          label: Text(
-            opciones[index],
-            style: GoogleFonts.inter(color: Colors.white70, fontSize: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+        itemCount: prompts.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 7),
+        itemBuilder: (_, index) => ActionChip(
+          onPressed: _thinking ? null : () => _send(prompts[index]),
+          label: Text(prompts[index]),
+          backgroundColor: _panel,
+          side: const BorderSide(color: Colors.white10),
+          labelStyle: GoogleFonts.inter(
+            color: Colors.white70,
+            fontSize: 10.5,
+            fontWeight: FontWeight.w700,
           ),
-          onPressed: _pensando ? null : () => _enviar(opciones[index]),
         ),
       ),
     );
   }
 
-  Widget _listaMensajes() {
-    final total = _mensajes.length + (_pensando ? 1 : 0);
+  Widget _conversation() {
     return ListView.builder(
-      controller: _scrollController,
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 18),
-      itemCount: total,
-      itemBuilder: (context, index) {
-        if (_pensando && index == _mensajes.length) {
-          return const Align(
-            alignment: Alignment.centerLeft,
-            child: _BurbujaPensando(),
+      controller: _scroll,
+      padding: const EdgeInsets.fromLTRB(14, 14, 14, 16),
+      itemCount: _messages.length + (_thinking ? 1 : 0),
+      itemBuilder: (_, index) {
+        if (_thinking && index == _messages.length) {
+          return _bubble(
+            const _AiMessage(
+              text: 'Analizando y consultando…',
+              user: false,
+            ),
+            loading: true,
           );
         }
-        final mensaje = _mensajes[index];
-        return Align(
-          alignment: mensaje.esUsuario
-              ? Alignment.centerRight
-              : Alignment.centerLeft,
-          child: Container(
-            constraints: const BoxConstraints(maxWidth: 590),
-            margin: const EdgeInsets.only(bottom: 12),
-            padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
-            decoration: BoxDecoration(
-              color: mensaje.esUsuario ? const Color(0xFF40372B) : _tarjeta,
-              borderRadius: BorderRadius.only(
-                topLeft: const Radius.circular(20),
-                topRight: const Radius.circular(20),
-                bottomLeft: Radius.circular(mensaje.esUsuario ? 20 : 5),
-                bottomRight: Radius.circular(mensaje.esUsuario ? 5 : 20),
-              ),
-              border: Border.all(
-                color: mensaje.esUsuario
-                    ? _acento.withOpacity(.35)
-                    : Colors.white10,
-              ),
-            ),
-            child: _contenidoMensaje(mensaje),
-          ),
-        );
+        return _bubble(_messages[index]);
       },
     );
   }
 
-  Widget _burbujaAudio(_MensajeAsistente mensaje) {
-    final reproduciendo = _audioReproduciendo == mensaje.audioUrl;
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        IconButton.filledTonal(
-          onPressed: () => _reproducirAudio(mensaje.audioUrl!),
-          icon: Icon(
-            reproduciendo ? Icons.stop_rounded : Icons.play_arrow_rounded,
+  Widget _bubble(_AiMessage message, {bool loading = false}) {
+    return Align(
+      alignment: message.user ? Alignment.centerRight : Alignment.centerLeft,
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 680),
+        margin: const EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: message.user ? const Color(0xFF16303A) : _panel,
+          borderRadius: BorderRadius.circular(21),
+          border: Border.all(
+            color: message.user ? _cyan.withOpacity(.18) : Colors.white10,
           ),
         ),
-        const SizedBox(width: 8),
-        Column(
+        child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Mensaje de audio',
-              style: GoogleFonts.inter(
-                color: Colors.white,
-                fontWeight: FontWeight.w700,
-              ),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  message.user
+                      ? Icons.person_rounded
+                      : Icons.auto_awesome_rounded,
+                  size: 15,
+                  color: message.user ? _cyan : _mint,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  message.user ? 'Tú' : 'Sauna IA',
+                  style: GoogleFonts.inter(
+                    color: Colors.white54,
+                    fontSize: 9.5,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                if (loading) ...[
+                  const SizedBox(width: 8),
+                  const SizedBox(
+                    width: 11,
+                    height: 11,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 1.6,
+                      color: _mint,
+                    ),
+                  ),
+                ],
+              ],
             ),
-            Text(
-              _formatoDuracion(mensaje.duracionAudio ?? 0),
-              style: GoogleFonts.inter(color: Colors.white54, fontSize: 11),
-            ),
-          ],
-        ),
-        const SizedBox(width: 16),
-        const Icon(Icons.graphic_eq_rounded, color: _acento),
-      ],
-    );
-  }
-
-  Widget _contenidoMensaje(_MensajeAsistente mensaje) {
-    if (mensaje.audioUrl != null) return _burbujaAudio(mensaje);
-    final imagenes = mensaje.imagenes ?? const <String>[];
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        if (imagenes.isNotEmpty) ...[
-          SizedBox(
-            height: 150,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              shrinkWrap: true,
-              itemCount: imagenes.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 7),
-              itemBuilder: (_, index) => ClipRRect(
-                borderRadius: BorderRadius.circular(13),
-                child: Image.network(
-                  imagenes[index],
-                  width: 170,
-                  height: 150,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => const SizedBox(
-                    width: 170,
-                    child: Center(
-                      child: Icon(Icons.broken_image_rounded, color: Colors.white24),
+            if (message.imageUrls.isNotEmpty) ...[
+              const SizedBox(height: 9),
+              SizedBox(
+                height: 112,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: message.imageUrls.length,
+                  separatorBuilder: (_, __) => const SizedBox(width: 7),
+                  itemBuilder: (_, imageIndex) => ClipRRect(
+                    borderRadius: BorderRadius.circular(14),
+                    child: Image.network(
+                      message.imageUrls[imageIndex],
+                      width: 128,
+                      height: 112,
+                      fit: BoxFit.cover,
                     ),
                   ),
                 ),
               ),
-            ),
-          ),
-          if (mensaje.texto.isNotEmpty) const SizedBox(height: 9),
-        ],
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Flexible(
-              child: Text(
-                mensaje.texto,
-                style: GoogleFonts.inter(color: Colors.white, height: 1.42),
-              ),
-            ),
-            if (!mensaje.esUsuario) ...[
-              const SizedBox(width: 4),
-              InkWell(
-                onTap: () => _hablar(mensaje.texto),
-                borderRadius: BorderRadius.circular(20),
-                child: const Padding(
-                  padding: EdgeInsets.all(5),
-                  child: Icon(
-                    Icons.volume_up_rounded,
-                    size: 17,
-                    color: Colors.white38,
+            ],
+            const SizedBox(height: 7),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Text(
+                    message.text,
+                    style: GoogleFonts.inter(
+                      color: Colors.white,
+                      fontSize: 13.5,
+                      height: 1.48,
+                    ),
                   ),
                 ),
+                if (!message.user && !loading)
+                  IconButton(
+                    visualDensity: VisualDensity.compact,
+                    tooltip: 'Escuchar respuesta',
+                    onPressed: () => _speakText(message.text),
+                    icon: const Icon(
+                      Icons.volume_up_rounded,
+                      color: Colors.white38,
+                      size: 18,
+                    ),
+                  ),
+              ],
+            ),
+            if (message.sources.isNotEmpty) ...[
+              const SizedBox(height: 10),
+              Wrap(
+                spacing: 7,
+                runSpacing: 7,
+                children: message.sources
+                    .take(5)
+                    .map(
+                      (source) => ActionChip(
+                        avatar: const Icon(Icons.open_in_new_rounded, size: 13),
+                        label: Text(
+                          source.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        onPressed: () => _openSource(source.url),
+                        backgroundColor: Colors.white.withOpacity(.04),
+                        side: const BorderSide(color: Colors.white12),
+                        labelStyle: GoogleFonts.inter(
+                          color: Colors.white60,
+                          fontSize: 9.5,
+                        ),
+                      ),
+                    )
+                    .toList(growable: false),
               ),
             ],
           ],
         ),
-      ],
+      ),
     );
   }
 
-  Widget _entradaMensaje() {
+  Widget _composer() {
     return SafeArea(
       top: false,
       child: Container(
-        padding: const EdgeInsets.fromLTRB(10, 8, 10, 12),
+        padding: const EdgeInsets.fromLTRB(10, 8, 10, 11),
         decoration: const BoxDecoration(
-          color: Color(0xFF0D0D0D),
+          color: Color(0xFF0A0D11),
           border: Border(top: BorderSide(color: Colors.white10)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (_imagenesAdjuntas.isNotEmpty)
+            if (_pendingImages.isNotEmpty)
               SizedBox(
-                height: 72,
+                height: 70,
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.only(bottom: 8),
-                  itemCount: _imagenesAdjuntas.length,
+                  padding: const EdgeInsets.only(bottom: 7),
+                  itemCount: _pendingImages.length,
                   separatorBuilder: (_, __) => const SizedBox(width: 7),
                   itemBuilder: (_, index) => Stack(
                     children: [
                       ClipRRect(
-                        borderRadius: BorderRadius.circular(11),
+                        borderRadius: BorderRadius.circular(12),
                         child: FutureBuilder<Widget>(
-                          future: _previewImagenIa(_imagenesAdjuntas[index]),
+                          future: _preview(_pendingImages[index]),
                           builder: (_, snapshot) => SizedBox(
-                            width: 64,
-                            height: 64,
+                            width: 62,
+                            height: 62,
                             child: snapshot.data ??
                                 const ColoredBox(color: Colors.white10),
                           ),
@@ -612,7 +455,7 @@ class _AsistenteIaScreenState extends State<AsistenteIaScreen> {
                         top: 1,
                         child: InkWell(
                           onTap: () => setState(
-                            () => _imagenesAdjuntas.removeAt(index),
+                            () => _pendingImages.removeAt(index),
                           ),
                           child: const CircleAvatar(
                             radius: 10,
@@ -625,82 +468,35 @@ class _AsistenteIaScreenState extends State<AsistenteIaScreen> {
                   ),
                 ),
               ),
-            if (_grabandoAudio || _subiendoAudio)
-              Container(
-                margin: const EdgeInsets.only(bottom: 8),
-                padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 9),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF291719),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.redAccent.withOpacity(.4)),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      _subiendoAudio
-                          ? Icons.cloud_upload_rounded
-                          : Icons.fiber_manual_record_rounded,
-                      size: 17,
-                      color: Colors.redAccent,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        _subiendoAudio
-                            ? 'Enviando audio…'
-                            : 'Grabando ${_formatoDuracion(_segundosAudio)}',
-                        style: GoogleFonts.inter(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                    if (_grabandoAudio)
-                      TextButton(
-                        onPressed: _detenerYEnviarAudio,
-                        child: const Text('ENVIAR'),
-                      ),
-                  ],
-                ),
-              ),
             Row(
               children: [
-                if (!_esAdmin)
-                  _BotonEntrada(
-                    tooltip: 'Solicitar herramienta',
-                    icono: Icons.handyman_rounded,
-                    onPressed: _abrirSolicitudHerramienta,
-                  ),
-                _BotonEntrada(
-                  tooltip: 'Enviar fotografías a Sauna IA',
-                  icono: Icons.add_photo_alternate_rounded,
-                  onPressed: _pensando ? null : _seleccionarImagenesIa,
-                ),
-                _BotonEntrada(
-                  tooltip: _escuchando ? 'Detener dictado' : 'Dictar pregunta',
-                  icono: _escuchando ? Icons.mic_rounded : Icons.mic_none_rounded,
-                  activo: _escuchando,
-                  onPressed: _alternarDictado,
+                IconButton.filledTonal(
+                  tooltip: 'Agregar fotografías',
+                  onPressed: _thinking ? null : _pickImages,
+                  icon: const Icon(Icons.add_photo_alternate_rounded),
                 ),
                 const SizedBox(width: 5),
+                IconButton.filledTonal(
+                  tooltip: _listening ? 'Detener dictado' : 'Hablar',
+                  onPressed: _thinking ? null : _toggleDictation,
+                  icon: Icon(
+                    _listening ? Icons.mic_rounded : Icons.mic_none_rounded,
+                  ),
+                ),
+                const SizedBox(width: 6),
                 Expanded(
                   child: TextField(
                     controller: _controller,
-                    enabled: !_pensando && !_grabandoAudio,
+                    enabled: !_thinking,
+                    onSubmitted: _send,
                     textCapitalization: TextCapitalization.sentences,
                     style: GoogleFonts.inter(color: Colors.white, fontSize: 14),
-                    onSubmitted: _enviar,
                     decoration: InputDecoration(
-                      hintText: _escuchando
-                          ? 'Te estoy escuchando…'
-                          : 'Pregunta lo que necesites…',
-                      hintStyle: const TextStyle(color: Colors.white38),
+                      hintText: _listening
+                          ? 'Te escucho…'
+                          : 'Pregunta, analiza o busca en Internet…',
                       filled: true,
-                      fillColor: _tarjeta,
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 12,
-                      ),
+                      fillColor: _panel,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(18),
                         borderSide: BorderSide.none,
@@ -708,22 +504,11 @@ class _AsistenteIaScreenState extends State<AsistenteIaScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(width: 5),
-                _BotonEntrada(
-                  tooltip: _grabandoAudio ? 'Detener y enviar audio' : 'Grabar audio',
-                  icono: _grabandoAudio
-                      ? Icons.stop_circle_rounded
-                      : Icons.graphic_eq_rounded,
-                  activo: _grabandoAudio,
-                  onPressed: _subiendoAudio ? null : _alternarGrabacionAudio,
-                ),
-                _BotonEntrada(
+                const SizedBox(width: 6),
+                IconButton.filled(
                   tooltip: 'Enviar',
-                  icono: Icons.arrow_upward_rounded,
-                  activo: true,
-                  onPressed: _pensando
-                      ? null
-                      : () => _enviar(_controller.text),
+                  onPressed: _thinking ? null : () => _send(_controller.text),
+                  icon: const Icon(Icons.arrow_upward_rounded),
                 ),
               ],
             ),
@@ -733,919 +518,205 @@ class _AsistenteIaScreenState extends State<AsistenteIaScreen> {
     );
   }
 
-  Future<void> _seleccionarImagenesIa() async {
-    final fotos = await ImagePicker().pickMultiImage(imageQuality: 82);
-    if (fotos.isNotEmpty && mounted) {
-      setState(() => _imagenesAdjuntas.addAll(fotos));
+  Future<void> _pickImages() async {
+    final images = await _picker.pickMultiImage(imageQuality: 82);
+    if (images.isNotEmpty && mounted) {
+      setState(() => _pendingImages.addAll(images.take(4)));
     }
   }
 
-  Future<Widget> _previewImagenIa(XFile imagen) async {
-    return Image.memory(await imagen.readAsBytes(), fit: BoxFit.cover);
+  Future<Widget> _preview(XFile image) async {
+    return Image.memory(await image.readAsBytes(), fit: BoxFit.cover);
   }
 
-  Future<List<String>> _subirImagenesIa(List<XFile> imagenes) async {
+  Future<List<String>> _uploadImages(List<XFile> images) async {
     final urls = <String>[];
-    final momento = DateTime.now().millisecondsSinceEpoch;
-    for (var index = 0; index < imagenes.length; index++) {
-      final imagen = imagenes[index];
-      final nombre = imagen.name.replaceAll(RegExp(r'[^a-zA-Z0-9._-]+'), '_');
-      final nombreSeguro = nombre.isEmpty ? 'foto.jpg' : nombre;
-      final archivo = await _media.upload(
-        bytes: await imagen.readAsBytes(),
-        fileName: nombreSeguro,
-        contentType: _mimeImagen(imagen.name),
-        folder:
-            'asistente_imagenes/${widget.usuario.id}/${momento}_$index',
+    for (var index = 0; index < images.length; index++) {
+      final image = images[index];
+      final file = await _media.upload(
+        bytes: await image.readAsBytes(),
+        fileName: image.name.isEmpty ? 'foto_$index.jpg' : image.name,
+        contentType: _mime(image.name),
+        folder: 'asistente_imagenes',
       );
-      urls.add(archivo.url);
+      urls.add(file.url);
     }
     return urls;
   }
 
-  String _mimeImagen(String nombre) {
-    final limpio = nombre.toLowerCase();
-    if (limpio.endsWith('.png')) return 'image/png';
-    if (limpio.endsWith('.webp')) return 'image/webp';
-    if (limpio.endsWith('.heic')) return 'image/heic';
+  String _mime(String name) {
+    final value = name.toLowerCase();
+    if (value.endsWith('.png')) return 'image/png';
+    if (value.endsWith('.webp')) return 'image/webp';
+    if (value.endsWith('.heic')) return 'image/heic';
     return 'image/jpeg';
   }
 
-  Future<void> _alternarDictado() async {
-    if (_grabandoAudio) return;
-    if (_escuchando) {
+  Future<void> _send(String value) async {
+    final question = value.trim();
+    if (_thinking || (question.isEmpty && _pendingImages.isEmpty)) return;
+    await _speech.stop();
+    final images = List<XFile>.from(_pendingImages);
+    setState(() {
+      _thinking = true;
+      _listening = false;
+      _controller.clear();
+      _pendingImages.clear();
+    });
+    try {
+      final uploaded =
+          images.isEmpty ? <String>[] : await _uploadImages(images);
+      final prompt = question.isEmpty
+          ? 'Analiza estas fotografías y dime qué observas de forma útil para mi trabajo.'
+          : question;
+      if (!mounted) return;
+      setState(() {
+        _messages.add(
+          _AiMessage(text: prompt, user: true, imageUrls: uploaded),
+        );
+      });
+      _moveToEnd();
+      final response = await _ai.responderAvanzado(
+        pregunta: prompt,
+        historial: _history(),
+        imagenes: uploaded,
+        usarInternet: true,
+        modo: 'asistente',
+      );
+      if (!mounted) return;
+      setState(() {
+        _thinking = false;
+        _online = true;
+        _messages.add(
+          _AiMessage(
+            text: response.respuesta,
+            user: false,
+            sources: response.fuentes,
+          ),
+        );
+      });
+      _moveToEnd();
+      if (_speak) unawaited(_speakText(response.respuesta));
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _thinking = false;
+        _online = false;
+        _messages.add(
+          _AiMessage(
+            text: error is AiAssistantException
+                ? error.message
+                : 'No pude conectar con Sauna IA. Revisa la conexión e intenta de nuevo.',
+            user: false,
+          ),
+        );
+      });
+      _moveToEnd();
+    }
+  }
+
+  List<Map<String, String>> _history() {
+    return _messages.reversed
+        .take(10)
+        .toList()
+        .reversed
+        .map(
+          (message) => <String, String>{
+            'rol': message.user ? 'usuario' : 'asistente',
+            'texto': message.text,
+          },
+        )
+        .toList(growable: false);
+  }
+
+  Future<void> _toggleDictation() async {
+    if (_listening) {
       await _speech.stop();
-      if (mounted) setState(() => _escuchando = false);
+      if (mounted) setState(() => _listening = false);
       return;
     }
+    await _player.stop();
     await _tts.stop();
-    final disponible = await _speech.initialize(
+    final available = await _speech.initialize(
       onStatus: (status) {
         if (!mounted) return;
         if (status == 'done' || status == 'notListening') {
-          setState(() => _escuchando = false);
+          setState(() => _listening = false);
         }
       },
       onError: (_) {
-        if (mounted) setState(() => _escuchando = false);
+        if (mounted) setState(() => _listening = false);
       },
     );
-    if (!disponible) {
-      _mostrarMensaje('Activa el permiso de micrófono para dictar preguntas.');
-      return;
-    }
-    setState(() => _escuchando = true);
+    if (!available) return;
+    setState(() => _listening = true);
     await _speech.listen(
       localeId: 'es_MX',
-      listenFor: const Duration(seconds: 35),
+      listenFor: const Duration(seconds: 40),
       pauseFor: const Duration(seconds: 4),
-      onResult: (resultado) {
+      onResult: (result) {
         if (!mounted) return;
-        setState(() => _controller.text = resultado.recognizedWords);
-        if (resultado.finalResult && resultado.recognizedWords.trim().isNotEmpty) {
+        setState(() => _controller.text = result.recognizedWords);
+        if (result.finalResult && result.recognizedWords.trim().isNotEmpty) {
           _speech.stop();
-          setState(() => _escuchando = false);
-          _enviar(resultado.recognizedWords);
+          setState(() => _listening = false);
+          _send(result.recognizedWords);
         }
       },
     );
   }
 
-  Future<void> _alternarGrabacionAudio() async {
-    if (_grabandoAudio) {
-      await _detenerYEnviarAudio();
-    } else {
-      await _iniciarGrabacionAudio();
-    }
-  }
-
-  Future<void> _iniciarGrabacionAudio() async {
-    await _speech.stop();
-    await _tts.stop();
-    final permitido = await _recorder.hasPermission();
-    if (!permitido) {
-      _mostrarMensaje('Necesito permiso de micrófono para grabar el audio.');
-      return;
-    }
-    try {
-      _audioBytes = BytesBuilder(copy: false);
-      _segundosAudio = 0;
-      final stream = await _recorder.startStream(
-        const RecordConfig(
-          encoder: AudioEncoder.pcm16bits,
-          sampleRate: 16000,
-          numChannels: 1,
-          autoGain: true,
-          echoCancel: true,
-          noiseSuppress: true,
-        ),
-      );
-      _flujoAudio = stream.listen(_audioBytes.add);
-      _cronometroAudio = Timer.periodic(const Duration(seconds: 1), (_) {
-        if (mounted) setState(() => _segundosAudio++);
-      });
-      if (mounted) setState(() => _grabandoAudio = true);
-    } catch (_) {
-      _mostrarMensaje('No pude iniciar la grabación en este dispositivo.');
-    }
-  }
-
-  Future<void> _detenerYEnviarAudio() async {
-    if (!_grabandoAudio) return;
-    setState(() {
-      _grabandoAudio = false;
-      _subiendoAudio = true;
-    });
-    _cronometroAudio?.cancel();
-    await _recorder.stop();
-    await _flujoAudio?.cancel();
-    final pcm = _audioBytes.takeBytes();
-    if (pcm.isEmpty) {
-      if (mounted) setState(() => _subiendoAudio = false);
-      _mostrarMensaje('El audio quedó vacío. Intenta grabarlo otra vez.');
-      return;
-    }
-    try {
-      final wav = _crearWav(pcm, sampleRate: 16000, channels: 1);
-      final fecha = DateTime.now().millisecondsSinceEpoch;
-      final archivo = await _media.upload(
-        bytes: wav,
-        fileName: 'audio_$fecha.wav',
-        contentType: 'audio/wav',
-        folder: 'audios_asistente/${widget.usuario.id}',
-      );
-      final url = archivo.url;
-      final db = FirebaseFirestore.instance;
-      final audioRef = db.collection('mensajes_audio').doc();
-      final batch = db.batch();
-      batch.set(audioRef, <String, dynamic>{
-        'emisorId': widget.usuario.id,
-        'emisorNombre': widget.usuario.nombre,
-        'emisorRol': widget.usuario.rol,
-        'audioUrl': url,
-        'duracionSegundos': _segundosAudio,
-        'destino': _esAdmin ? 'asistente' : 'administracion',
-        'origen': 'asistente_ia',
-        'creadoEn': FieldValue.serverTimestamp(),
-      });
-      if (!_esAdmin) {
-        batch.set(
-          db.collection('notificaciones').doc(),
-          NotificacionesService.datosAviso(
-            titulo: 'Nuevo audio de ${widget.usuario.nombre}',
-            mensaje: 'Envió un mensaje de voz desde el Asistente IA.',
-            tipo: 'audio',
-            rolesDestinatarios: const ['admin'],
-          ),
-        );
-      }
-      await batch.commit();
-      if (!mounted) return;
-      setState(() {
-        _subiendoAudio = false;
-        _pensando = true;
-        _mensajes.add(
-          _MensajeAsistente(
-            texto: 'Mensaje de audio',
-            esUsuario: true,
-            audioUrl: url,
-            duracionAudio: _segundosAudio,
-          ),
-        );
-      });
-      _moverAlFinal();
-      String? respuesta;
-      try {
-        respuesta = await _aiService.responder(
-          pregunta:
-              'Escucha este mensaje de voz, identifica lo que necesito y respóndeme de forma útil y breve.',
-          audios: <String>[url],
-          historial: _historialParaIa(),
-        );
-        if (respuesta != null) _nubeDisponible = true;
-      } catch (_) {
-        _nubeDisponible = false;
-      }
-      final respuestaFinal = respuesta ?? (_esAdmin
-          ? 'El audio quedó guardado. El motor inteligente no pudo analizarlo en este momento.'
-          : 'Audio enviado. Administración recibió el aviso; el motor inteligente no pudo analizarlo en este momento.');
-      if (!mounted) return;
-      setState(() {
-        _pensando = false;
-        _mensajes.add(
-          _MensajeAsistente(texto: respuestaFinal, esUsuario: false),
-        );
-      });
-      _moverAlFinal();
-      if (_leerRespuestas) unawaited(_hablar(respuestaFinal));
-    } catch (_) {
-      if (mounted) {
-        setState(() {
-          _subiendoAudio = false;
-          _pensando = false;
-        });
-      }
-      _mostrarMensaje('No pude subir el audio. Revisa tu conexión e inténtalo otra vez.');
-    }
-  }
-
-  Uint8List _crearWav(
-    Uint8List pcm, {
-    required int sampleRate,
-    required int channels,
-  }) {
-    const bitsPerSample = 16;
-    final byteRate = sampleRate * channels * bitsPerSample ~/ 8;
-    final blockAlign = channels * bitsPerSample ~/ 8;
-    final header = ByteData(44);
-    void texto(int offset, String value) {
-      final bytes = ascii.encode(value);
-      for (var i = 0; i < bytes.length; i++) {
-        header.setUint8(offset + i, bytes[i]);
-      }
-    }
-
-    texto(0, 'RIFF');
-    header.setUint32(4, 36 + pcm.length, Endian.little);
-    texto(8, 'WAVE');
-    texto(12, 'fmt ');
-    header.setUint32(16, 16, Endian.little);
-    header.setUint16(20, 1, Endian.little);
-    header.setUint16(22, channels, Endian.little);
-    header.setUint32(24, sampleRate, Endian.little);
-    header.setUint32(28, byteRate, Endian.little);
-    header.setUint16(32, blockAlign, Endian.little);
-    header.setUint16(34, bitsPerSample, Endian.little);
-    texto(36, 'data');
-    header.setUint32(40, pcm.length, Endian.little);
-    final resultado = BytesBuilder(copy: false)
-      ..add(header.buffer.asUint8List())
-      ..add(pcm);
-    return resultado.takeBytes();
-  }
-
-  Future<void> _reproducirAudio(String url) async {
-    if (_audioReproduciendo == url) {
-      await _audioPlayer.stop();
-      if (mounted) setState(() => _audioReproduciendo = null);
-      return;
-    }
-    await _audioPlayer.stop();
-    await _audioPlayer.play(UrlSource(url));
-    if (mounted) setState(() => _audioReproduciendo = url);
-  }
-
-  Future<void> _hablar(String texto) async {
-    await _tts.stop();
-    var voz = texto
-        .replaceAll('•', '')
-        .replaceAll(RegExp(r'\n+'), '. ')
+  Future<void> _speakText(String text) async {
+    final clean = text
         .replaceAll(RegExp(r'https?://\S+'), 'enlace')
-        .replaceAll('_', ' ')
         .replaceAll(RegExp(r'\s+'), ' ')
         .trim();
-    if (voz.length > 720) {
-      voz = '${voz.substring(0, 720)}. El resto está escrito en pantalla.';
-    }
-    await _tts.speak(voz);
-  }
-
-  Future<void> _enviar(String texto) async {
-    final adjuntas = List<XFile>.from(_imagenesAdjuntas);
-    final textoLimpio = texto.trim();
-    if ((textoLimpio.isEmpty && adjuntas.isEmpty) || _pensando) return;
-    final limpio = textoLimpio.isEmpty
-        ? 'Analiza estas fotografías y dime qué observas y qué acción recomiendas.'
-        : textoLimpio;
-    await _speech.stop();
-    setState(() {
-      _escuchando = false;
-      _controller.clear();
-      _pensando = true;
-    });
-    _moverAlFinal();
-
-    List<String> imagenesUrls = const <String>[];
+    if (clean.isEmpty) return;
+    final spoken = clean.length > 900
+        ? '${clean.substring(0, 900)}. El resto está disponible en pantalla.'
+        : clean;
+    await _player.stop();
+    await _tts.stop();
     try {
-      if (adjuntas.isNotEmpty) imagenesUrls = await _subirImagenesIa(adjuntas);
+      final audio = await _voice.synthesize(spoken);
+      if (audio != null) {
+        await _player.play(BytesSource(audio.bytes));
+        return;
+      }
     } catch (_) {
-      if (!mounted) return;
-      setState(() => _pensando = false);
-      _mostrarMensaje(
-        'No pude subir las fotografías. Revisa el permiso y la conexión.',
-      );
-      return;
+      // La voz del dispositivo permanece como respaldo si la personalizada falla.
     }
-    if (!mounted) return;
-    setState(() {
-      _imagenesAdjuntas.clear();
-      _mensajes.add(
-        _MensajeAsistente(
-          texto: limpio,
-          esUsuario: true,
-          imagenes: imagenesUrls,
-        ),
-      );
-    });
-
-    String? respuesta;
-    String? errorIa;
-    try {
-      respuesta = await _aiService.responder(
-        pregunta: limpio,
-        imagenes: imagenesUrls,
-        historial: _historialParaIa(),
-      );
-      if (respuesta != null) _nubeDisponible = true;
-    } catch (error) {
-      _nubeDisponible = false;
-      errorIa = error is AiAssistantException ? error.message : 'La IA no respondió. Revisa tu conexión y vuelve a intentarlo.';
-    }
-    final respuestaFinal = respuesta ?? errorIa ?? 'La IA no devolvió una respuesta. Intenta de nuevo.';
-    if (!mounted) return;
-    setState(() {
-      _pensando = false;
-      _mensajes.add(
-        _MensajeAsistente(texto: respuestaFinal, esUsuario: false),
-      );
-    });
-    _moverAlFinal();
-    if (_leerRespuestas) unawaited(_hablar(respuestaFinal));
+    await _tts.speak(spoken);
   }
 
-  List<Map<String, String>> _historialParaIa() {
-    return _mensajes
-        .where((mensaje) => mensaje.audioUrl == null)
-        .toList(growable: false)
-        .reversed
-        .take(10)
-        .map(
-          (mensaje) => <String, String>{
-            'rol': mensaje.esUsuario ? 'usuario' : 'asistente',
-            'texto': mensaje.texto,
-          },
-        )
-        .toList(growable: false)
-        .reversed
-        .toList(growable: false);
+  Future<void> _openSource(String value) async {
+    final uri = Uri.tryParse(value);
+    if (uri == null || !(uri.scheme == 'https' || uri.scheme == 'http')) return;
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
   }
 
-  bool _debeResponderConDatosLocales(String pregunta) {
-    final q = pregunta.toLowerCase();
-    const palabrasOperativas = <String>[
-      'cumple',
-      'resumen',
-      'estadíst',
-      'estadist',
-      'cliente',
-      'cotiza',
-      'proyecto',
-      'herramienta',
-      'inventario',
-      'disponible',
-      'almac',
-      'solicitud',
-      'evidencia',
-      'comprobar',
-      'logro',
-      'insignia',
-      'hoy',
-      'qué hago',
-      'que hago',
-      'pendiente',
-      'tarea',
-    ];
-    return palabrasOperativas.any(q.contains);
-  }
-
-  String _etiquetaVelocidad() {
-    if (kIsWeb) {
-      if (_velocidadVoz >= 1.45) return '1.5×';
-      if (_velocidadVoz >= 1.2) return '1.25×';
-      return '1×';
-    }
-    if (_velocidadVoz >= .9) return '1.5×';
-    if (_velocidadVoz >= .78) return '1.25×';
-    return '1×';
-  }
-
-  Future<void> _cambiarVelocidad(double velocidad) async {
-    setState(() => _velocidadVoz = velocidad);
-    await _tts.setSpeechRate(velocidad);
-    if (_leerRespuestas) {
-      unawaited(_hablar('Velocidad de voz ${_etiquetaVelocidad()} activada.'));
-    }
-  }
-
-  String _responderLocal(String pregunta) {
-    final q = pregunta.toLowerCase();
-    if (q.contains('cumple')) {
-      final conFecha = _equipo
-          .where((persona) => persona.cumpleanos != null)
-          .toList(growable: true);
-      if (conFecha.isEmpty) {
-        return 'Todavía no hay cumpleaños registrados en los perfiles del equipo.';
-      }
-      final hoy = DateTime.now();
-      int diasHasta(DateTime fecha) {
-        var siguiente = DateTime(hoy.year, fecha.month, fecha.day);
-        if (siguiente.isBefore(DateTime(hoy.year, hoy.month, hoy.day))) {
-          siguiente = DateTime(hoy.year + 1, fecha.month, fecha.day);
-        }
-        return siguiente.difference(DateTime(hoy.year, hoy.month, hoy.day)).inDays;
-      }
-
-      conFecha.sort(
-        (a, b) => diasHasta(a.cumpleanos!).compareTo(diasHasta(b.cumpleanos!)),
-      );
-      final lista = conFecha.take(8).map((persona) {
-        final fecha = persona.cumpleanos!;
-        final dias = diasHasta(fecha);
-        return '• ${persona.nombre}: ${DateFormat('d MMMM', 'es').format(fecha)}${dias == 0 ? ' — hoy' : ' — en $dias días'}';
-      }).join('\n');
-      return 'Próximos cumpleaños del equipo:\n$lista';
-    }
-    if (!_esAdmin &&
-        (q.contains('cliente') ||
-            q.contains('cotiza') ||
-            q.contains('proyecto'))) {
-      return 'Por seguridad, tu perfil no consulta clientes, cotizaciones ni el panel administrativo de proyectos. Sí puedo decirte tus tareas asignadas, evidencias pendientes y herramientas disponibles.';
-    }
-    if (_esAdmin &&
-        (q.contains('resumen') ||
-            q.contains('estadíst') ||
-            q.contains('estadist'))) {
-      final activos = _proyectos
-          .where((proyecto) => proyecto['estatus'] == 'en_proceso')
-          .length;
-      final tareasPendientes = _actividades
-          .where((actividad) => actividad.estatus != 'completado')
-          .length;
-      final cotizacionesPendientes = _cotizaciones.where((cotizacion) {
-        final estado = cotizacion['estatus_cotizacion']
-            ?.toString()
-            .toLowerCase();
-        return estado == 'pendiente' || estado == 'en seguimiento';
-      }).length;
-      return 'Resumen administrativo de hoy:\n'
-          '• ${_proyectos.length} proyectos registrados; $activos en proceso.\n'
-          '• $tareasPendientes tareas abiertas.\n'
-          '• ${_clientes.length} clientes registrados.\n'
-          '• ${_cotizaciones.length} cotizaciones; $cotizacionesPendientes pendientes o en seguimiento.\n'
-          '• ${_solicitudes.where((s) => s['estatus'] == 'pendiente').length} solicitudes de almacén pendientes.';
-    }
-    if (_esAdmin && q.contains('cliente')) {
-      if (_clientes.isEmpty) return 'No hay clientes registrados.';
-      final lista = _clientes.take(10).map((cliente) {
-        final nombre = cliente['nombre']?.toString() ?? 'Sin nombre';
-        final telefono = cliente['telefono']?.toString() ?? '';
-        return '• $nombre${telefono.isEmpty ? '' : ' — $telefono'}';
-      }).join('\n');
-      return 'Hay ${_clientes.length} clientes registrados. Los primeros son:\n$lista';
-    }
-    if (_esAdmin && q.contains('cotiza')) {
-      if (_cotizaciones.isEmpty) return 'No hay cotizaciones registradas.';
-      final porEstado = <String, int>{};
-      double total = 0;
-      for (final cotizacion in _cotizaciones) {
-        final estado = cotizacion['estatus_cotizacion']?.toString() ?? 'Sin estado';
-        porEstado[estado] = (porEstado[estado] ?? 0) + 1;
-        final monto = cotizacion['monto_cotizado'];
-        if (monto is num) total += monto.toDouble();
-      }
-      final estados = porEstado.entries
-          .map((entry) => '• ${entry.key}: ${entry.value}')
-          .join('\n');
-      return 'Cotizaciones: ${_cotizaciones.length}. Monto acumulado: ${NumberFormat.currency(locale: 'es_MX', symbol: r'$').format(total)}.\n$estados';
-    }
-    if (_esAdmin && q.contains('proyecto')) {
-      final activos = _proyectos
-          .where((proyecto) => proyecto['estatus'] == 'en_proceso')
-          .toList(growable: false);
-      if (activos.isEmpty) return 'No aparecen proyectos activos en este momento.';
-      final nombres = activos.take(8).map((proyecto) {
-        return '• ${proyecto['titulo'] ?? 'Proyecto'} — en proceso';
-      }).join('\n');
-      return 'Hay ${activos.length} proyectos en proceso:\n$nombres';
-    }
-    if (q.contains('herramienta') ||
-        q.contains('inventario') ||
-        q.contains('disponible')) {
-      final disponibles = _insumos
-          .where((insumo) => insumo.cantidadDisponible > 0)
-          .toList(growable: false);
-      if (disponibles.isEmpty) {
-        return 'No encuentro herramientas con existencia disponible en el almacén.';
-      }
-      final lista = disponibles.take(12).map(
-        (insumo) =>
-            '• ${insumo.nombre}: ${insumo.cantidadDisponible} ${insumo.unidadMedida}',
-      ).join('\n');
-      return '$lista\n\nUsa el botón de herramienta junto al cuadro de texto para enviar la solicitud.';
-    }
-    if (q.contains('almac') || q.contains('solicitud')) {
-      final pendientes = _solicitudes
-          .where((solicitud) => solicitud['estatus'] == 'pendiente')
-          .toList(growable: false);
-      if (pendientes.isEmpty) return 'No hay solicitudes de almacén pendientes.';
-      final detalle = pendientes.take(6).map((solicitud) {
-        final nombre = solicitud['nombreInsumo']?.toString() ?? 'Artículo';
-        final cantidad = solicitud['cantidad']?.toString() ?? '1';
-        final trabajador = solicitud['trabajadorNombre']?.toString() ?? '';
-        return '• $nombre × $cantidad${trabajador.isEmpty ? '' : ' — $trabajador'}';
-      }).join('\n');
-      return 'Hay ${pendientes.length} solicitudes pendientes:\n$detalle';
-    }
-    if (q.contains('evidencia') || q.contains('comprobar')) {
-      final sinEvidencia = _actividades
-          .where(
-            (actividad) =>
-                actividad.estatus != 'completado' &&
-                actividad.totalEvidencias == 0,
-          )
-          .toList(growable: false);
-      if (sinEvidencia.isEmpty) {
-        return 'Todas tus tareas abiertas ya cuentan con alguna evidencia.';
-      }
-      return 'Falta evidencia en ${sinEvidencia.length} tareas:\n${_listaTareas(sinEvidencia)}';
-    }
-    if (q.contains('logro') || q.contains('insignia')) {
-      final completadas = _actividades
-          .where((actividad) => actividad.estatus == 'completado')
-          .length;
-      final evidencias = _actividades.fold<int>(
-        0,
-        (total, actividad) => total + actividad.totalEvidencias,
-      );
-      return 'Tu registro muestra $completadas tareas completadas y $evidencias evidencias. Revisa Reconocimientos para ver tus insignias.';
-    }
-    if (q.contains('hoy') ||
-        q.contains('qué hago') ||
-        q.contains('que hago') ||
-        q.contains('pendiente')) {
-      final deHoy = _actividades
-          .where(
-            (actividad) =>
-                _esParaHoy(actividad) && actividad.estatus != 'completado',
-          )
-          .toList(growable: false);
-      final vencidas = _actividades
-          .where(
-            (actividad) =>
-                actividad.estatus != 'completado' &&
-                actividad.fechaTermino.isBefore(_inicioDeHoy()),
-          )
-          .toList(growable: false);
-      if (deHoy.isEmpty && vencidas.isEmpty) {
-        return 'No hay tareas abiertas para hoy. Revisa el blog o confirma con tu encargado si existe una nueva asignación.';
-      }
-      final partes = <String>[];
-      if (vencidas.isNotEmpty) {
-        partes.add(
-          'Prioridad alta: ${vencidas.length} tareas vencidas:\n${_listaTareas(vencidas)}',
-        );
-      }
-      if (deHoy.isNotEmpty) {
-        partes.add('Para hoy:\n${_listaTareas(deHoy)}');
-      }
-      return partes.join('\n\n');
-    }
-
-    final pendientes = _actividades
-        .where((actividad) => actividad.estatus != 'completado')
-        .toList(growable: false);
-    if (_nubeDisponible == false) {
-      return 'No pude conectar con el motor generativo en este momento. Con los datos disponibles sí puedo ayudarte con tareas, evidencias, almacén${_esAdmin ? ', clientes, cotizaciones, proyectos y estadísticas' : ' y herramientas'}.';
-    }
-    if (pendientes.isEmpty) {
-      return 'No hay tareas pendientes. Pregúntame por almacén, evidencias${_esAdmin ? ', clientes, cotizaciones o proyectos' : ' o logros'}.';
-    }
-    return 'Hay ${pendientes.length} tareas pendientes:\n${_listaTareas(pendientes.take(6).toList())}';
-  }
-
-  Future<void> _abrirSolicitudHerramienta() async {
-    final disponibles = _insumos
-        .where((insumo) => insumo.cantidadDisponible > 0)
-        .toList(growable: false);
-    if (disponibles.isEmpty) {
-      _mostrarMensaje('No hay herramientas disponibles registradas.');
-      return;
-    }
-    InsumoModel seleccionado = disponibles.first;
-    int cantidad = 1;
-    bool enviando = false;
-    await showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: _tarjeta,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-      ),
-      builder: (modalContext) => StatefulBuilder(
-        builder: (context, setModalState) => Padding(
-          padding: EdgeInsets.fromLTRB(
-            20,
-            22,
-            20,
-            MediaQuery.of(context).viewInsets.bottom + 24,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'SOLICITAR HERRAMIENTA',
-                style: GoogleFonts.montserrat(
-                  color: Colors.white,
-                  fontSize: 19,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-              const SizedBox(height: 16),
-              DropdownButtonFormField<InsumoModel>(
-                initialValue: seleccionado,
-                isExpanded: true,
-                decoration: const InputDecoration(
-                  labelText: 'Herramienta disponible',
-                ),
-                items: disponibles
-                    .map(
-                      (insumo) => DropdownMenuItem(
-                        value: insumo,
-                        child: Text(
-                          '${insumo.nombre} · ${insumo.cantidadDisponible} ${insumo.unidadMedida}',
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    )
-                    .toList(growable: false),
-                onChanged: (value) {
-                  if (value == null) return;
-                  setModalState(() {
-                    seleccionado = value;
-                    if (cantidad > seleccionado.cantidadDisponible) cantidad = 1;
-                  });
-                },
-              ),
-              const SizedBox(height: 14),
-              Row(
-                children: [
-                  Text('Cantidad', style: GoogleFonts.inter(color: Colors.white70)),
-                  const Spacer(),
-                  IconButton(
-                    onPressed: cantidad > 1
-                        ? () => setModalState(() => cantidad--)
-                        : null,
-                    icon: const Icon(Icons.remove_circle_outline_rounded),
-                  ),
-                  Text(
-                    '$cantidad',
-                    style: GoogleFonts.montserrat(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: cantidad < seleccionado.cantidadDisponible
-                        ? () => setModalState(() => cantidad++)
-                        : null,
-                    icon: const Icon(Icons.add_circle_outline_rounded),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 14),
-              SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: FilledButton.icon(
-                  style: FilledButton.styleFrom(
-                    backgroundColor: _acento,
-                    foregroundColor: Colors.black,
-                  ),
-                  onPressed: enviando
-                      ? null
-                      : () async {
-                          setModalState(() => enviando = true);
-                          final db = FirebaseFirestore.instance;
-                          final solicitudRef = db
-                              .collection('solicitudes_herramientas')
-                              .doc();
-                          final avisoRef = db.collection('notificaciones').doc();
-                          final batch = db.batch();
-                          batch.set(solicitudRef, <String, dynamic>{
-                            'proyectoId': 'general',
-                            'proyectoNombre': 'Solicitud desde Asistente IA',
-                            'trabajadorId': widget.usuario.id,
-                            'trabajadorNombre': widget.usuario.nombre,
-                            'insumoId': seleccionado.id,
-                            'nombreInsumo': seleccionado.nombre,
-                            'cantidad': cantidad,
-                            'esRetornable': true,
-                            'estatus': 'pendiente',
-                            'marcadoDevueltoTrabajador': false,
-                            'devueltoConfirmadoAdmin': false,
-                            'fechaSolicitud': FieldValue.serverTimestamp(),
-                            'origen': 'asistente_ia',
-                          });
-                          batch.set(
-                            avisoRef,
-                            NotificacionesService.datosAviso(
-                              titulo: 'Solicitud desde Asistente IA',
-                              mensaje:
-                                  '${widget.usuario.nombre} solicita $cantidad × ${seleccionado.nombre}',
-                              tipo: 'almacen',
-                              rolesDestinatarios: const ['admin', 'almacenista'],
-                            ),
-                          );
-                          await batch.commit();
-                          if (modalContext.mounted) Navigator.pop(modalContext);
-                          if (!mounted) return;
-                          final respuesta =
-                              'Solicitud enviada: $cantidad × ${seleccionado.nombre}. Administración y almacén recibieron el aviso.';
-                          setState(() {
-                            _mensajes.add(
-                              _MensajeAsistente(
-                                texto: respuesta,
-                                esUsuario: false,
-                              ),
-                            );
-                          });
-                          if (_leerRespuestas) _hablar(respuesta);
-                        },
-                  icon: const Icon(Icons.send_rounded),
-                  label: const Text('ENVIAR SOLICITUD'),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  String _listaTareas(List<ActividadModel> tareas) {
-    return tareas.take(6).map((actividad) {
-      final fecha = DateFormat('dd MMM', 'es').format(actividad.fechaAsignada);
-      return '• ${actividad.titulo} — $fecha';
-    }).join('\n');
-  }
-
-  bool _esParaHoy(ActividadModel actividad) {
-    final hoy = DateTime.now();
-    final fecha = actividad.fechaAsignada;
-    return hoy.year == fecha.year &&
-        hoy.month == fecha.month &&
-        hoy.day == fecha.day;
-  }
-
-  DateTime _inicioDeHoy() {
-    final ahora = DateTime.now();
-    return DateTime(ahora.year, ahora.month, ahora.day);
-  }
-
-  String _formatoDuracion(int segundos) {
-    final minutos = segundos ~/ 60;
-    final resto = segundos % 60;
-    return '$minutos:${resto.toString().padLeft(2, '0')}';
-  }
-
-  void _moverAlFinal() {
+  void _moveToEnd() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!_scrollController.hasClients) return;
-      _scrollController.animateTo(
-        _scrollController.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 350),
-        curve: Curves.easeOut,
+      if (!_scroll.hasClients) return;
+      _scroll.animateTo(
+        _scroll.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 320),
+        curve: Curves.easeOutCubic,
       );
     });
   }
-
-  void _mostrarMensaje(String mensaje) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(mensaje)));
-  }
 }
 
-class _MensajeAsistente {
-  final String texto;
-  final bool esUsuario;
-  final String? audioUrl;
-  final int? duracionAudio;
-  final List<String>? imagenes;
+class _AiMessage {
+  final String text;
+  final bool user;
+  final List<AiAssistantSource> sources;
+  final List<String> imageUrls;
 
-  const _MensajeAsistente({
-    required this.texto,
-    required this.esUsuario,
-    this.audioUrl,
-    this.duracionAudio,
-    this.imagenes,
+  const _AiMessage({
+    required this.text,
+    required this.user,
+    this.sources = const <AiAssistantSource>[],
+    this.imageUrls = const <String>[],
   });
-}
-
-class _Metrica extends StatelessWidget {
-  final String titulo;
-  final int valor;
-  final Color color;
-
-  const _Metrica({required this.titulo, required this.valor, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 126,
-      margin: const EdgeInsets.only(right: 10),
-      padding: const EdgeInsets.all(13),
-      decoration: BoxDecoration(
-        color: _AsistenteIaScreenState._tarjeta,
-        borderRadius: BorderRadius.circular(19),
-        border: Border.all(color: color.withOpacity(.3)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            '$valor',
-            style: GoogleFonts.montserrat(
-              color: color,
-              fontSize: 22,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-          Text(
-            titulo,
-            style: GoogleFonts.inter(
-              color: Colors.white54,
-              fontSize: 10,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _BotonEntrada extends StatelessWidget {
-  final String tooltip;
-  final IconData icono;
-  final VoidCallback? onPressed;
-  final bool activo;
-
-  const _BotonEntrada({
-    required this.tooltip,
-    required this.icono,
-    required this.onPressed,
-    this.activo = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return IconButton(
-      tooltip: tooltip,
-      visualDensity: VisualDensity.compact,
-      style: IconButton.styleFrom(
-        backgroundColor: activo
-            ? _AsistenteIaScreenState._acento
-            : const Color(0xFF242424),
-        foregroundColor: activo ? Colors.black : Colors.white70,
-      ),
-      onPressed: onPressed,
-      icon: Icon(icono, size: 21),
-    );
-  }
-}
-
-class _BurbujaPensando extends StatelessWidget {
-  const _BurbujaPensando();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
-      decoration: BoxDecoration(
-        color: _AsistenteIaScreenState._tarjeta,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Colors.white10),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const SizedBox(
-            width: 15,
-            height: 15,
-            child: CircularProgressIndicator(
-              strokeWidth: 2,
-              color: _AsistenteIaScreenState._acento,
-            ),
-          ),
-          const SizedBox(width: 10),
-          Text(
-            'Analizando datos…',
-            style: GoogleFonts.inter(color: Colors.white54, fontSize: 12),
-          ),
-        ],
-      ),
-    );
-  }
 }
