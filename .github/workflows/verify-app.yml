@@ -13,26 +13,16 @@ jobs:
   verify:
     runs-on: ubuntu-latest
     timeout-minutes: 25
-    permissions:
-      contents: write
     steps:
       - uses: actions/checkout@v4
-      - name: Apply checksum-verified release patch on its maintenance branch
-        if: github.event_name == 'push' && github.ref == 'refs/heads/feat/futuristic-shell-voice-guide'
-        run: |
-          if [ -f .maintenance/release.part0 ]; then
-            cat .maintenance/release.part0 .maintenance/release.part1 | base64 --decode | gzip --decompress > /tmp/sauna-release.patch
-            echo 'fb76e94deb3921c281ced0e05761478b8b79796d907e1f5a69575e2ae506164a  /tmp/sauna-release.patch' | sha256sum --check
-            git apply --check /tmp/sauna-release.patch
-            git apply /tmp/sauna-release.patch
-            git diff --check
-          fi
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
       - name: Validate backend and run regressions
         run: |
           for file in functions/*.js; do node --check "$file"; done
+          npm --prefix functions ci --ignore-scripts --no-audit --no-fund
+          node -e "require('./functions/app.js')"
           node --test tests/*.test.cjs
           bash -n tools/activate-services.sh
       - uses: subosito/flutter-action@v2
@@ -49,17 +39,6 @@ jobs:
           npm install --prefix /tmp/sauna-browser --no-audit --no-fund playwright
           python3 -m http.server 8177 --directory build/web >/tmp/sauna-http.log 2>&1 &
           NODE_PATH=/tmp/sauna-browser/node_modules SAUNA_URL=http://127.0.0.1:8177/ node tools/browser-smoke.cjs
-      - name: Commit only successfully verified release fixes
-        if: github.event_name == 'push' && github.ref == 'refs/heads/feat/futuristic-shell-voice-guide'
-        run: |
-          if [ -f .maintenance/release.part0 ]; then
-            git add -- functions lib tests test tools RELEASE_STATUS.md
-            git rm -- .maintenance/release.part0 .maintenance/release.part1
-            git config user.name 'github-actions[bot]'
-            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-            git commit -m 'fix: finish futuristic release, local guide and protected voice enrollment'
-            git push origin HEAD:feat/futuristic-shell-voice-guide
-          fi
       - name: Record tested source
         run: |
           git rev-parse HEAD > build/web/reviewed-source-sha.txt
