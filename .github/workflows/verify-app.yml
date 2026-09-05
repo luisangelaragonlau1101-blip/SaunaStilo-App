@@ -1,7 +1,7 @@
 name: Verify application
 on:
   push:
-    branches: [fix/2026-09-push-ai]
+    branches: [fix/2026-09-push-ai, feat/stilo-experience-20260905]
   pull_request:
     branches: [main]
 permissions:
@@ -15,14 +15,19 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
+      - name: Archive exact public source for reproducible review
+        run: git archive --format=zip HEAD -o source-review.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: source-review
+          path: source-review.zip
+          retention-days: 1
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
       - name: Validate backend and run connectivity regressions
         run: |
-          node --check functions/index.js
-          node --check functions/assistant-policy.js
-          node --check functions/push-payload.js
+          for file in functions/*.js; do node --check "$file"; done
           node --test tests/*.test.cjs
       - uses: subosito/flutter-action@v2
         with:
