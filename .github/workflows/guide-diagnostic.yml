@@ -8,38 +8,32 @@ permissions:
 jobs:
   guide:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 4
     steps:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Inspect direct and embedded guide replies
+      - name: Inspect public guide transport without private data
         run: |
           npm install --prefix /tmp/guide --no-audit --no-fund playwright
           mkdir -p guide-report
           NODE_PATH=/tmp/guide/node_modules node <<'NODE'
           const {chromium}=require('playwright'),fs=require('fs');
           (async()=>{
-            const browser=await chromium.launch({executablePath:'/usr/bin/google-chrome',headless:true,args:['--no-sandbox']});
-            const report=[];
-            for(const embedded of [false,true]){
-              const page=await browser.newPage({viewport:{width:390,height:844}});const item={embedded,network:[],errors:[]};report.push(item);
-              page.on('pageerror',e=>item.errors.push(e.message));
-              page.on('response',async r=>{if(r.url().includes('/api/')||r.url().includes('__appdeploy')){let body='';try{if(r.request().method()==='POST')body=(await r.text()).slice(0,2500)}catch{}item.network.push({url:r.url().split('?')[0],status:r.status(),body})}});
-              page.on('requestfailed',r=>item.errors.push({url:r.url().split('?')[0],failure:r.failure()}));
-              const url='https://ollin-smart-vxs23c.v2.appdeploy.ai/?workspace=sauna-stilo&role=trabajador';
+            const report={http:[],console:[],failures:[]};
+            for(const method of ['OPTIONS','POST']){
               try{
-                if(embedded){await page.goto('https://sauna-stilo-app-web.vercel.app/',{waitUntil:'domcontentloaded'});await page.evaluate(url=>{const f=document.createElement('iframe');f.id='guide';f.src=url;f.setAttribute('sandbox','allow-scripts allow-same-origin allow-forms allow-popups');f.style.cssText='position:fixed;inset:0;width:100%;height:100%;z-index:2147483647';document.body.appendChild(f)},url)}else await page.goto(url,{waitUntil:'domcontentloaded'});
-                const scope=embedded?page.frameLocator('#guide'):page;
-                await scope.getByLabel('Pregunta a Online Smart').fill('¿Cómo encuentro mis tareas en Sauna Stilo?');
-                await scope.getByRole('button',{name:'Enviar pregunta',exact:true}).click();
-                await scope.locator('.sg-bubble.assistant,.sg-error').first().waitFor({timeout:52000});
-                item.text=await scope.locator('body').innerText();
-                await page.screenshot({path:'guide-report/'+(embedded?'embedded':'direct')+'.png'});
-              }catch(e){item.error=e.message;try{await page.screenshot({path:'guide-report/failure-'+embedded+'.png'})}catch{}}
-              await page.close();
+                const r=await fetch('https://api-v2.appdeploy.ai/app/ollin-smart-vxs23c/api/chat',{method,headers:{Origin:'https://ollin-smart-vxs23c.v2.appdeploy.ai','Content-Type':'application/json',...(method==='OPTIONS'?{'Access-Control-Request-Method':'POST','Access-Control-Request-Headers':'content-type'}:{})},...(method==='POST'?{body:JSON.stringify({workspace:'sauna-stilo',messages:[{role:'user',content:'Explica cómo encontrar mis tareas.'}]})}:{}),signal:AbortSignal.timeout(45000)});
+                report.http.push({method,status:r.status,headers:Object.fromEntries([...r.headers].filter(([k])=>k.startsWith('access-control')||k==='content-type')),body:(await r.text()).slice(0,3500)});
+              }catch(e){report.http.push({method,error:e.message})}
             }
-            await browser.close();fs.writeFileSync('guide-report/results.json',JSON.stringify(report,null,2));console.log(JSON.stringify(report,null,2));
+            const browser=await chromium.launch({executablePath:'/usr/bin/google-chrome',headless:true,args:['--no-sandbox']});
+            const page=await browser.newPage({viewport:{width:390,height:844}});
+            page.on('console',m=>{if(m.type()==='error')report.console.push(m.text())});page.on('requestfailed',r=>report.failures.push({url:r.url().split('?')[0],failure:r.failure()}));
+            await page.goto('https://ollin-smart-vxs23c.v2.appdeploy.ai/?workspace=sauna-stilo',{waitUntil:'domcontentloaded'});
+            await page.getByLabel('Pregunta a Online Smart').fill('¿Cómo encuentro mis tareas en Sauna Stilo?');await page.getByRole('button',{name:'Enviar pregunta',exact:true}).click();
+            await page.locator('.sg-bubble.assistant,.sg-error').first().waitFor({timeout:52000});report.text=await page.locator('body').innerText();
+            await page.screenshot({path:'guide-report/guide.png'});await browser.close();fs.writeFileSync('guide-report/results.json',JSON.stringify(report,null,2));console.log(JSON.stringify(report,null,2));
           })().catch(e=>{console.error(e.message);process.exitCode=1});
           NODE
       - uses: actions/upload-artifact@v4
