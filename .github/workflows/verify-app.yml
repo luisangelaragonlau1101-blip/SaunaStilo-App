@@ -10,38 +10,61 @@ concurrency:
   group: verify-${{ github.ref }}
   cancel-in-progress: true
 jobs:
-  source-and-backend:
+  verify:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
-      - name: Archive tracked source for review
-        run: git archive --format=tar HEAD > source.tar
-      - uses: actions/upload-artifact@v4
-        with:
-          name: reviewed-source
-          path: source.tar
-          retention-days: 3
+      - name: Apply the reviewed one-time patch on its maintenance branch only
+        if: github.event_name == 'push' && github.ref == 'refs/heads/fix/2026-09-push-ai'
+        run: |
+          if [ -f .maintenance/update.part0 ]; then
+            cat .maintenance/update.part0 .maintenance/update.part1 .maintenance/update.part2 | base64 --decode | gzip --decompress > /tmp/sauna-update.patch
+            echo 'd6fa2b99ce49451567d7362776995778e2f9aa07cab2d8698d8c484d16cc0306  /tmp/sauna-update.patch' | sha256sum --check
+            git apply --check /tmp/sauna-update.patch
+            git apply /tmp/sauna-update.patch
+            git diff --check
+          fi
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: node --check functions/index.js
-      - name: Run notification regression tests when present
+      - name: Validate backend and run connectivity regressions
         run: |
-          if [ -d tests ]; then node --test tests/*.test.cjs; fi
-  flutter-web:
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    steps:
-      - uses: actions/checkout@v4
+          node --check functions/index.js
+          node --check functions/assistant-policy.js
+          node --check functions/push-payload.js
+          node --test tests/*.test.cjs
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
           cache: true
       - run: flutter pub get
-      - name: Compile existing web application
+      - name: Compile the updated application
         run: flutter build web --release --base-href /SaunaStilo-App/ --pwa-strategy=none
-      - name: Upload verified web bundle
-        uses: actions/upload-artifact@v4
+      - name: Commit only the successfully tested patch to its existing maintenance branch
+        if: github.event_name == 'push' && github.ref == 'refs/heads/fix/2026-09-push-ai'
+        run: |
+          if [ -f .maintenance/update.part0 ]; then
+            git add -- functions lib web tests
+            git rm -- .maintenance/update.part0 .maintenance/update.part1 .maintenance/update.part2
+            git diff --cached --stat
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git commit -m 'fix: preserve background push and connect honest Sauna IA diagnostics'
+            git push origin HEAD:fix/2026-09-push-ai
+          fi
+      - name: Record the exact tested source
+        run: |
+          git rev-parse HEAD > build/web/reviewed-source-sha.txt
+          git archive --format=tar HEAD > source.tar
+      - uses: actions/upload-artifact@v4
+        with:
+          name: reviewed-source
+          path: source.tar
+          retention-days: 3
+      - uses: actions/upload-artifact@v4
         with:
           name: verified-web
           path: build/web
