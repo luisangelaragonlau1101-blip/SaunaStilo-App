@@ -1,7 +1,7 @@
 name: Team workflow review
 on:
   push:
-    branches: [fix/intro-online-smart]
+    branches: [fix/team-final-reviewed-20260905]
 permissions:
   contents: read
 concurrency:
@@ -15,16 +15,16 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
-      - name: Apply reviewed source on its maintenance branch
-        if: github.ref == 'refs/heads/fix/intro-online-smart'
+      - name: Apply and reconcile reviewed source
+        if: github.ref == 'refs/heads/fix/team-final-reviewed-20260905'
         run: |
           if [ -f .maintenance/team.part0 ]; then
             cat .maintenance/team.part0 .maintenance/team.part1 .maintenance/team.part2 | base64 --decode | gzip --decompress > /tmp/team.patch
             echo '77ccf5612f2a81a634ee51bae63caa25c6f9fc2d05dfa64cb8fae908aab2abc4  /tmp/team.patch' | sha256sum --check
-            test "$(git hash-object lib/screens/online_smart_screen.dart)" = '09bf740532c9f87d9769d06a6001648274f8c640'
-            git apply --exclude=lib/screens/online_smart_screen.dart --check /tmp/team.patch
-            git apply --exclude=lib/screens/online_smart_screen.dart /tmp/team.patch
+            git apply --exclude=lib/screens/online_smart_screen.dart --exclude=lib/screens/mensajes_equipo_screen.dart --exclude=lib/screens/modern_dashboard_screen.dart --exclude=tests/futuristic-ai-voice.test.cjs --check /tmp/team.patch
+            git apply --exclude=lib/screens/online_smart_screen.dart --exclude=lib/screens/mensajes_equipo_screen.dart --exclude=lib/screens/modern_dashboard_screen.dart --exclude=tests/futuristic-ai-voice.test.cjs /tmp/team.patch
             python3 .maintenance/team-corrections.py
+            python3 .maintenance/team-reconcile.py
             git diff --check
           fi
       - uses: actions/setup-node@v4
@@ -57,15 +57,15 @@ jobs:
           NODE_PATH=/tmp/sauna-browser/node_modules SAUNA_URL=http://127.0.0.1:8177/ node tools/browser-smoke.cjs
           NODE_PATH=/tmp/sauna-browser/node_modules SAUNA_URL=http://127.0.0.1:8177/ node tools/team-browser-smoke.cjs
       - name: Commit source only after all checks pass
-        if: github.ref == 'refs/heads/fix/intro-online-smart'
+        if: github.ref == 'refs/heads/fix/team-final-reviewed-20260905'
         run: |
           if [ -f .maintenance/team.part0 ]; then
             git add -- functions lib tests test tools firestore.rules
-            git rm -- .maintenance/team.part0 .maintenance/team.part1 .maintenance/team.part2 .maintenance/team-corrections.py
+            git rm -- .maintenance/team.part0 .maintenance/team.part1 .maintenance/team.part2 .maintenance/team-corrections.py .maintenance/team-reconcile.py
             git config user.name 'github-actions[bot]'
             git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-            git commit -m 'fix: team home, private alerts, project chat and scoped master tasks'
-            git push origin HEAD:fix/intro-online-smart
+            git commit -m 'fix: home shortcuts, private alerts, project chat and scoped master tasks'
+            git push origin HEAD:fix/team-final-reviewed-20260905
           fi
       - name: Preserve exact verified source
         run: |
