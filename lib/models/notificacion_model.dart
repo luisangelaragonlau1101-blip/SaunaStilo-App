@@ -9,6 +9,8 @@ class NotificacionApp {
   final List<String> rolesDestinatarios;
   final List<String> leidosPor;
   final DateTime fecha;
+  final bool esLlamada;
+  final String creadoPor;
 
   const NotificacionApp({
     required this.id,
@@ -19,6 +21,8 @@ class NotificacionApp {
     required this.rolesDestinatarios,
     required this.leidosPor,
     required this.fecha,
+    this.esLlamada = false,
+    this.creadoPor = '',
   });
 
   bool visiblePara({required String usuarioId, required String rol}) {
@@ -51,7 +55,9 @@ class NotificacionApp {
                 .map((item) => item.toString())
                 .toList(growable: false)
           : const <String>[],
-      fecha: fechaRaw is Timestamp ? fechaRaw.toDate() : DateTime.now(),
+      fecha: fechaRaw is Timestamp ? fechaRaw.toDate() : DateTime.fromMillisecondsSinceEpoch(0),
+      esLlamada: data['esLlamada'] == true,
+      creadoPor: data['creadoPor']?.toString() ?? '',
     );
   }
 }

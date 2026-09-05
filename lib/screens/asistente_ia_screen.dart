@@ -13,18 +13,19 @@ import '../services/ai_assistant_service.dart';
 import '../services/custom_voice_service.dart';
 import '../services/media_upload_service.dart';
 import 'guia_inteligente_screen.dart';
+import 'online_smart_screen.dart';
 import 'voz_administracion_screen.dart';
 
-class AsistenteIaScreen extends StatefulWidget {
+class AsistenteIaLegadoScreen extends StatefulWidget {
   final UserModel usuario;
 
-  const AsistenteIaScreen({super.key, required this.usuario});
+  const AsistenteIaLegadoScreen({super.key, required this.usuario});
 
   @override
-  State<AsistenteIaScreen> createState() => _AsistenteIaScreenState();
+  State<AsistenteIaLegadoScreen> createState() => _AsistenteIaLegadoScreenState();
 }
 
-class _AsistenteIaScreenState extends State<AsistenteIaScreen> {
+class _AsistenteIaLegadoScreenState extends State<AsistenteIaLegadoScreen> {
   static const _bg = Color(0xFF05070A);
   static const _panel = Color(0xFF11161C);
   static const _cyan = Color(0xFF86E9FF);
@@ -738,4 +739,12 @@ class _AiMessage {
     this.sources = const <AiAssistantSource>[],
     this.imageUrls = const <String>[],
   });
+}
+
+// Retain the legacy implementation for internal data tools; the public entry uses Online Smart.
+class AsistenteIaScreen extends StatelessWidget {
+  final UserModel usuario;
+  const AsistenteIaScreen({super.key, required this.usuario});
+  @override
+  Widget build(BuildContext context) => OnlineSmartScreen(usuario: usuario);
 }

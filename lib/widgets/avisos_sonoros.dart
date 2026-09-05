@@ -9,6 +9,7 @@ import '../models/notificacion_model.dart';
 import '../screens/notificaciones_screen.dart';
 import '../models/user_model.dart';
 import '../services/notificaciones_service.dart';
+import '../services/notification_router.dart';
 import '../services/push_notifications_service.dart';
 
 class AvisosSonoros extends StatefulWidget {
@@ -38,6 +39,8 @@ class _AvisosSonorosState extends State<AvisosSonoros> with WidgetsBindingObserv
   bool _configurandoPush = false;
   bool _alarmaActiva = false;
   bool _dialogoAlarmaVisible = false;
+  bool _avisoPersonalVisible = false;
+  Timer? _soundTimeout;
 
   @override
   void initState() {
@@ -71,7 +74,7 @@ class _AvisosSonorosState extends State<AvisosSonoros> with WidgetsBindingObserv
 
   void _openNotice(String? id) {
     if (!mounted || id == null || id.isEmpty || !_openedIds.add(id)) return;
-    Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => NotificacionesScreen(usuario: widget.usuario)));
+    unawaited(NotificationRouter.open(context, widget.usuario, id));
   }
 
   @override
@@ -116,7 +119,7 @@ class _AvisosSonorosState extends State<AvisosSonoros> with WidgetsBindingObserv
           content: Text(message),
           action: SnackBarAction(
             label: 'ACTIVAR',
-            textColor: const Color(0xFF00E5FF),
+            textColor: const Color(0xFFB7FF2A),
             onPressed: _activatePushFromUserAction,
           ),
         ),
@@ -153,7 +156,8 @@ class _AvisosSonorosState extends State<AvisosSonoros> with WidgetsBindingObserv
                 .where(
                   (aviso) =>
                       aviso.tipo == 'alarma_admin' &&
-                      !aviso.leidaPor(widget.usuario.id),
+                      !aviso.leidaPor(widget.usuario.id) &&
+                      DateTime.now().difference(aviso.fecha).inMinutes < 15,
                 )
                 .toList(growable: false);
             if (alarmasSinConfirmar.isNotEmpty) {
@@ -165,7 +169,8 @@ class _AvisosSonorosState extends State<AvisosSonoros> with WidgetsBindingObserv
             return;
           }
           final nuevos = avisos
-              .where((aviso) => !_idsConocidos!.contains(aviso.id))
+              .where((aviso) => !_idsConocidos!.contains(aviso.id) && !aviso.leidaPor(widget.usuario.id) &&
+                aviso.tipo != 'aviso_personal' && aviso.creadoPor != widget.usuario.id && DateTime.now().difference(aviso.fecha).inMinutes < 15)
               .toList(growable: false);
           _idsConocidos = idsActuales;
           if (nuevos.isEmpty) return;
@@ -179,6 +184,11 @@ class _AvisosSonorosState extends State<AvisosSonoros> with WidgetsBindingObserv
             return;
           }
 
+          final destacados = nuevos.where((a) => a.tipo == 'aviso_personal' || (a.esLlamada && DateTime.now().difference(a.fecha).inSeconds < 60)).toList();
+          if (destacados.isNotEmpty && !_avisoPersonalVisible && !_alarmaActiva) {
+            await _mostrarPersonal(destacados.first);
+            return;
+          }
           await _reproducirAvisoNormal();
           if (!mounted || _alarmaActiva) return;
           final aviso = nuevos.first;
@@ -188,16 +198,48 @@ class _AvisosSonorosState extends State<AvisosSonoros> with WidgetsBindingObserv
               SnackBar(
                 backgroundColor: const Color(0xFF171717),
                 behavior: SnackBarBehavior.floating,
+                action: SnackBarAction(label: 'ABRIR', onPressed: () => _openNotice(aviso.id)),
                 content: Row(
                   children: [
-                    const Icon(Icons.notifications_active_rounded, color: Color(0xFF00E5FF)),
+                    const Icon(Icons.notifications_active_rounded, color: Color(0xFFB7FF2A)),
                     const SizedBox(width: 11),
                     Expanded(child: Text('${aviso.titulo}\n${aviso.mensaje}')),
                   ],
                 ),
               ),
             );
+        }, onError: (Object _) {
+          if (mounted) _showPushAction('No se pudieron sincronizar los avisos. Revisa la conexión; no se ha confirmado su recepción.');
         });
+  }
+
+  Future<void> _mostrarPersonal(NotificacionApp aviso) async {
+    if (!mounted || _avisoPersonalVisible) return;
+    _avisoPersonalVisible = true;
+    bool open = false;
+    try {
+      try {
+        await _player.stop();
+        await _player.setReleaseMode(ReleaseMode.loop);
+        await _player.play(AssetSource('sounds/urgent_alarm.ogg'), volume: 1);
+        _soundTimeout?.cancel();
+        _soundTimeout = Timer(const Duration(seconds: 8), () { if (!_alarmaActiva) unawaited(_player.stop()); });
+      } catch (_) {}
+      if (!mounted) return;
+      open = await showDialog<bool>(context: context, builder: (c) => AlertDialog(
+        backgroundColor: const Color(0xFF190A10),
+        title: Row(children: [Icon(aviso.esLlamada ? Icons.call_outlined : Icons.notifications_active_outlined, color: const Color(0xFFB7FF2A)), const SizedBox(width: 12), Expanded(child: Text(aviso.titulo))]),
+        content: SingleChildScrollView(child: Text(aviso.mensaje, style: const TextStyle(fontSize: 18, height: 1.5))),
+        actions: [TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Recibido')),
+          FilledButton(onPressed: () => Navigator.pop(c, true), child: Text(aviso.esLlamada ? 'Abrir llamada' : 'Ver mensaje'))],
+      )) ?? false;
+      try { await _notificacionesService.marcarLeida(aviso.id, widget.usuario.id); } catch (_) {}
+    } finally {
+      _soundTimeout?.cancel();
+      if (!_alarmaActiva) { try { await _player.stop(); await _player.setReleaseMode(ReleaseMode.release); } catch (_) {} }
+      _avisoPersonalVisible = false;
+    }
+    if (open && mounted) _openNotice(aviso.id);
   }
 
   Future<void> _reproducirAvisoNormal() async {
@@ -352,6 +394,7 @@ class _AvisosSonorosState extends State<AvisosSonoros> with WidgetsBindingObserv
     WidgetsBinding.instance.removeObserver(this);
     _openedSubscription?.cancel();
     _subscription?.cancel();
+    _soundTimeout?.cancel();
     _pushService.dispose();
     _alarmaActiva = false;
     _alarmasPendientes.clear();

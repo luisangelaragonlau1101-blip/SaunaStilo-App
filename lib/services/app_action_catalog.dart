@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../models/user_model.dart';
+import '../screens/equipo_tareas_screen.dart';
+import '../screens/online_smart_screen.dart';
+import '../screens/jornada_screen.dart';
 import '../screens/admin_alerta_general_screen.dart';
 import '../screens/admin_asistencias_screen.dart';
 import '../screens/admin_cajitas_screen.dart';
@@ -84,15 +87,16 @@ class AppActionCatalog {
     final master = user.rol == AppRoles.maestro;
 
     final actions = <AppAction>[
+      AppAction(id: 'tareas', title: 'Mis tareas', subtitle: 'Actividades, avances y evidencias', icon: Icons.assignment_outlined, color: _mint, primary: true, keywords: const ['actividades', 'jornada', 'pendientes'], builder: (_) => EquipoTareasScreen(usuario: user)),
       AppAction(
         id: 'ia',
-        title: 'Sauna IA',
-        subtitle: 'Pregunta, analiza y consulta Internet',
+        title: 'Online Smart',
+        subtitle: 'Tu guía mexicana para Sauna Stilo',
         icon: Icons.auto_awesome_rounded,
         color: _cyan,
         primary: true,
         keywords: const ['asistente', 'internet', 'inteligencia', 'buscar'],
-        builder: (_) => AsistenteIaScreen(usuario: user),
+        builder: (_) => OnlineSmartScreen(usuario: user),
       ),
       AppAction(
         id: 'guia',
@@ -102,7 +106,7 @@ class AppActionCatalog {
         color: _mint,
         primary: true,
         keywords: const ['ayuda', 'tutorial', 'pasos', 'cómo'],
-        builder: (_) => GuiaInteligenteScreen(usuario: user),
+        builder: (_) => OnlineSmartScreen(usuario: user),
       ),
       AppAction(
         id: 'mensajes',
@@ -198,13 +202,13 @@ class AppActionCatalog {
         const AppAction(id: 'proyectos', title: 'Proyectos', subtitle: 'Material por proyecto', icon: Icons.architecture_rounded, color: _mint, builder: _projectsWarehouse),
         const AppAction(id: 'cajitas', title: 'Cajitas', subtitle: 'Herramientas asignadas', icon: Icons.home_repair_service_rounded, color: Color(0xFFD7FF74), builder: _boxes),
         const AppAction(id: 'proveedores', title: 'Proveedores', subtitle: 'Abastecimiento', icon: Icons.local_shipping_rounded, color: Color(0xFFB82B55), builder: _providers),
-        AppAction(id: 'asistencia', title: 'Asistencia', subtitle: 'Registra tu jornada', icon: Icons.fingerprint_rounded, color: _mint, primary: true, builder: (_) => TrabajadorAsistenciaScreen(trabajador: user)),
+        AppAction(id: 'asistencia', title: 'Asistencia', subtitle: 'Registra tu jornada', icon: Icons.fingerprint_rounded, color: _mint, primary: true, builder: (_) => JornadaScreen(usuario: user)),
         AppAction(id: 'racha', title: 'Mi racha', subtitle: 'Constancia de asistencia', icon: Icons.local_fire_department_rounded, color: const Color(0xFFFF536A), builder: (_) => RachaAsistenciasScreen(usuario: user, isAdmin: false)),
       ]);
     } else {
       actions.addAll(<AppAction>[
         AppAction(id: 'proyectos', title: 'Proyectos', subtitle: 'Tus proyectos y avances', icon: Icons.architecture_rounded, color: _mint, primary: true, builder: (_) => ProyectosTrabajadorScreen(esMaestro: master)),
-        AppAction(id: 'asistencia', title: 'Asistencia', subtitle: 'Entrada, comida y salida', icon: Icons.fingerprint_rounded, color: _cyan, primary: true, builder: (_) => TrabajadorAsistenciaScreen(trabajador: user)),
+        AppAction(id: 'asistencia', title: 'Asistencia', subtitle: 'Entrada, comida y salida', icon: Icons.fingerprint_rounded, color: _cyan, primary: true, builder: (_) => JornadaScreen(usuario: user)),
         const AppAction(id: 'inventario', title: 'Inventario', subtitle: 'Herramientas disponibles', icon: Icons.inventory_2_rounded, color: _blue, builder: _inventoryWorker),
         AppAction(id: 'cajita', title: 'Mi cajita', subtitle: 'Tus herramientas asignadas', icon: Icons.home_repair_service_rounded, color: const Color(0xFFD7FF74), builder: (_) => TrabajadorCajitaHerramientasScreen(trabajadorId: user.id)),
         const AppAction(id: 'maderas', title: 'Maderas', subtitle: 'Catálogo de materiales', icon: Icons.forest_rounded, color: Color(0xFFC6FF68), builder: _woodWorker),

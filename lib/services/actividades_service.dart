@@ -29,15 +29,26 @@ class ActividadesService {
   CollectionReference<Map<String, dynamic>> _avancesRef(String actividadId) =>
       _actividadesRef.doc(actividadId).collection('avances');
 
-  // Crear una nueva actividad (acción del administrador).
+  // Administración o maestro asignado; Firestore vuelve a validar el alcance.
   Future<void> crearActividad(ActividadModel actividad) async {
     try {
+      final uid = (_auth ?? FirebaseAuth.instance).currentUser?.uid;
+      if (uid == null) throw StateError('Inicia sesión para asignar tareas.');
+      final profile = await _db.collection('usuarios').doc(uid).get();
+      final role = profile.data()?['rol'];
+      final isAdmin = role == 'admin';
+      final project = await _db.collection('proyectos').doc(actividad.proyectoId).get();
+      final members = List<String>.from(project.data()?['encargados'] ?? const []);
+      if (!isAdmin && (role != 'maestro' || !members.contains(uid) || !members.contains(actividad.asignadoATrabajadorId))) {
+        throw StateError('Solo puedes asignar tareas dentro de tu proyecto a sus integrantes.');
+      }
+      if (!project.exists) throw StateError('El proyecto ya no existe.');
       final actividadRef = _actividadesRef.doc();
       final proyectoRef = _db.collection('proyectos').doc(actividad.proyectoId);
       final avisoRef = _db.collection('notificaciones').doc();
       final batch = _db.batch();
-      batch.set(actividadRef, actividad.toJson());
-      batch.update(proyectoRef, {'estatus': 'en_proceso'});
+      batch.set(actividadRef, actividad.toJson()..addAll({'creadoPor': uid, 'creadoEn': FieldValue.serverTimestamp()}));
+      if (isAdmin) batch.update(proyectoRef, {'estatus': 'en_proceso'});
       batch.set(
         avisoRef,
         NotificacionesService.datosAviso(
@@ -45,7 +56,7 @@ class ActividadesService {
           mensaje: actividad.titulo,
           tipo: 'tarea',
           destinatarioId: actividad.asignadoATrabajadorId,
-        ),
+        )..addAll({'actividadId': actividadRef.id, 'proyectoId': actividad.proyectoId}),
       );
       await batch.commit();
     } catch (e) {

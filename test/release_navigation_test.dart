@@ -21,9 +21,12 @@ void main() {
   });
   test('Search handles accents, case and more than one word', () {
     final actions=AppActionCatalog.forUser(user('admin'));
-    expect(actions.where((a)=>a.matches('GUIA')).single.id,'guia');
+    final guideIds=actions.where((a)=>a.matches('GUIA')).map((a)=>a.id).toSet();
+    expect(guideIds, contains('guia'));
+    expect(actions.where((a)=>a.matches('guía')).map((a)=>a.id).toSet(), guideIds);
     expect(actions.where((a)=>a.matches('mi voz')).single.id,'voz');
     expect(actions.where((a)=>a.matches('configuracion')).single.id,'configuracion');
+    expect(actions.where((a)=>a.matches('zzzz-no-existe')),isEmpty);
   });
   test('Included guide explains operation without querying live data', () {
     expect(LocalGuide.answer('¿Cómo registro mi jornada?', 'trabajador'), contains('Asistencia'));

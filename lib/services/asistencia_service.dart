@@ -36,7 +36,7 @@ class AsistenciaService {
     }
 
     return await Geolocator.getCurrentPosition(
-      desiredAccuracy: LocationAccuracy.best, 
+      locationSettings: const LocationSettings(accuracy: LocationAccuracy.best, timeLimit: Duration(seconds: 20)),
     );
   }
 
@@ -98,12 +98,19 @@ class AsistenciaService {
     double lat = validacionUbicacion['lat'] ?? 0.0;
     double lon = validacionUbicacion['lon'] ?? 0.0;
 
-    if (!ubicacionValida) return;
+    if (!ubicacionValida) throw StateError(validacionUbicacion['error']?.toString() ?? 'No se validó la ubicación.');
     await _actualizarAsistenciaBackend(
       accion: 'entrada',
       latitud: lat,
       longitud: lon,
     );
+  }
+
+  Future<Map<String, dynamic>> registrarEntrada({required List<Map<String, dynamic>> zonasPermitidas}) async {
+    final location = await validarUbicacionesMultiples(zonasPermitidas);
+    if (location['valido'] != true) throw StateError(location['error']?.toString() ?? 'Debes estar en una zona autorizada.');
+    return _actualizarAsistenciaBackend(accion: 'entrada',
+      latitud: (location['lat'] as num).toDouble(), longitud: (location['lon'] as num).toDouble());
   }
 
   // 4. Solicitar salida a comer (Enviado por el trabajador)
@@ -228,9 +235,15 @@ Future<Map<String, dynamic>> registrarSalida({
         if (latitud != null) 'latitud': latitud,
         if (longitud != null) 'longitud': longitud,
       });
-      return Map<String, dynamic>.from(result.data as Map);
+      if (result.data is! Map) throw StateError('El servidor no confirmó el registro.');
+      final data = Map<String, dynamic>.from(result.data as Map);
+      if (data['exito'] != true) throw StateError(data['mensaje']?.toString() ?? 'El servidor no confirmó el registro.');
+      return data;
     } on FirebaseFunctionsException catch (error) {
-      throw StateError(error.message ?? 'No se pudo registrar la asistencia.');
+      if (['not-found', 'unavailable', 'internal'].contains(error.code)) {
+        throw StateError('El servicio de asistencia no está disponible. Administración debe activar updateAttendance en Firebase. Tu horario NO se registró.');
+      }
+      throw StateError(error.message ?? 'No se pudo registrar la asistencia. Tu horario NO se registró.');
     }
   }
 

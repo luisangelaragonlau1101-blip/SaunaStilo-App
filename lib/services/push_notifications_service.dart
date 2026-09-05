@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:audioplayers/audioplayers.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'web_push_environment_stub.dart' if (dart.library.html) 'web_push_environment_web.dart';
@@ -25,9 +24,7 @@ class PushNotificationsService {
 
   final FirebaseMessaging _messaging;
   final FirebaseFirestore _firestore;
-  final AudioPlayer _alarmPlayer = AudioPlayer();
   StreamSubscription<String>? _tokenRefreshSubscription;
-  StreamSubscription<RemoteMessage>? _foregroundMessageSubscription;
 
   PushNotificationsService({
     FirebaseMessaging? messaging,
@@ -86,12 +83,7 @@ class PushNotificationsService {
         },
       );
 
-      await _foregroundMessageSubscription?.cancel();
-      _foregroundMessageSubscription = FirebaseMessaging.onMessage.listen((message) {
-        if (message.data['type'] == 'alarma_admin') {
-          unawaited(_playUrgentAlarm());
-        }
-      });
+      // Foreground audio is handled once by AvisosSonoros from the saved notice.
 
       return const PushActivationResult(
         active: true,
@@ -105,19 +97,6 @@ class PushNotificationsService {
             ? 'El navegador no entregó el permiso push. Abre la app desde su URL segura, permite notificaciones y vuelve a intentar.'
             : 'No se pudieron activar las notificaciones. Revisa el permiso del sistema e intenta nuevamente.',
       );
-    }
-  }
-
-  Future<void> _playUrgentAlarm() async {
-    try {
-      await _alarmPlayer.stop();
-      await _alarmPlayer.setReleaseMode(ReleaseMode.loop);
-      await _alarmPlayer.play(AssetSource('sounds/urgent_alarm.ogg'), volume: 1.0);
-      await Future<void>.delayed(const Duration(seconds: 8));
-      await _alarmPlayer.stop();
-      await _alarmPlayer.setReleaseMode(ReleaseMode.release);
-    } catch (error) {
-      debugPrint('[push] No se pudo reproducir la alarma urgente: $error');
     }
   }
 
@@ -138,9 +117,6 @@ class PushNotificationsService {
   Future<void> deactivateFor(String userId) async {
     await _tokenRefreshSubscription?.cancel();
     _tokenRefreshSubscription = null;
-    await _foregroundMessageSubscription?.cancel();
-    _foregroundMessageSubscription = null;
-    await _alarmPlayer.stop();
     try {
       final settings = await currentSettings();
       if (settings.authorizationStatus != AuthorizationStatus.authorized &&
@@ -164,7 +140,5 @@ class PushNotificationsService {
 
   Future<void> dispose() async {
     await _tokenRefreshSubscription?.cancel();
-    await _foregroundMessageSubscription?.cancel();
-    await _alarmPlayer.dispose();
   }
 }

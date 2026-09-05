@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../models/notificacion_model.dart';
 import '../models/user_model.dart';
 import '../services/notificaciones_service.dart';
+import '../services/notification_router.dart';
 import 'mensajes_equipo_screen.dart';
 
 class NotificacionesScreen extends StatelessWidget {
@@ -57,9 +58,7 @@ class NotificacionesScreen extends StatelessWidget {
                 return InkWell(
                   onTap: () async {
                     if (!leida) await service.marcarLeida(aviso.id, usuario.id);
-                    if ((aviso.tipo == 'mensaje_privado' || aviso.tipo == 'alarma_admin') && context.mounted) {
-                      Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => MensajesEquipoScreen(usuario: usuario)));
-                    }
+                    if (context.mounted) await NotificationRouter.open(context, usuario, aviso.id);
                   },
                   borderRadius: BorderRadius.circular(20),
                   child: Container(

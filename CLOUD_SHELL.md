@@ -1,27 +1,31 @@
-# Activar IA, Internet y voz de Sauna Stilo
+# Sauna Stilo: activar asistencia, avisos y tareas del maestro
 
-Este paso usa tu cuenta de Google para publicar los servicios del proyecto existente `saunastiloapp-17e15`. No compartas contraseñas ni claves privadas. Abrir este tutorial no despliega nada automáticamente.
+La aplicación web y el servidor no se publican con el mismo proceso. Online Smart funciona en su alojamiento independiente; no necesita activar la antigua función Gemini para orientar sobre la app. El registro de entrada/salida, los recordatorios y los nuevos permisos de tareas sí necesitan Firebase.
 
-## Revisar la activación
+## Abrir con la cuenta propietaria
 
-El archivo `tools/activate-services.sh` verifica el proyecto y la facturación, pide confirmación y publica únicamente los servicios de IA, voz y envío push. Habilita las APIs necesarias. El uso de Google Cloud puede generar cargos. No modifica reglas de seguridad, usuarios ni datos de la empresa y no activa una nueva cuenta de cobro.
+Abre este repositorio en Google Cloud Shell usando la cuenta autorizada de `saunastiloapp-17e15`. No compartas contraseñas, claves privadas ni tokens. Este tutorial no despliega nada al abrirse.
 
-Revisa el script en el editor antes de continuar. La cuenta de Google debe estar autorizada para administrar el proyecto.
+Revisa `tools/activate-team-services.sh` y `firestore.rules`. El script publicará servicios concretos y reemplazará las reglas Firestore por la versión revisada del repositorio. No modifica usuarios ni documentos empresariales, pero habilita recordatorios que pueden notificarse al equipo según su horario. Si modificaste reglas en la consola y no están en GitHub, reconcilia esas diferencias antes de publicar.
 
-## Ejecutar
+## Ejecutar una vez
 
-En la terminal del repositorio ejecuta:
+En la terminal, dentro del repositorio:
 
 ```sh
-bash tools/activate-services.sh
+bash tools/activate-team-services.sh
 ```
 
-Cuando lo solicite, escribe `saunastiloapp-17e15` para confirmar. Si aparece una solicitud de autorización de Cloud Shell, revisa los permisos y autorízala solamente con la cuenta propietaria del proyecto. Ante un error de permisos o facturación, el script se detiene: no continúes cambiando permisos a ciegas.
+Escribe `saunastiloapp-17e15` cuando pida confirmación. El script utiliza Firebase CLI mediante npm, requiere Node 22 y se detiene si no tiene acceso al proyecto o no puede verificar facturación activa. No habilita una nueva cuenta de cobro. Google Cloud puede cobrar por uso.
 
-## Comprobar en la aplicación
+Si Cloud Shell pide autorización, revisa los permisos con la cuenta propietaria. Si aparece un error de acceso, no pegues secretos ni cambies permisos a ciegas. La activación de IA de Google y de voz personalizada está separada y no forma parte de este comando.
 
-Abre la aplicación habitual e inicia sesión. Pulsa `Probar IA`, prueba una consulta pública con fuentes y verifica el acceso con roles diferentes. La Guía de uso básica funciona sin el motor de IA; el resto de las consultas necesita el servidor.
+## Comprobar el resultado
 
-Para personalizar la voz, entra como administrador a `Estudio de voz`, graba el consentimiento y la muestra de tu propia voz y confirma su creación. Google debe autorizar Instant Custom Voice para este proyecto. Hasta entonces, las respuestas de voz usan la voz del dispositivo. Que el despliegue termine no garantiza que los permisos del modelo o de voz estén listos.
+En Inicio, Jornada tiene Registrar entrada y Registrar salida. La hora solo se considera registrada cuando el servidor lo confirma, desde las ubicaciones autorizadas. El maestro asigna desde Tareas y únicamente a integrantes de su proyecto. En Chats abre Personas o Por proyecto; el aviso personal muestra su contenido dentro de la app autenticada y la notificación del sistema usa una vista previa genérica.
 
-Para avisos, prueba con dos cuentas y teléfonos: app abierta, segundo plano y pantalla bloqueada. Las llamadas actuales son invitaciones a una sala externa; no son llamadas nativas CallKit. Nunca supongas entrega o sonido solo por una confirmación de envío.
+Los recordatorios revisan cada 15 minutos durante la primera hora posterior al horario de entrada, comida o salida, con un máximo de cuatro avisos; se detienen cuando el registro correspondiente aparece. No publiques `repeatWorkdayReminders` junto con `reminderEntrada`, `reminderComida` y `reminderSalida`, porque son implementaciones alternativas.
+
+Haz una prueba acordada con dos teléfonos, primero con app abierta y después en segundo plano y bloqueado. Cada teléfono debe autorizar notificaciones. El sistema operativo controla sonido, volumen y Enfoque. Las llamadas son invitaciones a una sala de comunicación; no son telefonía nativa ni alertas críticas del sistema.
+
+Online Smart permite preguntar, dictar cuando el navegador lo admite y escuchar con la voz del dispositivo. No consulta expedientes privados, registra acciones ni realiza búsqueda web en tiempo real. La voz personalizada de Ángel requiere su grabación y el servicio específico habilitado; la voz del dispositivo no se presenta como la suya.
