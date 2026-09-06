@@ -5,6 +5,7 @@ import '../models/actividad_model.dart';
 import '../models/user_model.dart';
 import '../services/app_action_catalog.dart';
 import '../widgets/jornada_compacta.dart';
+import '../widgets/stilo_orbit.dart';
 import '../widgets/personal_message_overlay.dart';
 import 'admin_modal_detalle_actividad.dart' as admin_detail;
 import 'trabajador_modal_detalle_actividad.dart' as worker_detail;
@@ -50,12 +51,8 @@ class _OperationsShellState extends State<OperationsShell> {
     _page(_index);
     return PersonalMessageOverlay(usuario: widget.usuario, child: Scaffold(
       backgroundColor: Colors.black,
-      body: IndexedStack(index: _index, children: List<Widget>.generate(5, (i) => _pages[i] ?? const SizedBox.shrink())),
-      bottomNavigationBar: NavigationBarTheme(data: NavigationBarThemeData(
-        backgroundColor: const Color(0xFF0D0B0D), indicatorColor: const Color(0xFF35101E),
-        iconTheme: WidgetStateProperty.resolveWith((states) => IconThemeData(color: states.contains(WidgetState.selected) ? const Color(0xFFB7FF2A) : Colors.white54)),
-        labelTextStyle: WidgetStateProperty.resolveWith((states) => TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: states.contains(WidgetState.selected) ? Colors.white : Colors.white54)),
-      ), child: NavigationBar(height: 68, selectedIndex: _index, destinations: operationsDestinations, onDestinationSelected: (i) => setState(() => _index = i))),
+      body: IndexedStack(index: _index, children: List<Widget>.generate(5, (i) => TickerMode(enabled: i == _index, child: _pages[i] ?? const SizedBox.shrink()))),
+      bottomNavigationBar: StiloDock(selectedIndex: _index, destinations: operationsDestinations, onSelected: (i) => setState(() => _index = i)),
     ));
   }
 }
@@ -91,14 +88,16 @@ class _OperationsHomeState extends State<_OperationsHome> {
       const Text('Tu jornada. Tus proyectos. Tu equipo.', style: TextStyle(color: Colors.white54, fontSize: 13)),
       const SizedBox(height: 18),
       if (alerts.isNotEmpty) Padding(padding: const EdgeInsets.only(bottom: 14), child: OutlinedButton.icon(style: OutlinedButton.styleFrom(foregroundColor: const Color(0xFFFF647A), backgroundColor: const Color(0xFF240B12), side: const BorderSide(color: Color(0xFF8E1538)), minimumSize: const Size.fromHeight(54)), onPressed: () => _open(alerts.first), icon: const Icon(Icons.campaign_rounded), label: const Text('ALERTA GENERAL · TODO EL EQUIPO', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800)))),
-      JornadaCompacta(usuario: widget.usuario),
+      if (widget.usuario.rol == AppRoles.admin)
+        AdminOperationsCard(onAttendance: () => _open(actions.firstWhere((a) => a.id == 'asistencias')), onTeam: () => _open(actions.firstWhere((a) => a.id == 'equipo')))
+      else JornadaCompacta(usuario: widget.usuario),
       const SizedBox(height: 16),
       Row(children: [const Expanded(child: Text('Mis tareas', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800))), TextButton(onPressed: () => widget.onTab(3), child: const Text('Ver todas'))]),
       OperationsTaskList(usuario: widget.usuario, compact: true),
       const SizedBox(height: 16),
       FilledButton.icon(onPressed: () => widget.onTab(2), icon: const Icon(Icons.contact_phone_outlined), label: const Text('Llamar o escribir a una persona'), style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(52))),
       const SizedBox(height: 16),
-      Wrap(spacing: 8, runSpacing: 8, children: quick.map((a) => ActionChip(avatar: Icon(a.id == 'ia' ? Icons.auto_awesome_outlined : a.icon, size: 18, color: a.id == 'ia' ? const Color(0xFFC13CFF) : const Color(0xFFB7FF2A)), label: Text(a.id == 'ia' ? 'Online Smart' : a.title), onPressed: () => _open(a))).toList()),
+      Wrap(spacing: 8, runSpacing: 8, children: quick.map((a) => ActionChip(shape: const StadiumBorder(), side: BorderSide(color: stiloAccents[quick.indexOf(a) % stiloAccents.length].withOpacity(.34)), avatar: Icon(a.icon, size: 18, color: stiloAccents[quick.indexOf(a) % stiloAccents.length]), label: Text(a.id == 'ia' ? 'Online Smart' : a.title), onPressed: () => _open(a))).toList()),
       const SizedBox(height: 20),
       TextField(decoration: const InputDecoration(hintText: 'Buscar una opción…', prefixIcon: Icon(Icons.search_rounded)), onChanged: (value) => setState(() => _search = value)),
       TextButton.icon(onPressed: () => setState(() => _all = !_all), icon: Icon(_all ? Icons.expand_less_rounded : Icons.apps_rounded), label: Text(_all ? 'Cerrar menú completo' : 'Todas las opciones de mi cuenta')),

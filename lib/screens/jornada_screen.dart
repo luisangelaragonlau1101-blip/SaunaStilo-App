@@ -26,7 +26,7 @@ class _JornadaScreenState extends State<JornadaScreen> {
   DateTime get _now => DateTime.now().toUtc().subtract(const Duration(hours: 6));
   String _time(dynamic t) => t is Timestamp ? DateFormat('HH:mm').format(t.toDate().toUtc().subtract(const Duration(hours: 6))) : '—';
   Future<void> _register(String action) async {
-    if (_busy) return;
+    if (_busy || widget.usuario.rol == AppRoles.admin) return;
     if (action == 'salida') {
       final ok = await showDialog<bool>(context: context, builder: (c) => AlertDialog(title: const Text('Registrar salida'), content: const Text('Se guardará la hora actual confirmada por el servidor.'), actions: [TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Cancelar')), FilledButton(onPressed: () => Navigator.pop(c, true), child: const Text('Registrar salida'))]));
       if (ok != true || !mounted) return;
@@ -45,6 +45,7 @@ class _JornadaScreenState extends State<JornadaScreen> {
   }
   @override
   Widget build(BuildContext context) {
+    if (widget.usuario.rol == AppRoles.admin) return Scaffold(appBar: AppBar(title: const Text('Administración')), body: const Center(child: Padding(padding: EdgeInsets.all(24), child: Text('Administración no registra asistencia. Consulta las jornadas del equipo desde Inicio → Asistencias.'))));
     final key = '${widget.usuario.id}_${DateFormat('yyyyMMdd').format(_now)}';
     // Query ownership instead of reading a missing private document: absence is a valid empty state.
     final stream = FirebaseFirestore.instance.collection('asistencias').where('trabajadorId', isEqualTo: widget.usuario.id).snapshots();

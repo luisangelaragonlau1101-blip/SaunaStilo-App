@@ -24,6 +24,7 @@ class _JornadaCompactaState extends State<JornadaCompacta> {
   void initState() {
     super.initState();
     _day = mexicoDayKey(DateTime.now());
+    if (widget.usuario.rol == AppRoles.admin) return;
     _clock = Timer.periodic(const Duration(minutes: 1), (_) {
       final day = mexicoDayKey(DateTime.now());
       if (mounted && day != _day) setState(() => _day = day);
@@ -33,7 +34,7 @@ class _JornadaCompactaState extends State<JornadaCompacta> {
   void dispose() { _clock?.cancel(); super.dispose(); }
   String _hour(dynamic value) => value is Timestamp ? DateFormat('HH:mm').format(value.toDate().toUtc().subtract(const Duration(hours: 6))) : '—';
   Future<void> _register(String action) async {
-    if (_busy) return;
+    if (_busy || widget.usuario.rol == AppRoles.admin) return;
     if (action == 'salida') {
       final confirmed = await showDialog<bool>(context: context, builder: (c) => AlertDialog(
         title: const Text('¿Registrar tu salida?'), content: const Text('Se guardará la hora actual en tu jornada de hoy.'),
@@ -72,7 +73,7 @@ class _JornadaCompactaState extends State<JornadaCompacta> {
     } finally { if (mounted) setState(() => _busy = false); }
   }
   @override
-  Widget build(BuildContext context) => StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+  Widget build(BuildContext context) => widget.usuario.rol == AppRoles.admin ? const SizedBox.shrink() : StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
     // Query by ownership first. A direct read of a nonexistent attendance document
     // fails the current resource-based rules and used to block a first entry.
     stream: FirebaseFirestore.instance.collection('asistencias').where('trabajadorId', isEqualTo: widget.usuario.id).snapshots(),

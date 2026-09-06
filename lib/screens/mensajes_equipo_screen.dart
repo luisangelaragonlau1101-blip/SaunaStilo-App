@@ -11,6 +11,7 @@ import '../services/media_upload_service.dart';
 import '../services/team_contact_service.dart';
 import '../widgets/audio_message_player.dart';
 import '../widgets/audio_note_button.dart';
+import '../widgets/team_notes_strip.dart';
 import '../widgets/message_dictation_button.dart';
 import 'proyecto_chat_screen.dart';
 
@@ -29,6 +30,7 @@ class _MensajesEquipoScreenState extends State<MensajesEquipoScreen> {
     appBar: AppBar(title: const Text('Chats y llamadas'), bottom: const TabBar(labelColor: Color(0xFFB7FF2A), indicatorColor: Color(0xFFB7FF2A), tabs: [Tab(text: 'Personas'), Tab(text: 'Por proyecto')])),
     body: TabBarView(children: [
       Column(children: [
+        TeamNotesStrip(user: widget.usuario),
         Padding(padding: const EdgeInsets.all(16), child: TextField(decoration: const InputDecoration(hintText: 'Buscar a una persona…', prefixIcon: Icon(Icons.search_rounded)), onChanged: (v) => setState(() => _query = v.trim().toLowerCase()))),
         Expanded(child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(stream: FirebaseFirestore.instance.collection('usuarios').snapshots(), builder: (context, snapshot) {
           if (snapshot.hasError) return const _ChatStatus('No se pudo leer el equipo. Revisa conexión y permisos.');
@@ -81,6 +83,9 @@ class _ConversacionPrivadaScreenState extends State<ConversacionPrivadaScreen> {
   bool _onScreen = true;
   late Future<void> _ready;
   String? _draftId;
+  Uint8List? _audioDraft;
+  String? _audioDraftId;
+  MediaUploadResult? _audioUpload;
   DocumentReference<Map<String, dynamic>> get _conversation => _service.conversation(widget.usuario, widget.contacto);
   CollectionReference<Map<String, dynamic>> get _messages => _conversation.collection('mensajes');
   @override
@@ -178,12 +183,14 @@ class _ConversacionPrivadaScreenState extends State<ConversacionPrivadaScreen> {
     finally { if (mounted) setState(() => _busy = false); }
   }
   Future<void> _audio(Uint8List wav, int seconds) async {
-    if (_busy) throw StateError('Espera a que termine el envío actual.');
+    if (!mounted || _busy) throw StateError('Espera a que termine el envío actual.');
+    if (!identical(_audioDraft, wav)) {_audioDraft = wav; _audioDraftId = _messages.doc().id; _audioUpload = null;}
     setState(() => _busy = true);
     try {
-      final id = _messages.doc().id;
-      final upload = await _media.upload(bytes: wav, fileName: 'audio_$id.wav', contentType: 'audio/wav', folder: 'mensajes/${_conversation.id}/$id');
+      final id = _audioDraftId!;
+      final upload = _audioUpload ??= await _media.upload(bytes: wav, fileName: 'audio_$id.wav', contentType: 'audio/wav', folder: 'mensajes/${_conversation.id}/$id');
       final notified = await _service.saveMessage(user: widget.usuario, contact: widget.contacto, messageId: id, onScreen: _onScreen, data: {'texto': '', 'audioUrl': upload.url, 'audioRuta': upload.path, 'duracionSegundos': seconds, 'archivos': <Map<String, dynamic>>[], 'tipo': 'audio'});
+      _audioDraft = null; _audioDraftId = null; _audioUpload = null;
       if (!notified) _notice('Audio guardado; el aviso no fue confirmado.');
     } finally { if (mounted) setState(() => _busy = false); }
   }
