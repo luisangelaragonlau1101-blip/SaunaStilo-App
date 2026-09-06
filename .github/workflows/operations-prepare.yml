@@ -41,9 +41,17 @@ jobs:
               outputs[name]=after
           name='lib/screens/trabajador_control_herramientas_screen.dart'
           outputs[name]=outputs[name].replace(b'_imagenBytes!, \n',b'_imagenBytes!,\n')
+          name='lib/screens/modal_asignar_actividades.dart'
+          assert outputs[name].count(b'      ])))));')==1
+          outputs[name]=outputs[name].replace(b'      ])))));',b'      ]))))));')
+          name='lib/services/offline_workspace.dart'
+          text=outputs[name].decode(); start=text.index('      if (kIsWeb)'); end=text.index('    } catch',start)
+          assert 'enablePersistence' in text[start:end]
+          text=text[:start]+'      FirebaseFirestore.instance.settings = Settings(persistenceEnabled: trusted, cacheSizeBytes: 40 * 1024 * 1024, webPersistentTabManager: kIsWeb && trusted ? const WebPersistentMultipleTabManager() : null);\n'+text[end:]
+          outputs[name]=text.encode()
           for name,after in outputs.items():
               p=root/name;p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(after)
-          print('Applied',len(outputs),'verified files; no business data changes.')
+          print('Applied',len(outputs),'verified files and reviewed SDK corrections; no business data changes.')
           PY
           git diff --check
       - uses: actions/setup-node@v4
