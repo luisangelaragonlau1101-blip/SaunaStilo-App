@@ -1,31 +1,39 @@
-# Sauna Stilo: activar asistencia, avisos y tareas del maestro
+# Sauna Stilo: activar las funciones pendientes
 
-La aplicación web y el servidor no se publican con el mismo proceso. Online Smart funciona en su alojamiento independiente; no necesita activar la antigua función Gemini para orientar sobre la app. El registro de entrada/salida, los recordatorios y los nuevos permisos de tareas sí necesitan Firebase.
+La versión web contiene perfiles con insignias/lugares, cumpleaños en lista con gustos/colores, préstamos por chat, justificación de faltas y captura de voz a velocidad normal. Publicar la web no publica las reglas ni los servicios Firebase. Online Smart funciona en su alojamiento independiente y no obtiene acceso a tus expedientes ni a tu voz personalizada.
 
-## Abrir con la cuenta propietaria
+## Cuenta autorizada y revisión
 
-Abre este repositorio en Google Cloud Shell usando la cuenta autorizada de `saunastiloapp-17e15`. No compartas contraseñas, claves privadas ni tokens. Este tutorial no despliega nada al abrirse.
+Abre Google Cloud Console con la cuenta propietaria de `saunastiloapp-17e15` y abre Cloud Shell. Una vista de repositorio en un entorno temporal sin credenciales no es una sesión autorizada. No compartas contraseñas, tokens ni claves privadas. Usa Node.js 22 o posterior.
 
-Revisa `tools/activate-team-services.sh` y `firestore.rules`. El script publicará servicios concretos y reemplazará las reglas Firestore por la versión revisada del repositorio. No modifica usuarios ni documentos empresariales, pero habilita recordatorios que pueden notificarse al equipo según su horario. Si modificaste reglas en la consola y no están en GitHub, reconcilia esas diferencias antes de publicar.
+Desde el repositorio actualizado, revisa `tools/activate-team-services.sh`, `firestore.rules` y `storage.rules`. La activación reemplaza ambas reglas por esta versión y habilita recordatorios de jornada; pueden llegar avisos al equipo en sus horarios. Si existen cambios de reglas en la consola que no están en GitHub, cancela y reconcilia primero. No se crea una cuenta de cobro, pero el uso del servidor puede generar cargos.
 
-## Ejecutar una vez
+## Activar operación, perfiles y evidencias privadas
 
-En la terminal, dentro del repositorio:
+Ejecuta dentro del repositorio:
 
 ```sh
 bash tools/activate-team-services.sh
 ```
 
-Escribe `saunastiloapp-17e15` cuando pida confirmación. El script utiliza Firebase CLI mediante npm, requiere Node 22 y se detiene si no tiene acceso al proyecto o no puede verificar facturación activa. No habilita una nueva cuenta de cobro. Google Cloud puede cobrar por uso.
+Escribe `saunastiloapp-17e15` solamente después de revisar el alcance. Si Firebase CLI no reconoce tu sesión, autentícate con `npx firebase-tools login --no-localhost` siguiendo el flujo oficial en el navegador; no compartas sus códigos. Si aparece un error de permisos o facturación, detente y revisa la cuenta. No agregues permisos a ciegas.
 
-Si Cloud Shell pide autorización, revisa los permisos con la cuenta propietaria. Si aparece un error de acceso, no pegues secretos ni cambies permisos a ciegas. La activación de IA de Google y de voz personalizada está separada y no forma parte de este comando.
+Este paso publica entrada/salida y entrega de avisos, tres programadores de recordatorios y reglas de Firestore/Storage. No publica la implementación alternativa `repeatWorkdayReminders` porque duplicaría avisos. No se registran asistencias ni se envían alarmas de prueba por el script.
 
-## Comprobar el resultado
+## Activar el servidor de voz por separado
 
-En Inicio, Jornada tiene Registrar entrada y Registrar salida. La hora solo se considera registrada cuando el servidor lo confirma, desde las ubicaciones autorizadas. El maestro asigna desde Tareas y únicamente a integrantes de su proyecto. En Chats abre Personas o Por proyecto; el aviso personal muestra su contenido dentro de la app autenticada y la notificación del sistema usa una vista previa genérica.
+Grabar y escuchar muestras es local y no necesita activar el servidor. Para crear una voz sintética, revisa y ejecuta:
 
-Los recordatorios revisan cada 15 minutos durante la primera hora posterior al horario de entrada, comida o salida, con un máximo de cuatro avisos; se detienen cuando el registro correspondiente aparece. No publiques `repeatWorkdayReminders` junto con `reminderEntrada`, `reminderComida` y `reminderSalida`, porque son implementaciones alternativas.
+```sh
+bash tools/activate-voice-service.sh
+```
 
-Haz una prueba acordada con dos teléfonos, primero con app abierta y después en segundo plano y bloqueado. Cada teléfono debe autorizar notificaciones. El sistema operativo controla sonido, volumen y Enfoque. Las llamadas son invitaciones a una sala de comunicación; no son telefonía nativa ni alertas críticas del sistema.
+También pide confirmación del proyecto. Solo publica `getAdminVoiceStatus`, `enrollAdminVoice`, `synthesizeAdminVoice` y `setAdminVoiceEnabled` y habilita APIs. No graba, clona ni sube muestras. Google mantiene Instant Custom Voice restringido a cuentas autorizadas: publicar funciones no concede ese acceso. La aprobación del proveedor y las grabaciones reales de consentimiento/referencia siguen siendo necesarias. No se presenta la voz del dispositivo de Online Smart como si fuera la de Ángel.
 
-Online Smart permite preguntar, dictar cuando el navegador lo admite y escuchar con la voz del dispositivo. No consulta expedientes privados, registra acciones ni realiza búsqueda web en tiempo real. La voz personalizada de Ángel requiere su grabación y el servicio específico habilitado; la voz del dispositivo no se presenta como la suya.
+## Comprobar antes del uso oficial
+
+Administración: Inicio → Administrar perfiles → persona → agregar y quitar insignia/lugar. Propietario: Perfil → Lo que me gusta → guardar intereses/colores y verificar tras volver a abrir. Cumpleaños: lista, filtro y búsqueda. Trabajador: Justificar una falta → motivo/foto → verificar que quede pendiente y privada, sin modificar horas. Préstamo: solicitar → compañero recibe el chat → ambos confirman entrega/recepción en Mi cajita. Solicitar no cambia automáticamente la custodia.
+
+Prueba con dos cuentas autorizadas y teléfonos reales: chat, notificación dirigida, app abierta/segundo plano/bloqueada, entrada/salida y que los recordatorios se detengan al registrar. Nunca consideres entregada una notificación solo porque fue registrada o aceptada por FCM. El teléfono controla el volumen y Silencio/Enfoque; la web no es un sistema único de emergencia.
+
+En Estudio de voz: graba y escucha primero; verifica duración y tono en Safari. Solo después de activar el servidor y obtener autorización del proveedor crea la voz y prueba una respuesta real. Online Smart incrustada conserva la voz del dispositivo y no realiza búsqueda web ni acciones privadas por sí misma.

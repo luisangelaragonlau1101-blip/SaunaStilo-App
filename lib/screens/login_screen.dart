@@ -14,9 +14,9 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
   bool _isLoading = false;
   bool _obscureText = true;
-  static const colorFondo = Color(0xFF05070A);
-  static const colorTextoPrimario = Color(0xFFF2F7FC);
-  static const colorAcento = Color(0xFF86E9FF);
+  static const colorFondo = Color(0xFF000000);
+  static const colorTextoPrimario = Color(0xFFF7F7F5);
+  static const colorAcento = Color(0xFFB7FF2A);
   static const colorError = Colors.redAccent;
 
   @override
@@ -67,7 +67,7 @@ class _LoginScreenState extends State<LoginScreen> {
         decoration: const BoxDecoration(
           gradient: RadialGradient(
             center: Alignment(0, -0.65), radius: 1.15,
-            colors: [Color(0xFF172D3C), Color(0xFF0A101A), colorFondo],
+            colors: [Color(0xFF230C15), Color(0xFF090708), colorFondo],
           ),
         ),
         child: SafeArea(
@@ -87,15 +87,15 @@ class _LoginScreenState extends State<LoginScreen> {
                         Center(child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 8),
                           decoration: BoxDecoration(
-                            color: colorAcento.withOpacity(.10),
+                            color: const Color(0xFF35101E),
                             borderRadius: BorderRadius.circular(999),
-                            border: Border.all(color: colorAcento.withOpacity(.40)),
+                            border: Border.all(color: const Color(0xFF8E1538)),
                           ),
                           child: Row(mainAxisSize: MainAxisSize.min, children: [
                             const Icon(Icons.hub_outlined, color: colorAcento, size: 16),
                             const SizedBox(width: 8),
                             Text('INTERFAZ 3.0', style: GoogleFonts.inter(
-                              color: colorAcento, fontSize: 11,
+                              color: colorTextoPrimario, fontSize: 11,
                               fontWeight: FontWeight.w800, letterSpacing: 1.2,
                             )),
                           ]),
@@ -114,9 +114,9 @@ class _LoginScreenState extends State<LoginScreen> {
                         Container(
                           padding: const EdgeInsets.all(18),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF10171F).withOpacity(.94),
+                            color: const Color(0xFF111012),
                             borderRadius: BorderRadius.circular(26),
-                            border: Border.all(color: colorAcento.withOpacity(.17)),
+                            border: Border.all(color: const Color(0xFF42212D)),
                             boxShadow: const [BoxShadow(color: Colors.black54, blurRadius: 30, offset: Offset(0, 18))],
                           ),
                           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
