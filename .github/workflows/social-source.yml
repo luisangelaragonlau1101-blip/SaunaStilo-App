@@ -1,0 +1,17 @@
+name: Social source snapshot
+on:
+  push:
+    branches: [feat/social-rounded-profiles-20260906]
+permissions:
+  contents: read
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: git archive HEAD > source.tar
+      - uses: actions/upload-artifact@v4
+        with:
+          name: social-source
+          path: source.tar
+          retention-days: 1
