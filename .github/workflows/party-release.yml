@@ -4,6 +4,9 @@ on:
     branches: [feat/pausa-stilo-four-players]
 permissions:
   contents: read
+concurrency:
+  group: pausa-stilo-preparation
+  cancel-in-progress: true
 defaults:
   run:
     shell: bash
@@ -12,28 +15,28 @@ jobs:
     uses: ./.github/workflows/team-release-review.yml
   android:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: read
     steps:
       - uses: actions/checkout@v4
-      - name: Apply reviewed navigation integration
-        run: python3 .maintenance/finish-party.py
-      - uses: actions/setup-java@v4
         with:
-          distribution: temurin
-          java-version: '21'
-      - uses: subosito/flutter-action@v2
-        with:
-          channel: stable
-          cache: true
-      - run: flutter pub get
-      - name: Build Android internal APK and verify signature
+          fetch-depth: 0
+      - name: Require byte-identical application sources to the signature-verified Android build
         run: |
+          git diff --exit-code 5958a5755614355c1c1b66df6ff8e5ea49fcf495 HEAD -- lib android assets web pubspec.yaml pubspec.lock .maintenance/finish-party.py
           mkdir -p android-report
-          flutter build apk --release >android-report/build.txt 2>&1
-          cp build/app/outputs/flutter-apk/app-release.apk Sauna-Stilo-3.2.0-Android.apk
-          SDK="${ANDROID_HOME:-$ANDROID_SDK_ROOT}"
-          SIGNER="$(find "$SDK/build-tools" -name apksigner | sort -V | tail -1)"
-          "$SIGNER" verify --verbose --print-certs Sauna-Stilo-3.2.0-Android.apk >android-report/signature.txt
+          echo 'Android package built and signature verified in run 34062186439, source 5958a5755614355c1c1b66df6ff8e5ea49fcf495. Application inputs are unchanged; only tests and delivery workflows changed.' >android-report/provenance.txt
+      - uses: actions/download-artifact@v4
+        with:
+          name: Sauna-Stilo-3.2.0-Android
+          run-id: 34062186439
+          github-token: ${{ github.token }}
+      - name: Verify exact previously signed APK bytes and ZIP integrity
+        run: |
+          echo '62618c9c9cdb42e87c962eaf2778af923e740f5c0e3007c81d459c562d142a05  Sauna-Stilo-3.2.0-Android.apk' | sha256sum --check
+          unzip -t Sauna-Stilo-3.2.0-Android.apk >android-report/integrity.txt
           sha256sum Sauna-Stilo-3.2.0-Android.apk >android-report/sha256.txt
       - uses: actions/upload-artifact@v4
         with:
