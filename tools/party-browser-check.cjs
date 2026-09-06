@@ -1,4 +1,4 @@
-// Signed-out, airplane-mode game QA. No production accounts, alerts, tasks or inventory writes.
+// Signed-out airplane-mode QA. No production account, alert, task or inventory writes.
 const {chromium}=require('playwright');
 const fs=require('node:fs');
 (async()=>{
@@ -10,6 +10,7 @@ const fs=require('node:fs');
  await page.addInitScript(()=>window.addEventListener('flutter-first-frame',()=>window.__partyFrame=true));
  async function frame(){await page.waitForFunction(()=>window.__partyFrame===true,{},{timeout:60000});const p=page.locator('flt-semantics-placeholder');if(await p.count())await p.evaluate(x=>x.click());}
  async function lobby(){const entry=page.getByRole('button',{name:'Juegos sin conexión · hasta 4',exact:true});await entry.waitFor({timeout:30000});await entry.click();await page.getByText('ELIGE TU PAUSA',{exact:true}).waitFor();}
+ async function stored(){return page.evaluate(()=>{const raw=Object.entries(localStorage).find(([k])=>k.endsWith('sauna.pausa.local.v1'))?.[1];if(!raw)return null;let value=JSON.parse(raw);if(typeof value==='string')value=JSON.parse(value);return value;});}
  try{
   await page.goto('http://127.0.0.1:8177/');await frame();
   await page.waitForFunction(()=>navigator.serviceWorker.controller!=null,{},{timeout:90000});
@@ -17,7 +18,8 @@ const fs=require('node:fs');
   await context.setOffline(true);report.offline=true;
   for(const [title,kind]of [['Memorama Stilo','memory'],['Territorios Stilo','territory'],['Carrera Stilo','race']]){
    await page.reload({waitUntil:'domcontentloaded'});await frame();await lobby();
-   await page.getByText(title,{exact:true}).first().click();
+   // Flutter merges the game title and description into one accessible card.
+   await page.getByText(title,{exact:false}).first().click();
    await page.getByText('4',{exact:true}).click();
    await page.getByRole('button',{name:'Empezar partida',exact:true}).click();
    await page.getByText(/P4 · Jugador 4/).waitFor();
@@ -25,14 +27,16 @@ const fs=require('node:fs');
    if(kind==='territory')await page.getByRole('button',{name:/Horizontal 1: libre/}).first().click();
    if(kind==='race')await page.getByRole('button',{name:/Tirar dado/}).click();
    await page.getByText('Partida guardada en este dispositivo',{exact:true}).waitFor();
+   const state=await stored();
+   if(!state||state.kind!==kind||state.names.length!==4||!(kind==='memory'?state.first>=0:state.moves>0))throw Error('Four-player offline move was not persisted: '+JSON.stringify(state));
    await page.screenshot({path:`smoke-results/party-${kind}-offline.png`,fullPage:true});
-   const raw=await page.evaluate(()=>Object.entries(localStorage).find(([k])=>k.endsWith('sauna.pausa.local.v1'))?.[1]);
-   if(!raw)throw Error('No local match persisted.');
-   report.started.push({title,players:4,interacted:true,persisted:true});
+   report.started.push({title,players:state.names.length,interacted:true,persisted:true,turn:state.turn,moves:state.moves,first:state.first});
   }
+  const before=await stored();
   await page.reload({waitUntil:'domcontentloaded'});await frame();await lobby();
   await page.getByRole('button',{name:/Continuar · Carrera Stilo/}).click();
-  await page.getByText(/P4 · Jugador 4/).waitFor();report.resumed=true;
+  await page.getByText(/P4 · Jugador 4/).waitFor();
+  const after=await stored();if(JSON.stringify(before)!==JSON.stringify(after))throw Error('Resume changed the saved match.');report.resumed=true;
   if(report.errors.length)throw Error('Browser errors: '+report.errors.join('; '));
  }finally{
   report.visibleText=await page.locator('body').innerText().catch(()=>'');

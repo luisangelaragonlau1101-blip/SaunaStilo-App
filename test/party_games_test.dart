@@ -8,7 +8,7 @@ import 'package:saunastilo/screens/local_party_screen.dart';
 
 void main() {
   final four = ['Ana', 'Beto', 'Caro', 'Dani'];
-  setUp(() => SharedPreferences.setMockInitialValues({}));
+  setUp(() {SharedPreferences.setMockInitialValues({}); WidgetController.hitTestWarningShouldBeFatal = true;});
   test('counts, names and invalid rolls cannot corrupt a match', () {
     expect(() => PartyMatch(PartyKind.race, ['Uno']), throwsArgumentError);
     expect(() => PartyMatch(PartyKind.memory, List.filled(5, 'X')), throwsArgumentError);
@@ -78,21 +78,25 @@ void main() {
     testWidgets('${kind.name} plays with four people at 320px without Firebase', (tester) async {
       tester.view.physicalSize = const Size(320, 850); tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.resetPhysicalSize); addTearDown(tester.view.resetDevicePixelRatio);
-      await tester.pumpWidget(MaterialApp(theme: ThemeData.dark(useMaterial3: true), home: LocalPartyBoard(match: PartyMatch(kind, four))));
+      final game = PartyMatch(kind, four);
+      await tester.pumpWidget(MaterialApp(theme: ThemeData.dark(useMaterial3: true), home: LocalPartyBoard(match: game)));
       await tester.pumpAndSettle();
       final target = find.byKey(ValueKey(switch (kind) { PartyKind.memory => 'memory-card-0', PartyKind.territory => 'territory-edge-0', PartyKind.race => 'race-roll' }));
-      await tester.ensureVisible(target); await tester.tap(target); await tester.pumpAndSettle();
-      expect(find.textContaining('Dani'), findsOneWidget); expect(tester.takeException(), isNull);
+      if (kind == PartyKind.race) {await tester.drag(find.byType(ListView).first, const Offset(0, -300)); await tester.pumpAndSettle();}
+      await tester.ensureVisible(target); await tester.pumpAndSettle(); await tester.tap(target); await tester.pumpAndSettle();
+      expect(kind == PartyKind.memory ? game.first : game.moves, kind == PartyKind.memory ? 0 : 1);
+      final saved = await PartyStore.read(); expect(saved!.toJson(), game.toJson());
+      expect(tester.takeException(), isNull);
     });
   }
   testWidgets('lobby offers three games and starts four-player setup with optional names', (tester) async {
     await tester.pumpWidget(MaterialApp(theme: ThemeData.dark(useMaterial3: true), home: const LocalPartyScreen()));
     await tester.pumpAndSettle();
     final target = find.byKey(const ValueKey('party-select-memory'));
-    await tester.ensureVisible(target); await tester.tap(target); await tester.pumpAndSettle();
+    await tester.ensureVisible(target); await tester.pumpAndSettle(); await tester.tap(target); await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('party-count-4'))); await tester.pumpAndSettle();
     expect(find.byType(TextField), findsNWidgets(4));
-    final start = find.byKey(const ValueKey('party-start')); await tester.ensureVisible(start); await tester.tap(start); await tester.pumpAndSettle();
+    final start = find.byKey(const ValueKey('party-start')); await tester.ensureVisible(start); await tester.pumpAndSettle(); await tester.tap(start); await tester.pumpAndSettle();
     expect(find.byType(LocalPartyBoard), findsOneWidget); expect(find.textContaining('Jugador 4'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
