@@ -15,6 +15,6 @@ if(!report.cacheReady)throw Error('Required public Firebase libraries were not c
 report.privateResourcesCached=report.cached.filter(u=>/firestore.googleapis|identitytoolkit|firebasestorage|cloudfunctions|\/api\//.test(u));if(report.privateResourcesCached.length)throw Error('Private resources entered public cache.');
 await context.setOffline(true);await page.reload({waitUntil:'domcontentloaded',timeout:45000});await page.waitForFunction(()=>window.__offlineFrame===true,{},{timeout:45000});report.offlineFrame=true;await semantics();
 const enter=page.getByRole('button',{name:'Entrar a mi espacio',exact:true});await enter.waitFor({state:'visible',timeout:45000});report.offlineLogin=true;
-await enter.click();await page.getByText('Ingresa tu correo electrónico',{exact:true}).waitFor({state:'visible',timeout:10000});report.validationWorked=true;
+await enter.click();await page.waitForFunction(()=>document.body.innerText.includes('Ingresa tu correo electrónico')&&document.body.innerText.includes('Ingresa tu contraseña'),{},{timeout:10000});report.validationWorked=true;
 }finally{report.cached=await cached().catch(()=>report.cached||[]);report.visibleText=await page.locator('body').innerText().catch(()=>'');await page.screenshot({path:'smoke-results/offline-login.png',fullPage:true}).catch(()=>{});fs.writeFileSync('smoke-results/offline-check.json',JSON.stringify(report,null,2));await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1});
