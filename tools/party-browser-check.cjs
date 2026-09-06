@@ -18,9 +18,9 @@ const fs=require('node:fs');
   await context.setOffline(true);report.offline=true;
   for(const [title,kind]of [['Memorama Stilo','memory'],['Territorios Stilo','territory'],['Carrera Stilo','race']]){
    await page.reload({waitUntil:'domcontentloaded'});await frame();await lobby();
-   // Flutter merges the game title and description into one accessible card.
+   // Flutter merges the game card and puts ChoiceChip values in aria-label, not DOM text.
    await page.getByText(title,{exact:false}).first().click();
-   await page.getByText('4',{exact:true}).click();
+   await page.getByLabel('4',{exact:true}).click();
    await page.getByRole('button',{name:'Empezar partida',exact:true}).click();
    await page.getByText(/P4 · Jugador 4/).waitFor();
    if(kind==='memory')await page.getByRole('button',{name:/Carta 1, oculta/}).first().click();
@@ -38,8 +38,11 @@ const fs=require('node:fs');
   await page.getByText(/P4 · Jugador 4/).waitFor();
   const after=await stored();if(JSON.stringify(before)!==JSON.stringify(after))throw Error('Resume changed the saved match.');report.resumed=true;
   if(report.errors.length)throw Error('Browser errors: '+report.errors.join('; '));
- }finally{
+ }catch(error){report.failure=error.message;throw error;}
+ finally{
   report.visibleText=await page.locator('body').innerText().catch(()=>'');
+  report.accessibility=await page.locator('body').ariaSnapshot().catch(()=>'');
+  report.savedGame=await stored().catch(()=>null);
   await page.screenshot({path:'smoke-results/party-last-state.png',fullPage:true}).catch(()=>{});
   fs.writeFileSync('smoke-results/party-offline.json',JSON.stringify(report,null,2));await browser.close();
  }
