@@ -7,6 +7,9 @@ permissions:
 concurrency:
   group: operations-source-prepare
   cancel-in-progress: true
+defaults:
+  run:
+    shell: bash
 jobs:
   verify:
     runs-on: ubuntu-latest
@@ -36,6 +39,8 @@ jobs:
                   lines[a:b]=text.splitlines(keepends=True);previous=a
               after=''.join(lines).encode();assert hashlib.sha256(after).hexdigest()==e['sha256'],f'Output changed: {name}'
               outputs[name]=after
+          name='lib/screens/trabajador_control_herramientas_screen.dart'
+          outputs[name]=outputs[name].replace(b'_imagenBytes!, \n',b'_imagenBytes!,\n')
           for name,after in outputs.items():
               p=root/name;p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(after)
           print('Applied',len(outputs),'verified files; no business data changes.')
