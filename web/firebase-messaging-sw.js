@@ -22,6 +22,7 @@ self.addEventListener('notificationclick', (event) => {
     return self.clients.openWindow(target.href);
   })());
 });
+importScripts('./stilo-offline-worker.js');
 importScripts('https://www.gstatic.com/firebasejs/12.15.0/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/12.15.0/firebase-messaging-compat.js');
 firebase.initializeApp({

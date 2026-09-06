@@ -1,3 +1,4 @@
+import '../widgets/shared_media_card.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -216,6 +217,7 @@ class _ProyectoChatScreenState extends State<ProyectoChatScreen> {
             if (texto.isNotEmpty) ...[
               const SizedBox(height: 5),
               Text(texto, style: GoogleFonts.inter(color: Colors.white.withOpacity(.88), height: 1.35)),
+              SharedMediaCard(text: texto),
             ],
             if (imagenes.isNotEmpty) ...[
               const SizedBox(height: 9),
@@ -329,8 +331,9 @@ class _ProyectoChatScreenState extends State<ProyectoChatScreen> {
               tooltip: 'Agregar evidencia',
               color: _tarjeta,
               icon: const Icon(Icons.add_circle_rounded, color: _acento),
-              onSelected: _seleccionarImagen,
+              onSelected: (v) { if (v == 'enlace') { addSharedLink(context, _controller); } else { _seleccionarImagen(v); } },
               itemBuilder: (_) => const [
+                PopupMenuItem(value: 'enlace', child: ListTile(leading: Icon(Icons.movie_filter_outlined), title: Text('Reel o canción'))),
                 PopupMenuItem(value: 'camara', child: ListTile(leading: Icon(Icons.photo_camera_rounded), title: Text('Tomar foto'))),
                 PopupMenuItem(value: 'galeria', child: ListTile(leading: Icon(Icons.photo_library_rounded), title: Text('Elegir fotografías'))),
               ],

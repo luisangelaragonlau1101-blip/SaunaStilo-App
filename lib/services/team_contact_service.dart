@@ -12,11 +12,11 @@ class TeamContactService {
   }
   DocumentReference<Map<String, dynamic>> conversation(UserModel user, UserModel contact) => db.collection('conversaciones').doc(conversationId(user.id, contact.id));
 
-  Future<void> ensureConversation(UserModel user, UserModel contact) async {
+  Future<void> ensureConversation(UserModel user, UserModel contact, {bool forSending = false}) async {
     if (FirebaseAuth.instance.currentUser?.uid != user.id || user.id == contact.id) throw StateError('Inicia sesión con tu cuenta y selecciona otro integrante.');
     final ref = conversation(user, contact);
     try {
-      final snapshot = await ref.get(const GetOptions(source: Source.server));
+      final snapshot = await ref.get(GetOptions(source: forSending ? Source.server : Source.serverAndCache)).timeout(const Duration(seconds: 15));
       if (snapshot.exists) {
         final members = List<String>.from(snapshot.data()?['participantes'] ?? const []);
         if (members.length != 2 || !members.contains(user.id) || !members.contains(contact.id)) throw StateError('No tienes acceso a esta conversación.');
@@ -36,7 +36,7 @@ class TeamContactService {
   }
 
   Future<bool> saveMessage({required UserModel user, required UserModel contact, required String messageId, required Map<String, dynamic> data, bool onScreen = true, bool call = false, bool toolRequest = false}) async {
-    await ensureConversation(user, contact);
+    await ensureConversation(user, contact, forSending: true);
     final ref = conversation(user, contact);
     final batch = db.batch();
     batch.set(ref.collection('mensajes').doc(messageId), {

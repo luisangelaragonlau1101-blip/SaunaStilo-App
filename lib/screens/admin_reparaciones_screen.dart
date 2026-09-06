@@ -12,16 +12,16 @@ class AdminReparacionesScreen extends StatefulWidget {
 }
 
 class _AdminReparacionesScreenState extends State<AdminReparacionesScreen> {
-  static const Color colorFondo = Color(0xFF121212);
-  static const Color colorTarjeta = Color(0xFF1E1E1E);
+  static const Color colorFondo = Color(0xFF000000);
+  static const Color colorTarjeta = Color(0xFF111012);
   static const Color colorTextoPrimario = Color(0xFFFDFDFD);
-  static const Color colorAcento = Color(0xFFFFDE21);
-  static const Color colorAzul = Color(0xFF00B0FF);
+  static const Color colorAcento = Color(0xFFB7FF2A);
+  static const Color colorAzul = Color(0xFFC798FF);
   static const Color colorRojoCoral = Color(0xFFFF5252);
-  static const Color colorMorado = Color(0xFF9400D3);
-  static const Color colorRosaVibrante = Color(0xFFFF3399);
+  static const Color colorMorado = Color(0xFFC13CFF);
+  static const Color colorRosaVibrante = Color(0xFFFF729C);
   static const Color colorBlanco = Color(0xFFFFFFFF);
-  static const Color colorVerde1 = Color(0xFF33CC33);
+  static const Color colorVerde1 = Color(0xFF7CE3BD);
 
   Color _obtenerColorBarra(String categoria) {
     switch (categoria.toLowerCase()) {

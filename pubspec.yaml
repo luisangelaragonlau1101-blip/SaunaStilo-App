@@ -3,7 +3,7 @@ description: "A new Flutter project."
 
 publish_to: 'none' 
 
-version: 1.0.0+1
+version: 3.2.0+1788740000
 
 environment:
   sdk: ^3.12.1
@@ -24,6 +24,7 @@ dependencies:
   provider: ^6.1.5+1
   intl: ^0.20.2
   url_launcher: ^6.3.2
+  shared_preferences: ^2.5.3
   http: ^1.5.0
   
   # --- PAQUETES PARA REPORTES ---

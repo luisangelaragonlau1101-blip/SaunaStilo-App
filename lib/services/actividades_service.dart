@@ -29,38 +29,48 @@ class ActividadesService {
   CollectionReference<Map<String, dynamic>> _avancesRef(String actividadId) =>
       _actividadesRef.doc(actividadId).collection('avances');
 
-  // Administración o maestro asignado; Firestore vuelve a validar el alcance.
+  // Task persistence is independent of notification delivery. A retry reuses its ID.
   Future<void> crearActividad(ActividadModel actividad) async {
-    try {
-      final uid = (_auth ?? FirebaseAuth.instance).currentUser?.uid;
-      if (uid == null) throw StateError('Inicia sesión para asignar tareas.');
-      final profile = await _db.collection('usuarios').doc(uid).get();
+    final uid = (_auth ?? FirebaseAuth.instance).currentUser?.uid;
+    if (uid == null) throw StateError('Inicia sesión para asignar tareas.');
+    if (actividad.id.isEmpty) actividad.id = _actividadesRef.doc().id;
+    final ref = _actividadesRef.doc(actividad.id);
+    await _db.runTransaction((tx) async {
+      final profile = await tx.get(_db.collection('usuarios').doc(uid));
+      final target = await tx.get(_db.collection('usuarios').doc(actividad.asignadoATrabajadorId));
       final role = profile.data()?['rol'];
-      final isAdmin = role == 'admin';
-      final project = await _db.collection('proyectos').doc(actividad.proyectoId).get();
-      final members = List<String>.from(project.data()?['encargados'] ?? const []);
-      if (!isAdmin && (role != 'maestro' || !members.contains(uid) || !members.contains(actividad.asignadoATrabajadorId))) {
-        throw StateError('Solo puedes asignar tareas dentro de tu proyecto a sus integrantes.');
+      if (!profile.exists || profile.data()?['activo'] == false) throw StateError('Tu cuenta no está activa.');
+      if (!target.exists || target.data()?['activo'] == false) throw StateError('La persona no tiene una cuenta activa.');
+      if (actividad.proyectoId.isNotEmpty) {
+        final project = await tx.get(_db.collection('proyectos').doc(actividad.proyectoId));
+        final members = (project.data()?['encargados'] as List? ?? const []).whereType<String>().toList();
+        if (!project.exists) throw StateError('El proyecto ya no existe.');
+        if (role != 'admin' && (role != 'maestro' || !members.contains(uid) || !members.contains(target.id))) {
+          throw StateError('El maestro debe estar asignado al proyecto y elegir a uno de sus integrantes.');
+        }
+      } else if (role != 'admin') {
+        throw StateError('Solo Administración puede asignar tareas generales sin proyecto.');
       }
-      if (!project.exists) throw StateError('El proyecto ya no existe.');
-      final actividadRef = _actividadesRef.doc();
-      final proyectoRef = _db.collection('proyectos').doc(actividad.proyectoId);
-      final avisoRef = _db.collection('notificaciones').doc();
-      final batch = _db.batch();
-      batch.set(actividadRef, actividad.toJson()..addAll({'creadoPor': uid, 'creadoEn': FieldValue.serverTimestamp()}));
-      if (isAdmin) batch.update(proyectoRef, {'estatus': 'en_proceso'});
-      batch.set(
-        avisoRef,
-        NotificacionesService.datosAviso(
-          titulo: 'Nueva tarea asignada',
-          mensaje: actividad.titulo,
-          tipo: 'tarea',
-          destinatarioId: actividad.asignadoATrabajadorId,
-        )..addAll({'actividadId': actividadRef.id, 'proyectoId': actividad.proyectoId}),
-      );
-      await batch.commit();
-    } catch (e) {
-      throw Exception('Error al crear la actividad: $e');
+      if (actividad.titulo.trim().length < 3 || actividad.titulo.length > 150 || actividad.descripcion.length > 2000 || !actividad.fechaTermino.isAfter(actividad.fechaInicio)) {
+        throw StateError('Revisa el título, las indicaciones y la fecha de entrega.');
+      }
+      final old = await tx.get(ref);
+      if (old.exists) {
+        if (old.data()?['creadoPor'] != uid || old.data()?['proyectoId'] != actividad.proyectoId || old.data()?['titulo'] != actividad.titulo || old.data()?['descripcion'] != actividad.descripcion || old.data()?['asignadoATrabajadorId'] != actividad.asignadoATrabajadorId) {
+          throw StateError('El identificador de la tarea ya está en uso.');
+        }
+        return; // Previously confirmed; never reset progress on a retry.
+      }
+      tx.set(ref, actividad.toJson()..addAll({'creadoPor': uid, 'creadoEn': FieldValue.serverTimestamp()}));
+      // Creating a task must not rewrite the project or its financial workflow.
+    });
+    try {
+      final notice = NotificacionesService.datosAviso(titulo: 'Nueva tarea asignada', mensaje: actividad.titulo,
+        tipo: 'tarea', destinatarioId: actividad.asignadoATrabajadorId)
+        ..addAll({'actividadId': ref.id, 'proyectoId': actividad.proyectoId});
+      await _db.collection('notificaciones').doc('tarea_${ref.id}').set(notice).timeout(const Duration(seconds: 8));
+    } catch (_) {
+      // The task remains saved; a failed push must never make the user create it twice.
     }
   }
 
@@ -481,21 +491,11 @@ class ActividadesService {
   /// Solo actualiza los campos administrables. Contadores, evidencias, avances,
   /// estado y fechas del flujo del trabajador permanecen intactos.
   Future<void> actualizarActividad(ActividadModel actividad) async {
-    try {
-      await _actividadesRef.doc(actividad.id).update({
-        'proyectoId': actividad.proyectoId,
-        'titulo': actividad.titulo,
-        'descripcion': actividad.descripcion,
-        'asignadoATrabajadorId': actividad.asignadoATrabajadorId,
-        'fechaInicio': actividad.fechaInicio,
-        'fechaTermino': actividad.fechaTermino,
-        'fechaAsignada': actividad.fechaAsignada,
-        'observacionesAdmin': actividad.observacionesAdmin,
-        'requiereEvidencia': actividad.requiereEvidencia,
-      });
-    } catch (e) {
-      throw Exception('Error al editar la actividad: $e');
-    }
+    await _actividadesRef.doc(actividad.id).update({
+      'titulo': actividad.titulo, 'descripcion': actividad.descripcion,
+      'asignadoATrabajadorId': actividad.asignadoATrabajadorId,
+      'fechaTermino': actividad.fechaTermino, 'fechaAsignada': actividad.fechaAsignada,
+    });
   }
 
   static String _estatus(Map<String, dynamic> data) {

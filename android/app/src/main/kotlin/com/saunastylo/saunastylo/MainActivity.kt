@@ -7,9 +7,30 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import io.flutter.embedding.android.FlutterActivity
+import io.flutter.embedding.engine.FlutterEngine
+import io.flutter.plugin.common.MethodChannel
+import android.view.WindowManager
 
 class MainActivity : FlutterActivity() {
+    override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
+        super.configureFlutterEngine(flutterEngine)
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "sauna_stilo/security")
+            .setMethodCallHandler { call, result ->
+                if (call.method != "setSecure") { result.notImplemented() }
+                else {
+                    val secure = call.arguments as? Boolean
+                    if (secure == null) { result.error("invalid", "Boolean required", null) }
+                    else {
+                        if (secure) window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+                        else window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+                        result.success(null)
+                    }
+                }
+            }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
+        window.addFlags(WindowManager.LayoutParams.FLAG_SECURE) // Secure until authenticated policy is loaded.
         super.onCreate(savedInstanceState)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val notificationSound = Settings.System.DEFAULT_NOTIFICATION_URI

@@ -6,9 +6,13 @@ const {ref,uploadBytes,getBytes}=require('firebase/storage');
 let env;
 test.before(async()=>{
  if(!process.env.FIRESTORE_EMULATOR_HOST||!process.env.FIREBASE_STORAGE_EMULATOR_HOST)throw Error('Only isolated emulators may run this test.');
- env=await initializeTestEnvironment({projectId:'demo-sauna-people',firestore:{rules:fs.readFileSync('firestore.rules','utf8')},storage:{rules:fs.readFileSync('storage.rules','utf8')}});
+ // Storage firestore.get resolves against the emulator project's Firestore database.
+ // Use the CLI's demo project, run suites sequentially, and reset fixtures explicitly.
+ env=await initializeTestEnvironment({projectId:'demo-sauna-team',firestore:{rules:fs.readFileSync('firestore.rules','utf8')},storage:{rules:fs.readFileSync('storage.rules','utf8')}});
+ await env.clearFirestore();
+ await env.clearStorage();
  await env.withSecurityRulesDisabled(async c=>{
-  for(const [id,rol]of [['admin','admin'],['worker','trabajador'],['other','trabajador']])await setDoc(doc(c.firestore(),'usuarios',id),{nombre:id,correo:id+'@example.invalid',rol});
+  for(const [id,rol]of [['admin','admin'],['warehouse','almacenista'],['worker','trabajador'],['other','trabajador']])await setDoc(doc(c.firestore(),'usuarios',id),{nombre:id,correo:id+'@example.invalid',rol});
  });
 });
 test.after(async()=>{if(env)await env.cleanup()});
@@ -42,4 +46,11 @@ test('private evidence denies peers even though legacy and social media remain r
  await assertFails(getBytes(ref(env.authenticatedContext('other').storage(),path)));
  await assertFails(getBytes(ref(env.unauthenticatedContext().storage(),path)));
  await assertFails(uploadBytes(ref(env.authenticatedContext('other').storage(),path),new Uint8Array([1]),{contentType:'image/png'}));
+});
+test('only administration and warehouse register inventory photos',async()=>{
+ const bytes=new Uint8Array([137,80,78,71]);
+ await assertSucceeds(uploadBytes(ref(env.authenticatedContext('admin').storage(),'insumos_inventario/admin.png'),bytes,{contentType:'image/png'}));
+ await assertSucceeds(uploadBytes(ref(env.authenticatedContext('warehouse').storage(),'insumos_inventario/warehouse.png'),bytes,{contentType:'image/png'}));
+ await assertFails(uploadBytes(ref(env.authenticatedContext('worker').storage(),'insumos_inventario/worker.png'),bytes,{contentType:'image/png'}));
+ await assertFails(uploadBytes(ref(env.unauthenticatedContext().storage(),'insumos_inventario/visitor.png'),bytes,{contentType:'image/png'}));
 });

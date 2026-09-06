@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 
 import '../models/user_model.dart';
+import '../screens/admin_solicitudes_herramientas_screen.dart';
+import '../screens/trabajador_control_herramientas_screen.dart';
+import '../screens/streak_overview_screen.dart';
+import '../screens/offline_desk_screen.dart';
+import '../screens/team_games_screen.dart';
 import '../screens/equipo_tareas_screen.dart';
 import '../screens/perfiles_equipo_screen.dart';
 import '../screens/prestamos_equipo_screen.dart';
@@ -90,6 +95,10 @@ class AppActionCatalog {
     final master = user.rol == AppRoles.maestro;
 
     final actions = <AppAction>[
+      if (admin || warehouse) AppAction(id: 'almacen_movimientos', title: 'Control de almacén', subtitle: 'Aprobar salidas, recibir devoluciones e historial', icon: Icons.warehouse_rounded, color: _amber, primary: true, keywords: const ['préstamos', 'salidas', 'entradas', 'aprobar'], builder: (_) => const AdminSolicitudesHerramientasScreen()),
+      AppAction(id: 'solicitudes_almacen', title: 'Solicitar al almacén', subtitle: 'Pedir herramienta y consultar tu préstamo', icon: Icons.outbox_rounded, color: _mint, keywords: const ['solicitud','herramientas'], builder: (_) => ControlHerramientasScreen(usuarioId: user.id, usuarioNombre: user.nombre)),
+      AppAction(id: 'sin_conexion', title: 'Sin conexión', subtitle: 'Preparar este equipo y guardar borradores', icon: Icons.offline_bolt_rounded, color: _amber, keywords: const ['offline','internet','borradores'], builder: (_) => OfflineDeskScreen(user: user)),
+      AppAction(id: 'juegos', title: 'Pausa Stilo · Juegos', subtitle: 'Sin Wi-Fi · hasta 4 en el mismo teléfono', icon: Icons.sports_esports_rounded, color: _violet, keywords: const ['jugar','memoria','gato','cuatro','carrera','territorios','offline'], builder: (_) => TeamGamesScreen(user: user)),
       AppAction(id: 'equipo', title: admin ? 'Administrar perfiles' : 'Nuestro equipo', subtitle: admin ? 'Otorgar insignias y agregar lugares de instalación' : 'Personas, intereses e instalaciones', icon: Icons.groups_outlined, color: _mint, keywords: const ['insignias', 'lugares', 'instalaciones', 'personas'], builder: (_) => PerfilesEquipoScreen(usuarioActual: user)),
       AppAction(id: 'prestamos', title: 'Préstamos de herramienta', subtitle: 'Solicitar, prestar, recibir y devolver', icon: Icons.handyman_outlined, color: _mint, keywords: const ['compañero', 'cajita', 'herramientas'], builder: (_) => PrestamosEquipoScreen(usuario: user)),
       if (!admin) AppAction(id: 'justificar', title: 'Justificar una falta', subtitle: 'Enviar motivo y consultar su revisión', icon: Icons.fact_check_outlined, color: _pink, keywords: const ['ausencia', 'justificación', 'falta'], builder: (_) => JustificarFaltaScreen(usuario: user)),
@@ -190,7 +199,7 @@ class AppActionCatalog {
         const AppAction(id: 'cajitas', title: 'Cajitas', subtitle: 'Herramientas asignadas', icon: Icons.home_repair_service_rounded, color: Color(0xFFD7FF74), builder: _boxes),
         const AppAction(id: 'maderas', title: 'Maderas', subtitle: 'Catálogo y materiales', icon: Icons.forest_rounded, color: Color(0xFFC6FF68), builder: _woodAdmin),
         const AppAction(id: 'ideas', title: 'Ideas', subtitle: 'Incubadora de innovación', icon: Icons.lightbulb_rounded, color: Color(0xFFC13CFF), builder: _ideas),
-        AppAction(id: 'rachas', title: 'Rachas', subtitle: 'Constancia del equipo', icon: Icons.local_fire_department_rounded, color: const Color(0xFFFF536A), builder: (_) => AdminRachasScreen(adminUser: user)),
+        AppAction(id: 'rachas', title: 'Rachas', subtitle: 'Constancia del equipo', icon: Icons.local_fire_department_rounded, color: const Color(0xFFFF536A), builder: (_) => StreakOverviewScreen(user: user)),
         AppAction(
           id: 'voz',
           title: 'Mi voz',
@@ -209,7 +218,7 @@ class AppActionCatalog {
         const AppAction(id: 'cajitas', title: 'Cajitas', subtitle: 'Herramientas asignadas', icon: Icons.home_repair_service_rounded, color: Color(0xFFD7FF74), builder: _boxes),
         const AppAction(id: 'proveedores', title: 'Proveedores', subtitle: 'Abastecimiento', icon: Icons.local_shipping_rounded, color: Color(0xFFB82B55), builder: _providers),
         AppAction(id: 'asistencia', title: 'Asistencia', subtitle: 'Registra tu jornada', icon: Icons.fingerprint_rounded, color: _mint, primary: true, builder: (_) => JornadaScreen(usuario: user)),
-        AppAction(id: 'racha', title: 'Mi racha', subtitle: 'Constancia de asistencia', icon: Icons.local_fire_department_rounded, color: const Color(0xFFFF536A), builder: (_) => RachaAsistenciasScreen(usuario: user, isAdmin: false)),
+        AppAction(id: 'racha', title: 'Mi racha', subtitle: 'Constancia de asistencia', icon: Icons.local_fire_department_rounded, color: const Color(0xFFFF536A), builder: (_) => StreakOverviewScreen(user: user)),
       ]);
     } else {
       actions.addAll(<AppAction>[
@@ -218,7 +227,7 @@ class AppActionCatalog {
         const AppAction(id: 'inventario', title: 'Inventario', subtitle: 'Herramientas disponibles', icon: Icons.inventory_2_rounded, color: _blue, builder: _inventoryWorker),
         AppAction(id: 'cajita', title: 'Mi cajita', subtitle: 'Tus herramientas asignadas', icon: Icons.home_repair_service_rounded, color: const Color(0xFFD7FF74), builder: (_) => TrabajadorCajitaHerramientasScreen(trabajadorId: user.id)),
         const AppAction(id: 'maderas', title: 'Maderas', subtitle: 'Catálogo de materiales', icon: Icons.forest_rounded, color: Color(0xFFC6FF68), builder: _woodWorker),
-        AppAction(id: 'racha', title: 'Mi racha', subtitle: 'Tu constancia', icon: Icons.local_fire_department_rounded, color: const Color(0xFFFF536A), builder: (_) => RachaAsistenciasScreen(usuario: user, isAdmin: false)),
+        AppAction(id: 'racha', title: 'Mi racha', subtitle: 'Tu constancia', icon: Icons.local_fire_department_rounded, color: const Color(0xFFFF536A), builder: (_) => StreakOverviewScreen(user: user)),
       ]);
     }
     return actions;

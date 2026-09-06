@@ -1,4 +1,5 @@
-import 'dart:io';
+import '../widgets/warehouse_header.dart';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
@@ -41,18 +42,18 @@ class _InsumoFormScreenState extends State<InsumoFormScreen> {
   bool _esProductoTienda = false;
 
   // --- VARIABLES PARA IMAGEN Y CARGA ---
-  File? _imagenSeleccionada;
+  Uint8List? _imagenBytes;
   String? _urlImagenActual;
   bool _isSaving = false; 
 
   late Future<List<String>> _categoriasFuture;
 
-  static const Color colorFondo = Color(0xFF121212);
-  static const Color colorTarjeta = Color(0xFF1E1E1E);
-  static const Color colorRosa = Color(0xFFE040FB);      
-  static const Color colorAzul = Color(0xFF00B0FF);      
-  static const Color colorRosaVibrante = Color(0xFFFF3399);
-  static const Color colorAcento = Color(0xFFFFDE21); // Agregado para el botón del escáner
+  static const Color colorFondo = Color(0xFF000000);
+  static const Color colorTarjeta = Color(0xFF111012);
+  static const Color colorRosa = Color(0xFFC798FF);
+  static const Color colorAzul = Color(0xFFC798FF);
+  static const Color colorRosaVibrante = Color(0xFFFF729C);
+  static const Color colorAcento = Color(0xFFB7FF2A); // Agregado para el botón del escáner
 
   @override
   void initState() {
@@ -206,6 +207,8 @@ Future<void> _escanearCodigoFormulario() async {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                WarehouseHeader(title: esEdicion ? 'Actualiza tu inventario' : 'Registra una herramienta', subtitle: 'Foto, identificación y existencias en un solo lugar.'),
+                const SizedBox(height: 22),
                 Center(child: _buildImageSelector()),
                 const SizedBox(height: 30),
 
@@ -216,8 +219,8 @@ Future<void> _escanearCodigoFormulario() async {
                   decoration: InputDecoration(
                     labelText: 'Código de Barras (Opcional)',
                     labelStyle: const TextStyle(color: Colors.white70, fontSize: 14),
-                    enabledBorder: OutlineInputBorder(borderSide: const BorderSide(color: Colors.white24), borderRadius: BorderRadius.circular(10)),
-                    focusedBorder: OutlineInputBorder(borderSide: const BorderSide(color: colorRosaVibrante), borderRadius: BorderRadius.circular(10)),
+                    enabledBorder: OutlineInputBorder(borderSide: const BorderSide(color: Colors.white24), borderRadius: BorderRadius.circular(20)),
+                    focusedBorder: OutlineInputBorder(borderSide: const BorderSide(color: colorRosaVibrante), borderRadius: BorderRadius.circular(20)),
                     suffixIcon: IconButton(
                       icon: const Icon(Icons.qr_code_scanner, color: colorAcento),
                       tooltip: 'Escanear Código',
@@ -380,7 +383,7 @@ Future<void> _escanearCodigoFormulario() async {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: colorAzul,
                     padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                   ),
                   onPressed: _isSaving ? null : _guardarInsumo, // Se desactiva si está guardando
                   child: _isSaving 
@@ -403,8 +406,8 @@ Future<void> _escanearCodigoFormulario() async {
     return InputDecoration(
       labelText: label,
       labelStyle: const TextStyle(color: Colors.white70, fontSize: 14),
-      enabledBorder: OutlineInputBorder(borderSide: const BorderSide(color: Colors.white24), borderRadius: BorderRadius.circular(10)),
-      focusedBorder: OutlineInputBorder(borderSide: const BorderSide(color: colorRosaVibrante), borderRadius: BorderRadius.circular(10)),
+      enabledBorder: OutlineInputBorder(borderSide: const BorderSide(color: Colors.white24), borderRadius: BorderRadius.circular(20)),
+      focusedBorder: OutlineInputBorder(borderSide: const BorderSide(color: colorRosaVibrante), borderRadius: BorderRadius.circular(20)),
     );
   }
 
@@ -429,7 +432,7 @@ Future<void> _escanearCodigoFormulario() async {
     return TextFormField(
       controller: controller,
       keyboardType: const TextInputType.numberWithOptions(decimal: true),
-      style: const TextStyle(color: Color(0xFFFFDE21), fontWeight: FontWeight.bold),
+      style: const TextStyle(color: Color(0xFFB7FF2A), fontWeight: FontWeight.bold),
       decoration: _inputDecoration(label),
       validator: (value) {
         if (value == null || value.trim().isEmpty) return 'Este campo es obligatorio';
@@ -511,13 +514,9 @@ Future<void> _escanearCodigoFormulario() async {
         String? urlFinal = _urlImagenActual; // Por defecto se queda la que tenía
 
         // Si el usuario seleccionó una NUEVA imagen
-        if (_imagenSeleccionada != null) {
-          // Si estamos editando y había una imagen vieja, hay que borrarla de Storage
-          if (_urlImagenActual != null && _urlImagenActual!.isNotEmpty) {
-            await widget.inventarioService.eliminarImagenPorUrl(_urlImagenActual!);
-          }
-          // Subimos la nueva y obtenemos la URL
-          urlFinal = await widget.inventarioService.subirImagenInsumo(_imagenSeleccionada!, nombreIngresado);
+        if (_imagenBytes != null) {
+          // Preserve the previous photo until the new record is saved.
+          urlFinal = await widget.inventarioService.subirImagenInsumoBytes(_imagenBytes!, nombreIngresado);
         }
 
         if (widget.insumo != null) {
@@ -571,6 +570,18 @@ Future<void> _escanearCodigoFormulario() async {
     }
   }
 
+  Future<void> _pickInventoryPhoto(ImageSource source) async {
+    if (_isSaving) return;
+    try {
+      final file = await ImagePicker().pickImage(source: source, maxWidth: 1600, imageQuality: 80);
+      if (file == null) return;
+      final bytes = await file.readAsBytes();
+      if (bytes.isEmpty || bytes.length > 8 * 1024 * 1024) throw StateError('Usa una foto de menos de 8 MB.');
+      if (mounted) setState(() => _imagenBytes = bytes);
+    } catch (_) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No se pudo leer la foto. Revisa el permiso y elige una imagen de menos de 8 MB.')));
+    }
+  }
   void _mostrarOpcionesImagen() {
     showModalBottomSheet(
       context: context,
@@ -584,8 +595,7 @@ Future<void> _escanearCodigoFormulario() async {
                 title: const Text('Tomar Foto', style: TextStyle(color: Colors.white)),
                 onTap: () async {
                   Navigator.pop(context);
-                  final pickedFile = await ImagePicker().pickImage(source: ImageSource.camera, imageQuality: 80);
-                  if (pickedFile != null) setState(() => _imagenSeleccionada = File(pickedFile.path));
+                  await _pickInventoryPhoto(ImageSource.camera);
                 },
               ),
               ListTile(
@@ -593,8 +603,7 @@ Future<void> _escanearCodigoFormulario() async {
                 title: const Text('Elegir de Galería', style: TextStyle(color: Colors.white)),
                 onTap: () async {
                   Navigator.pop(context);
-                  final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 80);
-                  if (pickedFile != null) setState(() => _imagenSeleccionada = File(pickedFile.path));
+                  await _pickInventoryPhoto(ImageSource.gallery);
                 },
               ),
             ],
@@ -612,13 +621,13 @@ Future<void> _escanearCodigoFormulario() async {
         width: 140,
         decoration: BoxDecoration(
           color: Colors.white10,
-          borderRadius: BorderRadius.circular(15),
+          borderRadius: BorderRadius.circular(28),
           border: Border.all(color: colorRosaVibrante.withOpacity(0.5), width: 1),
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(15),
-          child: _imagenSeleccionada != null
-              ? Image.file(_imagenSeleccionada!, fit: BoxFit.cover)
+          borderRadius: BorderRadius.circular(28),
+          child: _imagenBytes != null
+              ? Image.memory(_imagenBytes!, fit: BoxFit.cover)
               : (_urlImagenActual != null && _urlImagenActual!.isNotEmpty)
                   ? CachedNetworkImage(
                       imageUrl: _urlImagenActual!,

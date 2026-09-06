@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'dart:typed_data';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -37,16 +37,16 @@ class _ControlHerramientasScreenState extends State<ControlHerramientasScreen> {
   String _filtroSeleccionado = 'Todas';
   final List<String> _opcionesFiltro = ['Todas', 'Pendientes', 'Aprobadas', 'Rechazadas'];
 
-  static const Color colorFondo = Color(0xFF161210);
-  static const Color colorTarjeta = Color(0xFF221A16);
+  static const Color colorFondo = Color(0xFF000000);
+  static const Color colorTarjeta = Color(0xFF111012);
   static const Color colorTextoPrimario = Color(0xFFFDFDFD);
   static const Color colorTextoSecundario = Color(0xFFB5ABA5);
-  static const Color colorAcento = Color(0xFFFFDE21);
+  static const Color colorAcento = Color(0xFFB7FF2A);
   static const Color colorNaranja = Color(0xFFFF9800);
   static const Color colorRojo = Color(0xFFFF5252);
-  static const Color colorVerde = Color(0xFF4CAF50); 
-  static const Color colorGradiente1 = Color(0xFF8B4513); 
-  static const Color colorGradiente2 = Color(0xFF4A1504); 
+  static const Color colorVerde = Color(0xFF4CAF50);
+  static const Color colorGradiente1 = Color(0xFF351020);
+  static const Color colorGradiente2 = Color(0xFF120C12);
 
   @override
   void initState() {
@@ -1016,7 +1016,7 @@ class _ControlHerramientasScreenState extends State<ControlHerramientasScreen> {
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
             onPressed: () async {
-              await FirebaseFirestore.instance.collection('solicitudes_herramientas').doc(solicitudId).delete();
+              await FirebaseFirestore.instance.collection('solicitudes_herramientas').doc(solicitudId).update({'estatus':'cancelada','canceladoPor':FirebaseAuth.instance.currentUser!.uid,'fechaCancelacion':FieldValue.serverTimestamp()});
               if (ctx.mounted) {
                 Navigator.pop(ctx);
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -1029,7 +1029,7 @@ class _ControlHerramientasScreenState extends State<ControlHerramientasScreen> {
                       children: [
                         const Icon(Icons.delete_outline, color: Colors.white),
                         const SizedBox(width: 12),
-                        Expanded(child: Text("Solicitud eliminada.", style: GoogleFonts.inter(fontWeight: FontWeight.bold))),
+                        Expanded(child: Text("Solicitud cancelada. Se conserva su historial.", style: GoogleFonts.inter(fontWeight: FontWeight.bold))),
                       ],
                     ),
                   ),
@@ -1066,13 +1066,14 @@ class _ReporteDevolucionModalState extends State<ReporteDevolucionModal> {
   final TextEditingController _observacionesController = TextEditingController();
   bool _tieneFalla = false;
   String? _imagenLocalRuta;
+  Uint8List? _imagenBytes;
   bool _subiendoDatos = false;
 
-  static const Color colorFondo = Color(0xFF161210);
-  static const Color colorTarjeta = Color(0xFF221A16);
+  static const Color colorFondo = Color(0xFF000000);
+  static const Color colorTarjeta = Color(0xFF111012);
   static const Color colorTextoPrimario = Color(0xFFFDFDFD);
   static const Color colorTextoSecundario = Color(0xFFB5ABA5);
-  static const Color colorAcento = Color(0xFFFFDE21);
+  static const Color colorAcento = Color(0xFFB7FF2A);
   static const Color colorNaranja = Color(0xFFFF9800);
   static const Color colorVerde = Color(0xFF4CAF50);
 
@@ -1087,8 +1088,10 @@ class _ReporteDevolucionModalState extends State<ReporteDevolucionModal> {
     final XFile? image = await picker.pickImage(source: ImageSource.camera, imageQuality: 70);
     
     if (image != null) {
+      final bytes=await image.readAsBytes();
+      if (!mounted) return;
       setState(() {
-        _imagenLocalRuta = image.path;
+        _imagenLocalRuta = image.path; _imagenBytes = bytes;
       });
     }
   }
@@ -1100,11 +1103,12 @@ class _ReporteDevolucionModalState extends State<ReporteDevolucionModal> {
     
     try {
       if (_imagenLocalRuta != null) {
-        File file = File(_imagenLocalRuta!);
+        final bytes = _imagenBytes ?? await XFile(_imagenLocalRuta!).readAsBytes();
+        if (bytes.isEmpty || bytes.length > 5 * 1024 * 1024) throw StateError('Usa una foto menor de 5 MB.');
         String fileName = 'devoluciones/${widget.solicitud.id}_${DateTime.now().millisecondsSinceEpoch}.jpg';
         Reference ref = FirebaseStorage.instance.ref().child(fileName);
         
-        UploadTask uploadTask = ref.putFile(file);
+        UploadTask uploadTask = ref.putData(bytes, SettableMetadata(contentType: 'image/jpeg'));
         TaskSnapshot snapshot = await uploadTask;
         urlFinalFoto = await snapshot.ref.getDownloadURL();
       }
@@ -1256,8 +1260,8 @@ class _ReporteDevolucionModalState extends State<ReporteDevolucionModal> {
                                   Positioned.fill(
                                     child: ClipRRect(
                                       borderRadius: BorderRadius.circular(14),
-                                      child: Image.file(
-                                        File(_imagenLocalRuta!), 
+                                      child: Image.memory(
+                                        _imagenBytes!,
                                         width: double.infinity, 
                                         fit: BoxFit.cover,
                                         opacity: const AlwaysStoppedAnimation(0.6),

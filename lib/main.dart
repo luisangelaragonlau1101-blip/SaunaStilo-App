@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'screens/local_party_screen.dart';
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -8,6 +9,8 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
 
 import 'firebase_options.dart';
+import 'services/offline_workspace.dart';
+import 'widgets/screen_security_guard.dart';
 import 'providers/seguimiento_cotizaciones_provider.dart';
 import 'screens/wrapper.dart';
 import 'services/cajita_herramientas_service.dart';
@@ -40,6 +43,7 @@ class _SaunaStiloBootstrapState extends State<SaunaStiloBootstrap> {
     if (Firebase.apps.isEmpty) {
       await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform).timeout(const Duration(seconds: 25));
     }
+    await OfflineWorkspace.configure();
   }
   void _retry() => setState(() => _startup = _initializeApp());
 
@@ -62,6 +66,7 @@ class _SaunaStiloBootstrapState extends State<SaunaStiloBootstrap> {
                 const Text('No pudimos conectar.', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
                 const SizedBox(height: 12),
                 FilledButton.icon(onPressed: _retry, icon: const Icon(Icons.refresh_rounded), label: const Text('REINTENTAR')),
+                Builder(builder: (nav) => TextButton.icon(onPressed: () => Navigator.of(nav).push(MaterialPageRoute<void>(builder: (_) => const LocalPartyScreen())), icon: const Icon(Icons.sports_esports_rounded), label: const Text('Juegos sin conexión · hasta 4'))),
               ],
             ]),
           ))),
@@ -84,7 +89,7 @@ class MyApp extends StatelessWidget {
         title: 'Sauna Stilo', debugShowCheckedModeBanner: false,
         localizationsDelegates: const [GlobalMaterialLocalizations.delegate, GlobalWidgetsLocalizations.delegate, GlobalCupertinoLocalizations.delegate],
         supportedLocales: const [Locale('es', 'MX'), Locale('es', 'ES')],
-        theme: _futureTheme(), home: Wrapper(),
+        theme: _futureTheme(), builder: (context, child) => ScreenSecurityGuard(child: child ?? const SizedBox.shrink()), home: Wrapper(),
       ),
     );
   }

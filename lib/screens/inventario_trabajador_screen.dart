@@ -1,3 +1,4 @@
+import '../widgets/warehouse_header.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -20,17 +21,17 @@ class _InventarioTrabajadorScreenState extends State<InventarioTrabajadorScreen>
   bool _estaBuscando = false; 
   String _filtroStock = "Todos"; 
 
-  static const Color colorFondo = Color(0xFF121212); 
-  static const Color colorTarjeta = Color(0xFF1E1E1E); 
+  static const Color colorFondo = Color(0xFF000000);
+  static const Color colorTarjeta = Color(0xFF111012);
   static const Color colorTextoPrimario = Color(0xFFFDFDFD);
-  static const Color colorAcento = Color(0xFFFFDE21); 
-  static const Color colorRosa = Color(0xFFE040FB);      
-  static const Color colorAzul = Color(0xFF00B0FF);      
-  static const Color colorMorado = Color(0xFF9400D3);    
-  static const Color colorRojoCoral = Color(0xFFFF5252); 
-  static const Color colorRosaVibrante = Color(0xFFFF3399);
+  static const Color colorAcento = Color(0xFFB7FF2A);
+  static const Color colorRosa = Color(0xFFC798FF);
+  static const Color colorAzul = Color(0xFFC798FF);
+  static const Color colorMorado = Color(0xFFC13CFF);
+  static const Color colorRojoCoral = Color(0xFFFF5252);
+  static const Color colorRosaVibrante = Color(0xFFFF729C);
   static const Color colorBlanco = Color(0xFFFFFFFF);
-  static const Color colorVerde1 = Color(0xFF33CC33);
+  static const Color colorVerde1 = Color(0xFF7CE3BD);
 
   @override
   void initState() {
@@ -247,6 +248,7 @@ class _InventarioTrabajadorScreenState extends State<InventarioTrabajadorScreen>
 
           return Column(
             children: [
+              if (MediaQuery.sizeOf(context).height > 650 && MediaQuery.textScalerOf(context).scale(1) < 1.5) const Padding(padding: EdgeInsets.fromLTRB(16, 8, 16, 8), child: WarehouseHeader(title: 'Todo en su lugar.', subtitle: 'Existencias · Herramientas · Insumos', compact: true)),
               // --- FILTROS DE STOCK (CHIPS) ---
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
