@@ -19,6 +19,14 @@ jobs:
       - name: Apply bounded reviewed source edits
         run: |
           python3 .maintenance/finalize-task-warehouse.py
+          python3 - <<'PY'
+          import subprocess
+          from pathlib import Path
+          for name in subprocess.check_output(['git','diff','--name-only'],text=True).splitlines():
+            if name.startswith('lib/screens/') and name.endswith('.dart'):
+              p=Path(name)
+              p.write_text(''.join(line.rstrip()+'\n' if 'static const Color' in line else line for line in p.read_text().splitlines(keepends=True)))
+          PY
           git diff --check
           mkdir -p smoke-results
       - uses: actions/setup-node@v4
