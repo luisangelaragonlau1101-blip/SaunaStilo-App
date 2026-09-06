@@ -1,50 +1,66 @@
 name: Build Android APK
-
 on:
   workflow_dispatch:
   push:
-    branches:
-      - main
-    paths-ignore:
-      - "README.md"
-
+    branches: [main, release/android-apk-20260906]
+    paths-ignore: ['README.md']
 permissions:
   contents: read
-
+concurrency:
+  group: android-apk-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   build-apk:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
-
+    timeout-minutes: 35
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
-
       - name: Set up Java 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: "17"
-
+          java-version: '17'
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
           channel: stable
           cache: true
-
       - name: Install dependencies
         run: flutter pub get
-
-      - name: Analyze project
-        run: flutter analyze lib --no-fatal-infos --no-fatal-warnings
-
-      - name: Build release APK
-        run: flutter build apk --release
-
+      - name: Analyze source without suppressing errors
+        run: |
+          mkdir -p apk-report
+          flutter analyze lib --no-fatal-infos --no-fatal-warnings > apk-report/analyze.log 2>&1 || { grep -E 'error [•]|error -|issues found' apk-report/analyze.log; exit 1; }
+      - name: Verify existing role navigation and audio workflows
+        run: flutter test test/release_navigation_test.dart test/team_workflows_test.dart test/people_release_test.dart test/social_audio_test.dart
+      - name: Build installable APK with the existing internal signing configuration
+        run: |
+          flutter build apk --release --build-name=3.0.1 --build-number=30001 > apk-report/build.log 2>&1 || { tail -n 180 apk-report/build.log; exit 1; }
+          tail -n 25 apk-report/build.log
+      - name: Verify package signature and record provenance
+        run: |
+          set -euo pipefail
+          mkdir -p apk-delivery
+          cp build/app/outputs/flutter-apk/app-release.apk apk-delivery/Sauna-Stilo-3.0.1-Android.apk
+          TOOLS="$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -1)"
+          "$TOOLS/apksigner" verify --verbose --print-certs apk-delivery/Sauna-Stilo-3.0.1-Android.apk > apk-report/signature.txt
+          "$TOOLS/aapt" dump badging apk-delivery/Sauna-Stilo-3.0.1-Android.apk > apk-report/package.txt
+          git rev-parse HEAD > apk-report/source-commit.txt
+          cp pubspec.lock apk-report/pubspec.lock
+          (cd apk-delivery && sha256sum Sauna-Stilo-3.0.1-Android.apk > SHA256SUMS.txt)
+          printf 'Sauna Stilo 3.0.1 (30001)\nInstalador directo de prueba interna. Firma de desarrollo existente; no publicado en Google Play.\nContiene las funciones de la versión web del commit 2db07850811b12d723acfc6ad3b06c7a0d5660cb y correcciones de compilación.\nNo se activaron servicios de Firebase ni voz personalizada. No probado en un teléfono físico.\n' > apk-delivery/LEEME.txt
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: SaunaStilo-Android
-          path: build/app/outputs/flutter-apk/app-release.apk
+          path: apk-delivery
           if-no-files-found: error
           retention-days: 30
+      - name: Upload build diagnostics without credentials
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Android-build-report
+          path: apk-report
+          retention-days: 7
