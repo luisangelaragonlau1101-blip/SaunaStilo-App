@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'screens/local_party_screen.dart';
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -65,6 +66,7 @@ class _SaunaStiloBootstrapState extends State<SaunaStiloBootstrap> {
                 const Text('No pudimos conectar.', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
                 const SizedBox(height: 12),
                 FilledButton.icon(onPressed: _retry, icon: const Icon(Icons.refresh_rounded), label: const Text('REINTENTAR')),
+                Builder(builder: (nav) => TextButton.icon(onPressed: () => Navigator.of(nav).push(MaterialPageRoute<void>(builder: (_) => const LocalPartyScreen())), icon: const Icon(Icons.sports_esports_rounded), label: const Text('Juegos sin conexión · hasta 4'))),
               ],
             ]),
           ))),

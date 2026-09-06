@@ -1,3 +1,4 @@
+import 'local_party_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -172,6 +173,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           ]),
                         ),
                         const SizedBox(height: 22),
+                        TextButton.icon(onPressed: _isLoading ? null : () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const LocalPartyScreen())), icon: const Icon(Icons.sports_esports_rounded), label: const Text('Juegos sin conexión · hasta 4')),
                         Text('SAUNA STILO · INTERFAZ 3.0', textAlign: TextAlign.center,
                           style: GoogleFonts.inter(color: Colors.white60, fontSize: 10,
                             fontWeight: FontWeight.w700, letterSpacing: 1.45)),

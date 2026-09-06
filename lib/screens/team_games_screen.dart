@@ -1,3 +1,4 @@
+import 'local_party_screen.dart';
 import 'dart:async';
 import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -14,7 +15,7 @@ class TeamGamesScreen extends StatefulWidget{
   State<TeamGamesScreen> createState()=>_GamesState();
 }
 class _GamesState extends State<TeamGamesScreen>{
-  late final _service=TeamGamesService();bool _busy=false;final _ids=<String,String>{};
+  late final _service=TeamGamesService();bool _busy=false;bool _remote=false;final _ids=<String,String>{};
   Future<void> _invite()async{
     final person=await showModalBottomSheet<UserModel>(context:context,isScrollControlled:true,useSafeArea:true,builder:(c)=>SizedBox(height:MediaQuery.sizeOf(c).height*.65,child:Column(children:[const Padding(padding:EdgeInsets.all(20),child:Text('Invitar a jugar Gato',style:TextStyle(fontSize:22,fontWeight:FontWeight.w800))),Expanded(child:StreamBuilder<QuerySnapshot<Map<String,dynamic>>>(stream:FirebaseFirestore.instance.collection('usuarios').snapshots(),builder:(c,s){
       if(s.hasError)return const Center(child:Text('No se pudo consultar el equipo.'));
@@ -30,18 +31,17 @@ class _GamesState extends State<TeamGamesScreen>{
     finally{if(mounted)setState(()=>_busy=false);}
   }
   @override
-  Widget build(BuildContext context)=>DefaultTabController(length:2,child:Scaffold(appBar:AppBar(title:const Text('Pausa Stilo · Juegos'),bottom:const TabBar(tabs:[Tab(text:'En este teléfono'),Tab(text:'Con el equipo')])),body:TabBarView(children:[
-    ListView(padding:const EdgeInsets.all(20),children:[const Text('Una pausa para conectar',style:TextStyle(fontSize:25,fontWeight:FontWeight.w800)),const SizedBox(height:12),const Text('Dos juegos para turnarse en el mismo teléfono, incluso sin Internet. Sin apuestas ni compras.',style:TextStyle(color:Colors.white60)),const SizedBox(height:16),
-      _tile('Gato','Dos personas · mismo teléfono',Icons.grid_3x3_rounded,0,()=>Navigator.push(context,MaterialPageRoute<void>(builder:(_)=>TeamGameBoard(user:widget.user)))),
-      _tile('Memoria','Encuentra pares · dos jugadores',Icons.extension_outlined,2,()=>Navigator.push(context,MaterialPageRoute<void>(builder:(_)=>const TeamMemoryGame()))),
-    ]),
-    Column(children:[Padding(padding:const EdgeInsets.all(18),child:FilledButton.icon(onPressed:_busy?null:_invite,icon:const Icon(Icons.person_add_alt),label:Text(_busy?'Creando invitación…':'Invitar a una persona'))),const Padding(padding:EdgeInsets.symmetric(horizontal:20),child:Text('Cada jugador usa su cuenta. Necesitan Internet para aceptar y registrar turnos.',style:TextStyle(color:Colors.white60))),Expanded(child:StreamBuilder<QuerySnapshot<Map<String,dynamic>>>(stream:_service.games.where('jugadores',arrayContains:widget.user.id).snapshots(includeMetadataChanges:true),builder:(c,s){
+  Widget build(BuildContext context)=>Scaffold(backgroundColor:Colors.black,
+    appBar:AppBar(title:const Text('Pausa Stilo · Juegos')),
+    body:Column(children:[Padding(padding:const EdgeInsets.symmetric(horizontal:16),child:Wrap(spacing:10,runSpacing:8,children:[
+      ChoiceChip(label:const Text('Sin Wi-Fi · hasta 4'),selected:!_remote,onSelected:(_)=>setState(()=>_remote=false)),
+      ChoiceChip(label:const Text('Gato en línea'),selected:_remote,onSelected:(_)=>setState(()=>_remote=true)),
+    ])),Expanded(child:_remote?Column(children:[Padding(padding:const EdgeInsets.all(18),child:FilledButton.icon(onPressed:_busy?null:_invite,icon:const Icon(Icons.person_add_alt),label:Text(_busy?'Creando invitación…':'Invitar a una persona'))),const Padding(padding:EdgeInsets.symmetric(horizontal:20),child:Text('Cada jugador usa su cuenta. Necesitan Internet para aceptar y registrar turnos.',style:TextStyle(color:Colors.white60))),Expanded(child:StreamBuilder<QuerySnapshot<Map<String,dynamic>>>(stream:_service.games.where('jugadores',arrayContains:widget.user.id).snapshots(includeMetadataChanges:true),builder:(c,s){
       if(s.hasError)return const Center(child:Padding(padding:EdgeInsets.all(24),child:Text('El servidor no autorizó consultar partidas. Administración debe publicar las reglas de esta versión. Los juegos locales siguen disponibles.')));
       if(!s.hasData)return const Center(child:CircularProgressIndicator());
       final docs=s.data!.docs.toList()..sort((a,b){int date(Map<String,dynamic>d)=>d['actualizadaEn']is Timestamp?(d['actualizadaEn']as Timestamp).millisecondsSinceEpoch:0;return date(b.data()).compareTo(date(a.data()));});
       return ListView(padding:const EdgeInsets.all(16),children:[OfflineDataBadge(cached:s.data!.metadata.isFromCache),if(docs.isEmpty)const ListTile(title:Text('Aún no hay partidas. Invita a un compañero.')),for(final d in docs)Card(child:ListTile(leading:const Icon(Icons.sports_esports_outlined,color:Color(0xFFB7FF2A)),title:Text((d.data()['nombres']as List).join(' vs. ')),subtitle:Text(d.data()['estado'].toString()),onTap:()=>Navigator.push(context,MaterialPageRoute<void>(builder:(_)=>TeamGameBoard(user:widget.user,gameId:d.id))))) ]);
-    }))]),
-  ])));
+    }))]):const LocalPartyLobby())]));
   Widget _tile(String title,String text,IconData icon,int color,VoidCallback tap)=>Card(child:ListTile(contentPadding:const EdgeInsets.all(18),leading:StiloOrbitIcon(icon:icon,color:stiloAccents[color],size:52,active:true),title:Text(title,style:const TextStyle(fontSize:21,fontWeight:FontWeight.w800)),subtitle:Text(text),trailing:const Icon(Icons.chevron_right_rounded),onTap:tap));
 }
 class TeamGameBoard extends StatefulWidget{
