@@ -163,6 +163,9 @@ exports.updateAttendance = onCall(
       throw new HttpsError('permission-denied', 'Tu perfil no está activo.');
     }
     const profileData = profile.data() || {};
+    if (profileData.rol === 'admin' || profileData.activo === false) {
+      throw new HttpsError('permission-denied', 'Administración no registra asistencia; esta cuenta solo supervisa al equipo.');
+    }
     const dateKey = mexicoDateKey();
     const attendanceRef = db.collection('asistencias').doc(`${uid}_${dateKey}`);
     const now = new Date();

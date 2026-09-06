@@ -2,6 +2,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import '../models/user_model.dart';
 import '../services/team_profile_helpers.dart';
+import 'stilo_orbit.dart';
+
+const recognitionIcons = <String, IconData>{'calidad': Icons.verified_rounded, 'sauna': Icons.local_fire_department_rounded, 'equipo': Icons.groups_rounded, 'maestria': Icons.handyman_rounded, 'seguridad': Icons.shield_rounded, 'innovacion': Icons.auto_awesome_rounded, 'puntualidad': Icons.timer_rounded, 'lugar': Icons.location_on_rounded};
 
 class TeamProfileDetails extends StatelessWidget {
   final UserModel usuarioActual;
@@ -31,7 +34,7 @@ class TeamProfileDetails extends StatelessWidget {
       if (badges.isEmpty) const Text('Sin reconocimientos manuales todavía.', style: TextStyle(color: Colors.white60)),
       for (final b in badges) _entry(context, b, 'insigniasAdmin', Icons.verified_outlined),
       const SizedBox(height: 16),
-      _section(context, 'LUGARES DE INSTALACIÓN', Icons.location_on_outlined, () => _add(context, 'lugaresInstalacion', 'Agregar lugar', 'Ciudad y estado', 'Proyecto o participación (opcional)', places.length), editable: _admin),
+      _section(context, 'ESTADOS Y LUGARES DE INSTALACIÓN', Icons.location_on_outlined, () => _add(context, 'lugaresInstalacion', 'Agregar lugar', 'Estado y ciudad donde participó', 'Proyecto o participación (opcional)', places.length), editable: _admin),
       if (places.isEmpty) const Text('Administración puede agregar la trayectoria de esta persona.', style: TextStyle(color: Colors.white60)),
       for (final p in places) _entry(context, p, 'lugaresInstalacion', Icons.place_outlined),
     ]);
@@ -42,7 +45,8 @@ class TeamProfileDetails extends StatelessWidget {
     if (editable) IconButton(tooltip: title == 'LO QUE ME GUSTA' ? 'Editar mis gustos' : 'Agregar', onPressed: action, icon: Icon(title == 'LO QUE ME GUSTA' ? Icons.edit_outlined : Icons.add_circle_outline)),
   ]);
   Widget _entry(BuildContext context, Map item, String field, IconData icon) => Card(color: const Color(0xFF171217), child: ListTile(
-    leading: Icon(icon, color: const Color(0xFFB7FF2A)),
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+    leading: StiloOrbitIcon(icon: recognitionIcons[item['icono']] ?? icon, color: stiloAccents[(item['acento'] is int && item['acento'] >= 0 ? item['acento'] as int : (item['nombre']?.toString().length ?? 0)) % stiloAccents.length], size: 44, active: true),
     title: Text(item['nombre']?.toString() ?? '', style: const TextStyle(fontWeight: FontWeight.w700)),
     subtitle: (item['detalle']?.toString() ?? '').isEmpty ? null : Text(item['detalle'].toString()),
     trailing: !_admin ? null : IconButton(tooltip: 'Quitar de este perfil', icon: const Icon(Icons.delete_outline, size: 20), onPressed: () async {
@@ -63,15 +67,21 @@ class TeamProfileDetails extends StatelessWidget {
     if (!_admin) return;
     if (count >= 60) { _notice(context, 'Este perfil alcanzó 60 registros. Quita uno antes de agregar otro.'); return; }
     final first = TextEditingController(); final second = TextEditingController();
-    await _form(context, title: title, first: first, firstLabel: label, firstMax: 100, second: second, secondLabel: detail, secondMax: 200, requiredFirst: true, save: () => _ref.update({field: FieldValue.arrayUnion([{'nombre': first.text.trim(), 'detalle': second.text.trim(), 'otorgadoPor': usuarioActual.id, 'registradoEn': DateTime.now().toUtc().toIso8601String()}])}));
+    String iconKey = field == 'lugaresInstalacion' ? 'lugar' : 'calidad'; int accent = 0;
+    await _form(context, title: title, first: first, firstLabel: label, firstMax: 100, second: second, secondLabel: detail, secondMax: 200, requiredFirst: true, styleChanged: (icon, color) {iconKey = icon; accent = color;}, initialIcon: iconKey, save: () => _ref.update({field: FieldValue.arrayUnion([{'nombre': first.text.trim(), 'detalle': second.text.trim(), 'icono': iconKey, 'acento': accent, 'otorgadoPor': usuarioActual.id, 'registradoEn': DateTime.now().toUtc().toIso8601String()}])}));
     first.dispose(); second.dispose();
   }
-  Future<void> _form(BuildContext context, {required String title, required TextEditingController first, required String firstLabel, required int firstMax, required TextEditingController second, required String secondLabel, required int secondMax, required bool requiredFirst, required Future<void> Function() save}) async {
-    bool busy = false; String? error;
+  Future<void> _form(BuildContext context, {required String title, required TextEditingController first, required String firstLabel, required int firstMax, required TextEditingController second, required String secondLabel, required int secondMax, required bool requiredFirst, required Future<void> Function() save, void Function(String, int)? styleChanged, String initialIcon = 'calidad'}) async {
+    bool busy = false; String? error; String chosenIcon = initialIcon; int chosenAccent = 0;
     await showDialog<void>(context: context, barrierDismissible: false, builder: (dialog) => StatefulBuilder(builder: (c, update) => PopScope(canPop: !busy, child: AlertDialog(
       title: Text(title), content: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, children: [
         TextField(controller: first, maxLength: firstMax, enabled: !busy, decoration: InputDecoration(labelText: firstLabel)),
         TextField(controller: second, maxLength: secondMax, enabled: !busy, maxLines: 2, decoration: InputDecoration(labelText: secondLabel)),
+        if (styleChanged != null) ...[
+          const Text('Elige el símbolo y su color', style: TextStyle(color: Colors.white70)),
+          Wrap(spacing: 6, runSpacing: 8, children: [for (final e in recognitionIcons.entries) IconButton(tooltip: e.key, onPressed: busy ? null : () {update(() => chosenIcon = e.key); styleChanged(chosenIcon, chosenAccent);}, icon: StiloOrbitIcon(icon: e.value, color: stiloAccents[chosenAccent], size: 36, active: chosenIcon == e.key))]),
+          Wrap(spacing: 8, children: List.generate(stiloAccents.length, (i) => IconButton(tooltip: 'Color ${i + 1}', onPressed: busy ? null : () {update(() => chosenAccent = i); styleChanged(chosenIcon, chosenAccent);}, icon: Icon(chosenAccent == i ? Icons.check_circle_rounded : Icons.circle, color: stiloAccents[i])))),
+        ],
         const Text('No incluyas domicilios de clientes, contraseñas ni información privada.', style: TextStyle(fontSize: 11, color: Colors.white54)),
         if (error != null) Text(error!, style: const TextStyle(color: Colors.orangeAccent)),
       ])), actions: [TextButton(onPressed: busy ? null : () => Navigator.pop(dialog), child: const Text('Cancelar')), FilledButton(onPressed: busy ? null : () async {

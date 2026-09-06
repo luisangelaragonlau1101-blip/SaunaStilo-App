@@ -94,7 +94,7 @@ class _VozAdministracionScreenState extends State<VozAdministracionScreen> {
         const SizedBox(height: 16), _activateCard(),
         if (_message != null) ...[const SizedBox(height: 12), _messageCard(_message!)],
         const SizedBox(height: 18),
-        Text('Las muestras permanecen en esta pantalla hasta que las envías para crear la voz; al salir se descartan. La aplicación no muestra la voz como activa hasta recibir confirmación real del servidor. Online Smart conserva la voz del dispositivo; no es una clonación de tu voz.', textAlign: TextAlign.center, style: GoogleFonts.inter(color: Colors.white54, fontSize: 10.8, height: 1.5)),
+        Text('Las muestras permanecen en esta pantalla hasta que las envías para crear la voz; al salir se descartan. La aplicación no muestra la voz como activa hasta recibir confirmación real del servidor. En Online Smart, Escuchar usa el dispositivo. El botón Voz de Ángel permite solicitar la voz oficial después de activarla.', textAlign: TextAlign.center, style: GoogleFonts.inter(color: Colors.white54, fontSize: 10.8, height: 1.5)),
       ]),
     );
   }

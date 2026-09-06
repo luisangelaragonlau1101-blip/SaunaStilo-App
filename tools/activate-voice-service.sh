@@ -10,7 +10,7 @@ node -e 'if(Number(process.versions.node.split(".")[0])<22)process.exit(1)' || {
 gcloud projects describe "$PROJECT" --format='value(projectId)' | grep -Fx "$PROJECT" >/dev/null
 printf '\nSAUNA STILO · Publicación del servicio de voz\nProyecto: %s\n' "$PROJECT"
 printf 'Publicará solo estado, alta, activación y síntesis de voz. Habilita las APIs necesarias; no crea una voz, no envía grabaciones y no cambia reglas, usuarios ni facturación. El proveedor puede cobrar por uso.\n'
-printf 'Google debe autorizar Instant Custom Voice por separado. Este despliegue NO concede esa autorización y NO conecta automáticamente el iframe independiente de Online Smart a tu voz.\n'
+printf 'Google debe autorizar Instant Custom Voice por separado. Este despliegue NO concede esa autorización y no activa reproducción automática. El botón Voz de Ángel de la guía utilizará estas funciones una vez creada la voz.\n'
 read -r -p "Para autorizar, escribe $PROJECT: " CONFIRMATION
 [[ "$CONFIRMATION" == "$PROJECT" ]] || { echo 'Cancelado, sin cambios.'; exit 0; }
 BILLING="$(gcloud billing projects describe "$PROJECT" --format='value(billingEnabled)')"

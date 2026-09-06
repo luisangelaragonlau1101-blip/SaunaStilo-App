@@ -8,6 +8,8 @@ import '../models/user_model.dart';
 import '../services/notificaciones_service.dart';
 import '../services/social_service.dart';
 import '../widgets/team_profile_details.dart';
+import '../widgets/profile_networks.dart';
+import '../widgets/stilo_orbit.dart';
 
 class PerfilSocialScreen extends StatelessWidget {
   final UserModel usuarioActual;
@@ -164,6 +166,7 @@ class PerfilSocialScreen extends StatelessWidget {
                   children: [
                     _cabecera(context, nombre, rol, foto, cumpleanos),
                     TeamProfileDetails(usuarioActual: usuarioActual, perfilId: perfilId, data: perfil),
+                    ProfileNetworks(profileId: perfilId, editable: _esPropio, data: perfil['redesSociales']),
                     const SizedBox(height: 14),
                     _metricas(actividades, posts.length, totalInstalaciones),
                     const SizedBox(height: 20),
@@ -339,7 +342,7 @@ class PerfilSocialScreen extends StatelessWidget {
       logros.add(('Primera misión', Icons.flag_rounded, const Color(0xFF00E676)));
     }
     if (completadas.length >= 5) {
-      logros.add(('Cumplidor', Icons.task_alt_rounded, const Color(0xFF00B0FF)));
+      logros.add(('Cumplidor', Icons.task_alt_rounded, const Color(0xFFFF729C)));
     }
     if (evidencias >= 10) {
       logros.add(('Evidencia impecable', Icons.verified_rounded, const Color(0xFF8B5CF6)));
@@ -374,13 +377,13 @@ class PerfilSocialScreen extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                 decoration: BoxDecoration(
                   color: logro.$3.withOpacity(.13),
-                  borderRadius: BorderRadius.circular(13),
+                  borderRadius: BorderRadius.circular(28),
                   border: Border.all(color: logro.$3.withOpacity(.35)),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(logro.$2, color: logro.$3, size: 17),
+                    StiloOrbitIcon(icon: logro.$2, color: logro.$3, size: 34, active: true),
                     const SizedBox(width: 6),
                     Text(
                       logro.$1,
