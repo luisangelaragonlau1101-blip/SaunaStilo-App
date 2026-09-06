@@ -27,10 +27,10 @@ jobs:
           channel: stable
           cache: true
       - run: flutter pub get
-      - name: Verify existing work roles and offline games
+      - name: Verify work roles, rounds and introductory lessons
         run: |
           node --test tests/*.test.cjs
-          flutter test test/release_navigation_test.dart test/team_workflows_test.dart test/people_release_test.dart test/social_audio_test.dart test/operations_release_test.dart test/task_creation_test.dart test/party_games_test.dart
+          flutter test test/release_navigation_test.dart test/team_workflows_test.dart test/people_release_test.dart test/social_audio_test.dart test/operations_release_test.dart test/task_creation_test.dart test/party_games_test.dart test/academy_arcade_test.dart
       - uses: actions/configure-pages@v5
         with:
           enablement: true
@@ -43,7 +43,7 @@ jobs:
           sed -i "s/main.dart.js/main.${VERSION}.dart.js/g" "build/web/flutter_bootstrap.${VERSION}.js"
           sed -i "s/flutter_bootstrap.js/flutter_bootstrap.${VERSION}.js/g" build/web/index.html
           sed -i "s/__SAUNA_BUILD_VERSION__/${VERSION}/g" build/web/index.html
-          node -e "require('fs').writeFileSync('build/web/version.json', JSON.stringify({release:'3.2.0',commit:process.env.GITHUB_SHA,builtAt:new Date().toISOString()}))"
+          node -e "require('fs').writeFileSync('build/web/version.json', JSON.stringify({release:'3.3.0',commit:process.env.GITHUB_SHA,builtAt:new Date().toISOString()}))"
           cp web/reset.html build/web/reset.html
           cp web/flutter_service_worker.js build/web/flutter_service_worker.js
           node tools/prepare-offline.cjs
