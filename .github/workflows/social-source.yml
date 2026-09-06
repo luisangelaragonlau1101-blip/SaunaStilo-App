@@ -37,6 +37,11 @@ jobs:
               after=''.join(lines).encode()
               assert hashlib.sha256(after).hexdigest()==entry['sha256'],f'Final checksum mismatch: {name}'
               outputs[name]=after
+          name='lib/widgets/stilo_orbit.dart'
+          old=b'              ])))))));'
+          assert outputs[name].count(old)==1
+          outputs[name]=outputs[name].replace(old,b'              ]))))))));')
+          assert hashlib.sha256(outputs[name]).hexdigest()=='cf05a025554937aec2b6ffbfed3c05aa5e859443b5266a74a087c87cf80e95d8'
           for name,after in outputs.items():
               path=root/name; path.parent.mkdir(parents=True,exist_ok=True); path.write_bytes(after)
           print('Verified and applied',len(outputs),'application files; no production data changed.')
