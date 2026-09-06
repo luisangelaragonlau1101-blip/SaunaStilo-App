@@ -16,14 +16,19 @@ const {chromium}=require('playwright');const fs=require('node:fs');
      await capture.start(180);let rejected=false;try{await capture.start(180)}catch(_){rejected=true}
      await new Promise(r=>setTimeout(r,1600));
      const wav=await capture.stop(),h=new DataView(wav.buffer,wav.byteOffset,wav.byteLength);
-     let crossings=0,last=0;for(let i=44;i<wav.length;i+=2){const v=h.getInt16(i,true);if(last<0&&v>=0)crossings++;last=v}
+     // Oscillator and capture contexts start independently. Leading silence is not a change of pitch.
+     // Measure cycles over their actual sample interval; still require sufficient duration and playback.
+     let crossings=0,last=0,firstCross=-1,lastCross=-1;
+     for(let i=44;i<wav.length;i+=2){const v=h.getInt16(i,true);if(last<0&&v>=0){const sample=(i-44)/2;if(firstCross<0)firstCross=sample;lastCross=sample;crossings++;}last=v;}
+     const activeSeconds=(lastCross-firstCross)/24000;
+     const frequency=activeSeconds>0?(crossings-1)/activeSeconds:0;
      const seconds=(wav.length-44)/48000;const audio=new Audio(URL.createObjectURL(new Blob([wav],{type:'audio/wav'})));
      await new Promise((resolve,reject)=>{audio.onloadedmetadata=resolve;audio.onerror=reject;});await audio.play();await new Promise(r=>setTimeout(r,250));
      const advanced=audio.currentTime>0;audio.pause();URL.revokeObjectURL(audio.src);
-     return {input:rate,output:h.getUint32(24,true),seconds,frequency:crossings/seconds,duplicateStartRejected:rejected,playbackAdvanced:advanced,tracksStopped:dest.stream.getTracks().every(t=>t.readyState==='ended')};
+     return {input:rate,output:h.getUint32(24,true),seconds,activeSeconds,frequency,duplicateStartRejected:rejected,playbackAdvanced:advanced,tracksStopped:dest.stream.getTracks().every(t=>t.readyState==='ended')};
     } finally {navigator.mediaDevices.getUserMedia=original;window.AudioContext=Native;o.stop();await source.close();await capture.dispose();}
    },rate);
-   results.push(result);if(result.output!==24000||result.seconds<1||result.seconds>2||Math.abs(result.frequency-440)>12||!result.playbackAdvanced||!result.tracksStopped||!result.duplicateStartRejected)throw Error('Audio capture/playback contract failed');
+   results.push(result);if(result.output!==24000||result.seconds<1||result.seconds>2||result.activeSeconds<0.8||Math.abs(result.frequency-440)>5||!result.playbackAdvanced||!result.tracksStopped||!result.duplicateStartRejected)throw Error('Audio capture/playback contract failed');
    await page.close();
   }
   const page=await browser.newPage({viewport:{width:390,height:844}});
