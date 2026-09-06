@@ -39,20 +39,11 @@ jobs:
                   lines[a:b]=text.splitlines(keepends=True);previous=a
               after=''.join(lines).encode();assert hashlib.sha256(after).hexdigest()==e['sha256'],f'Output changed: {name}'
               outputs[name]=after
-          name='lib/screens/trabajador_control_herramientas_screen.dart'
-          outputs[name]=outputs[name].replace(b'_imagenBytes!, \n',b'_imagenBytes!,\n')
-          name='lib/screens/modal_asignar_actividades.dart'
-          assert outputs[name].count(b'      ])))));')==1
-          outputs[name]=outputs[name].replace(b'      ])))));',b'      ]))))));')
-          name='lib/services/offline_workspace.dart'
-          text=outputs[name].decode(); start=text.index('      if (kIsWeb)'); end=text.index('    } catch',start)
-          assert 'enablePersistence' in text[start:end]
-          text=text[:start]+'      FirebaseFirestore.instance.settings = Settings(persistenceEnabled: trusted, cacheSizeBytes: 40 * 1024 * 1024, webPersistentTabManager: kIsWeb && trusted ? const WebPersistentMultipleTabManager() : null);\n'+text[end:]
-          outputs[name]=text.encode()
           for name,after in outputs.items():
               p=root/name;p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(after)
-          print('Applied',len(outputs),'verified files and reviewed SDK corrections; no business data changes.')
+          print('Applied',len(outputs),'verified application files.')
           PY
+          python3 .maintenance/ops.followup.py
           git diff --check
       - uses: actions/setup-node@v4
         with:
@@ -68,7 +59,7 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
-      - name: Test task roles warehouse atomic history and private games
+      - name: Test task roles warehouse atomic history and complete private games
         run: |
           npm install --prefix /tmp/sauna-rules --no-audit --no-fund firebase firebase-tools @firebase/rules-unit-testing
           NODE_PATH=/tmp/sauna-rules/node_modules /tmp/sauna-rules/node_modules/.bin/firebase emulators:exec --project demo-sauna-team --only firestore,storage 'NODE_PATH=/tmp/sauna-rules/node_modules node --test tools/security.test.cjs tools/people-security.test.cjs tools/social-security.test.cjs tools/operations-security.test.cjs' | tee smoke-results/security-tests.txt
