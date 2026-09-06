@@ -1,585 +1,74 @@
-import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../services/notificaciones_service.dart';
+import '../services/warehouse_operations_service.dart';
+import '../services/offline_workspace.dart';
+import '../widgets/stilo_orbit.dart';
 
-class AdminSolicitudesHerramientasScreen extends StatefulWidget {
-  const AdminSolicitudesHerramientasScreen({Key? key}) : super(key: key);
-
+class AdminSolicitudesHerramientasScreen extends StatefulWidget{
+  const AdminSolicitudesHerramientasScreen({super.key});
   @override
-  State<AdminSolicitudesHerramientasScreen> createState() => _AdminSolicitudesHerramientasScreenState();
+  State<AdminSolicitudesHerramientasScreen> createState()=>_WarehouseState();
 }
-
-class _AdminSolicitudesHerramientasScreenState extends State<AdminSolicitudesHerramientasScreen> with SingleTickerProviderStateMixin {
-  late TabController _tabController;
-
+class _WarehouseState extends State<AdminSolicitudesHerramientasScreen>{
+  String? _busy;String _search='';
+  Future<void> _action(String id,String action)async{
+    final label=action=='salida'?'Autorizar salida':action=='entrada'?'Confirmar entrada física':'Rechazar solicitud';
+    final yes=await showDialog<bool>(context:context,builder:(c)=>AlertDialog(title:Text(label),content:Text(action=='entrada'?'Confirma únicamente cuando recibas físicamente la herramienta. La entrada quedará registrada a tu nombre; si tiene daño irá a reparación.':'Se verificará la solicitud vigente. El movimiento y su historial se confirman juntos, con conexión.'),actions:[TextButton(onPressed:()=>Navigator.pop(c,false),child:const Text('Cancelar')),FilledButton(onPressed:()=>Navigator.pop(c,true),child:const Text('Confirmar'))]));
+    if(yes!=true||!mounted||_busy!=null)return;setState(()=>_busy=id);
+    try{await WarehouseOperationsService().apply(id,action);if(mounted)ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text('Movimiento confirmado. El historial quedó guardado.')));}
+    catch(e){if(mounted)ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(e is StateError?e.message.toString():e is FirebaseException&&e.code=='permission-denied'?'El servidor negó el permiso. Deben publicarse las reglas de Almacén de esta versión.':'No se confirmó el movimiento. Revisa Internet y actualiza la lista antes de reintentar.')));}
+    finally{if(mounted)setState(()=>_busy=null);}
+  }
   @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+  Widget build(BuildContext context)=>DefaultTabController(length:5,child:Scaffold(backgroundColor:Colors.black,appBar:AppBar(title:const Text('Almacén · movimientos'),bottom:const TabBar(isScrollable:true,tabAlignment:TabAlignment.start,tabs:[Tab(text:'Solicitudes'),Tab(text:'En préstamo'),Tab(text:'Recibir'),Tab(text:'Historial'),Tab(text:'Entre compañeros')])),body:Column(children:[
+    Padding(padding:const EdgeInsets.all(16),child:TextField(onChanged:(v)=>setState(()=>_search=v.toLowerCase().trim()),decoration:const InputDecoration(prefixIcon:Icon(Icons.search),hintText:'Buscar persona o herramienta'))),
+    Expanded(child:TabBarView(children:[for(var i=0;i<4;i++)_list(i),_transfers()])),
+  ])));
+  Widget _list(int tab)=>StreamBuilder<QuerySnapshot<Map<String,dynamic>>>(stream:FirebaseFirestore.instance.collection('solicitudes_herramientas').snapshots(includeMetadataChanges:true),builder:(c,s){
+    if(s.hasError)return const Center(child:Padding(padding:EdgeInsets.all(24),child:Text('No se pudo consultar Almacén. Revisa el rol de tu cuenta y los permisos del servidor.')));
+    if(!s.hasData)return const Center(child:CircularProgressIndicator());
+    final docs=s.data!.docs.where((doc){final d=doc.data();if(!'${d['trabajadorNombre']} ${d['nombreInsumo']}'.toLowerCase().contains(_search))return false;
+      final loan=d['estatus']=='aprobada'&&d['esRetornable']==true&&d['devueltoConfirmadoAdmin']!=true;
+      return switch(tab){0=>d['estatus']=='pendiente',1=>loan,2=>loan&&d['marcadoDevueltoTrabajador']==true,_=>true};}).toList();
+    docs.sort((a,b)=>_time(b.data()['fechaSolicitud']).compareTo(_time(a.data()['fechaSolicitud'])));
+    return Column(children:[OfflineDataBadge(cached:s.data!.metadata.isFromCache,pending:s.data!.metadata.hasPendingWrites),Expanded(child:docs.isEmpty?const Center(child:Text('No hay movimientos en esta vista.')):ListView.builder(padding:const EdgeInsets.fromLTRB(16,0,16,24),itemCount:docs.length,itemBuilder:(c,i){final doc=docs[i],d=doc.data();final returned=d['devueltoConfirmadoAdmin']==true;
+      return Card(child:Padding(padding:const EdgeInsets.all(18),child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+        Row(children:[StiloOrbitIcon(icon:Icons.handyman_outlined,color:stiloAccents[tab],size:44),const SizedBox(width:12),Expanded(child:Text('${d['nombreInsumo']??'Herramienta'} × ${d['cantidad']??1}',style:const TextStyle(fontWeight:FontWeight.w800,fontSize:17)))]),
+        const SizedBox(height:10),Text('${d['trabajadorNombre']??'Integrante'} · ${returned?'Recibida en almacén':d['estatus']??'pendiente'}'),
+        if(d['tieneReporteFalla']==true)const Text('Reportada con daño: recibir en reparación',style:TextStyle(color:Colors.orangeAccent)),
+        if((d['observacionesDevolucion']??'').toString().isNotEmpty)Text(d['observacionesDevolucion'].toString()),
+        const SizedBox(height:12),Wrap(spacing:8,runSpacing:8,children:[
+          if(d['estatus']=='pendiente')...[
+            FilledButton(onPressed:_busy!=null?null:()=>_action(doc.id,'salida'),child:const Text('Autorizar salida')),
+            TextButton(onPressed:_busy!=null?null:()=>_action(doc.id,'rechazo'),child:const Text('Rechazar'))],
+          if(d['estatus']=='aprobada'&&d['esRetornable']==true&&!returned)OutlinedButton.icon(onPressed:_busy!=null?null:()=>_action(doc.id,'entrada'),icon:const Icon(Icons.move_to_inbox_outlined),label:const Text('Confirmar entrada')),
+          TextButton.icon(onPressed:()=>_history(doc),icon:const Icon(Icons.history_rounded),label:const Text('Ver historial')),
+        ]),if(_busy==doc.id)const LinearProgressIndicator(),
+      ])));
+    }))]);
+  });
+  int _time(dynamic v)=>v is Timestamp?v.millisecondsSinceEpoch:0;
+  void _history(QueryDocumentSnapshot<Map<String,dynamic>> doc){
+    showModalBottomSheet<void>(context:context,isScrollControlled:true,useSafeArea:true,builder:(c)=>SizedBox(height:MediaQuery.sizeOf(c).height*.7,child:Column(children:[
+      Padding(padding:const EdgeInsets.all(20),child:Text('Historial · ${doc.data()['nombreInsumo']??''}',style:const TextStyle(fontSize:20,fontWeight:FontWeight.w800))),
+      const Padding(padding:EdgeInsets.symmetric(horizontal:20),child:Text('Se conserva la solicitud original. Los movimientos nuevos incluyen quién autorizó y quién recibió.',style:TextStyle(color:Colors.white60))),
+      Expanded(child:StreamBuilder<QuerySnapshot<Map<String,dynamic>>>(stream:doc.reference.collection('historial').orderBy('fecha').snapshots(),builder:(c,s){
+        if(s.hasError)return const Center(child:Text('No se pudo leer el historial. Revisa los permisos.'));
+        if(!s.hasData)return const Center(child:CircularProgressIndicator());
+        return ListView(children:[ListTile(leading:const Icon(Icons.receipt_long_outlined),title:const Text('Solicitud original'),subtitle:Text('${doc.data()['trabajadorNombre']??''} · ${_date(doc.data()['fechaSolicitud'])}')),
+          if(s.data!.docs.isEmpty)const ListTile(title:Text('Sin eventos nuevos'),subtitle:Text('Las solicitudes antiguas conservan sus datos, pero no inventamos la firma de movimientos históricos.')),
+          for(final e in s.data!.docs)ListTile(leading:const Icon(Icons.verified_outlined),title:Text(e.data()['accion'].toString()),subtitle:Text('${e.data()['responsableNombre']} · ${_date(e.data()['fecha'])}'))]);
+      })),
+    ])));
   }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF121212),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF121212),
-        elevation: 0,
-        title: Text(
-          "CONTROL DE HERRAMIENTAS",
-          style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 1.2, color: Colors.white),
-        ),
-        centerTitle: true,
-        iconTheme: const IconThemeData(color: Colors.white),
-        bottom: TabBar(
-          controller: _tabController,
-          indicatorColor: const Color(0xFFFFDE21),
-          labelColor: const Color(0xFFFFDE21),
-          unselectedLabelColor: Colors.white54,
-          labelStyle: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 13),
-          indicatorWeight: 3,
-          tabs: const [
-            Tab(text: "NUEVAS"),
-            Tab(text: "EN PRÉSTAMO"),
-            Tab(text: "HISTORIAL"),
-          ],
-        ),
-      ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          _buildListaPorEstatus(['pendiente']), // Pendientes
-          _buildListaPrestamosActivos(),        // Aprobadas, retornables y no devueltas
-          _buildListaPorEstatus(['rechazada', 'aprobada']), // Historial general (filtrado adentro)
-        ],
-      ),
-    );
-  }
-
-  // --- BUILDER PRINCIPAL DE LISTAS ---
-  Widget _buildListaPorEstatus(List<String> estatusFiltro) {
-    return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection('solicitudes_herramientas')
-          .where('estatus', whereIn: estatusFiltro)
-          .orderBy('fechaSolicitud', descending: true)
-          .snapshots(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator(color: Color(0xFFFFDE21)));
-        }
-        
-        var docs = snapshot.data?.docs ?? [];
-        
-        // Filtro especial para el historial (ocultar las que siguen en préstamo)
-        if (estatusFiltro.contains('aprobada') && estatusFiltro.contains('rechazada')) {
-          docs = docs.where((doc) {
-            final data = doc.data() as Map<String, dynamic>;
-            final esRetornable = data['esRetornable'] ?? false;
-            final devueltoAdmin = data['devueltoConfirmadoAdmin'] ?? false;
-            if (data['estatus'] == 'aprobada' && esRetornable && !devueltoAdmin) return false;
-            return true;
-          }).toList();
-        }
-
-        if (docs.isEmpty) {
-          return _buildEmptyState("No hay solicitudes en esta sección.");
-        }
-
-        return ListView.builder(
-          padding: const EdgeInsets.all(16),
-          itemCount: docs.length,
-          itemBuilder: (context, index) {
-            return _buildSolicitudCard(docs[index], isHistorial: estatusFiltro.length > 1);
-          },
-        );
-      },
-    );
-  }
-
-  // --- BUILDER PARA PRÉSTAMOS ACTIVOS ---
-  Widget _buildListaPrestamosActivos() {
-    return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection('solicitudes_herramientas')
-          .where('estatus', isEqualTo: 'aprobada')
-          .where('esRetornable', isEqualTo: true)
-          .where('devueltoConfirmadoAdmin', isEqualTo: false)
-          .snapshots(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator(color: Color(0xFFFFDE21)));
-        }
-        
-        final docs = snapshot.data?.docs ?? [];
-        if (docs.isEmpty) return _buildEmptyState("No hay herramientas en préstamo activo.");
-
-        return ListView.builder(
-          padding: const EdgeInsets.all(16),
-          itemCount: docs.length,
-          itemBuilder: (context, index) => _buildSolicitudCard(docs[index], isPrestamo: true),
-        );
-      },
-    );
-  }
-
-  // --- TARJETA DE SOLICITUD ---
-  Widget _buildSolicitudCard(DocumentSnapshot doc, {bool isHistorial = false, bool isPrestamo = false}) {
-    final data = doc.data() as Map<String, dynamic>;
-    final String id = doc.id;
-    final String trabajador = data['trabajadorNombre'] ?? 'Desconocido';
-    final String insumo = data['nombreInsumo'] ?? 'Sin nombre';
-    final int cantidad = data['cantidad'] ?? 1;
-    final bool esRetornable = data['esRetornable'] ?? false;
-    final String estatus = data['estatus'] ?? 'pendiente';
-    final String? notaAdmin = data['notaAdmin'];
-    final bool marcadoDevuelto = data['marcadoDevueltoTrabajador'] ?? false;
-    final Timestamp? limiteTs = data['fechaLimiteDevolucion'];
-    
-    // Extraer los nuevos campos de devolución
-    final bool tieneFalla = data['tieneReporteFalla'] ?? false;
-    final String? observaciones = data['observacionesDevolucion'];
-    final String? fotoUrl = data['fotoDevolucionUrl'];
-    
-    bool estaAtrasada = false;
-    if (isPrestamo && limiteTs != null) {
-      estaAtrasada = DateTime.now().isAfter(limiteTs.toDate());
-    }
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1E1E1E),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: estaAtrasada 
-            ? Colors.redAccent.withOpacity(0.5) 
-            : tieneFalla ? Colors.orangeAccent.withOpacity(0.5) : Colors.white10,
-          width: estaAtrasada || tieneFalla ? 1.5 : 1.0,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // HEADER CARD
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Text(
-                  trabajador.toUpperCase(),
-                  style: GoogleFonts.inter(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1),
-                ),
-              ),
-              _buildBadgeEstatus(estatus, esRetornable, isPrestamo, marcadoDevuelto),
-            ],
-          ),
-          const Divider(color: Colors.white10, height: 20),
-          
-          // INFO INSUMO
-          Row(
-            children: [
-              Icon(esRetornable ? Icons.handyman_rounded : Icons.format_paint_rounded, color: const Color(0xFFFFDE21), size: 24),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(insumo, style: GoogleFonts.inter(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 4),
-                    Text(
-                      "Cantidad solicitada: $cantidad  •  ${esRetornable ? 'RETORNABLE' : 'CONSUMIBLE'}",
-                      style: GoogleFonts.inter(color: Colors.white54, fontSize: 12),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-
-          // NOTA ADMIN (Stock 0 o requiere compra)
-          if (notaAdmin != null && notaAdmin.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(color: Colors.orange.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
-              child: Row(
-                children: [
-                  const Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 16),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(notaAdmin, style: GoogleFonts.inter(color: Colors.orangeAccent, fontSize: 12, fontStyle: FontStyle.italic)),
-                  ),
-                ],
-              ),
-            ),
-          ],
-
-          // NUEVO: SECCIÓN DE REPORTE DE DEVOLUCIÓN
-          if (marcadoDevuelto || isHistorial && (observaciones != null || tieneFalla)) ...[
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: tieneFalla ? Colors.redAccent.withOpacity(0.1) : Colors.cyanAccent.withOpacity(0.05),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: tieneFalla ? Colors.redAccent.withOpacity(0.3) : Colors.cyanAccent.withOpacity(0.2)),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(tieneFalla ? Icons.warning_rounded : Icons.info_outline, 
-                          color: tieneFalla ? Colors.redAccent : Colors.cyanAccent, size: 16),
-                      const SizedBox(width: 6),
-                      Text(
-                        tieneFalla ? "REPORTE DE DAÑO" : "Nota del trabajador",
-                        style: GoogleFonts.inter(
-                          color: tieneFalla ? Colors.redAccent : Colors.cyanAccent, 
-                          fontWeight: FontWeight.bold, 
-                          fontSize: 12
-                        ),
-                      ),
-                    ],
-                  ),
-                  if (observaciones != null && observaciones.isNotEmpty) ...[
-                    const SizedBox(height: 8),
-                    Text('"$observaciones"', style: GoogleFonts.inter(color: Colors.white70, fontSize: 13, fontStyle: FontStyle.italic)),
-                  ],
-                  if (fotoUrl != null && fotoUrl.isNotEmpty) ...[
-                    const SizedBox(height: 12),
-                    GestureDetector(
-                      onTap: () => _mostrarFotoEvidencia(context, fotoUrl),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.image_outlined, color: Colors.white54, size: 16),
-                          const SizedBox(width: 6),
-                          Text(
-                            "Ver foto adjunta", 
-                            style: GoogleFonts.inter(color: Colors.lightBlueAccent, fontSize: 13, decoration: TextDecoration.underline)
-                          ),
-                        ],
-                      ),
-                    ),
-                  ]
-                ],
-              ),
-            ),
-          ],
-
-          // FECHA LÍMITE (Si está en préstamo)
-          if (isPrestamo && limiteTs != null) ...[
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Icon(Icons.timer_outlined, color: estaAtrasada ? Colors.redAccent : Colors.cyanAccent, size: 14),
-                const SizedBox(width: 6),
-                Text(
-                  estaAtrasada ? "VENCIDO: ${DateFormat('dd/MM HH:mm').format(limiteTs.toDate())}" : "Límite: ${DateFormat('dd/MM/yyyy HH:mm').format(limiteTs.toDate())}",
-                  style: GoogleFonts.inter(color: estaAtrasada ? Colors.redAccent : Colors.cyanAccent, fontSize: 12, fontWeight: estaAtrasada ? FontWeight.bold : FontWeight.normal),
-                ),
-              ],
-            ),
-          ],
-
-          // BOTONES DE ACCIÓN
-          if (estatus == 'pendiente') ...[
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.redAccent,
-                      side: const BorderSide(color: Colors.redAccent),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    ),
-                    onPressed: () => _actualizarEstatus(id, 'rechazada', data),
-                    child: Text("Rechazar", style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.greenAccent,
-                      foregroundColor: Colors.black,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    ),
-                    onPressed: () => _aprobarSolicitud(id, data),
-                    child: Text("Aprobar", style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
-                  ),
-                ),
-              ],
-            )
-          ],
-
-          if (isPrestamo) ...[
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: marcadoDevuelto ? Colors.cyanAccent : Colors.white10,
-                  foregroundColor: marcadoDevuelto ? Colors.black : Colors.white,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                ),
-                onPressed: () => _confirmarDevolucion(id, data),
-                icon: const Icon(Icons.check_circle_outline, size: 18),
-                label: Text(
-                  marcadoDevuelto 
-                    ? (tieneFalla ? "Confirmar Recepción (Con Daño)" : "Confirmar Recepción") 
-                    : "Forzar Recepción (No marcado)",
-                  style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 13),
-                ),
-              ),
-            )
-          ]
-        ],
-      ),
-    );
-  }
-
-  void _mostrarFotoEvidencia(BuildContext context, String url) {
-    showDialog(
-      context: context,
-      builder: (ctx) => Dialog(
-        backgroundColor: Colors.transparent,
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(16),
-          child: Image.network(
-            url,
-            fit: BoxFit.contain,
-            loadingBuilder: (context, child, loadingProgress) {
-              if (loadingProgress == null) return child;
-              return Container(
-                height: 200,
-                color: const Color(0xFF161B22),
-                child: const Center(child: CircularProgressIndicator(color: Color(0xFFFFDE21))),
-              );
-            },
-            errorBuilder: (context, error, stackTrace) => Container(
-              height: 200,
-              color: const Color(0xFF161B22),
-              child: const Center(child: Icon(Icons.broken_image, color: Colors.white54, size: 50)),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Future<void> _aprobarSolicitud(String idSolicitud, Map<String, dynamic> data) async {
-    final bool esRetornable = data['esRetornable'] ?? false;
-    final String? insumoId = data['insumoId'];
-    final int cantidad = data['cantidad'] ?? 1;
-    
-    if (insumoId == null || insumoId.isEmpty) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(backgroundColor: Colors.red, content: Text("Error: El campo 'insumoId' está vacío."))
-        );
-      }
-      return;
-    }
-
-    Map<String, dynamic> updates = {'estatus': 'aprobada'};
-    if (esRetornable) {
-      updates['fechaLimiteDevolucion'] = DateTime.now().add(const Duration(hours: 24));
-    }
-
-    try {
-      final docInsumoRef = FirebaseFirestore.instance.collection('insumos_inventario').doc(insumoId);
-      final docSolicitudRef = FirebaseFirestore.instance.collection('solicitudes_herramientas').doc(idSolicitud);
-
-      await FirebaseFirestore.instance.runTransaction((transaction) async {
-        final docInsumo = await transaction.get(docInsumoRef);
-        
-        if (!docInsumo.exists) {
-          throw Exception("El insumo con ID '$insumoId' no existe en el inventario.");
-        }
-
-        final dataInsumo = docInsumo.data() as Map<String, dynamic>;
-        final dynamic cantidadActualRaw = dataInsumo['cantidad_disponible'];        
-        final int actual = (cantidadActualRaw is num) ? cantidadActualRaw.toInt() : int.tryParse(cantidadActualRaw.toString()) ?? 0;
-
-        if (actual >= cantidad) {
-          transaction.update(docInsumoRef, {'cantidad_disponible': actual - cantidad});
-          updates['notaAdmin'] = ""; 
-        } else {
-          updates['notaAdmin'] = "¡AGOTADO! Se aprobó sin stock suficiente en almacén. Requiere compra urgente.";
-        }
-
-        transaction.update(docSolicitudRef, updates);
-      });
-
-      final trabajadorId = data['trabajadorId']?.toString() ?? '';
-      if (trabajadorId.isNotEmpty) {
-        await FirebaseFirestore.instance.collection('notificaciones').add(
-          NotificacionesService.datosAviso(
-            titulo: 'Solicitud aprobada',
-            mensaje: '${data['nombreInsumo'] ?? 'Tu solicitud'} ya fue autorizada por almacén.',
-            tipo: 'almacen',
-            destinatarioId: trabajadorId,
-          ),
-        );
-      }
-      
-      if(mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(backgroundColor: Colors.green, content: Text("Solicitud procesada correctamente."))
-        );
-      }
-    } catch (e) {
-      print("Error en _aprobarSolicitud: $e");
-      if(mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(backgroundColor: Colors.red, content: Text("Error: ${e.toString().replaceAll('Exception: ', '')}"))
-        );
-      }
-    }
-  }
-
-  Future<void> _actualizarEstatus(String idSolicitud, String nuevoEstatus, Map<String, dynamic> data) async {
-    final db = FirebaseFirestore.instance;
-    final solicitudRef = db.collection('solicitudes_herramientas').doc(idSolicitud);
-    final trabajadorId = data['trabajadorId']?.toString() ?? '';
-    final batch = db.batch();
-    batch.update(solicitudRef, {'estatus': nuevoEstatus});
-    if (trabajadorId.isNotEmpty) {
-      final avisoRef = db.collection('notificaciones').doc();
-      batch.set(
-        avisoRef,
-        NotificacionesService.datosAviso(
-          titulo: nuevoEstatus == 'rechazada'
-              ? 'Solicitud no autorizada'
-              : 'Solicitud actualizada',
-          mensaje: '${data['nombreInsumo'] ?? 'Tu solicitud'} cambió a $nuevoEstatus.',
-          tipo: 'almacen',
-          destinatarioId: trabajadorId,
-        ),
-      );
-    }
-    await batch.commit();
-  }
-
- Future<void> _confirmarDevolucion(String idSolicitud, Map<String, dynamic> data) async {
-    final String insumoId = data['insumoId'];
-    final int cantidad = data['cantidad'] ?? 1;
-    final bool tieneFalla = data['tieneReporteFalla'] ?? false; 
-
-    try {
-      final docInsumoRef = FirebaseFirestore.instance.collection('insumos_inventario').doc(insumoId);
-      final docSolicitudRef = FirebaseFirestore.instance.collection('solicitudes_herramientas').doc(idSolicitud);
-
-      await FirebaseFirestore.instance.runTransaction((transaction) async {
-        final docInsumo = await transaction.get(docInsumoRef);
-        
-        if (docInsumo.exists) {
-          final dataInsumo = docInsumo.data() as Map<String, dynamic>;
-          
-          if (!tieneFalla) {
-            // --- FLUJO NORMAL: Se suma al stock disponible ---
-            final dynamic cantidadActualRaw = dataInsumo['cantidad_disponible'];          
-            final int actual = (cantidadActualRaw is num) ? cantidadActualRaw.toInt() : int.tryParse(cantidadActualRaw.toString()) ?? 0;
-
-            transaction.update(docInsumoRef, {'cantidad_disponible': actual + cantidad});
-          } else {
-            // --- NUEVO FLUJO CON DAÑO: Se suma al contador de reparación ---
-            final dynamic cantidadReparacionRaw = dataInsumo['en_reparacion'];          
-            final int actualReparacion = (cantidadReparacionRaw is num) ? cantidadReparacionRaw.toInt() : int.tryParse(cantidadReparacionRaw.toString()) ?? 0;
-
-            transaction.update(docInsumoRef, {'en_reparacion': actualReparacion + cantidad});
-          }
-        }
-
-        // Marcamos la solicitud como finalizada/devuelta por el admin
-        transaction.update(docSolicitudRef, {
-          'devueltoConfirmadoAdmin': true,
-        });
-      });
-
-      if(mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            backgroundColor: tieneFalla ? Colors.orange : Colors.cyan, 
-            content: Text(tieneFalla 
-              ? "Recepción confirmada. Enviada a la sección de reparaciones." 
-              : "Herramienta regresada al inventario."
-            )
-          )
-        );
-      }
-    } catch (e) {
-      if(mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(backgroundColor: Colors.red, content: Text("Error: $e"))
-        );
-      }
-    }
-  }
-
-  // --- COMPONENTES VISUALES SECUNDARIOS ---
-  Widget _buildBadgeEstatus(String estatus, bool retornable, bool isPrestamo, bool marcadoDevuelto) {
-    Color bg = Colors.white10;
-    Color text = Colors.white;
-    String label = estatus.toUpperCase();
-
-    if (estatus == 'pendiente') {
-      bg = Colors.orange.withOpacity(0.15);
-      text = Colors.orangeAccent;
-    } else if (estatus == 'rechazada') {
-      bg = Colors.red.withOpacity(0.15);
-      text = Colors.redAccent;
-    } else if (estatus == 'aprobada') {
-      if (isPrestamo) {
-        if (marcadoDevuelto) {
-          bg = Colors.cyan.withOpacity(0.15);
-          text = Colors.cyanAccent;
-          label = "LISTO P/ RECIBIR";
-        } else {
-          bg = Colors.blue.withOpacity(0.15);
-          text = Colors.lightBlueAccent;
-          label = "EN USO";
-        }
-      } else {
-        bg = Colors.green.withOpacity(0.15);
-        text = Colors.greenAccent;
-        label = retornable ? "DEVUELTO" : "ENTREGADO (Consumido)";
-      }
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(8)),
-      child: Text(label, style: GoogleFonts.inter(color: text, fontSize: 10, fontWeight: FontWeight.bold)),
-    );
-  }
-
-  Widget _buildEmptyState(String mensaje) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.inbox_rounded, color: Colors.white24, size: 60),
-          const SizedBox(height: 16),
-          Text(mensaje, style: GoogleFonts.inter(color: Colors.white54, fontSize: 14)),
-        ],
-      ),
-    );
-  }
+  String _date(dynamic v)=>v is Timestamp?DateFormat('dd/MM/yyyy HH:mm').format(v.toDate()):'Fecha no registrada';
+  Widget _transfers()=>StreamBuilder<QuerySnapshot<Map<String,dynamic>>>(stream:FirebaseFirestore.instance.collection('traspasos_inventario').snapshots(includeMetadataChanges:true),builder:(c,s){
+    if(s.hasError)return const Center(child:Text('No se pudieron consultar los préstamos entre compañeros.'));
+    if(!s.hasData)return const Center(child:CircularProgressIndicator());
+    final docs=s.data!.docs.where((d)=>'${d.data()['nombre_herramienta']} ${d.data()['origen_usuario_nombre']} ${d.data()['destino_usuario_nombre']}'.toLowerCase().contains(_search)).toList()..sort((a,b)=>_time(b.data()['fecha_creacion']).compareTo(_time(a.data()['fecha_creacion'])));
+    return ListView(padding:const EdgeInsets.all(16),children:[const Text('Supervisión de préstamos entre personas. No representan una salida nueva del almacén; la recepción la confirma el destinatario.',style:TextStyle(color:Colors.white60)),OfflineDataBadge(cached:s.data!.metadata.isFromCache),
+      if(docs.isEmpty)const ListTile(title:Text('Sin préstamos registrados')),
+      for(final doc in docs)Card(child:ListTile(leading:const Icon(Icons.swap_horiz_rounded,color:Color(0xFFB7FF2A)),title:Text(doc.data()['nombre_herramienta']?.toString()??'Herramienta'),subtitle:Text('${doc.data()['origen_usuario_nombre']} → ${doc.data()['destino_usuario_nombre']}\n${doc.data()['estado']} · ${_date(doc.data()['fecha_creacion'])}')))]);
+  });
 }

@@ -1,3 +1,5 @@
+import '../widgets/shared_media_card.dart';
+import '../services/offline_workspace.dart';
 import 'dart:typed_data';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:file_picker/file_picker.dart';
@@ -108,27 +110,28 @@ class _ConversacionPrivadaScreenState extends State<ConversacionPrivadaScreen> {
       if (ready.hasError) return Center(child: Column(mainAxisSize: MainAxisSize.min, children: [const _ChatStatus('No se pudo abrir esta conversación. Revisa tu sesión y conexión.'), FilledButton(onPressed: () => setState(() => _ready = _service.ensureConversation(widget.usuario, widget.contacto)), child: const Text('Reintentar'))]));
       if (ready.connectionState != ConnectionState.done) return const Center(child: CircularProgressIndicator());
       return Column(children: [
-        Expanded(child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(stream: _messages.orderBy('fecha', descending: true).snapshots(), builder: (context, snapshot) {
+        Expanded(child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(stream: _messages.orderBy('fecha', descending: true).snapshots(includeMetadataChanges: true), builder: (context, snapshot) {
           if (snapshot.hasError) return const _ChatStatus('No se pudieron leer los mensajes. No se ha borrado tu conversación.');
           if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
           final docs = snapshot.data!.docs;
-          if (docs.isEmpty) return const _ChatStatus('Escribe, dicta o envía una nota de voz para comenzar.');
-          return ListView.builder(reverse: true, padding: const EdgeInsets.all(14), itemCount: docs.length, itemBuilder: (context, i) => _bubble(docs[i].data()));
+          if (docs.isEmpty) return _ChatStatus(snapshot.data!.metadata.isFromCache ? 'No hay mensajes guardados localmente. Conecta para consultar esta conversación.' : 'Escribe, dicta o envía una nota de voz para comenzar.');
+          return Column(children: [OfflineDataBadge(cached: snapshot.data!.metadata.isFromCache, pending: snapshot.data!.metadata.hasPendingWrites), Expanded(child: ListView.builder(reverse: true, padding: const EdgeInsets.all(14), itemCount: docs.length, itemBuilder: (context, i) => _bubble(docs[i].data())))]);
         })),
         if (_busy) const LinearProgressIndicator(),
         if (_files.isNotEmpty) SizedBox(height: 48, child: ListView(scrollDirection: Axis.horizontal, padding: const EdgeInsets.symmetric(horizontal: 10), children: [for (final f in _files) Padding(padding: const EdgeInsets.only(right: 6), child: InputChip(label: Text(f.name, overflow: TextOverflow.ellipsis), onDeleted: _busy ? null : () => setState(() => _files.remove(f))))])),
         SafeArea(top: false, child: Container(padding: const EdgeInsets.fromLTRB(10, 4, 10, 10), color: const Color(0xFF111012), child: Column(children: [
           Row(children: [Switch(value: _onScreen, activeTrackColor: const Color(0xFF668F19), onChanged: _busy ? null : (v) => setState(() => _onScreen = v)), const Expanded(child: Text('Mostrar aviso personal en su pantalla', style: TextStyle(color: Colors.white70, fontSize: 11)))]),
           TextField(controller: _text, enabled: !_busy, minLines: 1, maxLines: 4, maxLength: 4000, textCapitalization: TextCapitalization.sentences, decoration: const InputDecoration(hintText: 'Escribe o dicta un mensaje…', counterText: '')),
-          Row(children: [
+          SingleChildScrollView(scrollDirection: Axis.horizontal, child: Row(children: [
+            IconButton(tooltip: 'Compartir reel o canción', onPressed: _busy ? null : () => addSharedLink(context, _text), icon: const Icon(Icons.movie_filter_outlined)),
             IconButton(tooltip: 'Fotografías', onPressed: _busy ? null : _pickImages, icon: const Icon(Icons.add_photo_alternate_outlined)),
             IconButton(tooltip: 'Archivos o videos', onPressed: _busy ? null : _pickFiles, icon: const Icon(Icons.attach_file_rounded)),
             IconButton(tooltip: 'Emojis y stickers', onPressed: _busy ? null : _emoji, icon: const Icon(Icons.emoji_emotions_outlined)),
             MessageDictationButton(controller: _text, enabled: !_busy),
             IgnorePointer(ignoring: _busy, child: AudioNoteButton(color: _accent, onAudioReady: _audio)),
-            const Spacer(),
+            const SizedBox(width: 12),
             IconButton.filled(tooltip: 'Enviar mensaje', onPressed: _busy ? null : _send, icon: const Icon(Icons.arrow_upward_rounded)),
-          ]),
+          ])),
         ]))),
       ]);
     }),
@@ -142,6 +145,7 @@ class _ConversacionPrivadaScreenState extends State<ConversacionPrivadaScreen> {
     final files = raw is List ? raw.whereType<Map>().toList() : <Map>[];
     return Align(alignment: own ? Alignment.centerRight : Alignment.centerLeft, child: Container(constraints: const BoxConstraints(maxWidth: 430), margin: const EdgeInsets.only(bottom: 10), padding: const EdgeInsets.all(14), decoration: BoxDecoration(color: own ? const Color(0xFF29101B) : const Color(0xFF151315), borderRadius: BorderRadius.circular(20), border: Border.all(color: own ? const Color(0xFF632A3E) : Colors.white12)), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       if (text.isNotEmpty) SelectableText(text, style: TextStyle(fontSize: d['sticker'] == true ? 34 : 14, height: 1.4)),
+      SharedMediaCard(text: text),
       for (final f in files) _attachment(f),
       if (audio.isNotEmpty) AudioMessagePlayer(url: audio, durationSeconds: (d['duracionSegundos'] as num?)?.toInt() ?? 0, color: _accent),
       if (meeting.isNotEmpty) Padding(padding: const EdgeInsets.only(top: 10), child: FilledButton.icon(icon: const Icon(Icons.call_outlined), label: const Text('Entrar a la llamada'), onPressed: () => _openUrl(meeting, meeting: true))),

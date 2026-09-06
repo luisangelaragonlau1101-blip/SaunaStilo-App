@@ -7,6 +7,8 @@ import '../screens/proyecto_chat_screen.dart';
 import '../screens/equipo_tareas_screen.dart';
 import '../screens/jornada_screen.dart';
 import '../screens/prestamos_equipo_screen.dart';
+import '../screens/admin_solicitudes_herramientas_screen.dart';
+import '../screens/trabajador_control_herramientas_screen.dart';
 
 class NotificationRouter {
   static Future<void> open(BuildContext context, UserModel user, String id) async {
@@ -30,6 +32,8 @@ class NotificationRouter {
         destination = ConversacionPrivadaScreen(usuario: user, contacto: UserModel.fromFirestore(contact));
       } else if (data['tipo'] == 'traspaso_herramienta') {
         destination = PrestamosEquipoScreen(usuario: user);
+      } else if (data['tipo'] == 'almacen' || data['tipo'] == 'solicitud_herramienta') {
+        destination = [AppRoles.admin, AppRoles.almacenista].contains(user.rol) ? const AdminSolicitudesHerramientasScreen() : ControlHerramientasScreen(usuarioId: user.id, usuarioNombre: user.nombre);
       } else if (data['tipo'] == 'tarea') {
         destination = EquipoTareasScreen(usuario: user);
       } else if (projectId.isNotEmpty) {

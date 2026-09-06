@@ -68,7 +68,7 @@ class TeamNotePreview extends StatelessWidget {
           Row(children: [Icon((data['musicaUrl'] ?? '').toString().isEmpty ? Icons.chat_bubble_outline_rounded : Icons.music_note_rounded, size: 16, color: color), const SizedBox(width: 6),
             Expanded(child: Text(data['autorNombre']?.toString() ?? 'Integrante', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800)))]),
           const SizedBox(height: 7),
-          Expanded(child: Text((data['notaTexto']?.toString() ?? '').isNotEmpty ? data['notaTexto'].toString() : data['musicaTitulo']?.toString() ?? 'Mi canción', maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12, height: 1.3, color: Colors.white70))),
+          Expanded(child: Text((data['musicaUrl']?.toString() ?? '').isNotEmpty ? '♫ ${(data['musicaTitulo']?.toString() ?? '').isEmpty ? 'Canción compartida' : data['musicaTitulo']}' : data['notaTexto']?.toString() ?? '', maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12, height: 1.3, color: Colors.white70))),
         ])),
     )));
 }
@@ -89,7 +89,7 @@ class TeamNoteDetails extends StatelessWidget {
         try {if (!await launchUrl(Uri.parse(link), mode: LaunchMode.externalApplication)) throw StateError('open');}
         catch (_) {if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No se pudo abrir la canción.')));}
       }), Text(Uri.parse(link).host, style: const TextStyle(color: Colors.white54, fontSize: 12)),
-        const Text('Se abre en el servicio de música. No se reproduce automáticamente.', style: TextStyle(color: Colors.white54, fontSize: 11))],
+        const Text('Canción compartida por esta persona; no es su reproducción en vivo. Se abre en el servicio de música sin reproducirse automáticamente.', style: TextStyle(color: Colors.white54, fontSize: 11))],
       const SizedBox(height: 18), const Text('Compartida con el equipo de Sauna Stilo.', style: TextStyle(color: Colors.white38, fontSize: 12)),
     ])));
   }
@@ -127,6 +127,7 @@ class _TeamNoteEditorState extends State<TeamNoteEditor> {
       const SizedBox(height: 14), TextField(controller: _text, enabled: !_busy, maxLength: 180, maxLines: 3, decoration: const InputDecoration(labelText: 'Tu nota', hintText: '¿Qué quieres compartir?')),
       TextField(controller: _song, enabled: !_busy, maxLength: 100, decoration: const InputDecoration(labelText: 'Canción y artista (opcional)', prefixIcon: Icon(Icons.music_note_rounded))),
       TextField(controller: _url, enabled: !_busy, maxLength: 500, autocorrect: false, keyboardType: TextInputType.url, decoration: const InputDecoration(labelText: 'Enlace de la canción (opcional)', hintText: 'Spotify, YouTube, Apple Music o SoundCloud', prefixIcon: Icon(Icons.link_rounded))),
+      const Padding(padding: EdgeInsets.only(top: 10), child: Text('En Spotify: Compartir → Copiar enlace. Pégalo aquí con el nombre de la canción. Mostrar lo que suena en vivo requiere una conexión autorizada de Spotify; este enlace no da acceso a tu cuenta.', style: TextStyle(fontSize: 11, color: Colors.white54))),
       if (_error != null) Text(_error!, style: const TextStyle(color: Colors.orangeAccent)),
     ]))),
     actions: [

@@ -1,27 +1,19 @@
-// Browser-only compatibility checks; no asynchronous work before the permission gesture.
-// ignore_for_file: deprecated_member_use, avoid_web_libraries_in_flutter
-import 'dart:html' as html;
-import 'dart:js_util' as js;
-
+import 'dart:js_interop';
+@JS('navigator.userAgent') external String get _userAgent;
+@JS('navigator.maxTouchPoints') external int? get _maxTouchPoints;
+@JS('navigator.standalone') external bool? get _iosStandalone;
+@JS('window.matchMedia') external _MediaQueryList _matchMedia(String query);
+@JS('window.location.protocol') external String get _protocol;
+@JS('window.location.hostname') external String get _hostname;
+@JS('window.Notification') external JSAny? get _notification;
+@JS('navigator.serviceWorker') external JSAny? get _serviceWorker;
+@JS('window.PushManager') external JSAny? get _pushManager;
+extension type _MediaQueryList(JSObject _) implements JSObject { external bool get matches; }
 String? pushEnvironmentProblem() {
-  final nav = html.window.navigator;
-  final ua = nav.userAgent;
-  final touch = js.hasProperty(nav, 'maxTouchPoints')
-      ? js.getProperty<num>(nav, 'maxTouchPoints') : 0;
-  final ios = RegExp(r'iPad|iPhone|iPod').hasMatch(ua) ||
-      (ua.contains('Macintosh') && touch > 1);
-  final standalone = html.window.matchMedia('(display-mode: standalone)').matches ||
-      (js.hasProperty(nav, 'standalone') && js.getProperty<Object?>(nav, 'standalone') == true);
-  if (ios && !standalone) {
-    return 'En iPhone: abre esta dirección en Safari, toca Compartir → Añadir a pantalla de inicio. Abre Sauna Stilo desde ese icono y pulsa Activar avisos.';
-  }
-  if (html.window.location.protocol != 'https:' && html.window.location.hostname != 'localhost') {
-    return 'Los avisos necesitan la dirección HTTPS de la aplicación.';
-  }
-  if (!js.hasProperty(html.window, 'Notification') ||
-      !js.hasProperty(nav, 'serviceWorker') ||
-      !js.hasProperty(html.window, 'PushManager')) {
-    return 'Este navegador no admite avisos push. Actualiza el navegador o usa la aplicación instalada en un dispositivo compatible.';
-  }
+  final ua=_userAgent;
+  final ios=RegExp(r'iPad|iPhone|iPod').hasMatch(ua)||(ua.contains('Macintosh')&&(_maxTouchPoints??0)>1);
+  if(ios&&!(_matchMedia('(display-mode: standalone)').matches||_iosStandalone==true)) return 'En iPhone: abre esta dirección en Safari, toca Compartir → Añadir a pantalla de inicio. Abre Sauna Stilo desde ese icono y pulsa Activar avisos.';
+  if(_protocol!='https:'&&_hostname!='localhost'&&_hostname!='127.0.0.1') return 'Los avisos necesitan la dirección HTTPS de la aplicación.';
+  if(_notification==null||_serviceWorker==null||_pushManager==null) return 'Este navegador no admite avisos push. Actualiza el navegador o usa la aplicación instalada en un dispositivo compatible.';
   return null;
 }

@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import '../services/offline_workspace.dart';
 import 'package:intl/intl.dart';
 import '../models/actividad_model.dart';
 import '../models/user_model.dart';
@@ -60,20 +61,20 @@ class _EquipoTareasScreenState extends State<EquipoTareasScreen> {
         ])),
         if (_puedeAsignar) Padding(padding: const EdgeInsets.fromLTRB(16, 0, 16, 12), child: SizedBox(width: double.infinity,
           child: FilledButton.icon(onPressed: () => _seleccionarProyecto(crear: true), icon: const Icon(Icons.add_rounded), label: const Text('Crear actividad y asignar tarea')))),
-        Expanded(child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(stream: query.snapshots(), builder: (context, snapshot) {
+        Expanded(child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(stream: query.snapshots(includeMetadataChanges: true), builder: (context, snapshot) {
           if (snapshot.hasError) return const Center(child: Padding(padding: EdgeInsets.all(24), child: Text('No pudimos consultar estas tareas. Revisa tu conexión o pide a Administración que confirme tu asignación al proyecto.')));
           if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
           final tareas = snapshot.data!.docs.map((d) => ActividadModel.fromJson(d.data(), d.id)).where((t) => !_soloPendientes || t.estatus != 'completado').toList()
             ..sort((a,b) => a.fechaTermino.compareTo(b.fechaTermino));
-          if (tareas.isEmpty) return const Center(child: Text('No hay tareas en esta vista.'));
-          return ListView.builder(padding: const EdgeInsets.fromLTRB(12, 0, 12, 24), itemCount: tareas.length, itemBuilder: (context, i) {
+          if (tareas.isEmpty) return Center(child: Text(snapshot.data!.metadata.isFromCache ? 'Sin tareas guardadas en este dispositivo. Conecta para consultar el servidor.' : 'No hay tareas en esta vista.'));
+          return Column(children: [OfflineDataBadge(cached: snapshot.data!.metadata.isFromCache, pending: snapshot.data!.metadata.hasPendingWrites), Expanded(child: ListView.builder(padding: const EdgeInsets.fromLTRB(12, 0, 12, 24), itemCount: tareas.length, itemBuilder: (context, i) {
             final t = tareas[i];
             return Card(child: ListTile(contentPadding: const EdgeInsets.all(16),
               leading: Icon(t.estatus == 'completado' ? Icons.task_alt_rounded : Icons.assignment_outlined, color: const Color(0xFFB7FF2A)),
               title: Text(t.titulo, style: const TextStyle(fontWeight: FontWeight.w700)),
               subtitle: Text('${t.estatus} · ${t.totalEvidencias} evidencias\n${DateFormat('dd/MM · HH:mm').format(t.fechaTermino)}'),
               trailing: const Icon(Icons.chevron_right_rounded), onTap: () => _abrir(t)));
-          });
+          }))]);
         })),
       ]));
   }

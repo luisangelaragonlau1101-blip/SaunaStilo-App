@@ -48,8 +48,10 @@ test('attendance confirms server success and cannot silently accept invalid coor
 });
 test('master task creation never changes project status without admin role', () => {
   const s=read('lib/services/actividades_service.dart');
-  assert.match(s,/if \(isAdmin\) batch.update\(proyectoRef/);
-  assert.match(s,/members.contains\(actividad.asignadoATrabajadorId\)/);
+  assert.doesNotMatch(s,/batch.update\(proyectoRef/);
+  assert.match(s,/await _db.runTransaction/);
+  assert.match(s,/doc\('tarea_\$\{ref.id\}'\)/);
+  assert.match(s,/members.contains\(target.id\)/);
   assert.match(read('firestore.rules'),/allow create: if isAdmin\(\) \|\| validMasterTask\(\)/);
 });
 test('Online Smart iframe sends no authentication tokens or private profile to provider', () => {

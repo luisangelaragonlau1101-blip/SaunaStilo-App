@@ -503,6 +503,9 @@ service cloud.firestore {
     }
 
     match /actividades/{activityId} {
+      // Allows transactional creation, not reads of another project's existing task.
+      allow get: if signedIn() && (isAdmin() || role() == 'maestro')
+        && !exists(/databases/$(database)/documents/actividades/$(activityId));
       allow read: if signedIn()
         && (isAdmin()
           || resource.data.asignadoATrabajadorId == request.auth.uid
@@ -688,9 +691,83 @@ service cloud.firestore {
 
     // Operación interna de almacén. Los trabajadores pueden solicitar y
     // consultar; administración y almacén mantienen inventario y entregas.
+    function initialToolRequest() {
+      let d = request.resource.data;
+      return signedIn() && (isWarehouse() || d.trabajadorId == request.auth.uid)
+        && d.keys().hasOnly(['proyectoId','proyectoNombre','trabajadorId','trabajadorNombre','insumoId','nombreInsumo','cantidad','esRetornable','estatus','marcadoDevueltoTrabajador','devueltoConfirmadoAdmin','fechaSolicitud','fechaAprobacion','fechaLimiteDevolucion','tieneReporteFalla','observacionesDevolucion','fotoDevolucionUrl','fechaMarcadoDevuelto','notaAdmin','requiereCompra'])
+        && d.insumoId is string && d.insumoId.size() > 0 && d.cantidad is int && d.cantidad > 0 && d.cantidad <= 100000
+        && d.esRetornable is bool && d.estatus == 'pendiente'
+        && d.marcadoDevueltoTrabajador == false && d.devueltoConfirmadoAdmin == false
+        && d.tieneReporteFalla == false && d.get('fechaAprobacion',null) == null
+        && d.get('fechaMarcadoDevuelto',null) == null && d.fechaSolicitud is timestamp;
+    }
+    function workerToolReport() {
+      let d = request.resource.data;
+      let old = resource.data;
+      return signedIn() && old.trabajadorId == request.auth.uid && (
+        (old.estatus == 'pendiente' && d.diff(old).affectedKeys().hasOnly(['cantidad','esRetornable'])
+          && d.cantidad is int && d.cantidad > 0 && d.cantidad <= 100000 && d.esRetornable is bool)
+        || (old.estatus == 'pendiente' && d.diff(old).affectedKeys().hasOnly(['estatus','canceladoPor','fechaCancelacion'])
+          && d.estatus == 'cancelada' && d.canceladoPor == request.auth.uid && d.fechaCancelacion == request.time)
+        || (old.estatus == 'aprobada' && old.esRetornable == true && old.devueltoConfirmadoAdmin == false
+          && d.diff(old).affectedKeys().hasOnly(['marcadoDevueltoTrabajador','tieneReporteFalla','observacionesDevolucion','fotoDevolucionUrl','fechaMarcadoDevuelto'])
+          && d.marcadoDevueltoTrabajador == true && d.tieneReporteFalla is bool
+          && d.get('observacionesDevolucion','') is string && d.observacionesDevolucion.size() <= 2000
+          && (d.get('fotoDevolucionUrl',null) == null || (d.fotoDevolucionUrl is string && d.fotoDevolucionUrl.size() <= 4096))
+          && d.fechaMarcadoDevuelto == request.time));
+    }
+    function linkedWarehouseEvent(id, action) {
+      let path = /databases/$(database)/documents/solicitudes_herramientas/$(id)/historial/$(action);
+      let event = getAfter(path).data;
+      return !exists(path) && event.accion == action && event.solicitudId == id
+        && event.responsableId == request.auth.uid && event.fecha == request.time
+        && event.cantidad == resource.data.cantidad && event.trabajadorId == resource.data.trabajadorId
+        && event.insumoId == resource.data.insumoId;
+    }
+    function warehouseApproval(id) {
+      let d = request.resource.data;
+      let old = resource.data;
+      let item = /databases/$(database)/documents/insumos_inventario/$(old.insumoId);
+      return isWarehouse() && old.cantidad is int && old.cantidad > 0 && (
+        (old.estatus == 'pendiente' && d.estatus == 'rechazada'
+          && d.diff(old).affectedKeys().hasOnly(['estatus','rechazadoPor','fechaRechazo','notaAdmin'])
+          && d.rechazadoPor == request.auth.uid && d.fechaRechazo == request.time && linkedWarehouseEvent(id,'rechazo'))
+        || (old.estatus == 'pendiente' && d.estatus == 'aprobada'
+          && d.diff(old).affectedKeys().hasOnly(['estatus','fechaAprobacion','autorizadoPorAdminId','notaAdmin','fechaLimiteDevolucion'])
+          && d.autorizadoPorAdminId == request.auth.uid && d.fechaAprobacion == request.time
+          && get(item).data.cantidad_disponible >= old.cantidad
+          && getAfter(item).data.cantidad_disponible == get(item).data.cantidad_disponible - old.cantidad
+          && linkedWarehouseEvent(id,'salida'))
+        || (old.estatus == 'aprobada' && old.esRetornable == true && old.devueltoConfirmadoAdmin == false
+          && d.diff(old).affectedKeys().hasOnly(['devueltoConfirmadoAdmin','recibidoPor','fechaRecepcion'])
+          && d.devueltoConfirmadoAdmin == true && d.recibidoPor == request.auth.uid && d.fechaRecepcion == request.time
+          && (old.get('tieneReporteFalla',false) == true
+            ? getAfter(item).data.en_reparacion == get(item).data.get('en_reparacion',0) + old.cantidad
+              && getAfter(item).data.cantidad_disponible == get(item).data.cantidad_disponible
+            : getAfter(item).data.cantidad_disponible == get(item).data.cantidad_disponible + old.cantidad)
+          && linkedWarehouseEvent(id,'entrada')));
+    }
     match /solicitudes_herramientas/{documentId} {
-      allow read, create, update: if signedIn();
-      allow delete: if isWarehouse();
+      allow read: if signedIn();
+      allow create: if initialToolRequest();
+      allow update: if workerToolReport() || warehouseApproval(documentId);
+      // Requests and confirmed movements are retained, including cancellations.
+      allow delete: if false;
+      match /historial/{eventId} {
+        allow read: if isWarehouse() || (signedIn()
+          && get(/databases/$(database)/documents/solicitudes_herramientas/$(documentId)).data.trabajadorId == request.auth.uid);
+        allow create: if isWarehouse() && eventId in ['salida','rechazo','entrada']
+          && request.resource.data.keys().hasOnly(['accion','solicitudId','insumoId','cantidad','responsableId','responsableNombre','trabajadorId','fecha','observacion','conFalla'])
+          && request.resource.data.accion == eventId && request.resource.data.solicitudId == documentId
+          && request.resource.data.responsableId == request.auth.uid && request.resource.data.fecha == request.time
+          && request.resource.data.cantidad == getAfter(/databases/$(database)/documents/solicitudes_herramientas/$(documentId)).data.cantidad
+          && (eventId == 'salida'
+            ? get(/databases/$(database)/documents/solicitudes_herramientas/$(documentId)).data.estatus == 'pendiente' && getAfter(/databases/$(database)/documents/solicitudes_herramientas/$(documentId)).data.estatus == 'aprobada'
+            : eventId == 'rechazo'
+              ? get(/databases/$(database)/documents/solicitudes_herramientas/$(documentId)).data.estatus == 'pendiente' && getAfter(/databases/$(database)/documents/solicitudes_herramientas/$(documentId)).data.estatus == 'rechazada'
+              : get(/databases/$(database)/documents/solicitudes_herramientas/$(documentId)).data.devueltoConfirmadoAdmin == false && getAfter(/databases/$(database)/documents/solicitudes_herramientas/$(documentId)).data.devueltoConfirmadoAdmin == true);
+        allow update, delete: if false;
+      }
     }
     match /solicitudes_salida/{documentId} {
       allow read, create, update: if signedIn();
@@ -738,9 +815,54 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    // Cualquier módulo no enumerado queda reservado a administración.
-    match /{document=**} {
-      allow read, write: if isAdmin();
+    function gameWin(b,m) {
+      return (b[0] == m && b[1] == m && b[2] == m) || (b[3] == m && b[4] == m && b[5] == m) || (b[6] == m && b[7] == m && b[8] == m) || (b[0] == m && b[3] == m && b[6] == m) || (b[1] == m && b[4] == m && b[7] == m) || (b[2] == m && b[5] == m && b[8] == m) || (b[0] == m && b[4] == m && b[8] == m) || (b[2] == m && b[4] == m && b[6] == m);
+    }
+    function gameResult(b) {
+      return gameWin(b,'X') ? 'X' : gameWin(b,'O') ? 'O' : b.hasAny(['']) ? '' : 'empate';
+    }
+    function oneGameMove(old,b,m) {
+      let i = b[0] != old[0] ? 0 : b[1] != old[1] ? 1 : b[2] != old[2] ? 2 : b[3] != old[3] ? 3 : b[4] != old[4] ? 4 : b[5] != old[5] ? 5 : b[6] != old[6] ? 6 : b[7] != old[7] ? 7 : b[8] != old[8] ? 8 : -1;
+      return b is list && b.size() == 9 && i >= 0 && old[i] == '' && b[i] == m
+        && (i == 0 || b[0] == old[0]) && (i == 1 || b[1] == old[1]) && (i == 2 || b[2] == old[2])
+        && (i == 3 || b[3] == old[3]) && (i == 4 || b[4] == old[4]) && (i == 5 || b[5] == old[5])
+        && (i == 6 || b[6] == old[6]) && (i == 7 || b[7] == old[7]) && (i == 8 || b[8] == old[8]);
+    }
+    match /partidas_equipo/{gameId} {
+      allow get: if signedIn() && gameId.matches('juego_' + request.auth.uid + '_[A-Za-z0-9]+')
+        && !exists(/databases/$(database)/documents/partidas_equipo/$(gameId));
+      allow read: if signedIn() && request.auth.uid in resource.data.jugadores;
+      allow create: if signedIn() && request.resource.data.keys().hasOnly(['jugadores','nombres','tablero','estado','turno','resultado','creadoPor','fecha','actualizadaEn'])
+        && request.resource.data.jugadores is list && request.resource.data.jugadores.size() == 2
+        && request.resource.data.jugadores[0] == request.auth.uid && request.resource.data.jugadores[1] is string
+        && request.resource.data.jugadores[1] != request.auth.uid
+        && exists(/databases/$(database)/documents/usuarios/$(request.resource.data.jugadores[1]))
+        && get(/databases/$(database)/documents/usuarios/$(request.resource.data.jugadores[1])).data.get('activo',true) != false
+        && request.resource.data.nombres is list && request.resource.data.nombres.size() == 2
+        && request.resource.data.tablero == ['','','','','','','','','']
+        && request.resource.data.estado == 'invitada' && request.resource.data.turno == request.auth.uid
+        && request.resource.data.resultado == '' && request.resource.data.creadoPor == request.auth.uid
+        && request.resource.data.fecha == request.time && request.resource.data.actualizadaEn == request.time;
+      allow update: if signedIn() && request.auth.uid in resource.data.jugadores
+        && request.resource.data.actualizadaEn == request.time && (
+        (resource.data.estado == 'invitada' && request.auth.uid == resource.data.jugadores[1]
+          && request.resource.data.estado == 'jugando'
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['estado','actualizadaEn']))
+        || (resource.data.estado in ['invitada','jugando'] && request.resource.data.estado == 'cancelada'
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['estado','actualizadaEn']))
+        || (resource.data.estado == 'jugando' && resource.data.turno == request.auth.uid
+          && resource.data.resultado == ''
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['tablero','turno','resultado','estado','actualizadaEn'])
+          && oneGameMove(resource.data.tablero,request.resource.data.tablero,request.auth.uid == resource.data.jugadores[0] ? 'X' : 'O')
+          && request.resource.data.turno == (request.auth.uid == resource.data.jugadores[0] ? resource.data.jugadores[1] : resource.data.jugadores[0])
+          && request.resource.data.resultado == gameResult(request.resource.data.tablero)
+          && request.resource.data.estado == (request.resource.data.resultado == '' ? 'jugando' : 'terminada')));
+      allow delete: if false;
+    }
+
+    // Legacy admin access does not bypass immutable movement history or game turns.
+    match /{rootCollection}/{document=**} {
+      allow read, write: if isAdmin() && !(rootCollection in ['solicitudes_herramientas','partidas_equipo']);
     }
   }
 }
