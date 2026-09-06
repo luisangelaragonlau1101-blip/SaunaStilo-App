@@ -44,7 +44,7 @@ jobs:
       - name: Verify task scopes custody history and games in isolated emulators
         run: |
           npm install --prefix /tmp/sauna-rules --no-audit --no-fund firebase firebase-tools @firebase/rules-unit-testing
-          NODE_PATH=/tmp/sauna-rules/node_modules /tmp/sauna-rules/node_modules/.bin/firebase emulators:exec --project demo-sauna-team --only firestore,storage 'NODE_PATH=/tmp/sauna-rules/node_modules node --test tools/security.test.cjs tools/people-security.test.cjs tools/social-security.test.cjs tools/operations-security.test.cjs tools/general-task-security.test.cjs' | tee smoke-results/security-tests.txt
+          NODE_PATH=/tmp/sauna-rules/node_modules /tmp/sauna-rules/node_modules/.bin/firebase emulators:exec --project demo-sauna-team --only firestore,storage 'NODE_PATH=/tmp/sauna-rules/node_modules node --test --test-concurrency=1 tools/security.test.cjs tools/people-security.test.cjs tools/social-security.test.cjs tools/operations-security.test.cjs tools/general-task-security.test.cjs' | tee smoke-results/security-tests.txt
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
