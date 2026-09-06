@@ -37,16 +37,16 @@ class _ControlHerramientasScreenState extends State<ControlHerramientasScreen> {
   String _filtroSeleccionado = 'Todas';
   final List<String> _opcionesFiltro = ['Todas', 'Pendientes', 'Aprobadas', 'Rechazadas'];
 
-  static const Color colorFondo = Color(0xFF161210);
-  static const Color colorTarjeta = Color(0xFF221A16);
+  static const Color colorFondo = Color(0xFF000000);
+  static const Color colorTarjeta = Color(0xFF111012);
   static const Color colorTextoPrimario = Color(0xFFFDFDFD);
   static const Color colorTextoSecundario = Color(0xFFB5ABA5);
-  static const Color colorAcento = Color(0xFFFFDE21);
+  static const Color colorAcento = Color(0xFFB7FF2A);
   static const Color colorNaranja = Color(0xFFFF9800);
   static const Color colorRojo = Color(0xFFFF5252);
-  static const Color colorVerde = Color(0xFF4CAF50); 
-  static const Color colorGradiente1 = Color(0xFF8B4513); 
-  static const Color colorGradiente2 = Color(0xFF4A1504); 
+  static const Color colorVerde = Color(0xFF4CAF50);
+  static const Color colorGradiente1 = Color(0xFF351020);
+  static const Color colorGradiente2 = Color(0xFF120C12);
 
   @override
   void initState() {
@@ -1069,11 +1069,11 @@ class _ReporteDevolucionModalState extends State<ReporteDevolucionModal> {
   Uint8List? _imagenBytes;
   bool _subiendoDatos = false;
 
-  static const Color colorFondo = Color(0xFF161210);
-  static const Color colorTarjeta = Color(0xFF221A16);
+  static const Color colorFondo = Color(0xFF000000);
+  static const Color colorTarjeta = Color(0xFF111012);
   static const Color colorTextoPrimario = Color(0xFFFDFDFD);
   static const Color colorTextoSecundario = Color(0xFFB5ABA5);
-  static const Color colorAcento = Color(0xFFFFDE21);
+  static const Color colorAcento = Color(0xFFB7FF2A);
   static const Color colorNaranja = Color(0xFFFF9800);
   static const Color colorVerde = Color(0xFF4CAF50);
 

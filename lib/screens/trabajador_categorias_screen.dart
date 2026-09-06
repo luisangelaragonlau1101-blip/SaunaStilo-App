@@ -17,11 +17,11 @@ class _TrabajadorCategoriasScreenState extends State<TrabajadorCategoriasScreen>
   String _searchQuery = '';
   bool _estaBuscando = false;
 
-  static const Color colorFondo = Color(0xFF121212);
-  static const Color colorTarjeta = Color(0xFF1E1E1E);
+  static const Color colorFondo = Color(0xFF000000);
+  static const Color colorTarjeta = Color(0xFF111012);
   static const Color colorTextoPrimario = Color(0xFFFDFDFD);
-  static const Color colorAcento = Color(0xFFFFDE21);
-  static const Color colorRosaVibrante = Color(0xFFFF3399);
+  static const Color colorAcento = Color(0xFFB7FF2A);
+  static const Color colorRosaVibrante = Color(0xFFFF729C);
 
   @override
   void dispose() {

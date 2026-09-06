@@ -19,17 +19,17 @@ class TrabajadorCajitaHerramientasScreen extends StatefulWidget {
 class _TrabajadorCajitaHerramientasScreenState extends State<TrabajadorCajitaHerramientasScreen> {
   
   // Paleta de colores cálidos (Estilo Industrial/Pro)
-  static const Color colorFondo = Color(0xFF161210); 
-  static const Color colorTarjeta = Color(0xFF221A16); 
+  static const Color colorFondo = Color(0xFF000000);
+  static const Color colorTarjeta = Color(0xFF111012);
   static const Color colorTextoPrimario = Color(0xFFFDFDFD);
   static const Color colorTextoSecundario = Color(0xFFB5ABA5);
-  static const Color colorAcento = Color(0xFFFFDE21); 
-  static const Color colorNaranja = Color(0xFFFF9800); 
-  static const Color colorRojo = Color(0xFFFF5252); 
+  static const Color colorAcento = Color(0xFFB7FF2A);
+  static const Color colorNaranja = Color(0xFFFF9800);
+  static const Color colorRojo = Color(0xFFFF5252);
   
   // NUEVOS COLORES PARA EL GRADIENTE (Más sobrios y elegantes)
   static const Color colorGradiente1 = Color(0xFF382A22); // Bronce oscuro sutil
-  static const Color colorGradiente2 = Color(0xFF221A16); // Carbón/Marrón que se funde con la app
+  static const Color colorGradiente2 = Color(0xFF111012); // Carbón/Marrón que se funde con la app
 
   @override
   Widget build(BuildContext context) {

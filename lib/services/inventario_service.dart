@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import 'dart:io'; // <-- NUEVO: Para manejar el archivo físico de la imagen
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart'; // <-- NUEVO: Para Storage
@@ -26,6 +27,19 @@ class InventarioService {
     
     // Retornar la URL pública de descarga
     return await snapshot.ref.getDownloadURL();
+  }
+
+  Future<String> subirImagenInsumoBytes(Uint8List bytes, String nombreInsumo) async {
+    if (bytes.isEmpty || bytes.length > 8 * 1024 * 1024) throw StateError('La foto debe pesar menos de 8 MB.');
+    final png = bytes.length > 8 && bytes[0] == 137 && bytes[1] == 80 && bytes[2] == 78;
+    final jpg = bytes.length > 3 && bytes[0] == 255 && bytes[1] == 216 && bytes[2] == 255;
+    final webp = bytes.length > 12 && bytes[0] == 82 && bytes[1] == 73 && bytes[8] == 87 && bytes[9] == 69;
+    if (!png && !jpg && !webp) throw StateError('Usa una foto JPG, PNG o WebP.');
+    final ext = png ? 'png' : webp ? 'webp' : 'jpg';
+    final name = nombreInsumo.replaceAll(RegExp(r'[^a-zA-Z0-9_-]'), '_');
+    final ref = _storage.ref('insumos_inventario/${DateTime.now().microsecondsSinceEpoch}_$name.$ext');
+    await ref.putData(bytes, SettableMetadata(contentType: png ? 'image/png' : webp ? 'image/webp' : 'image/jpeg'));
+    return ref.getDownloadURL();
   }
 
   /// Elimina una imagen de Storage usando su URL de descarga

@@ -13,12 +13,12 @@ class AdminCategoriasScreen extends StatefulWidget {
 class _AdminCategoriasScreenState extends State<AdminCategoriasScreen> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  static const Color colorFondo = Color(0xFF121212);
-  static const Color colorTarjeta = Color(0xFF1E1E1E);
+  static const Color colorFondo = Color(0xFF000000);
+  static const Color colorTarjeta = Color(0xFF111012);
   static const Color colorTextoPrimario = Color(0xFFFDFDFD);
-  static const Color colorAcento = Color(0xFFFFDE21);
-  static const Color colorAzul = Color(0xFF00B0FF);
-  static const Color colorRosaVibrante = Color(0xFFFF3399);
+  static const Color colorAcento = Color(0xFFB7FF2A);
+  static const Color colorAzul = Color(0xFFC798FF);
+  static const Color colorRosaVibrante = Color(0xFFFF729C);
   static const Color colorBlanco = Color(0xFFFFFFFF);
 
   // Auxiliar para remover acentos y comparar texto plano de forma segura

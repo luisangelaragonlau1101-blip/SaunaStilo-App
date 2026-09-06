@@ -15,11 +15,11 @@ class InsumoDetalleScreen extends StatefulWidget {
 }
 
 class _InsumoDetalleScreenState extends State<InsumoDetalleScreen> {
-  static const Color colorFondo = Color(0xFF121212);
-  static const Color colorTarjeta = Color(0xFF1E1E1E);
+  static const Color colorFondo = Color(0xFF000000);
+  static const Color colorTarjeta = Color(0xFF111012);
   static const Color colorTextoPrimario = Color(0xFFFDFDFD);
   static const Color colorTextoSecundario = Colors.white54;
-  static const Color colorAcento = Color(0xFFFFDE21);
+  static const Color colorAcento = Color(0xFFB7FF2A);
   
   List<Map<String, dynamic>> _historial = [];
   bool _cargandoHistorial = true;

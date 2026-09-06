@@ -39,19 +39,24 @@ class _ModalAsignarActividadState extends State<ModalAsignarActividad> {
     setState(() {_loading = true; _error = null;});
     try {
       final db = FirebaseFirestore.instance;
-      final project = await db.collection('proyectos').doc(widget.proyectoId).get().timeout(const Duration(seconds: 15));
-      final people = await db.collection('usuarios').get().timeout(const Duration(seconds: 15));
-      final members = List<String>.from(project.data()?['encargados'] ?? const []);
       final admin = widget.rolUsuario == 'admin';
-      if (!project.exists || (!admin && (widget.rolUsuario != 'maestro' || !members.contains(_uid)))) {
-        throw StateError('Administración debe asignarte como integrante de este proyecto.');
+      var members = <String>[];
+      if (widget.proyectoId.isNotEmpty) {
+        final project = await db.collection('proyectos').doc(widget.proyectoId).get().timeout(const Duration(seconds: 15));
+        members = (project.data()?['encargados'] as List? ?? const []).whereType<String>().toList();
+        if (!project.exists || (!admin && (widget.rolUsuario != 'maestro' || !members.contains(_uid)))) {
+          throw StateError('Administración debe asignarte como integrante de este proyecto.');
+        }
+      } else if (!admin) {
+        throw StateError('Las tareas generales las asigna Administración. Como maestro, elige uno de tus proyectos.');
       }
+      final people = await db.collection('usuarios').get().timeout(const Duration(seconds: 15));
       final entries = people.docs.where((d) => d.data()['activo'] != false &&
         (admin || members.contains(d.id))).map((d) => {'id': d.id, 'nombre': '${d.data()['nombre'] ?? d.data()['Nombre'] ?? 'Integrante'} · ${d.data()['rol'] ?? ''}'}).toList();
       entries.sort((a,b) => a['nombre']!.compareTo(b['nombre']!));
       if (!mounted) return;
       setState(() {_people = entries; if (!_people.any((p) => p['id'] == _target)) _target = null;});
-      if (entries.isEmpty) setState(() => _error = 'Este proyecto no tiene integrantes activos. Administración puede agregarlos desde Proyectos.');
+      if (entries.isEmpty) setState(() => _error = widget.proyectoId.isEmpty ? 'No hay personas activas disponibles. Revisa las cuentas del equipo.' : 'Este proyecto no tiene integrantes activos. Administración puede agregarlos desde Proyectos.');
     } catch (e) {if (mounted) setState(() => _error = _explain(e));}
     finally {if (mounted) setState(() => _loading = false);}
   }
@@ -106,6 +111,8 @@ class _ModalAsignarActividadState extends State<ModalAsignarActividad> {
         crossAxisAlignment: CrossAxisAlignment.stretch, mainAxisSize: MainAxisSize.min, children: [
         Text(widget.actividadAEditar == null ? 'Crear y asignar tarea' : 'Editar tarea', style: const TextStyle(fontSize: 23,fontWeight: FontWeight.w800)),
         const SizedBox(height: 8), const Text('La tarea se confirma en el servidor. Sin conexión puedes conservar un borrador.', style: TextStyle(color: Colors.white60)),
+        const SizedBox(height: 12),
+        Text(widget.proyectoId.isEmpty ? 'TAREA GENERAL · SIN PROYECTO' : 'TAREA VINCULADA AL PROYECTO', style: const TextStyle(color: Color(0xFFB7FF2A), fontWeight: FontWeight.w700, fontSize: 11)),
         const SizedBox(height: 15),
         TextFormField(controller: _title, enabled: !_busy, maxLength: 150, decoration: const InputDecoration(labelText: 'Nombre de la tarea'), validator: (v) => (v?.trim().length ?? 0)<3 ? 'Escribe al menos 3 caracteres.' : null),
         TextFormField(controller: _body, enabled: !_busy, maxLength: 2000, minLines: 2, maxLines: 5, decoration: const InputDecoration(labelText: 'Indicaciones y evidencia requerida')),

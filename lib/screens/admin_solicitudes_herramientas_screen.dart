@@ -1,3 +1,7 @@
+import '../widgets/warehouse_header.dart';
+import '../services/inventario_service.dart';
+import 'inventario_admin_screen.dart';
+import 'insumo_form_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -21,7 +25,8 @@ class _WarehouseState extends State<AdminSolicitudesHerramientasScreen>{
     finally{if(mounted)setState(()=>_busy=null);}
   }
   @override
-  Widget build(BuildContext context)=>DefaultTabController(length:5,child:Scaffold(backgroundColor:Colors.black,appBar:AppBar(title:const Text('Almacén · movimientos'),bottom:const TabBar(isScrollable:true,tabAlignment:TabAlignment.start,tabs:[Tab(text:'Solicitudes'),Tab(text:'En préstamo'),Tab(text:'Recibir'),Tab(text:'Historial'),Tab(text:'Entre compañeros')])),body:Column(children:[
+  Widget build(BuildContext context)=>DefaultTabController(length:5,child:Scaffold(backgroundColor:Colors.black,appBar:AppBar(title:const Text('Almacén'),actions:[IconButton(tooltip:'Registrar herramienta',icon:const Icon(Icons.add_circle_outline_rounded,color:Color(0xFFB7FF2A)),onPressed:()=>Navigator.push(context,MaterialPageRoute<void>(builder:(_)=>InsumoFormScreen(inventarioService:InventarioService())))),IconButton(tooltip:'Ver inventario',icon:const Icon(Icons.inventory_2_outlined),onPressed:()=>Navigator.push(context,MaterialPageRoute<void>(builder:(_)=>const InventarioAdminScreen())))],bottom:const TabBar(isScrollable:true,tabAlignment:TabAlignment.start,dividerColor:Colors.transparent,indicatorSize:TabBarIndicatorSize.tab,indicator:BoxDecoration(color:Color(0xFF371321),borderRadius:BorderRadius.all(Radius.circular(26))),labelColor:Color(0xFFB7FF2A),unselectedLabelColor:Colors.white60,tabs:[Tab(icon:Icon(Icons.pending_actions_rounded),text:'Solicitudes'),Tab(icon:Icon(Icons.outbox_outlined),text:'En préstamo'),Tab(icon:Icon(Icons.move_to_inbox_outlined),text:'Recibir'),Tab(icon:Icon(Icons.history_rounded),text:'Historial'),Tab(icon:Icon(Icons.swap_horiz_rounded),text:'Compañeros')])),body:Column(children:[
+    if(MediaQuery.sizeOf(context).height>650&&MediaQuery.textScalerOf(context).scale(1)<1.5)const Padding(padding:EdgeInsets.fromLTRB(16,16,16,0),child:WarehouseHeader(title:'Cada herramienta, bajo control.',subtitle:'Autoriza la salida · Confirma la devolución · Conserva el historial',compact:true)),
     Padding(padding:const EdgeInsets.all(16),child:TextField(onChanged:(v)=>setState(()=>_search=v.toLowerCase().trim()),decoration:const InputDecoration(prefixIcon:Icon(Icons.search),hintText:'Buscar persona o herramienta'))),
     Expanded(child:TabBarView(children:[for(var i=0;i<4;i++)_list(i),_transfers()])),
   ])));

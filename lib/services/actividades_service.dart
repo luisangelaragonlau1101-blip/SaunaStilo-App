@@ -37,14 +37,22 @@ class ActividadesService {
     final ref = _actividadesRef.doc(actividad.id);
     await _db.runTransaction((tx) async {
       final profile = await tx.get(_db.collection('usuarios').doc(uid));
-      final project = await tx.get(_db.collection('proyectos').doc(actividad.proyectoId));
       final target = await tx.get(_db.collection('usuarios').doc(actividad.asignadoATrabajadorId));
       final role = profile.data()?['rol'];
-      final members = List<String>.from(project.data()?['encargados'] ?? const []);
-      if (!project.exists) throw StateError('El proyecto ya no existe.');
+      if (!profile.exists || profile.data()?['activo'] == false) throw StateError('Tu cuenta no está activa.');
       if (!target.exists || target.data()?['activo'] == false) throw StateError('La persona no tiene una cuenta activa.');
-      if (role != 'admin' && (role != 'maestro' || !members.contains(uid) || !members.contains(target.id))) {
-        throw StateError('El maestro debe estar asignado al proyecto y elegir a uno de sus integrantes.');
+      if (actividad.proyectoId.isNotEmpty) {
+        final project = await tx.get(_db.collection('proyectos').doc(actividad.proyectoId));
+        final members = (project.data()?['encargados'] as List? ?? const []).whereType<String>().toList();
+        if (!project.exists) throw StateError('El proyecto ya no existe.');
+        if (role != 'admin' && (role != 'maestro' || !members.contains(uid) || !members.contains(target.id))) {
+          throw StateError('El maestro debe estar asignado al proyecto y elegir a uno de sus integrantes.');
+        }
+      } else if (role != 'admin') {
+        throw StateError('Solo Administración puede asignar tareas generales sin proyecto.');
+      }
+      if (actividad.titulo.trim().length < 3 || actividad.titulo.length > 150 || actividad.descripcion.length > 2000 || !actividad.fechaTermino.isAfter(actividad.fechaInicio)) {
+        throw StateError('Revisa el título, las indicaciones y la fecha de entrega.');
       }
       final old = await tx.get(ref);
       if (old.exists) {

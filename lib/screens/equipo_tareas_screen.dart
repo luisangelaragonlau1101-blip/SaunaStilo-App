@@ -1,3 +1,4 @@
+import '../widgets/task_creation_choice.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import '../services/offline_workspace.dart';
@@ -22,6 +23,19 @@ class _EquipoTareasScreenState extends State<EquipoTareasScreen> {
   bool get _admin => widget.usuario.rol == AppRoles.admin;
   bool get _puedeAsignar => _admin || widget.usuario.rol == AppRoles.maestro;
 
+  Future<void> _crearTarea() async {
+    if (!_puedeAsignar) return;
+    if (!_admin) { await _seleccionarProyecto(crear: true); return; }
+    final scope = await showModalBottomSheet<String>(context: context, isScrollControlled: true,
+      backgroundColor: const Color(0xFF111012), shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(30))),
+      builder: (sheet) => TaskCreationChoice(admin: true,
+        onGeneral: () => Navigator.pop(sheet, 'general'), onProject: () => Navigator.pop(sheet, 'project')));
+    if (!mounted || scope == null) return;
+    if (scope == 'project') { await _seleccionarProyecto(crear: true); return; }
+    setState(() { _proyectoId = null; _proyectoTitulo = 'Tareas del equipo'; });
+    await showModalBottomSheet<void>(context: context, isScrollControlled: true, backgroundColor: Colors.transparent,
+      builder: (_) => ModalAsignarActividad(proyectoId: '', rolUsuario: widget.usuario.rol));
+  }
   Future<void> _seleccionarProyecto({bool crear = false}) async {
     final proyecto = await elegirProyecto(context, widget.usuario,
       titulo: crear ? 'Proyecto para la nueva tarea' : 'Tareas de un proyecto');
@@ -51,7 +65,7 @@ class _EquipoTareasScreenState extends State<EquipoTareasScreen> {
     else if (!_admin) { query = query.where('asignadoATrabajadorId', isEqualTo: widget.usuario.id); }
     return Scaffold(backgroundColor: Colors.black,
       appBar: AppBar(title: Text(_admin ? 'Tareas del equipo' : 'Mis tareas'), actions: [
-        if (_puedeAsignar) IconButton(tooltip: 'Crear y asignar tarea', onPressed: () => _seleccionarProyecto(crear: true), icon: const Icon(Icons.add_task_rounded)),
+        if (_puedeAsignar) IconButton(tooltip: 'Crear y asignar tarea', onPressed: _crearTarea, icon: const Icon(Icons.add_task_rounded)),
       ]),
       body: Column(children: [
         Padding(padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10), child: Wrap(spacing: 8, runSpacing: 6, children: [
@@ -60,7 +74,7 @@ class _EquipoTareasScreenState extends State<EquipoTareasScreen> {
           FilterChip(label: const Text('Pendientes'), selected: _soloPendientes, onSelected: (v) => setState(() => _soloPendientes = v)),
         ])),
         if (_puedeAsignar) Padding(padding: const EdgeInsets.fromLTRB(16, 0, 16, 12), child: SizedBox(width: double.infinity,
-          child: FilledButton.icon(onPressed: () => _seleccionarProyecto(crear: true), icon: const Icon(Icons.add_rounded), label: const Text('Crear actividad y asignar tarea')))),
+          child: FilledButton.icon(onPressed: _crearTarea, icon: const Icon(Icons.add_rounded), label: const Text('Crear actividad y asignar tarea')))),
         Expanded(child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(stream: query.snapshots(includeMetadataChanges: true), builder: (context, snapshot) {
           if (snapshot.hasError) return const Center(child: Padding(padding: EdgeInsets.all(24), child: Text('No pudimos consultar estas tareas. Revisa tu conexión o pide a Administración que confirme tu asignación al proyecto.')));
           if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
@@ -72,7 +86,7 @@ class _EquipoTareasScreenState extends State<EquipoTareasScreen> {
             return Card(child: ListTile(contentPadding: const EdgeInsets.all(16),
               leading: Icon(t.estatus == 'completado' ? Icons.task_alt_rounded : Icons.assignment_outlined, color: const Color(0xFFB7FF2A)),
               title: Text(t.titulo, style: const TextStyle(fontWeight: FontWeight.w700)),
-              subtitle: Text('${t.estatus} · ${t.totalEvidencias} evidencias\n${DateFormat('dd/MM · HH:mm').format(t.fechaTermino)}'),
+              subtitle: Text('${t.proyectoId.isEmpty ? 'General' : 'Proyecto'} · ${t.estatus} · ${t.totalEvidencias} evidencias\n${DateFormat('dd/MM · HH:mm').format(t.fechaTermino)}'),
               trailing: const Icon(Icons.chevron_right_rounded), onTap: () => _abrir(t)));
           }))]);
         })),

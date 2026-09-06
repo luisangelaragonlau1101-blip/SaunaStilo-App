@@ -17,3 +17,8 @@ Desde una copia revisada de esta versión y una cuenta autorizada: `firebase dep
 
 ## Pruebas necesarias
 Node sobre datos/avisos y caché pública, emuladores aislados de autorización y movimientos, Flutter para roles/formularios/juegos, compilación web y Android. Registrar el resultado real de CI; este archivo no afirma pruebas realizadas solo por existir. La aceptación final requiere dos cuentas autorizadas en teléfonos: crear tareas, aprobar/recibir/rechazar préstamo, enviar audio, jugar, preparar offline, y comprobar captura con bloqueo activo/inactivo. Firma Android sigue siendo la de desarrollo para pruebas internas, no Play Store.
+
+## Corrección de la captura enviada (3.1.1)
+Administración puede elegir Tarea general y asignarla a una persona sin crear ni seleccionar un proyecto. La tarea se almacena en actividades con proyectoId vacío; no se fabrica un proyecto ni se cambia membresía. Maestros conservan asignaciones dentro de sus proyectos. Las tareas generales aparecen en el panel del responsable y admiten avances/evidencia.
+Almacén, catálogo, registro con foto, categorías y recepción comparten negro, vino y acentos redondeados. Las fotos nuevas se leen y suben como bytes compatibles con navegador/Android y no se borra la foto anterior antes de confirmar el cambio.
+Las reglas y funciones de producción no se despliegan con esta publicación. Las asignaciones del maestro, aprobaciones, historial estricto y juegos necesitan las reglas revisadas activas. No se han probado movimientos con cuentas reales ni el APK en un teléfono físico.
