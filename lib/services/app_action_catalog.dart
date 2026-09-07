@@ -1,5 +1,6 @@
 import '../screens/training_access_screen.dart';
 import '../screens/company_manuals_screen.dart';
+import '../screens/personal_day_screen.dart';
 import '../screens/stilo_academy_screen.dart';
 import 'package:flutter/material.dart';
 
@@ -98,6 +99,8 @@ class AppActionCatalog {
     final master = user.rol == AppRoles.maestro;
 
     final actions = <AppAction>[
+      if (admin) AppAction(id: 'plan_personal', title: 'Organizar al personal', subtitle: 'Asignar comidas, compras, eventos y pendientes', icon: Icons.edit_calendar_rounded, color: _amber, keywords: const ['hogar','compras','eventos','comida','personal'], builder: (_) => PersonalPlanningAdminScreen(user: user)),
+      if (user.usesPersonalPanel) AppAction(id: 'mi_dia', title: 'Mi día', subtitle: 'Mi plan, comidas, compras y eventos', icon: Icons.wb_sunny_rounded, color: _amber, keywords: const ['hogar','compras','eventos','comida'], builder: (_) => PersonalDayScreen(user: user)),
       if (admin || warehouse) AppAction(id: 'almacen_movimientos', title: 'Control de almacén', subtitle: 'Aprobar salidas, recibir devoluciones e historial', icon: Icons.warehouse_rounded, color: _amber, primary: true, keywords: const ['préstamos', 'salidas', 'entradas', 'aprobar'], builder: (_) => const AdminSolicitudesHerramientasScreen()),
       AppAction(id: 'solicitudes_almacen', title: 'Solicitar al almacén', subtitle: 'Pedir herramienta y consultar tu préstamo', icon: Icons.outbox_rounded, color: _mint, keywords: const ['solicitud','herramientas'], builder: (_) => ControlHerramientasScreen(usuarioId: user.id, usuarioNombre: user.nombre)),
       AppAction(id: 'sin_conexion', title: 'Sin conexión', subtitle: 'Preparar este equipo y guardar borradores', icon: Icons.offline_bolt_rounded, color: _amber, keywords: const ['offline','internet','borradores'], builder: (_) => OfflineDeskScreen(user: user)),

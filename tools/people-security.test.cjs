@@ -54,3 +54,11 @@ test('only administration and warehouse register inventory photos',async()=>{
  await assertFails(uploadBytes(ref(env.authenticatedContext('worker').storage(),'insumos_inventario/worker.png'),bytes,{contentType:'image/png'}));
  await assertFails(uploadBytes(ref(env.unauthenticatedContext().storage(),'insumos_inventario/visitor.png'),bytes,{contentType:'image/png'}));
 });
+
+test('personal-day panel can only be enabled by Administration, without changing staff role',async()=>{
+ const worker=env.authenticatedContext('worker').firestore();
+ await assertFails(updateDoc(doc(worker,'usuarios','worker'),{panelPersonal:true}));
+ await assertSucceeds(updateDoc(doc(env.authenticatedContext('admin').firestore(),'usuarios','worker'),{panelPersonal:true}));
+ await assertFails(updateDoc(doc(worker,'usuarios','worker'),{panelPersonal:false}));
+ await assertFails(updateDoc(doc(env.authenticatedContext('other').firestore(),'usuarios','worker'),{panelPersonal:false}));
+});

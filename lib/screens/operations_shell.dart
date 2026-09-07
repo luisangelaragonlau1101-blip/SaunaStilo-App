@@ -1,6 +1,7 @@
 import '../services/external_transfer.dart';
 import '../widgets/home_progress_panel.dart';
 import 'training_access_screen.dart';
+import 'personal_day_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -42,12 +43,16 @@ class _OperationsShellState extends State<OperationsShell> {
     if (oldWidget.usuario != widget.usuario) _pages.clear();
     if (oldWidget.usuario.id != widget.usuario.id || oldWidget.usuario.rol != widget.usuario.rol) _index = 0;
   }
+  void _personalMenu() {
+    final actions = AppActionCatalog.forUser(widget.usuario);
+    showModalBottomSheet<void>(context: context, isScrollControlled: true, useSafeArea: true, backgroundColor: const Color(0xFF111012), builder: (c) => SizedBox(height: MediaQuery.sizeOf(c).height * .82, child: ListView(padding: const EdgeInsets.all(20), children: [const Text('Todas mis opciones', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800)), for (final a in actions) ListTile(leading: Icon(a.icon, color: a.color), title: Text(a.title), subtitle: Text(a.subtitle), onTap: () { Navigator.pop(c); Navigator.of(context).push(MaterialPageRoute<void>(builder: a.builder)); })])));
+  }
   Widget _page(int index) => _pages.putIfAbsent(index, () => switch (index) {
     1 => BlogInternoScreen(usuario: widget.usuario),
     2 => MensajesEquipoScreen(usuario: widget.usuario),
     3 => EquipoTareasScreen(usuario: widget.usuario),
     4 => PerfilSocialScreen(usuarioActual: widget.usuario, perfilId: widget.usuario.id),
-    _ => _OperationsHome(usuario: widget.usuario, onTab: (i) => setState(() => _index = i)),
+    _ => widget.usuario.usesPersonalPanel ? PersonalDayScreen(user: widget.usuario, embedded: true, onProfile: () => setState(() => _index = 4), onOptions: _personalMenu) : _OperationsHome(usuario: widget.usuario, onTab: (i) => setState(() => _index = i)),
   });
   @override
   Widget build(BuildContext context) {
