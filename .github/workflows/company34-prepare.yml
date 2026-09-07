@@ -1,0 +1,74 @@
+name: Verify company learning manuals and alarms
+on:
+  push:
+    branches: [feat/company-training-manuals-34]
+permissions:
+  contents: read
+defaults:
+  run:
+    shell: bash
+jobs:
+  verify:
+    uses: ./.github/workflows/team-release-review.yml
+  android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 .maintenance/apply-company34.py
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - name: Compile internal Android app and verify signature
+        run: |
+          mkdir -p android-report
+          flutter build apk --release >android-report/build.txt 2>&1
+          cp build/app/outputs/flutter-apk/app-release.apk Sauna-Stilo-3.4.0-Android.apk
+          SDK="${ANDROID_HOME:-$ANDROID_SDK_ROOT}"
+          SIGNER="$(find "$SDK/build-tools" -name apksigner | sort -V | tail -1)"
+          "$SIGNER" verify --verbose --print-certs Sauna-Stilo-3.4.0-Android.apk >android-report/signature.txt
+          sha256sum Sauna-Stilo-3.4.0-Android.apk >android-report/sha256.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Sauna-Stilo-3.4.0-Android
+          path: Sauna-Stilo-3.4.0-Android.apk
+          retention-days: 30
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: company34-android-report
+          path: android-report
+          retention-days: 7
+  preserve:
+    needs: [verify, android]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Preserve only the verified integration
+        run: |
+          python3 .maintenance/apply-company34.py
+          git diff --check
+          git add lib test tests tools pubspec.yaml COMPANY34_RELEASE.md
+          git rm .maintenance/company34-plan.json .maintenance/apply-company34.py
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'feat: gate company learning and connect manuals with personalized alerts'
+          git push origin HEAD:feat/company-training-manuals-34
+          git archive HEAD > source.tar
+          git rev-parse HEAD > tested-source.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: company34-verified-source
+          path: |
+            source.tar
+            tested-source.txt
+          retention-days: 3
