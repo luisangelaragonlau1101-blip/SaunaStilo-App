@@ -44,15 +44,12 @@ class HomeProgressView extends StatelessWidget{
   Wrap(spacing:10,runSpacing:10,children:[
    _pill(Icons.local_fire_department_rounded,streak,admin?'Mejor secuencia del equipo':'Mi racha registrada',const Color(0xFFFFB876),onStreak),
    _pill(Icons.workspace_premium_rounded,loadingBadges?'—':'${badges.length}','Insignias otorgadas',const Color(0xFFB7FF2A),onProfile),
-   _pill(Icons.auto_awesome_rounded,learning==null?'—':'${learning!.xp}','XP de idiomas',const Color(0xFFC798FF),onLearn),
   ]),
   if(cached)const Padding(padding:EdgeInsets.only(top:9),child:Text('Asistencia: copia local, pendiente de actualización.',style:TextStyle(color:Colors.white54,fontSize:11))),
   if(workUnavailable)const Padding(padding:EdgeInsets.only(top:9),child:Text('No se pudo actualizar la información laboral.',style:TextStyle(color:Colors.orangeAccent,fontSize:12))),
   if(badges.isNotEmpty)...[const SizedBox(height:12),Wrap(spacing:7,runSpacing:7,children:[for(final b in badges.take(4))Chip(avatar:Icon(recognitionIcons[b['icono']]??Icons.verified_rounded,size:17,color:stiloAccents[(b['acento'] is int?(b['acento'] as int).abs():0)%stiloAccents.length]),label:Text(b['nombre']?.toString()??'Insignia'))])],
   const SizedBox(height:9),TextButton.icon(onPressed:onProfile,icon:const Icon(Icons.military_tech_rounded,size:19),label:const Text('Ver todos mis logros')),
-  const Divider(color:Colors.white12),const SizedBox(height:8),
-  Row(children:[const StiloOrbitIcon(icon:Icons.translate_rounded,color:Color(0xFFC798FF),size:46,active:true),const SizedBox(width:12),Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[const Text('Stilo Aprende',style:TextStyle(fontWeight:FontWeight.w800,fontSize:18)),const SizedBox(height:4),Text(learningError?'Tu progreso local no se pudo leer.':learning==null?'Preparando tu progreso…':'Inglés: ${learning!.streak('en',DateTime.now())} días · Francés: ${learning!.streak('fr',DateTime.now())} días',style:const TextStyle(color:Colors.white60,fontSize:12))]))]),
-  const SizedBox(height:12),FilledButton.icon(key:const ValueKey('home-learn'),onPressed:onLearn,icon:const Icon(Icons.school_rounded),label:const Text('Continuar aprendiendo')),
+
  ]));
  Widget _pill(IconData icon,String number,String label,Color color,VoidCallback tap)=>InkWell(borderRadius:BorderRadius.circular(24),onTap:tap,child:Container(padding:const EdgeInsets.symmetric(horizontal:13,vertical:12),decoration:BoxDecoration(color:color.withValues(alpha:.07),borderRadius:BorderRadius.circular(24),border:Border.all(color:color.withValues(alpha:.25))),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Row(mainAxisSize:MainAxisSize.min,children:[Icon(icon,color:color,size:25),const SizedBox(width:7),Text(number,style:TextStyle(color:color,fontSize:26,fontWeight:FontWeight.w900))]),const SizedBox(height:4),Text(label,style:const TextStyle(color:Colors.white70,fontSize:10))])));
 }

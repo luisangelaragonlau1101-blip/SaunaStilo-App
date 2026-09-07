@@ -1,135 +1,51 @@
-import '../services/external_transfer.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import '../services/external_transfer.dart';
+import '../services/personalized_alert.dart';
 
-import '../services/notificaciones_service.dart';
-
-class AdminAlertaGeneralScreen extends StatefulWidget {
-  const AdminAlertaGeneralScreen({super.key});
-
-  @override
-  State<AdminAlertaGeneralScreen> createState() => _AdminAlertaGeneralScreenState();
+class AdminAlertaGeneralScreen extends StatefulWidget{
+ const AdminAlertaGeneralScreen({super.key});
+ @override State<AdminAlertaGeneralScreen> createState()=>_AdminAlertState();
 }
-
-class _AdminAlertaGeneralScreenState extends State<AdminAlertaGeneralScreen> {
-  static const _bg = Color(0xFF050506);
-  static const _panel = Color(0xFF121012);
-  static const _wine = Color(0xFF8E1538);
-  static const _neon = Color(0xFFB7FF2A);
-  final _controller = TextEditingController(text: 'Atención equipo Sauna Stilo. Comuníquense con Administración de inmediato.');
-  final _service = NotificacionesService();
-  bool _sending = false;
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  Future<void> _send() async {
-    if (_sending) return;
-    final message = _controller.text.trim();
-    if (message.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Escribe el motivo de la alerta.')));
-      return;
-    }
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        backgroundColor: _panel,
-        title: const Text('¿Enviar alerta a TODO el equipo?'),
-        content: const Text('Se enviará una notificación urgente a todos los dispositivos registrados. Úsala solo cuando necesites la atención inmediata del equipo.'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('Cancelar')),
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: _wine, foregroundColor: Colors.white),
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('ENVIAR ALERTA'),
-          ),
-        ],
-      ),
-    );
-    if (confirmed != true || !mounted) return;
-    setState(() => _sending = true);
-    try {
-      await _service.enviarAlertaGeneral(mensaje: message);
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Alerta general enviada al sistema de notificaciones.')));
-    } catch (error) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('No se pudo enviar la alerta: $error')));
-    } finally {
-      if (mounted) setState(() => _sending = false);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: _bg,
-      appBar: AppBar(title: const Text('Alerta General'), backgroundColor: _bg),
-      body: ListView(
-        padding: const EdgeInsets.all(18),
-        children: [
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: _panel,
-              borderRadius: BorderRadius.circular(26),
-              border: Border.all(color: _wine.withOpacity(.7), width: 1.2),
-              boxShadow: [BoxShadow(color: _wine.withOpacity(.18), blurRadius: 30, spreadRadius: 1)],
-            ),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Row(children: [
-                Container(
-                  width: 52,
-                  height: 52,
-                  decoration: BoxDecoration(color: _wine.withOpacity(.22), borderRadius: BorderRadius.circular(18)),
-                  child: const Icon(Icons.campaign_rounded, color: Colors.white, size: 30),
-                ),
-                const SizedBox(width: 14),
-                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text('LLAMAR A TODO EL EQUIPO', style: GoogleFonts.inter(fontWeight: FontWeight.w900, fontSize: 17, letterSpacing: .3)),
-                  const SizedBox(height: 4),
-                  Text('Alerta de prioridad máxima', style: GoogleFonts.inter(color: _neon, fontSize: 11, fontWeight: FontWeight.w800)),
-                ])),
-              ]),
-              const SizedBox(height: 18),
-              Text('Este botón envía un aviso urgente a todos los usuarios con un dispositivo registrado. En segundo plano el sistema solicita prioridad alta y sonido; el volumen final sigue dependiendo de permisos, modo Silencio/Enfoque y restricciones del teléfono.', style: GoogleFonts.inter(color: Colors.white70, height: 1.45, fontSize: 12.5)),
-              const SizedBox(height: 18),
-              TextField(contextMenuBuilder: privacyTextMenu,
-                controller: _controller,
-                minLines: 3,
-                maxLines: 6,
-                maxLength: 420,
-                decoration: const InputDecoration(labelText: 'Mensaje de alerta', hintText: 'Escribe qué necesita hacer el equipo ahora'),
-              ),
-              const SizedBox(height: 14),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton.icon(
-                  style: FilledButton.styleFrom(backgroundColor: _wine, foregroundColor: Colors.white, minimumSize: const Size.fromHeight(62)),
-                  onPressed: _sending ? null : _send,
-                  icon: _sending
-                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                      : const Icon(Icons.notifications_active_rounded),
-                  label: Text(_sending ? 'ENVIANDO…' : 'ACTIVAR ALERTA GENERAL', style: const TextStyle(fontWeight: FontWeight.w900)),
-                ),
-              ),
-            ]),
-          ),
-          const SizedBox(height: 18),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(color: const Color(0xFF10130D), borderRadius: BorderRadius.circular(20), border: Border.all(color: _neon.withOpacity(.2))),
-            child: const Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Icon(Icons.verified_user_outlined, color: _neon),
-              SizedBox(width: 10),
-              Expanded(child: Text('Protección: el servidor verifica que la alerta haya sido creada por una cuenta de Administración antes de distribuirla a todo el equipo.')),
-            ]),
-          ),
-        ],
-      ),
-    );
-  }
+class _AdminAlertState extends State<AdminAlertaGeneralScreen>{
+ final _title=TextEditingController(text:'🚨 ALERTA GENERAL · SAUNA STILO');
+ final _message=TextEditingController(text:'Atención equipo Sauna Stilo. Comuníquense con Administración de inmediato.');
+ String _audience='todos',_role='trabajador',_search='';final _people=<String>{};bool _sending=false;String? _error,_batchId;List<Map<String,dynamic>>? _pending;
+ @override void dispose(){_title.dispose();_message.dispose();super.dispose();}
+ Future<void> _send()async{
+  if(_sending)return;final uid=FirebaseAuth.instance.currentUser?.uid;if(uid==null){setState(()=>_error='Inicia sesión como administrador.');return;}
+  setState(()=>_sending=true);
+  try{
+   final payloads=_pending??personalizedAlertPayloads(senderId:uid,title:_title.text,message:_message.text,audience:_audience,users:_people.toList(),role:_role);
+   final label=_audience=='todos'?'TODO EL EQUIPO':_audience=='personas'?'${_people.length} personas seleccionadas':'el rol $_role';
+   final yes=await showDialog<bool>(context:context,builder:(c)=>AlertDialog(title:Text('¿Enviar a $label?'),content:Text('${_title.text}\n\n${_message.text}\n\nSe solicita sonido urgente. La recepción y el volumen dependen de conexión, permisos y ajustes del teléfono.'),actions:[TextButton(onPressed:()=>Navigator.pop(c,false),child:const Text('Cancelar')),FilledButton(onPressed:()=>Navigator.pop(c,true),child:const Text('ENVIAR ALERTA'))]));if(yes!=true||!mounted)return;
+   setState((){_sending=true;_error=null;});
+   if(payloads.any((p)=>p['creadoPor']!=uid))throw StateError('La sesión cambió. Abre de nuevo esta pantalla.');
+   final db=FirebaseFirestore.instance;final profile=await db.collection('usuarios').doc(uid).get(const GetOptions(source:Source.server));
+   if(profile.data()?['rol']!='admin'||profile.data()?['activo']==false)throw StateError('Solo una cuenta activa de Administración puede enviar la alerta.');
+   _batchId??=db.collection('notificaciones').doc().id;_pending=payloads;
+   final batch=db.batch();for(var i=0;i<payloads.length;i++){batch.set(db.collection('notificaciones').doc('${_batchId}_$i'),{...payloads[i],'fecha':FieldValue.serverTimestamp(),'loteId':_batchId});}
+   // Same IDs are retained for retry. The existing push trigger runs only on create.
+   await batch.commit();
+   if(!mounted)return;setState((){_batchId=null;_pending=null;});
+   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text('Alerta registrada para sus destinatarios. Esto no confirma que haya sonado en cada teléfono.')));
+  }catch(e){if(mounted)setState(()=>_error=e is StateError?e.message.toString():e is ArgumentError?e.message.toString():'No se confirmó el envío. Reintentar conserva el mismo identificador para evitar duplicados.');}
+  finally{if(mounted)setState(()=>_sending=false);}
+ }
+ @override Widget build(BuildContext context){final locked=_sending||_pending!=null;
+ return Scaffold(backgroundColor:Colors.black,appBar:AppBar(title:const Text('Alerta General · Personalizada')),body:ListView(padding:const EdgeInsets.all(20),children:[
+  Container(padding:const EdgeInsets.all(22),decoration:BoxDecoration(borderRadius:BorderRadius.circular(30),gradient:const LinearGradient(colors:[Color(0xFF401024),Color(0xFF141015)]),border:Border.all(color:const Color(0xFF8E1538))),child:const Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Icon(Icons.campaign_rounded,size:46,color:Color(0xFFFF729C)),SizedBox(height:12),Text('La atención del equipo,\ncon tu mensaje.',style:TextStyle(fontSize:26,fontWeight:FontWeight.w900)),SizedBox(height:10),Text('Conserva la alarma general o elige exactamente a quién avisar.',style:TextStyle(color:Colors.white70))])),
+  const SizedBox(height:20),DropdownButtonFormField<String>(initialValue:_audience,decoration:const InputDecoration(labelText:'Destinatarios'),items:const [DropdownMenuItem(value:'todos',child:Text('Todo el equipo')),DropdownMenuItem(value:'personas',child:Text('Elegir personas')),DropdownMenuItem(value:'rol',child:Text('Un rol del equipo'))],onChanged:locked?null:(v)=>setState(()=>_audience=v!)),
+  if(_audience=='rol')Padding(padding:const EdgeInsets.only(top:12),child:DropdownButtonFormField<String>(initialValue:_role,items:const [DropdownMenuItem(value:'trabajador',child:Text('Trabajadores')),DropdownMenuItem(value:'maestro',child:Text('Maestros')),DropdownMenuItem(value:'almacenista',child:Text('Almacén')),DropdownMenuItem(value:'admin',child:Text('Administración'))],onChanged:locked?null:(v)=>setState(()=>_role=v!))),
+  if(_audience=='personas')...[
+   const SizedBox(height:12),TextField(contextMenuBuilder:privacyTextMenu,enabled:!locked,decoration:const InputDecoration(hintText:'Buscar una persona'),onChanged:(v)=>setState(()=>_search=v.toLowerCase())),
+   StreamBuilder<QuerySnapshot<Map<String,dynamic>>>(stream:FirebaseFirestore.instance.collection('usuarios').snapshots(),builder:(c,s){if(s.hasError)return const Text('No se pudo leer el equipo.');if(!s.hasData)return const LinearProgressIndicator();final people=s.data!.docs.where((d)=>d.data()['activo']!=false&&(d.data()['nombre']??'').toString().toLowerCase().contains(_search)).toList();return Column(children:[for(final d in people)CheckboxListTile(value:_people.contains(d.id),title:Text(d.data()['nombre']?.toString()??'Integrante'),subtitle:Text(d.data()['rol']?.toString()??''),onChanged:locked?null:(v)=>setState((){if(v==true){_people.add(d.id);}else{_people.remove(d.id);}}))]);}),
+  ],
+  const SizedBox(height:18),TextField(contextMenuBuilder:privacyTextMenu,controller:_title,enabled:!locked,maxLength:80,decoration:const InputDecoration(labelText:'Título personalizado')),
+  TextField(contextMenuBuilder:privacyTextMenu,controller:_message,enabled:!locked,minLines:3,maxLines:6,maxLength:420,decoration:const InputDecoration(labelText:'Mensaje que recibirán')),
+  if(_error!=null)Padding(padding:const EdgeInsets.only(bottom:16),child:Text(_error!,style:const TextStyle(color:Colors.orangeAccent))),
+  FilledButton.icon(onPressed:_sending?null:_send,style:FilledButton.styleFrom(backgroundColor:const Color(0xFF8E1538),foregroundColor:Colors.white,minimumSize:const Size.fromHeight(58)),icon:const Icon(Icons.notifications_active_rounded),label:Text(_sending?'ENVIANDO…':_pending!=null?'REINTENTAR EL MISMO ENVÍO':_audience=='todos'?'ACTIVAR ALERTA GENERAL':'ENVIAR ALERTA PERSONALIZADA')),
+  const SizedBox(height:18),const Text('El sonido urgente existente se conserva. Personalizar no fuerza volumen máximo, no omite Silencio/Enfoque y no cambia los permisos de notificaciones. El servidor mantiene la validación de Administración antes de distribuir el aviso.',style:TextStyle(color:Colors.white54,fontSize:12,height:1.5)),
+ ]));}
 }

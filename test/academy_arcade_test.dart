@@ -58,7 +58,7 @@ void main(){
   tester.view.physicalSize=const Size(320,850);tester.view.devicePixelRatio=1;addTearDown(tester.view.resetPhysicalSize);addTearDown(tester.view.resetDevicePixelRatio);
   int tapped=0;await tester.pumpWidget(MaterialApp(theme:ThemeData.dark(),home:Scaffold(body:SingleChildScrollView(child:HomeProgressView(admin:true,streak:'14',badges:const [{'nombre':'Calidad','icono':'calidad','acento':1}],learning:LearningProgress(),onStreak:(){},onProfile:(){},onLearn:()=>tapped++)))));
   expect(find.text('Mejor secuencia del equipo'),findsOneWidget);expect(find.text('Mi racha registrada'),findsNothing);
-  await tester.ensureVisible(find.byKey(const ValueKey('home-learn')));await tester.pumpAndSettle();await tester.tap(find.byKey(const ValueKey('home-learn')));expect(tapped,1);expect(tester.takeException(),isNull);
+  expect(find.byKey(const ValueKey('home-learn')),findsNothing);expect(find.text('XP idiomas'),findsNothing);expect(tapped,0);expect(tester.takeException(),isNull);
  });
  testWidgets('quiz moves and scores from actual taps, never network',(tester)async{
   final game=RoundMatch('riddles',['A','B','C','D'],3,random:Random(1));

@@ -8,13 +8,13 @@ import '../games/round_questions.dart';
 import '../widgets/stilo_orbit.dart';
 
 class StiloAcademyScreen extends StatefulWidget{
- final String userId;
- const StiloAcademyScreen({super.key,required this.userId});
+ final String userId; final List<String> allowedLanguages;
+ const StiloAcademyScreen({super.key,required this.userId,this.allowedLanguages=const ['en','fr']});
  @override State<StiloAcademyScreen> createState()=>_AcademyState();
 }
 class _AcademyState extends State<StiloAcademyScreen>{
  String _language='en';LearningProgress? _progress;String? _error;
- @override void initState(){super.initState();_load();}
+ @override void initState(){super.initState();_language=widget.allowedLanguages.first;_load();}
  Future<void> _load()async{try{final p=await LearningStore.read(widget.userId);if(mounted)setState((){_progress=p;_error=null;});}catch(_){if(mounted)setState(()=>_error='No se pudo leer el progreso local. No se borró.');}}
  Future<void> _open(StiloLesson lesson)async{await Navigator.push(context,MaterialPageRoute<void>(builder:(_)=>StiloLessonScreen(userId:widget.userId,lesson:lesson)));if(mounted)await _load();}
  @override Widget build(BuildContext context){final p=_progress,lessons=stiloLessons.where((l)=>l.language==_language).toList();
@@ -24,7 +24,7 @@ class _AcademyState extends State<StiloAcademyScreen>{
     const SizedBox(height:14),const Text('Un idioma.\nUn paso cada día.',style:TextStyle(fontSize:29,height:1.12,fontWeight:FontWeight.w900)),
     const SizedBox(height:14),const Text('Lecciones cortas para empezar desde cero. Aprende, practica y celebra tu avance.',style:TextStyle(color:Colors.white70,height:1.5)),
    ]),),
-   const SizedBox(height:16),Wrap(spacing:10,children:[for(final lang in ['en','fr'])ChoiceChip(key:ValueKey('language-$lang'),label:Text(lang=='en'?'Inglés':'Francés'),selected:_language==lang,onSelected:(_)=>setState(()=>_language=lang))]),
+   const SizedBox(height:16),Wrap(spacing:10,children:[for(final lang in widget.allowedLanguages)ChoiceChip(key:ValueKey('language-$lang'),label:Text(lang=='en'?'Inglés':'Francés'),selected:_language==lang,onSelected:(_)=>setState(()=>_language=lang))]),
    const SizedBox(height:16),
    if(_error!=null)...[Text(_error!,style:const TextStyle(color:Colors.orangeAccent)),TextButton(onPressed:_load,child:const Text('Reintentar'))]
    else if(p==null)const LinearProgressIndicator()
@@ -37,7 +37,7 @@ class _AcademyState extends State<StiloAcademyScreen>{
      title:Text('${l.order+1}. ${l.title}',style:const TextStyle(fontWeight:FontWeight.w800)),subtitle:Text(p.score(l.id)>=80?'Completada · mejor resultado ${p.score(l.id)}%':p.unlocked(l)?'6 expresiones · 12 ejercicios':'Completa la lección anterior'),trailing:p.score(l.id)>=80?const Icon(Icons.star_rounded,color:Color(0xFFFFB876)):null,onTap:p.unlocked(l)?()=>_open(l):null))),
     const SizedBox(height:22),Wrap(spacing:8,runSpacing:8,children:[for(final milestone in [1,3,6,12])Chip(avatar:Icon(p.completed(_language)>=milestone?Icons.workspace_premium_rounded:Icons.lock_outline_rounded,color:p.completed(_language)>=milestone?const Color(0xFFB7FF2A):Colors.white38),label:Text('$milestone ${milestone==1?'lección':'lecciones'}'))]),
    ],
-   const SizedBox(height:20),const Text('Práctica introductoria, no certificación de nivel. El texto y los ejercicios funcionan sin Internet después de descargarse la app. La pronunciación depende de las voces disponibles en tu dispositivo.\n\nEl progreso es local, separado por cuenta y dispositivo. No modifica tus rachas laborales. La racha de estudio cuenta días del reloj de este dispositivo; repetir una lección mantiene la práctica, pero no duplica los XP.',style:TextStyle(color:Colors.white54,fontSize:12,height:1.5)),
+   const SizedBox(height:20),const Text('Curso introductorio. La constancia empresarial requiere evaluación final en línea y revisión de Administración. El texto y los ejercicios funcionan sin Internet después de descargarse la app. La pronunciación depende de las voces disponibles en tu dispositivo.\n\nEl progreso es local, separado por cuenta y dispositivo. No modifica tus rachas laborales. La racha de estudio cuenta días del reloj de este dispositivo; repetir una lección mantiene la práctica, pero no duplica los XP.',style:TextStyle(color:Colors.white54,fontSize:12,height:1.5)),
   ]));
  }
 }
