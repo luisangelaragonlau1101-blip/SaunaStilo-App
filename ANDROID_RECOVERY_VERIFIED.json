@@ -1,0 +1,32 @@
+{
+  "version": "3.5.1",
+  "edition": "side-by-side recovery; not an in-place update",
+  "label": "Sauna Stilo Nueva",
+  "applicationId": "com.saunastilo.personal",
+  "legacyApplicationId": "com.saunastylo.saunastylo",
+  "apkBytes": 79366201,
+  "apkSha256": "23b36c54b771e2988c6b9dd3943cebd25b5885015511340fb9d9cad3390c9cf3",
+  "signingCertificateSha256": "716e331c62be7c4055e8217ebf771da716ed13c87e10bf55bb98f608625b80bf",
+  "signatureV2Verified": true,
+  "signatureV3Verified": true,
+  "installationTest": {
+    "workflowRun": 34163946054,
+    "sourceCommit": "382adaf5847a89d45e9b7f053e1f61206109c958",
+    "environment": "Android API 35 Google APIs x86_64 emulator",
+    "legacyInstalled": true,
+    "recoveryInstalledWithoutUninstall": true,
+    "recoveryLaunchStatus": "ok",
+    "legacySyntheticDataMarkerPreserved": true,
+    "sameSignerHigherVersionUpgradeSucceeded": true,
+    "recoverySyntheticDataMarkerPreservedAfterUpgrade": true,
+    "firebaseInitializationErrorsObserved": []
+  },
+  "physicalPhoneTested": false,
+  "realAccountSignInTested": false,
+  "realPushDeliveryTested": false,
+  "localOnlyDataAutomaticallyMigrated": false,
+  "signingPrivateMaterial": "owner-only backup recovered from RSA-OAEP/AES-GCM encrypted transfer; no plaintext keys in repository or public CI artifacts",
+  "automaticEphemeralDebugReleaseDisabled": true,
+  "githubSigningSecretsConfigured": false,
+  "newFirebaseAndroidRegistrationCreated": false
+}

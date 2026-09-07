@@ -45,9 +45,10 @@ jobs:
           python3 - <<'PY'
           import os,pathlib,re
           s=pathlib.Path('signature.txt').read_text()
-          actual=re.search(r'Signer #1 certificate SHA-256 digest: ([0-9a-f]+)',s).group(1)
+          actual=set(re.findall(r'certificate SHA-256 digest: ([0-9a-f]+)',s))
           expected=os.environ['EXPECTED_CERT_SHA256'].replace(':','').lower().strip()
-          if actual!=expected: raise SystemExit('Unexpected signing certificate: refusing to distribute this APK.')
+          if not re.fullmatch(r'[0-9a-f]{64}',expected) or actual!={expected}:
+              raise SystemExit('Unexpected signing certificate: refusing to distribute this APK.')
           PY
       - uses: actions/upload-artifact@v4
         with:
