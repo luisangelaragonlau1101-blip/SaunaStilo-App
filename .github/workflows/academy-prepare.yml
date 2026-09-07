@@ -4,9 +4,6 @@ on:
     branches: [feat/stilo-academy-arcade-33]
 permissions:
   contents: read
-concurrency:
-  group: stilo-academy-preparation
-  cancel-in-progress: true
 defaults:
   run:
     shell: bash
@@ -15,28 +12,51 @@ jobs:
     uses: ./.github/workflows/team-release-review.yml
   android:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      actions: read
     steps:
       - uses: actions/checkout@v4
-      - name: Reproduce reviewed application edits
-        run: python3 .maintenance/apply-academy.py
-      - uses: actions/setup-java@v4
         with:
-          distribution: temurin
-          java-version: '21'
-      - uses: subosito/flutter-action@v2
-        with:
-          channel: stable
-          cache: true
-      - run: flutter pub get
-      - name: Build internal Android and verify signature
+          fetch-depth: 0
+      - name: Require exact application inputs from the signed Android compilation
         run: |
+          git worktree add --detach /tmp/stilo-prior 0490612e4417d40987e3fba14b3d3cd1d6f148f7
+          (cd /tmp/stilo-prior && python3 .maintenance/apply-academy.py)
+          python3 .maintenance/apply-academy.py
+          for path in lib android assets web pubspec.yaml pubspec.lock; do git diff --no-index --exit-code "/tmp/stilo-prior/$path" "$path"; done
           mkdir -p android-report
-          flutter build apk --release >android-report/build.txt 2>&1
-          cp build/app/outputs/flutter-apk/app-release.apk Sauna-Stilo-3.3.0-Android.apk
+          echo 'Exact application inputs match the APK compilation in run 34068225431. Only tests and delivery workflows changed.' > android-report/provenance.txt
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Wait for original signed artifact without rebuilding or changing its key
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          node <<'NODE'
+          (async()=>{
+            const url='https://api.github.com/repos/luisangelaragonlau1101-blip/SaunaStilo-App/actions/runs/34068225431/artifacts';
+            for(let i=0;i<60;i++){
+              const r=await fetch(url,{headers:{Authorization:'Bearer '+process.env.GH_TOKEN,Accept:'application/vnd.github+json'}});
+              if(!r.ok)throw Error('Artifact status '+r.status);
+              const j=await r.json();if(j.artifacts.some(a=>a.name==='Sauna-Stilo-3.3.0-Android'&&!a.expired))return;
+              await new Promise(r=>setTimeout(r,10000));
+            }throw Error('Original Android compilation has not supplied a signed artifact.');
+          })().catch(e=>{console.error(e.message);process.exitCode=1;});
+          NODE
+      - uses: actions/download-artifact@v4
+        with:
+          name: Sauna-Stilo-3.3.0-Android
+          run-id: 34068225431
+          github-token: ${{ github.token }}
+      - name: Verify signature and exact APK integrity
+        run: |
           SDK="${ANDROID_HOME:-$ANDROID_SDK_ROOT}"
           SIGNER="$(find "$SDK/build-tools" -name apksigner | sort -V | tail -1)"
           "$SIGNER" verify --verbose --print-certs Sauna-Stilo-3.3.0-Android.apk >android-report/signature.txt
+          unzip -t Sauna-Stilo-3.3.0-Android.apk >android-report/integrity.txt
           sha256sum Sauna-Stilo-3.3.0-Android.apk >android-report/sha256.txt
       - uses: actions/upload-artifact@v4
         with:
