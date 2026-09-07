@@ -1,3 +1,4 @@
+import '../services/external_transfer.dart';
 import '../widgets/warehouse_header.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -259,7 +260,7 @@ class _InventarioAdminScreenState extends State<InventarioAdminScreen> {
       await File(pdfPath).writeAsBytes(await pdf.save());
       
       if (mounted) Navigator.pop(context); 
-      Share.shareXFiles([XFile(pdfPath, mimeType: 'application/pdf')], text: 'Reporte de Reabastecimiento - $fechaDisplay');
+      ExternalTransfer.block(context);
 
     } catch (e) {
       if (mounted) Navigator.pop(context);
@@ -356,7 +357,7 @@ class _InventarioAdminScreenState extends State<InventarioAdminScreen> {
                 letterSpacing: 0.5,
               ),
             )
-        : TextField(
+        : TextField(contextMenuBuilder: privacyTextMenu,
               controller: _searchController,
               autofocus: true,
               style: const TextStyle(color: Colors.white, fontSize: 16),

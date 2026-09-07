@@ -1,3 +1,4 @@
+import '../services/external_transfer.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -62,7 +63,7 @@ class _TrabajadorCategoriasScreenState extends State<TrabajadorCategoriasScreen>
               'INVENTARIO Y CATEGORÍAS',
               style: GoogleFonts.inter(color: colorTextoPrimario, fontWeight: FontWeight.w700, fontSize: 16),
             )
-          : TextField(
+          : TextField(contextMenuBuilder: privacyTextMenu,
               controller: _searchController,
               autofocus: true,
               style: const TextStyle(color: Colors.white, fontSize: 16),

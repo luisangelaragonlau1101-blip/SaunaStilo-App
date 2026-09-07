@@ -1,3 +1,5 @@
+import '../services/external_transfer.dart';
+import '../widgets/protected_media_viewer.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -276,18 +278,7 @@ class _ModalDetalleActividadState extends State<ModalDetalleActividad> {
   }
 
   Future<void> _abrirUrl(String url) async {
-    try {
-      final uri = Uri.tryParse(url);
-      if (uri != null &&
-          await launchUrl(uri, mode: LaunchMode.platformDefault)) {
-        return;
-      }
-    } catch (_) {
-      // El mensaje común de abajo mantiene la experiencia consistente.
-    }
-    if (mounted) {
-      _mostrarMensaje('No fue posible abrir esta evidencia.', esError: true);
-    }
+    await showProtectedMedia(context, url);
   }
 
   String _formatearTamanio(int bytes) {
@@ -577,7 +568,7 @@ class _ModalDetalleActividadState extends State<ModalDetalleActividad> {
           ),
         ),
         const SizedBox(height: 10),
-        TextField(
+        TextField(contextMenuBuilder: privacyTextMenu,
           controller: _comentarioController,
           enabled: habilitado,
           maxLines: 4,

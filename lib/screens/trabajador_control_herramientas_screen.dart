@@ -1,3 +1,4 @@
+import '../services/external_transfer.dart';
 import 'dart:typed_data';
 import 'dart:ui';
 import 'package:flutter/material.dart';
@@ -551,7 +552,7 @@ class _ControlHerramientasScreenState extends State<ControlHerramientasScreen> {
                   const SizedBox(height: 16),
                   
                   // BUSCADOR
-                  TextField(
+                  TextField(contextMenuBuilder: privacyTextMenu,
                     controller: searchController,
                     onChanged: (value) {
                       setModalState(() {
@@ -1207,7 +1208,7 @@ class _ReporteDevolucionModalState extends State<ReporteDevolucionModal> {
 
                     Text("Observaciones:", style: GoogleFonts.inter(color: colorTextoPrimario, fontSize: 16, fontWeight: FontWeight.w600)),
                     const SizedBox(height: 12),
-                    TextField(
+                    TextField(contextMenuBuilder: privacyTextMenu,
                       controller: _observacionesController,
                       maxLines: 4,
                       style: GoogleFonts.inter(color: colorTextoPrimario),

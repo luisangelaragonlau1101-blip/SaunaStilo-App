@@ -1,3 +1,4 @@
+import '../services/external_transfer.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -273,6 +274,6 @@ void _registrarVenta() async {
   
   Widget _buildTextField(TextEditingController controller, String label, IconData icon, {TextInputType type = TextInputType.text}) => Container(
     margin: const EdgeInsets.only(bottom: 12), 
-    child: TextField(controller: controller, keyboardType: type, style: const TextStyle(color: Colors.white), decoration: _inputDecoration(label, icon)),
+    child: TextField(contextMenuBuilder: privacyTextMenu, controller: controller, keyboardType: type, style: const TextStyle(color: Colors.white), decoration: _inputDecoration(label, icon)),
   );
 }

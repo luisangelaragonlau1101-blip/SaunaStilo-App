@@ -1,3 +1,4 @@
+import '../services/external_transfer.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -258,7 +259,7 @@ class _FuturisticDashboardScreenState
   Widget _searchBar(List<AppAction> actions) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(18, 10, 18, 5),
-      child: TextField(
+      child: TextField(contextMenuBuilder: privacyTextMenu,
         controller: _search,
         onChanged: (value) => setState(() => _query = value),
         onSubmitted: (value) {

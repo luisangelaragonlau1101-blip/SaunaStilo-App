@@ -1,3 +1,4 @@
+import '../services/external_transfer.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
@@ -342,7 +343,7 @@ class _FormPedidoInsumoScreenState extends State<FormPedidoInsumoScreen> {
     int maxLines = 1,
     bool isRequired = true,
   }) {
-    return TextFormField(
+    return TextFormField(contextMenuBuilder: privacyTextMenu,
       controller: controller,
       keyboardType: keyboardType,
       maxLines: maxLines,

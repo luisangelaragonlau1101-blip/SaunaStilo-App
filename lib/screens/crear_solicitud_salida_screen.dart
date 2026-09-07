@@ -1,3 +1,4 @@
+import '../services/external_transfer.dart';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -302,7 +303,7 @@ class _CrearSolicitudSalidaScreenState extends State<CrearSolicitudSalidaScreen>
                   const SizedBox(height: 16),
                   
                   
-                  TextField(
+                  TextField(contextMenuBuilder: privacyTextMenu,
                     controller: searchController,
                     onChanged: (value) => setModalState(() => searchQuery = value.toLowerCase()),
                     style: GoogleFonts.inter(color: Colors.white),

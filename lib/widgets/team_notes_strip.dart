@@ -1,3 +1,4 @@
+import '../services/external_transfer.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -84,7 +85,7 @@ class TeamNoteDetails extends StatelessWidget {
     return SafeArea(child: SingleChildScrollView(padding: const EdgeInsets.all(24), child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
       const StiloOrbitIcon(icon: Icons.music_note_rounded, color: Color(0xFFC798FF), size: 58), const SizedBox(height: 14),
       Text(data['autorNombre']?.toString() ?? 'Integrante', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800)),
-      const SizedBox(height: 12), SelectableText(data['notaTexto']?.toString() ?? '', style: const TextStyle(fontSize: 18, height: 1.5)),
+      const SizedBox(height: 12), Text(data['notaTexto']?.toString() ?? '', style: const TextStyle(fontSize: 18, height: 1.5)),
       if (link.isNotEmpty) ...[const SizedBox(height: 18), FilledButton.icon(icon: const Icon(Icons.play_arrow_rounded), label: Text((data['musicaTitulo']?.toString() ?? '').isEmpty ? 'Abrir canción' : data['musicaTitulo'].toString()), onPressed: () async {
         try {if (!await launchUrl(Uri.parse(link), mode: LaunchMode.externalApplication)) throw StateError('open');}
         catch (_) {if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No se pudo abrir la canción.')));}
@@ -124,9 +125,9 @@ class _TeamNoteEditorState extends State<TeamNoteEditor> {
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)), title: const Text('Una nota. Una canción. Tú.'),
     content: SizedBox(width: 390, child: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, children: [
       const Text('Visible para todo el equipo en Chats y Comunidad. Se conserva hasta que la cambies o elimines.', style: TextStyle(color: Colors.white60, fontSize: 12, height: 1.5)),
-      const SizedBox(height: 14), TextField(controller: _text, enabled: !_busy, maxLength: 180, maxLines: 3, decoration: const InputDecoration(labelText: 'Tu nota', hintText: '¿Qué quieres compartir?')),
-      TextField(controller: _song, enabled: !_busy, maxLength: 100, decoration: const InputDecoration(labelText: 'Canción y artista (opcional)', prefixIcon: Icon(Icons.music_note_rounded))),
-      TextField(controller: _url, enabled: !_busy, maxLength: 500, autocorrect: false, keyboardType: TextInputType.url, decoration: const InputDecoration(labelText: 'Enlace de la canción (opcional)', hintText: 'Spotify, YouTube, Apple Music o SoundCloud', prefixIcon: Icon(Icons.link_rounded))),
+      const SizedBox(height: 14), TextField(contextMenuBuilder: privacyTextMenu, controller: _text, enabled: !_busy, maxLength: 180, maxLines: 3, decoration: const InputDecoration(labelText: 'Tu nota', hintText: '¿Qué quieres compartir?')),
+      TextField(contextMenuBuilder: privacyTextMenu, controller: _song, enabled: !_busy, maxLength: 100, decoration: const InputDecoration(labelText: 'Canción y artista (opcional)', prefixIcon: Icon(Icons.music_note_rounded))),
+      TextField(contextMenuBuilder: privacyTextMenu, controller: _url, enabled: !_busy, maxLength: 500, autocorrect: false, keyboardType: TextInputType.url, decoration: const InputDecoration(labelText: 'Enlace de la canción (opcional)', hintText: 'Spotify, YouTube, Apple Music o SoundCloud', prefixIcon: Icon(Icons.link_rounded))),
       const Padding(padding: EdgeInsets.only(top: 10), child: Text('En Spotify: Compartir → Copiar enlace. Pégalo aquí con el nombre de la canción. Mostrar lo que suena en vivo requiere una conexión autorizada de Spotify; este enlace no da acceso a tu cuenta.', style: TextStyle(fontSize: 11, color: Colors.white54))),
       if (_error != null) Text(_error!, style: const TextStyle(color: Colors.orangeAccent)),
     ]))),

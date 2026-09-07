@@ -1,3 +1,4 @@
+import '../services/external_transfer.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import '../models/user_model.dart';
@@ -23,7 +24,7 @@ class _PrestamosEquipoScreenState extends State<PrestamosEquipoScreen> {
       Padding(padding: const EdgeInsets.all(18), child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         FilledButton.icon(onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => TrabajadorCajitaHerramientasScreen(trabajadorId: widget.usuario.id))), icon: const Icon(Icons.handyman_outlined), label: const Text('Mi cajita · prestar, recibir o devolver')),
         const SizedBox(height: 12), const Text('Solicita una herramienta a quien la tiene. El préstamo solo cambia de responsable cuando se confirma la entrega en Mi cajita.', style: TextStyle(color: Colors.white60, height: 1.45)),
-        const SizedBox(height: 12), TextField(onChanged: (v) => setState(() => _query = v.trim().toLowerCase()), decoration: const InputDecoration(hintText: 'Buscar herramienta o compañero…', prefixIcon: Icon(Icons.search))),
+        const SizedBox(height: 12), TextField(contextMenuBuilder: privacyTextMenu, onChanged: (v) => setState(() => _query = v.trim().toLowerCase()), decoration: const InputDecoration(hintText: 'Buscar herramienta o compañero…', prefixIcon: Icon(Icons.search))),
       ])),
       Expanded(child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(stream: FirebaseFirestore.instance.collection('cajitas_inventario').where('estado', isEqualTo: 'asignado').snapshots(), builder: (c, snapshot) {
         if (snapshot.hasError) return const Center(child: Padding(padding: EdgeInsets.all(20), child: Text('No se pudieron consultar las herramientas. Revisa Internet y permisos.')));

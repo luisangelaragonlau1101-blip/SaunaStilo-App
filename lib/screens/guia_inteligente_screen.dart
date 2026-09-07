@@ -1,3 +1,4 @@
+import '../services/external_transfer.dart';
 import 'dart:async';
 
 import 'package:audioplayers/audioplayers.dart';
@@ -406,7 +407,7 @@ class _GuiaInteligenteScreenState extends State<GuiaInteligenteScreen> {
                 ),
                 const SizedBox(width: 6),
                 Expanded(
-                  child: TextField(
+                  child: TextField(contextMenuBuilder: privacyTextMenu,
                     controller: _controller,
                     enabled: !_thinking,
                     onSubmitted: _ask,

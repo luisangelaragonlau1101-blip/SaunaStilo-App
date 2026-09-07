@@ -1,8 +1,10 @@
+import '../services/external_transfer.dart';
 import '../widgets/shared_media_card.dart';
 import '../services/offline_workspace.dart';
 import 'dart:typed_data';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:file_picker/file_picker.dart';
+import '../widgets/protected_media_viewer.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
@@ -33,7 +35,7 @@ class _MensajesEquipoScreenState extends State<MensajesEquipoScreen> {
     body: TabBarView(children: [
       Column(children: [
         TeamNotesStrip(user: widget.usuario),
-        Padding(padding: const EdgeInsets.all(16), child: TextField(decoration: const InputDecoration(hintText: 'Buscar a una persona…', prefixIcon: Icon(Icons.search_rounded)), onChanged: (v) => setState(() => _query = v.trim().toLowerCase()))),
+        Padding(padding: const EdgeInsets.all(16), child: TextField(contextMenuBuilder: privacyTextMenu, decoration: const InputDecoration(hintText: 'Buscar a una persona…', prefixIcon: Icon(Icons.search_rounded)), onChanged: (v) => setState(() => _query = v.trim().toLowerCase()))),
         Expanded(child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(stream: FirebaseFirestore.instance.collection('usuarios').snapshots(), builder: (context, snapshot) {
           if (snapshot.hasError) return const _ChatStatus('No se pudo leer el equipo. Revisa conexión y permisos.');
           if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
@@ -121,7 +123,7 @@ class _ConversacionPrivadaScreenState extends State<ConversacionPrivadaScreen> {
         if (_files.isNotEmpty) SizedBox(height: 48, child: ListView(scrollDirection: Axis.horizontal, padding: const EdgeInsets.symmetric(horizontal: 10), children: [for (final f in _files) Padding(padding: const EdgeInsets.only(right: 6), child: InputChip(label: Text(f.name, overflow: TextOverflow.ellipsis), onDeleted: _busy ? null : () => setState(() => _files.remove(f))))])),
         SafeArea(top: false, child: Container(padding: const EdgeInsets.fromLTRB(10, 4, 10, 10), color: const Color(0xFF111012), child: Column(children: [
           Row(children: [Switch(value: _onScreen, activeTrackColor: const Color(0xFF668F19), onChanged: _busy ? null : (v) => setState(() => _onScreen = v)), const Expanded(child: Text('Mostrar aviso personal en su pantalla', style: TextStyle(color: Colors.white70, fontSize: 11)))]),
-          TextField(controller: _text, enabled: !_busy, minLines: 1, maxLines: 4, maxLength: 4000, textCapitalization: TextCapitalization.sentences, decoration: const InputDecoration(hintText: 'Escribe o dicta un mensaje…', counterText: '')),
+          TextField(contextMenuBuilder: privacyTextMenu, controller: _text, enabled: !_busy, minLines: 1, maxLines: 4, maxLength: 4000, textCapitalization: TextCapitalization.sentences, decoration: const InputDecoration(hintText: 'Escribe o dicta un mensaje…', counterText: '')),
           SingleChildScrollView(scrollDirection: Axis.horizontal, child: Row(children: [
             IconButton(tooltip: 'Compartir reel o canción', onPressed: _busy ? null : () => addSharedLink(context, _text), icon: const Icon(Icons.movie_filter_outlined)),
             IconButton(tooltip: 'Fotografías', onPressed: _busy ? null : _pickImages, icon: const Icon(Icons.add_photo_alternate_outlined)),
@@ -144,7 +146,7 @@ class _ConversacionPrivadaScreenState extends State<ConversacionPrivadaScreen> {
     final raw = d['archivos'];
     final files = raw is List ? raw.whereType<Map>().toList() : <Map>[];
     return Align(alignment: own ? Alignment.centerRight : Alignment.centerLeft, child: Container(constraints: const BoxConstraints(maxWidth: 430), margin: const EdgeInsets.only(bottom: 10), padding: const EdgeInsets.all(14), decoration: BoxDecoration(color: own ? const Color(0xFF29101B) : const Color(0xFF151315), borderRadius: BorderRadius.circular(20), border: Border.all(color: own ? const Color(0xFF632A3E) : Colors.white12)), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      if (text.isNotEmpty) SelectableText(text, style: TextStyle(fontSize: d['sticker'] == true ? 34 : 14, height: 1.4)),
+      if (text.isNotEmpty) Text(text, style: TextStyle(fontSize: d['sticker'] == true ? 34 : 14, height: 1.4)),
       SharedMediaCard(text: text),
       for (final f in files) _attachment(f),
       if (audio.isNotEmpty) AudioMessagePlayer(url: audio, durationSeconds: (d['duracionSegundos'] as num?)?.toInt() ?? 0, color: _accent),
@@ -218,6 +220,7 @@ class _ConversacionPrivadaScreenState extends State<ConversacionPrivadaScreen> {
   Future<void> _openUrl(String value, {bool meeting = false}) async {
     final uri = Uri.tryParse(value);
     if (uri == null || uri.scheme != 'https' || (meeting && uri.host != 'meet.jit.si')) { _notice('Enlace no permitido.'); return; }
+    if (!meeting) { await showProtectedMedia(context, value); return; }
     if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) _notice('No se pudo abrir el enlace. Revisa los permisos del navegador.');
   }
 }

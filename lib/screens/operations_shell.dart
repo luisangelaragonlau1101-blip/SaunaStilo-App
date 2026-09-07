@@ -1,3 +1,6 @@
+import '../services/external_transfer.dart';
+import '../widgets/home_progress_panel.dart';
+import 'stilo_academy_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -88,6 +91,7 @@ class _OperationsHomeState extends State<_OperationsHome> {
       const Text('Tu jornada. Tus proyectos. Tu equipo.', style: TextStyle(color: Colors.white54, fontSize: 13)),
       const SizedBox(height: 18),
       if (alerts.isNotEmpty) Padding(padding: const EdgeInsets.only(bottom: 14), child: OutlinedButton.icon(style: OutlinedButton.styleFrom(foregroundColor: const Color(0xFFFF647A), backgroundColor: const Color(0xFF240B12), side: const BorderSide(color: Color(0xFF8E1538)), minimumSize: const Size.fromHeight(54)), onPressed: () => _open(alerts.first), icon: const Icon(Icons.campaign_rounded), label: const Text('ALERTA GENERAL · TODO EL EQUIPO', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800)))),
+      HomeProgressPanel(user: widget.usuario, onStreak: () => _open(actions.firstWhere((a) => a.id == (widget.usuario.rol == AppRoles.admin ? 'rachas' : 'racha'))), onProfile: () => widget.onTab(4), onLearn: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => StiloAcademyScreen(userId: widget.usuario.id)))),
       if (widget.usuario.rol == AppRoles.admin)
         AdminOperationsCard(onAttendance: () => _open(actions.firstWhere((a) => a.id == 'asistencias')), onTeam: () => _open(actions.firstWhere((a) => a.id == 'equipo')))
       else JornadaCompacta(usuario: widget.usuario),
@@ -99,7 +103,7 @@ class _OperationsHomeState extends State<_OperationsHome> {
       const SizedBox(height: 16),
       Wrap(spacing: 8, runSpacing: 8, children: quick.map((a) => ActionChip(shape: const StadiumBorder(), side: BorderSide(color: stiloAccents[quick.indexOf(a) % stiloAccents.length].withOpacity(.34)), avatar: Icon(a.icon, size: 18, color: stiloAccents[quick.indexOf(a) % stiloAccents.length]), label: Text(a.id == 'ia' ? 'Online Smart' : a.title), onPressed: () => _open(a))).toList()),
       const SizedBox(height: 20),
-      TextField(decoration: const InputDecoration(hintText: 'Buscar una opción…', prefixIcon: Icon(Icons.search_rounded)), onChanged: (value) => setState(() => _search = value)),
+      TextField(contextMenuBuilder: privacyTextMenu, decoration: const InputDecoration(hintText: 'Buscar una opción…', prefixIcon: Icon(Icons.search_rounded)), onChanged: (value) => setState(() => _search = value)),
       TextButton.icon(onPressed: () => setState(() => _all = !_all), icon: Icon(_all ? Icons.expand_less_rounded : Icons.apps_rounded), label: Text(_all ? 'Cerrar menú completo' : 'Todas las opciones de mi cuenta')),
       if (_all || _search.trim().isNotEmpty) ...actions.where((a) => a.matches(_search)).map((a) => Card(color: const Color(0xFF111012), child: ListTile(leading: Icon(a.icon, color: a.color), title: Text(a.id == 'ia' ? 'Online Smart' : a.title, style: const TextStyle(fontWeight: FontWeight.w700)), subtitle: Text(a.id == 'ia' ? 'Asistente mexicano para tus actividades' : a.subtitle), trailing: const Icon(Icons.arrow_forward_rounded, size: 18), onTap: () => _open(a)))),
     ]));

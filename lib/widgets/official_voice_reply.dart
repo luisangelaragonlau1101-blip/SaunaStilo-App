@@ -54,7 +54,7 @@ class _OfficialVoiceReplyState extends State<OfficialVoiceReply> {
     Row(children: [const Expanded(child: Text('Voz oficial · Sauna Stilo', style: TextStyle(fontSize: 21, fontWeight: FontWeight.w800))), IconButton(tooltip: 'Cerrar voz', onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close_rounded))]),
     const Text('Voz sintética autorizada por Ángel. El audio se genera únicamente al tocar el botón; requiere servicio activo.', style: TextStyle(color: Colors.white60, height: 1.4)),
     const SizedBox(height: 16),
-    if (_parts.isNotEmpty) SelectableText(_parts[_part], style: const TextStyle(height: 1.5)),
+    if (_parts.isNotEmpty) Text(_parts[_part], style: const TextStyle(height: 1.5)),
     if (_parts.length > 1) Row(children: [IconButton(tooltip: 'Parte anterior', onPressed: _busy || _part == 0 ? null : () => _move(_part - 1), icon: const Icon(Icons.chevron_left)), Expanded(child: Text('Parte ${_part + 1} de ${_parts.length}', textAlign: TextAlign.center)), IconButton(tooltip: 'Parte siguiente', onPressed: _busy || _part == _parts.length - 1 ? null : () => _move(_part + 1), icon: const Icon(Icons.chevron_right))]),
     if (_error != null) Padding(padding: const EdgeInsets.symmetric(vertical: 12), child: Text(_error!, style: const TextStyle(color: Colors.orangeAccent))),
     const SizedBox(height: 16),

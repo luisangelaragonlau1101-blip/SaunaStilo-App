@@ -1,3 +1,4 @@
+import '../services/external_transfer.dart';
 import 'screen_security_guard.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -77,8 +78,8 @@ class TeamProfileDetails extends StatelessWidget {
     bool busy = false; String? error; String chosenIcon = initialIcon; int chosenAccent = 0;
     await showDialog<void>(context: context, barrierDismissible: false, builder: (dialog) => StatefulBuilder(builder: (c, update) => PopScope(canPop: !busy, child: AlertDialog(
       title: Text(title), content: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, children: [
-        TextField(controller: first, maxLength: firstMax, enabled: !busy, decoration: InputDecoration(labelText: firstLabel)),
-        TextField(controller: second, maxLength: secondMax, enabled: !busy, maxLines: 2, decoration: InputDecoration(labelText: secondLabel)),
+        TextField(contextMenuBuilder: privacyTextMenu, controller: first, maxLength: firstMax, enabled: !busy, decoration: InputDecoration(labelText: firstLabel)),
+        TextField(contextMenuBuilder: privacyTextMenu, controller: second, maxLength: secondMax, enabled: !busy, maxLines: 2, decoration: InputDecoration(labelText: secondLabel)),
         if (styleChanged != null) ...[
           const Text('Elige el símbolo y su color', style: TextStyle(color: Colors.white70)),
           Wrap(spacing: 6, runSpacing: 8, children: [for (final e in recognitionIcons.entries) IconButton(tooltip: e.key, onPressed: busy ? null : () {update(() => chosenIcon = e.key); styleChanged(chosenIcon, chosenAccent);}, icon: StiloOrbitIcon(icon: e.value, color: stiloAccents[chosenAccent], size: 36, active: chosenIcon == e.key))]),

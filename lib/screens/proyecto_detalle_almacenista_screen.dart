@@ -1,3 +1,4 @@
+import '../services/external_transfer.dart';
 import 'dart:io';
 import 'dart:ui';
 import 'package:flutter/material.dart';
@@ -1106,7 +1107,7 @@ class _VerificarRecepcionAlmacenModalState extends State<VerificarRecepcionAlmac
                                       const SizedBox(height: 8),
                                       Text("Descripción del daño:", style: GoogleFonts.inter(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
                                       const SizedBox(height: 8),
-                                      TextField(
+                                      TextField(contextMenuBuilder: privacyTextMenu,
                                         controller: item.notasController,
                                         maxLines: 2,
                                         style: GoogleFonts.inter(color: Colors.white),

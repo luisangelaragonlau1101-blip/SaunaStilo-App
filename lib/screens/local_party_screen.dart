@@ -1,3 +1,6 @@
+import '../services/external_transfer.dart';
+import 'round_arcade_screen.dart';
+import 'stilo_academy_screen.dart';
 import 'package:flutter/material.dart';
 import '../games/party_match.dart';
 import '../games/party_store.dart';
@@ -77,6 +80,8 @@ class _LocalLobbyState extends State<LocalPartyLobby> {
         ]),
         const SizedBox(height: 6), const Text('Por turnos en el mismo teléfono. Sin datos, anuncios ni compras.', style: TextStyle(color: Colors.white70, height: 1.4)),
       ])),
+    Padding(padding: const EdgeInsets.only(top: 18), child: FilledButton.icon(key: const ValueKey('party-rounds'), onPressed: () => Navigator.push(context, MaterialPageRoute<void>(builder: (_) => const RoundArcadeScreen())), icon: const Icon(Icons.quiz_rounded), label: const Text('17 retos · Adivinanzas, quiz y más'))),
+    Padding(padding: const EdgeInsets.only(top: 10), child: OutlinedButton.icon(key: const ValueKey('party-learn'), onPressed: () => Navigator.push(context, MaterialPageRoute<void>(builder: (_) => const StiloAcademyScreen(userId: 'local-guest'))), icon: const Icon(Icons.school_rounded), label: const Text('Probar idiomas · progreso de invitado'))),
     if (_warning != null) Padding(padding: const EdgeInsets.symmetric(vertical: 12), child: Text(_warning!, style: const TextStyle(color: Colors.amberAccent))),
     if (_saved != null) Padding(padding: const EdgeInsets.only(top: 16), child: OutlinedButton.icon(
       key: const ValueKey('party-resume'), onPressed: () => _open(_saved!), icon: const Icon(Icons.play_circle_outline_rounded),
@@ -116,7 +121,7 @@ class _SetupState extends State<_PartySetup> {
         for (var p = widget.kind == PartyKind.memory ? 1 : 2; p <= 4; p++) ChoiceChip(key: ValueKey('party-count-$p'), label: Text('$p'),
           selected: _players == p, onSelected: (_) => setState(() => _players = p)),
       ]),
-      for (var i = 0; i < _players; i++) Padding(padding: const EdgeInsets.only(top: 12), child: TextField(
+      for (var i = 0; i < _players; i++) Padding(padding: const EdgeInsets.only(top: 12), child: TextField(contextMenuBuilder: privacyTextMenu,
         key: ValueKey('party-name-$i'), controller: _names[i], maxLength: 24, textCapitalization: TextCapitalization.words,
         decoration: InputDecoration(labelText: 'Jugador ${i + 1}', hintText: 'Nombre o apodo (opcional)', counterText: '', prefixIcon: Icon(Icons.person_rounded, color: partyColors[i])))),
       const SizedBox(height: 18), Text(widget.hasSaved ? 'Al empezar se reemplaza la partida local anterior. No se modifica ningún dato de trabajo.' : 'Solo se guardan nombres y jugadas en este dispositivo.', style: const TextStyle(color: Colors.white54, fontSize: 12)),

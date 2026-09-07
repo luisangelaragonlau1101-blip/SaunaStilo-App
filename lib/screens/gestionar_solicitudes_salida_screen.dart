@@ -1,3 +1,4 @@
+import '../services/external_transfer.dart';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -629,7 +630,7 @@ class _ChecklistDevolucionModalState extends State<ChecklistDevolucionModal> {
                                     children: [
                                       Text("Describe el daño para el taller:", style: GoogleFonts.inter(color: Colors.redAccent, fontSize: 13, fontWeight: FontWeight.bold)),
                                       const SizedBox(height: 8),
-                                      TextField(
+                                      TextField(contextMenuBuilder: privacyTextMenu,
                                         controller: _notasPorHerramienta[index],
                                         style: GoogleFonts.inter(color: Colors.white, fontSize: 14),
                                         decoration: InputDecoration(

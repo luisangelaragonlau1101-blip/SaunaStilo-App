@@ -1,3 +1,4 @@
+import '../services/external_transfer.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -212,7 +213,7 @@ class _AdminAsistenciasScreenState extends State<AdminAsistenciasScreen> {
                     // --- FORMULARIO PARA AÑADIR UNO NUEVO ---
                     Text("Añadir nuevo registro:", style: GoogleFonts.inter(color: textMuted, fontSize: 12)),
                     const SizedBox(height: 8),
-                    TextField(
+                    TextField(contextMenuBuilder: privacyTextMenu,
                       controller: montoController,
                       keyboardType: const TextInputType.numberWithOptions(decimal: true),
                       style: GoogleFonts.inter(color: Colors.white, fontSize: 18),
@@ -225,7 +226,7 @@ class _AdminAsistenciasScreenState extends State<AdminAsistenciasScreen> {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    TextField(
+                    TextField(contextMenuBuilder: privacyTextMenu,
                       controller: motivoController,
                       textCapitalization: TextCapitalization.sentences,
                       style: GoogleFonts.inter(color: Colors.white),
@@ -459,7 +460,7 @@ class _AdminAsistenciasScreenState extends State<AdminAsistenciasScreen> {
                       },
                     ),
                     const SizedBox(height: 16),
-                    TextField(
+                    TextField(contextMenuBuilder: privacyTextMenu,
                       controller: motivoController,
                       style: GoogleFonts.inter(color: Colors.white),
                       decoration: InputDecoration(
@@ -2197,14 +2198,14 @@ class _AdminAsistenciasScreenState extends State<AdminAsistenciasScreen> {
               TextButton(
                 onPressed: () {
                   Navigator.pop(context);
-                  Share.shareXFiles([XFile(pdfPath, mimeType: 'application/pdf')], text: 'Reporte de Nómina ($tipoPeriodo)');            
+                  ExternalTransfer.block(context);
                 },
                 child: const Text('PDF', style: TextStyle(color: Colors.purpleAccent)),
               ),
               TextButton(
                 onPressed: () {
                   Navigator.pop(context);
-                  Share.shareXFiles([XFile(csvPath, mimeType: 'text/csv')], text: 'Reporte CSV');              
+                  ExternalTransfer.block(context);
                 },
                 child: const Text('Excel/CSV', style: TextStyle(color: Colors.greenAccent)),
               ),

@@ -1,3 +1,4 @@
+import '../services/external_transfer.dart';
 import 'local_party_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -121,7 +122,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             boxShadow: const [BoxShadow(color: Colors.black54, blurRadius: 30, offset: Offset(0, 18))],
                           ),
                           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-                            TextFormField(
+                            TextFormField(contextMenuBuilder: privacyTextMenu,
                               controller: _emailController,
                               enabled: !_isLoading,
                               style: const TextStyle(color: colorTextoPrimario),
@@ -133,7 +134,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               validator: (value) => value == null || value.trim().isEmpty ? 'Ingresa tu correo electrónico' : null,
                             ),
                             const SizedBox(height: 14),
-                            TextFormField(
+                            TextFormField(contextMenuBuilder: privacyTextMenu,
                               controller: _passwordController,
                               enabled: !_isLoading,
                               style: const TextStyle(color: colorTextoPrimario),

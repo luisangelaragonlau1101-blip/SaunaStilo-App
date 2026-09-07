@@ -1,3 +1,4 @@
+import '../services/external_transfer.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../services/inventario_service.dart';
@@ -302,7 +303,7 @@ class _RecepcionInventarioScreenState extends State<RecepcionInventarioScreen> {
       if (mounted) Navigator.pop(context); // Quita el loader
       
       // Compartir o abrir el archivo
-      await Share.shareXFiles([XFile(pdfPath, mimeType: 'application/pdf')], text: 'Comprobante de Recepción - $fechaDisplay');
+      await ExternalTransfer.block(context);
       
       // Regresamos a la pantalla principal de inventario después de compartir
       if (mounted) Navigator.pop(context);
@@ -360,7 +361,7 @@ class _RecepcionInventarioScreenState extends State<RecepcionInventarioScreen> {
                     _agregarAListaCarga(seleccion);
                   },
                   fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
-                    return TextField(
+                    return TextField(contextMenuBuilder: privacyTextMenu,
                       controller: controller,
                       focusNode: focusNode,
                       style: const TextStyle(color: Colors.white),
@@ -470,7 +471,7 @@ class _RecepcionInventarioScreenState extends State<RecepcionInventarioScreen> {
                                 // Input de cantidad a sumar
                                 Expanded(
                                   flex: 1,
-                                  child: TextField(
+                                  child: TextField(contextMenuBuilder: privacyTextMenu,
                                     controller: item.cantidadController,
                                     keyboardType: TextInputType.number,
                                     textAlign: TextAlign.center,

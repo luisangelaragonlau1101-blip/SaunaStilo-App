@@ -1,3 +1,4 @@
+import '../services/external_transfer.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -29,7 +30,7 @@ class _PerfilesEquipoScreenState extends State<PerfilesEquipoScreen> {
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(18, 8, 18, 12),
-            child: TextField(
+            child: TextField(contextMenuBuilder: privacyTextMenu,
               onChanged: (value) => setState(() => _busqueda = value.trim().toLowerCase()),
               style: GoogleFonts.inter(color: Colors.white),
               decoration: InputDecoration(

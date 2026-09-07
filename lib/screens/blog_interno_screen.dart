@@ -1,3 +1,4 @@
+import '../services/external_transfer.dart';
 import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -397,7 +398,7 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
                   ],
                 ),
                 const Divider(color: _linea),
-                TextField(
+                TextField(contextMenuBuilder: privacyTextMenu,
                   controller: texto,
                   minLines: 3,
                   maxLines: 7,
@@ -909,7 +910,7 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
                     ),
                     const SizedBox(width: 11),
                     Expanded(
-                      child: TextField(
+                      child: TextField(contextMenuBuilder: privacyTextMenu,
                         controller: texto,
                         minLines: 4,
                         maxLines: 8,
@@ -1425,7 +1426,7 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
                       ),
                       const SizedBox(width: 9),
                       Expanded(
-                        child: TextField(
+                        child: TextField(contextMenuBuilder: privacyTextMenu,
                           controller: controller,
                           textCapitalization: TextCapitalization.sentences,
                           style: GoogleFonts.inter(

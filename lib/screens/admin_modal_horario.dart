@@ -1,3 +1,4 @@
+import '../services/external_transfer.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -40,7 +41,7 @@ void mostrarModalHorario(BuildContext context, String trabajadorId, String nombr
             // --- HORA DE ENTRADA ---
             Text("Hora de entrada (HH:MM formato 24h)", style: GoogleFonts.inter(color: Colors.white70, fontSize: 13)),
             const SizedBox(height: 8),
-            TextField(
+            TextField(contextMenuBuilder: privacyTextMenu,
               controller: horaEntradaController,
               style: GoogleFonts.inter(color: Colors.white),
               keyboardType: TextInputType.datetime,
@@ -58,7 +59,7 @@ void mostrarModalHorario(BuildContext context, String trabajadorId, String nombr
             // --- HORA DE SALIDA (NUEVO) ---
             Text("Hora de salida (HH:MM formato 24h)", style: GoogleFonts.inter(color: Colors.white70, fontSize: 13)),
             const SizedBox(height: 8),
-            TextField(
+            TextField(contextMenuBuilder: privacyTextMenu,
               controller: horaSalidaController,
               style: GoogleFonts.inter(color: Colors.white),
               keyboardType: TextInputType.datetime,
@@ -76,7 +77,7 @@ void mostrarModalHorario(BuildContext context, String trabajadorId, String nombr
             // --- TOLERANCIA ---
             Text("Tolerancia (en minutos)", style: GoogleFonts.inter(color: Colors.white70, fontSize: 13)),
             const SizedBox(height: 8),
-            TextField(
+            TextField(contextMenuBuilder: privacyTextMenu,
               controller: toleranciaController,
               style: GoogleFonts.inter(color: Colors.white),
               keyboardType: TextInputType.number,

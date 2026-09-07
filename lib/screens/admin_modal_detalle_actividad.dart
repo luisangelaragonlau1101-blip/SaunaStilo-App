@@ -1,3 +1,5 @@
+import '../services/external_transfer.dart';
+import '../widgets/protected_media_viewer.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
@@ -116,21 +118,7 @@ class _ModalDetalleActividadState extends State<ModalDetalleActividad> {
   }
 
   Future<void> _abrirArchivo(String url) async {
-    final uri = Uri.tryParse(url);
-    if (uri == null || !uri.hasScheme) {
-      _mostrarError('El enlace del archivo no es válido.');
-      return;
-    }
-
-    try {
-      final abierto = await launchUrl(
-        uri,
-        mode: LaunchMode.platformDefault,
-      );
-      if (!abierto) _mostrarError('No se pudo abrir el archivo.');
-    } catch (_) {
-      _mostrarError('No se pudo abrir el archivo.');
-    }
+    await showProtectedMedia(context, url);
   }
 
   void _mostrarError(String mensaje) {
@@ -729,7 +717,7 @@ class _ModalDetalleActividadState extends State<ModalDetalleActividad> {
           ],
         ),
         const SizedBox(height: 15),
-        TextFormField(
+        TextFormField(contextMenuBuilder: privacyTextMenu,
           controller: _observacionesController,
           maxLines: 3,
           style: GoogleFonts.inter(color: Colors.white),

@@ -1,3 +1,4 @@
+import '../services/external_transfer.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
@@ -109,7 +110,7 @@ class _IncubadoraIdeasScreenState extends State<IncubadoraIdeasScreen> {
           // 1. BUSCADOR PRO
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: TextField(
+            child: TextField(contextMenuBuilder: privacyTextMenu,
               controller: _searchController,
               focusNode: _searchFocusNode,
               onChanged: (val) => setState(() => _searchQuery = val.toLowerCase()),

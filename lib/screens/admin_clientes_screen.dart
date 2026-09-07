@@ -1,3 +1,4 @@
+import '../services/external_transfer.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../services/ventas_service.dart';
@@ -52,7 +53,7 @@ class _AdminClientesScreenState extends State<AdminClientesScreen> {
           // --- BARRA DE BÚSQUEDA ---
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-            child: TextField(
+            child: TextField(contextMenuBuilder: privacyTextMenu,
               controller: _searchController, 
               focusNode: _searchFocusNode, // <-- 4. Se lo asignamos al TextField
               onChanged: (value) {
@@ -398,7 +399,7 @@ class _FormularioClienteModalState extends State<_FormularioClienteModal> {
     int maxLines = 1,
     TextInputType keyboardType = TextInputType.text,
   }) {
-    return TextFormField(
+    return TextFormField(contextMenuBuilder: privacyTextMenu,
       controller: controller,
       maxLines: maxLines,
       keyboardType: keyboardType,

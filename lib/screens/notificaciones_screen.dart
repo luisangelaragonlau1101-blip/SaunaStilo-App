@@ -1,3 +1,4 @@
+import '../services/external_transfer.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
@@ -129,7 +130,7 @@ class NotificacionesScreen extends StatelessWidget {
         content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
           const Text('Se enviará una alerta crítica a TODO el equipo. Úsala únicamente cuando necesites su atención inmediata.'),
           const SizedBox(height: 14),
-          TextField(controller: motivo, maxLength: 220, maxLines: 3, decoration: const InputDecoration(labelText: 'Motivo de la llamada')),
+          TextField(contextMenuBuilder: privacyTextMenu, controller: motivo, maxLength: 220, maxLines: 3, decoration: const InputDecoration(labelText: 'Motivo de la llamada')),
         ]),
         actions: [
           TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('Cancelar')),
