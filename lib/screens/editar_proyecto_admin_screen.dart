@@ -1,3 +1,4 @@
+import '../services/external_transfer.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
@@ -206,7 +207,7 @@ class _EditarProyectoAdminScreenState extends State<EditarProyectoAdminScreen> {
               backgroundColor: const Color(0xFF1E1E1E),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               title: Text("Añadir Tipo de Madera", style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
-              content: TextField(
+              content: TextField(contextMenuBuilder: privacyTextMenu,
                 controller: nuevoSaunaController,
                 style: const TextStyle(color: Colors.white),
                 decoration: InputDecoration(
@@ -344,7 +345,7 @@ class _EditarProyectoAdminScreenState extends State<EditarProyectoAdminScreen> {
               const SizedBox(height: 16),
               
               // Campo Acumulado calculado automáticamente y de solo lectura
-              TextFormField(
+              TextFormField(contextMenuBuilder: privacyTextMenu,
                 controller: TextEditingController(text: montoPagadoAcumulado.toStringAsFixed(2)),
                 readOnly: true,
                 style: const TextStyle(color: Color(0xFF10B981), fontWeight: FontWeight.bold),
@@ -489,7 +490,7 @@ class _EditarProyectoAdminScreenState extends State<EditarProyectoAdminScreen> {
   }
 
   Widget _buildFinanzasField(TextEditingController controller, String label, IconData icon) {
-    return TextFormField(
+    return TextFormField(contextMenuBuilder: privacyTextMenu,
       controller: controller,
       keyboardType: const TextInputType.numberWithOptions(decimal: true),
       style: const TextStyle(color: Color(0xFFFFDE21), fontWeight: FontWeight.bold),
@@ -597,7 +598,7 @@ class _EditarProyectoAdminScreenState extends State<EditarProyectoAdminScreen> {
   }
 
   Widget _buildTextField(TextEditingController controller, String label, IconData icon, Color iconColor, {int maxLines = 1, bool esObligatorio = true}) {
-    return TextFormField(
+    return TextFormField(contextMenuBuilder: privacyTextMenu,
       controller: controller, 
       maxLines: maxLines, 
       style: const TextStyle(color: Colors.white),

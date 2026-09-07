@@ -24,7 +24,7 @@ class _GuardState extends State<ScreenSecurityGuard>{
     if(user==null||!mounted||ticket!=_generation)return;
     final uid=user.uid;
     _profile=FirebaseFirestore.instance.collection('usuarios').doc(uid).snapshots().listen((d){
-      if(ticket==_generation&&FirebaseAuth.instance.currentUser?.uid==uid&&d.exists)_secure(d.data()?['bloquearCapturas']==true);
+      if(ticket==_generation&&FirebaseAuth.instance.currentUser?.uid==uid&&d.exists)_secure(true);
     },onError:(_){_secure(true);});
   }
   Future<void> _secure(bool flag)async{
@@ -38,24 +38,12 @@ class _GuardState extends State<ScreenSecurityGuard>{
   Widget build(BuildContext context)=>Stack(children:[widget.child,if(_failed)Positioned(left:12,right:12,top:0,child:SafeArea(child:Material(color:const Color(0xFF4B172B),borderRadius:BorderRadius.circular(18),child:const Padding(padding:EdgeInsets.all(12),child:Text('Protección de capturas no confirmada. Este APK necesita actualizarse.',textAlign:TextAlign.center,style:TextStyle(color:Colors.white,fontSize:12))))))]);
 }
 
-class CapturePolicyControl extends StatefulWidget{
-  final String profileId;final bool enabled;
-  const CapturePolicyControl({super.key,required this.profileId,required this.enabled});
-  @override
-  State<CapturePolicyControl> createState()=>_CaptureControlState();
-}
-class _CaptureControlState extends State<CapturePolicyControl>{
-  bool _busy=false;String? _error;
-  @override
-  Widget build(BuildContext context)=>Card(color:const Color(0xFF21111B),child:Column(children:[
-    SwitchListTile(title:const Text('Bloquear capturas en el APK'),secondary:const Icon(Icons.security_rounded,color:Color(0xFFC798FF)),
-      subtitle:const Text('Se aplica a todas las pantallas de Sauna Stilo en Android compatible. No bloquea Chrome/Safari, otras apps ni fotografías con otra cámara.'),value:widget.enabled,onChanged:_busy?null:(v)async{
-        final yes=await showDialog<bool>(context:context,builder:(c)=>AlertDialog(title:Text(v?'Activar protección':'Desactivar protección'),content:const Text('La política se guarda para esta persona. Su APK la recibe con conexión y conserva la última política recibida cuando está sin señal.'),actions:[TextButton(onPressed:()=>Navigator.pop(c,false),child:const Text('Cancelar')),FilledButton(onPressed:()=>Navigator.pop(c,true),child:const Text('Guardar'))]));
-        if(yes!=true||!mounted)return;setState((){_busy=true;_error=null;});
-        try{await FirebaseFirestore.instance.collection('usuarios').doc(widget.profileId).update({'bloquearCapturas':v});}
-        catch(_){if(mounted)setState(()=>_error='El servidor no confirmó el cambio. Revisa tu permiso de Administración.');}
-        finally{if(mounted)setState(()=>_busy=false);}
-      }),
-    if(_busy)const LinearProgressIndicator(),if(_error!=null)Padding(padding:const EdgeInsets.all(12),child:Text(_error!,style:const TextStyle(color:Colors.orangeAccent))),
-  ]));
+class CapturePolicyControl extends StatelessWidget {
+ final String profileId; final bool enabled;
+ const CapturePolicyControl({super.key,required this.profileId,required this.enabled});
+ @override
+ Widget build(BuildContext context)=>const Card(color:Color(0xFF21111B),child:ListTile(
+  leading:Icon(Icons.security_rounded,color:Color(0xFFC798FF)),title:Text('Protección general de Sauna Stilo'),
+  subtitle:Text('En el nuevo APK Android, las capturas y la grabación del contenido de la app se bloquean en dispositivos compatibles, para todas las cuentas. No depende de este perfil. No bloquea capturas en Chrome/Safari ni fotografías tomadas con otra cámara.'),
+ ));
 }

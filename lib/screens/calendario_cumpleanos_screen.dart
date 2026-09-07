@@ -1,3 +1,4 @@
+import '../services/external_transfer.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -19,7 +20,7 @@ class _CalendarioCumpleanosScreenState extends State<CalendarioCumpleanosScreen>
     final today = mexicoToday();
     return Scaffold(backgroundColor: Colors.black, appBar: AppBar(title: const Text('Cumpleaños del equipo')), body: Column(children: [
       Container(margin: const EdgeInsets.all(18), padding: const EdgeInsets.all(20), decoration: BoxDecoration(borderRadius: BorderRadius.circular(24), gradient: const LinearGradient(colors: [Color(0xFF35101E), Color(0xFF111012)])), child: const Row(children: [Icon(Icons.celebration_outlined, size: 35, color: Color(0xFFB7FF2A)), SizedBox(width: 15), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('Celebramos a nuestra gente', style: TextStyle(fontSize: 21, fontWeight: FontWeight.w800)), SizedBox(height: 5), Text('Fechas, intereses y detalles que nos unen.', style: TextStyle(color: Colors.white60))]))])),
-      Padding(padding: const EdgeInsets.symmetric(horizontal: 18), child: TextField(decoration: const InputDecoration(hintText: 'Buscar a una persona…', prefixIcon: Icon(Icons.search)), onChanged: (s) => setState(() => _search = s.trim().toLowerCase()))),
+      Padding(padding: const EdgeInsets.symmetric(horizontal: 18), child: TextField(contextMenuBuilder: privacyTextMenu, decoration: const InputDecoration(hintText: 'Buscar a una persona…', prefixIcon: Icon(Icons.search)), onChanged: (s) => setState(() => _search = s.trim().toLowerCase()))),
       Padding(padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 9), child: Row(children: [ChoiceChip(label: const Text('Próximos'), selected: !_monthOnly, onSelected: (_) => setState(() => _monthOnly = false)), const SizedBox(width: 8), ChoiceChip(label: const Text('Este mes'), selected: _monthOnly, onSelected: (_) => setState(() => _monthOnly = true))])),
       Expanded(child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(stream: FirebaseFirestore.instance.collection('usuarios').snapshots(), builder: (context, snapshot) {
         if (snapshot.hasError) return const Center(child: Padding(padding: EdgeInsets.all(24), child: Text('No se pudo cargar el equipo. Revisa la conexión y los permisos.')));

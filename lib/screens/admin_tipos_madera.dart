@@ -1,3 +1,4 @@
+import '../services/external_transfer.dart';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -62,7 +63,7 @@ class _CatalogoSaunasScreenState extends State<CatalogoSaunasScreen> {
           // --- BARRA DE BÚSQUEDA ---
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-            child: TextField(
+            child: TextField(contextMenuBuilder: privacyTextMenu,
               controller: _searchController,
               focusNode: _searchFocusNode,
               onTap: () {
@@ -537,7 +538,7 @@ class _FormularioMaderaModalState extends State<_FormularioMaderaModal> {
     int maxLines = 1,
     bool esObligatorio = true, 
   }) {
-    return TextFormField(
+    return TextFormField(contextMenuBuilder: privacyTextMenu,
       controller: controller,
       maxLines: maxLines,
       style: GoogleFonts.inter(color: Colors.white),

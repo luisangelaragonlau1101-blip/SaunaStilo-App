@@ -1,3 +1,4 @@
+import '../services/external_transfer.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -394,7 +395,7 @@ class _DetalleCotizacionScreenState extends State<DetalleCotizacionScreen> {
                 Row(
                   children: [
                     Expanded(
-                      child: TextField(
+                      child: TextField(contextMenuBuilder: privacyTextMenu,
                         controller: _nuevaNotaController,
                         style: const TextStyle(color: Colors.white),
                         decoration: InputDecoration(

@@ -1,3 +1,4 @@
+import '../services/external_transfer.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -63,14 +64,14 @@ class _UsuariosCrudScreenState extends State<UsuariosCrudScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    TextField(
+                    TextField(contextMenuBuilder: privacyTextMenu,
                       controller: nombreCtrl, 
                       style: const TextStyle(color: Colors.white), 
                       cursorColor: colorMorado, 
                       decoration: const InputDecoration(labelText: "Nombre", labelStyle: TextStyle(color: Colors.white54), focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: colorMorado)), enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white24)))
                     ),
                     const SizedBox(height: 10),
-                    TextField(
+                    TextField(contextMenuBuilder: privacyTextMenu,
                       controller: correoCtrl, 
                       style: const TextStyle(color: Colors.white), 
                       cursorColor: colorMorado, 
@@ -80,7 +81,7 @@ class _UsuariosCrudScreenState extends State<UsuariosCrudScreen> {
                     const SizedBox(height: 10),
 
                     if (!esEdicion) ...[
-                      TextField(
+                      TextField(contextMenuBuilder: privacyTextMenu,
                         controller: passwordTemporalCtrl,
                         obscureText: ocultarPasswordTemporal,
                         autocorrect: false,
@@ -123,7 +124,7 @@ class _UsuariosCrudScreenState extends State<UsuariosCrudScreen> {
                       const SizedBox(height: 10),
                     ],
                     
-                    TextField(
+                    TextField(contextMenuBuilder: privacyTextMenu,
                       controller: fechaCtrl,
                       readOnly: true, 
                       style: const TextStyle(color: Colors.white),
@@ -166,7 +167,7 @@ class _UsuariosCrudScreenState extends State<UsuariosCrudScreen> {
                     const SizedBox(height: 10),
                     
                     // --- NUEVOS CAMPOS EN EL DIÁLOGO ---
-                    TextField(
+                    TextField(contextMenuBuilder: privacyTextMenu,
                       controller: sueldoCtrl, 
                       style: const TextStyle(color: Colors.white), 
                       cursorColor: colorMorado, 
@@ -339,7 +340,7 @@ class _UsuariosCrudScreenState extends State<UsuariosCrudScreen> {
                       style: TextStyle(color: Colors.white70),
                     ),
                     const SizedBox(height: 16),
-                    TextField(
+                    TextField(contextMenuBuilder: privacyTextMenu,
                       controller: passwordCtrl,
                       obscureText: ocultarPassword,
                       style: const TextStyle(color: Colors.white),

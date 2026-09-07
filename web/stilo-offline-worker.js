@@ -10,7 +10,7 @@
     if (!u.pathname.startsWith(base.pathname)) return false;
     const p = u.pathname.slice(base.pathname.length);
     return !u.search && (p === '' || p === 'index.html' || p === 'manifest.json' ||
-      /^(?:main[.\w-]*|flutter_bootstrap[.\w-]*|flutter|sauna-maintenance|chat-audio-capture|voice-capture|offline-client)\.js$/.test(p) ||
+      /^(?:main[.\w-]*|flutter_bootstrap[.\w-]*|flutter|sauna-maintenance|chat-audio-capture|voice-capture|privacy-controls|offline-client)\.js$/.test(p) ||
       /^(?:assets|canvaskit|icons)\/[\w./-]+\.(?:js|wasm|json|bin|png|jpg|svg|ttf|otf|woff2|ogg)$/.test(p) || p === 'favicon.png');
   }
   function canonical(input) { const u = new URL(input,base); u.search=''; u.hash=''; return u.href; }

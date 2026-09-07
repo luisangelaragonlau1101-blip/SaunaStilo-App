@@ -1,3 +1,4 @@
+import '../services/external_transfer.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -112,7 +113,7 @@ class _CrearNuevaLineaAdminScreenState extends State<CrearNuevaLineaAdminScreen>
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                       decoration: BoxDecoration(color: const Color(0xFF2D2D2D), borderRadius: BorderRadius.circular(14)),
-                      child: TextField(
+                      child: TextField(contextMenuBuilder: privacyTextMenu,
                         controller: _tareaTituloController,
                         style: const TextStyle(color: Colors.white),
                         decoration: const InputDecoration(
@@ -264,7 +265,7 @@ class _CrearNuevaLineaAdminScreenState extends State<CrearNuevaLineaAdminScreen>
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 14),
                             decoration: BoxDecoration(color: const Color(0xFF2D2D2D), borderRadius: BorderRadius.circular(12)),
-                            child: TextFormField(
+                            child: TextFormField(contextMenuBuilder: privacyTextMenu,
                               controller: _tituloController,
                               style: const TextStyle(color: Colors.white),
                               decoration: const InputDecoration(
@@ -279,7 +280,7 @@ class _CrearNuevaLineaAdminScreenState extends State<CrearNuevaLineaAdminScreen>
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
                             decoration: BoxDecoration(color: const Color(0xFF2D2D2D), borderRadius: BorderRadius.circular(12)),
-                            child: TextFormField(
+                            child: TextFormField(contextMenuBuilder: privacyTextMenu,
                               controller: _descripcionController,
                               maxLines: 3,
                               style: const TextStyle(color: Colors.white70, fontSize: 14),

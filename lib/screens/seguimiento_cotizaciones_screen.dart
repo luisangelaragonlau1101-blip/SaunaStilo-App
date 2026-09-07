@@ -1,3 +1,4 @@
+import '../services/external_transfer.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -359,14 +360,14 @@ class _SeguimientoCotizacionesScreenState extends State<SeguimientoCotizacionesS
               TextButton(
                 onPressed: () {
                   Navigator.pop(context);
-                  Share.shareXFiles([XFile(pdfPath, mimeType: 'application/pdf')], text: 'Reporte Cotizaciones PDF: $estatus');             
+                  ExternalTransfer.block(context);
                 },
                 child: const Text('Compartir PDF', style: TextStyle(color: Colors.purpleAccent)),
               ),
               TextButton(
                 onPressed: () {
                   Navigator.pop(context);
-                  Share.shareXFiles([XFile(csvPath, mimeType: 'text/csv')], text: 'Reporte Cotizaciones CSV: $estatus');             
+                  ExternalTransfer.block(context);
                 },
                 child: const Text('Compartir CSV', style: TextStyle(color: Colors.blueAccent)),
               ),
@@ -445,7 +446,7 @@ class _SeguimientoCotizacionesScreenState extends State<SeguimientoCotizacionesS
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-            child: TextField(
+            child: TextField(contextMenuBuilder: privacyTextMenu,
               controller: _searchController,
               focusNode: _searchFocusNode,
               onTap: () {

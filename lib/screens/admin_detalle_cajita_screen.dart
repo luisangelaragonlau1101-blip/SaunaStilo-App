@@ -1,3 +1,4 @@
+import '../services/external_transfer.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -169,7 +170,7 @@ class _AdminDetalleCajitaScreenState extends State<AdminDetalleCajitaScreen> {
                     // Barra de búsqueda
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                      child: TextField(
+                      child: TextField(contextMenuBuilder: privacyTextMenu,
                         style: GoogleFonts.inter(color: colorTextoPrimario),
                         decoration: InputDecoration(
                           hintText: 'Buscar por nombre...',

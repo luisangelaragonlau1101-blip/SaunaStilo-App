@@ -1,3 +1,4 @@
+import '../services/external_transfer.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -593,7 +594,7 @@ class PerfilSocialScreen extends StatelessWidget {
       builder: (dialogContext) => AlertDialog(
         backgroundColor: const Color(0xFF171717),
         title: Text('Sugerencia para $nombrePerfil'),
-        content: TextField(
+        content: TextField(contextMenuBuilder: privacyTextMenu,
           controller: controller,
           maxLines: 4,
           textCapitalization: TextCapitalization.sentences,

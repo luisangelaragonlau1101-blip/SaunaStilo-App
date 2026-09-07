@@ -1,3 +1,4 @@
+import '../services/external_transfer.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:typed_data';
@@ -30,7 +31,7 @@ class _JustificarFaltaScreenState extends State<JustificarFaltaScreen> {
     const Text('Explica lo ocurrido', style: TextStyle(fontSize: 25, fontWeight: FontWeight.w800)),
     const SizedBox(height: 8), const Text('Tu solicitud será revisada por Administración. Enviarla no equivale a aprobarla ni modifica tus horas de entrada o salida.', style: TextStyle(color: Colors.white60, height: 1.45)),
     const SizedBox(height: 16), OutlinedButton.icon(onPressed: _busy ? null : () async { final date = await showDatePicker(context: context, initialDate: _date, firstDate: DateTime(2020), lastDate: mexicoToday()); if (date != null && mounted) setState(() => _date = date); }, icon: const Icon(Icons.event_outlined), label: Text(DateFormat('dd/MM/yyyy').format(_date))),
-    const SizedBox(height: 10), TextField(controller: _reason, enabled: !_busy, minLines: 4, maxLines: 8, maxLength: 2000, decoration: const InputDecoration(labelText: 'Motivo', hintText: 'Describe el motivo de tu ausencia…', alignLabelWithHint: true)),
+    const SizedBox(height: 10), TextField(contextMenuBuilder: privacyTextMenu, controller: _reason, enabled: !_busy, minLines: 4, maxLines: 8, maxLength: 2000, decoration: const InputDecoration(labelText: 'Motivo', hintText: 'Describe el motivo de tu ausencia…', alignLabelWithHint: true)),
     OutlinedButton.icon(onPressed: _busy ? null : _pickEvidence, icon: const Icon(Icons.add_photo_alternate_outlined), label: Text(_evidence == null ? 'Agregar evidencia (opcional)' : 'Cambiar evidencia')),
     if (_preview != null) Column(children: [Image.memory(_preview!, height: 120), TextButton(onPressed: _busy ? null : () => setState(() { _evidence = null; _preview = null; }), child: const Text('Quitar evidencia'))]),
     const Text('La evidencia se guarda en un espacio restringido a tu cuenta y Administración. No la envíes en chats generales.', style: TextStyle(color: Colors.white54, fontSize: 12)),

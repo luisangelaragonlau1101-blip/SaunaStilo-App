@@ -1,3 +1,4 @@
+import '../services/external_transfer.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart'; 
@@ -143,7 +144,7 @@ class _VentasScreenState extends State<VentasScreen> {
       builder: (context) => AlertDialog(
         backgroundColor: const Color(0xFF1E1E1E),
         title: Text("EDITAR TOTAL VENTA", style: GoogleFonts.inter(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
-        content: TextField(
+        content: TextField(contextMenuBuilder: privacyTextMenu,
           controller: controllerMonto,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
           style: const TextStyle(color: Colors.white),
@@ -192,7 +193,7 @@ class _VentasScreenState extends State<VentasScreen> {
           // --- BARRA DE BÚSQUEDA ---
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-            child: TextField(
+            child: TextField(contextMenuBuilder: privacyTextMenu,
               controller: _searchController,
               focusNode: _searchFocusNode,
               onTapOutside: (event) {
@@ -591,14 +592,14 @@ class _VentasScreenState extends State<VentasScreen> {
               TextButton(
                 onPressed: () {
                   Navigator.pop(context);
-                  Share.shareXFiles([XFile(pdfPath, mimeType: 'application/pdf')], text: 'Reporte PDF: $nombreMes $anio');             
+                  ExternalTransfer.block(context);
                 },
                 child: const Text('Compartir PDF', style: TextStyle(color: Colors.purpleAccent)),
               ),
               TextButton(
                 onPressed: () {
                   Navigator.pop(context);
-                  Share.shareXFiles([XFile(csvPath, mimeType: 'text/csv')], text: 'Reporte CSV: $nombreMes $anio');              
+                  ExternalTransfer.block(context);
                 },
                 child: const Text('Compartir CSV', style: TextStyle(color: Colors.blueAccent)),
               ),

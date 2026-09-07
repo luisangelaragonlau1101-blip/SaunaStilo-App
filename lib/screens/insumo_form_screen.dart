@@ -1,3 +1,4 @@
+import '../services/external_transfer.dart';
 import '../widgets/warehouse_header.dart';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
@@ -134,7 +135,7 @@ Future<void> _escanearCodigoFormulario() async {
           esCategoria ? 'NUEVA CATEGORÍA' : 'NUEVA SUBCATEGORÍA',
           style: GoogleFonts.inter(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
         ),
-        content: TextField(
+        content: TextField(contextMenuBuilder: privacyTextMenu,
           controller: textController,
           autofocus: true,
           style: const TextStyle(color: Colors.white),
@@ -213,7 +214,7 @@ Future<void> _escanearCodigoFormulario() async {
                 const SizedBox(height: 30),
 
                 // --- 4. NUEVO: CAMPO DE CÓDIGO DE BARRAS EN LA UI ---
-                TextFormField(
+                TextFormField(contextMenuBuilder: privacyTextMenu,
                   controller: _codigoBarrasController,
                   style: const TextStyle(color: Colors.white),
                   decoration: InputDecoration(
@@ -412,7 +413,7 @@ Future<void> _escanearCodigoFormulario() async {
   }
 
   Widget _buildTextField(TextEditingController controller, String label, {bool isNumber = false, bool isObligatorio = true}) {
-    return TextFormField(
+    return TextFormField(contextMenuBuilder: privacyTextMenu,
       controller: controller,
       keyboardType: isNumber ? TextInputType.number : TextInputType.text,
       style: const TextStyle(color: Colors.white),
@@ -429,7 +430,7 @@ Future<void> _escanearCodigoFormulario() async {
   }
   
   Widget _buildPrecioField(TextEditingController controller, String label, {bool isNumber = false}) {
-    return TextFormField(
+    return TextFormField(contextMenuBuilder: privacyTextMenu,
       controller: controller,
       keyboardType: const TextInputType.numberWithOptions(decimal: true),
       style: const TextStyle(color: Color(0xFFB7FF2A), fontWeight: FontWeight.bold),

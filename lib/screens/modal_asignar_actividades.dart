@@ -1,3 +1,4 @@
+import '../services/external_transfer.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -114,8 +115,8 @@ class _ModalAsignarActividadState extends State<ModalAsignarActividad> {
         const SizedBox(height: 12),
         Text(widget.proyectoId.isEmpty ? 'TAREA GENERAL · SIN PROYECTO' : 'TAREA VINCULADA AL PROYECTO', style: const TextStyle(color: Color(0xFFB7FF2A), fontWeight: FontWeight.w700, fontSize: 11)),
         const SizedBox(height: 15),
-        TextFormField(controller: _title, enabled: !_busy, maxLength: 150, decoration: const InputDecoration(labelText: 'Nombre de la tarea'), validator: (v) => (v?.trim().length ?? 0)<3 ? 'Escribe al menos 3 caracteres.' : null),
-        TextFormField(controller: _body, enabled: !_busy, maxLength: 2000, minLines: 2, maxLines: 5, decoration: const InputDecoration(labelText: 'Indicaciones y evidencia requerida')),
+        TextFormField(contextMenuBuilder: privacyTextMenu, controller: _title, enabled: !_busy, maxLength: 150, decoration: const InputDecoration(labelText: 'Nombre de la tarea'), validator: (v) => (v?.trim().length ?? 0)<3 ? 'Escribe al menos 3 caracteres.' : null),
+        TextFormField(contextMenuBuilder: privacyTextMenu, controller: _body, enabled: !_busy, maxLength: 2000, minLines: 2, maxLines: 5, decoration: const InputDecoration(labelText: 'Indicaciones y evidencia requerida')),
         if (_loading) const LinearProgressIndicator() else DropdownButtonFormField<String>(initialValue: _target, key: ValueKey('$_target:${_people.length}'), isExpanded: true,
           decoration: const InputDecoration(labelText: 'Asignar a'), items: _people.map((p) => DropdownMenuItem(value: p['id'], child: Text(p['nombre']!, overflow: TextOverflow.ellipsis))).toList(),
           onChanged: _busy ? null : (v) => setState(() => _target = v), validator: (v) => v == null ? 'Selecciona a una persona.' : null),

@@ -1,3 +1,4 @@
+import '../services/external_transfer.dart';
 import '../widgets/shared_media_card.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -339,7 +340,7 @@ class _ProyectoChatScreenState extends State<ProyectoChatScreen> {
               ],
             ),
             Expanded(
-              child: TextField(
+              child: TextField(contextMenuBuilder: privacyTextMenu,
                 controller: _controller,
                 minLines: 1,
                 maxLines: 4,

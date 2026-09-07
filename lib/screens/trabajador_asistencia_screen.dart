@@ -1,3 +1,4 @@
+import '../services/external_transfer.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -756,7 +757,7 @@ class _TrabajadorAsistenciaScreenState extends State<TrabajadorAsistenciaScreen>
                           ),
                         ),
                       ] else ...[
-                        TextField(
+                        TextField(contextMenuBuilder: privacyTextMenu,
                           controller: _motivoFaltaController,
                           style: GoogleFonts.inter(color: Colors.white),
                           maxLines: 2,

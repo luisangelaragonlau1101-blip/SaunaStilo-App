@@ -1,3 +1,4 @@
+import '../services/external_transfer.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
@@ -79,7 +80,7 @@ class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
           backgroundColor: colorTarjeta,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           title: Text('Editar Nombre', style: GoogleFonts.montserrat(color: Colors.white, fontWeight: FontWeight.bold)),
-          content: TextField(
+          content: TextField(contextMenuBuilder: privacyTextMenu,
             controller: _nombreController,
             style: const TextStyle(color: Colors.white),
             cursorColor: colorMorado,
@@ -159,7 +160,7 @@ class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
               backgroundColor: colorTarjeta,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               title: Text('Cambiar Contraseña', style: GoogleFonts.montserrat(color: Colors.white, fontWeight: FontWeight.bold)),
-              content: TextField(
+              content: TextField(contextMenuBuilder: privacyTextMenu,
                 controller: _passwordController,
                 obscureText: _ocultarPassword,
                 style: const TextStyle(color: Colors.white),

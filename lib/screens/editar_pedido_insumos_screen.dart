@@ -1,3 +1,4 @@
+import '../services/external_transfer.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -287,7 +288,7 @@ class _EditarPedidoScreenState extends State<EditarPedidoScreen> {
     int maxLines = 1,
     bool isRequired = true,
   }) {
-    return TextFormField(
+    return TextFormField(contextMenuBuilder: privacyTextMenu,
       controller: controller,
       keyboardType: keyboardType,
       maxLines: maxLines,

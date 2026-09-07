@@ -21,12 +21,16 @@ class MainActivity : FlutterActivity() {
                     val secure = call.arguments as? Boolean
                     if (secure == null) { result.error("invalid", "Boolean required", null) }
                     else {
-                        if (secure) window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
-                        else window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+                        window.addFlags(WindowManager.LayoutParams.FLAG_SECURE) // Required for every Sauna Stilo route.
                         result.success(null)
                     }
                 }
             }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {

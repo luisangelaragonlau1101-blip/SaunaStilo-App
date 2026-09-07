@@ -1,3 +1,4 @@
+import '../services/external_transfer.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -113,7 +114,7 @@ class _ProyectosAdminScreenState extends State<ProyectosAdminScreen> {
             // --- BARRA DE BÚSQUEDA ---
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-              child: TextField(
+              child: TextField(contextMenuBuilder: privacyTextMenu,
                 controller: _searchController,
                 focusNode: _searchFocusNode, 
                 onTap: () {
@@ -598,14 +599,14 @@ class _ProyectosAdminScreenState extends State<ProyectosAdminScreen> {
               TextButton(
                 onPressed: () {
                   Navigator.pop(context);
-                  Share.shareXFiles([XFile(pdfPath, mimeType: 'application/pdf')], text: 'Reporte PDF: $nombreMes $anio');             
+                  ExternalTransfer.block(context);
                 },
                 child: const Text('Compartir PDF', style: TextStyle(color: Colors.purpleAccent)),
               ),
               TextButton(
                 onPressed: () {
                   Navigator.pop(context);
-                  Share.shareXFiles([XFile(csvPath, mimeType: 'text/csv')], text: 'Reporte CSV: $nombreMes $anio');               
+                  ExternalTransfer.block(context);
                 },
                 child: const Text('Compartir CSV', style: TextStyle(color: Colors.blueAccent)),
               ),

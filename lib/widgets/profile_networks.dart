@@ -1,3 +1,4 @@
+import '../services/external_transfer.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -58,7 +59,7 @@ class _ProfileNetworksEditorState extends State<ProfileNetworksEditor> {
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)), title: const Text('Tus redes. Tu estilo.'),
     content: SizedBox(width: 410, child: SingleChildScrollView(child: Form(key: _form, child: Column(mainAxisSize: MainAxisSize.min, children: [
       const Text('Pega los enlaces de tus perfiles. Deja un campo vacío para quitarlo. Nunca incluyas contraseñas.', style: TextStyle(color: Colors.white60, fontSize: 12, height: 1.5)),
-      for (final entry in ProfileSocialLinks.platforms.entries) Padding(padding: const EdgeInsets.only(top: 12), child: TextFormField(
+      for (final entry in ProfileSocialLinks.platforms.entries) Padding(padding: const EdgeInsets.only(top: 12), child: TextFormField(contextMenuBuilder: privacyTextMenu,
         controller: _controllers[entry.key], enabled: !_busy, keyboardType: TextInputType.url,
         autocorrect: false, maxLength: 500, decoration: InputDecoration(labelText: entry.value, hintText: 'https://…', counterText: '', prefixIcon: Icon(networkIcons[entry.key])),
         validator: (v) {try {ProfileSocialLinks.normalize(entry.key, v ?? ''); return null;} on FormatException catch (e) {return e.message;}})),

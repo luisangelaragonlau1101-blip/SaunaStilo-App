@@ -1,3 +1,4 @@
+import '../services/external_transfer.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -96,7 +97,7 @@ class _AdminAlertaGeneralScreenState extends State<AdminAlertaGeneralScreen> {
               const SizedBox(height: 18),
               Text('Este botón envía un aviso urgente a todos los usuarios con un dispositivo registrado. En segundo plano el sistema solicita prioridad alta y sonido; el volumen final sigue dependiendo de permisos, modo Silencio/Enfoque y restricciones del teléfono.', style: GoogleFonts.inter(color: Colors.white70, height: 1.45, fontSize: 12.5)),
               const SizedBox(height: 18),
-              TextField(
+              TextField(contextMenuBuilder: privacyTextMenu,
                 controller: _controller,
                 minLines: 3,
                 maxLines: 6,
