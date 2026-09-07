@@ -1,5 +1,6 @@
 import {randomInt} from 'node:crypto';
 import {courses} from './courses.mjs';
+import {createPersonalService} from './personal-day.mjs';
 const PROJECT='saunastiloapp-17e15';
 // Public web configuration, not a service-account key. No elevated Firebase credential is used.
 const CLIENT_KEY='AIzaSyCqvb1kOvxvPTZzCZLQx6aZgEBnC-AZnYE';
@@ -23,11 +24,11 @@ export async function firebaseSession(headers,fetcher=fetch){
  assert(lookup.ok,'No se pudo validar la sesión de Google.',lookup.status===429?429:401);
  const identity=(await lookup.json()).users?.[0];
  assert(identity&&identity.localId===claims.sub&&identity.disabled!==true&&claims.auth_time>=Number(identity.validSince||0),'La sesión fue revocada o desactivada.',401);
- const response=await fetcher(`https://firestore.googleapis.com/v1/projects/${PROJECT}/databases/(default)/documents/usuarios/${encodeURIComponent(claims.sub)}?mask.fieldPaths=nombre&mask.fieldPaths=rol&mask.fieldPaths=activo`,{headers:{Authorization:`Bearer ${token}`},signal:AbortSignal.timeout(12000)});
+ const response=await fetcher(`https://firestore.googleapis.com/v1/projects/${PROJECT}/databases/(default)/documents/usuarios/${encodeURIComponent(claims.sub)}?mask.fieldPaths=nombre&mask.fieldPaths=rol&mask.fieldPaths=activo&mask.fieldPaths=panelPersonal`,{headers:{Authorization:`Bearer ${token}`},signal:AbortSignal.timeout(12000)});
  assert(response.ok,'No se pudo validar tu perfil de Sauna Stilo.',response.status===429?429:403);
  const f=(await response.json()).fields||{},role=f.rol?.stringValue;
  assert(ROLES.includes(role)&&f.activo?.booleanValue!==false,'Tu perfil no tiene acceso.',403);
- return {uid:claims.sub,role,name:String(f.nombre?.stringValue||'Integrante').slice(0,160)};
+ return {uid:claims.sub,role,name:String(f.nombre?.stringValue||'Integrante').slice(0,160),panelPersonal:f.panelPersonal?.booleanValue===true};
 }
 export function selectSources(manuals,role,question){
  const stop=new Set(['como','para','puedo','quiero','hacer','esto','tengo','necesito','donde','esta','debo','manual','manuales','hola','con','los','las','una','del','que','por']);
@@ -42,6 +43,7 @@ export function selectSources(manuals,role,question){
  return chunks.sort((a,b)=>b.score-a.score).slice(0,5).map(({score,...s})=>s);
 }
 export function createService({db,ai,parsePdf,fetcher=fetch}){
+ const personal=createPersonalService({db,ai,Fault,selectSources});
  async function list(table,limit=100){const r=await db.list(table,{limit});assert(!r.nextToken,'Este historial alcanzó el límite de esta versión. No se ocultaron registros.',409);return r.items;}
  async function add(table,record){const [id]=await db.add(table,[record]);assert(id,'No se confirmó el guardado. Reintenta consultando primero el estado.',503);return id;}
  const table=uid=>'sauna34-training:'+uid;
@@ -54,6 +56,7 @@ export function createService({db,ai,parsePdf,fetcher=fetch}){
  async function append(uid,u,b,record){const rows=await events(uid);assert(rows.length<90,'El historial está lleno. Contacta a Administración.',409);const op=text(b.operationId,80);const prior=rows.find(e=>e.operationId===op);if(prior)return prior.id;const stamp=new Date(Math.max(Date.now(),...rows.map(r=>Date.parse(r.at)+1))).toISOString();return add(table(uid),{...record,at:stamp,actorId:u.uid,actorName:u.name,operationId:op});}
  async function approved(uid,l){const rows=await events(uid),g=permission(rows,l);assert(g?.kind==='approve','Primero solicita y recibe la aprobación de Administración.',403);return {rows,g};}
  return async function run(action,b,u){
+  if(typeof action==='string'&&action.startsWith('personal-'))return personal(action,b,u);
   if(action==='status')return {version:'3.4',role:u.role,name:u.name};
   if(action==='training-state')return state(await target(u,b));
   if(action==='training-request'){

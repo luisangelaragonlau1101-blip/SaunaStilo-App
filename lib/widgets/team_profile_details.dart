@@ -1,5 +1,6 @@
 import '../services/external_transfer.dart';
 import 'screen_security_guard.dart';
+import 'personal_panel_control.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import '../models/user_model.dart';
@@ -23,6 +24,7 @@ class TeamProfileDetails extends StatelessWidget {
     final places = data['lugaresInstalacion'] is List ? (data['lugaresInstalacion'] as List).whereType<Map>().toList() : <Map>[];
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       if (_admin) CapturePolicyControl(profileId: perfilId, enabled: data['bloquearCapturas'] == true),
+      if (_admin && data['rol'] == AppRoles.trabajador) PersonalPanelControl(administrator: usuarioActual, profileId: perfilId, name: data['nombre']?.toString() ?? 'Personal', enabled: data['panelPersonal'] == true),
       const SizedBox(height: 18),
       _section(context, 'LO QUE ME GUSTA', Icons.favorite_outline_rounded, () => _editInterests(context), editable: _admin || usuarioActual.id == perfilId),
       const Text('Información opcional, compartida con el equipo.', style: TextStyle(color: Colors.white54, fontSize: 12)),

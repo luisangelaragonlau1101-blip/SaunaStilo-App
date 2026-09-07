@@ -11,6 +11,8 @@ class AppRoles {
 
 class UserModel {
   final String id;
+  final bool panelPersonal;
+  bool get usesPersonalPanel => panelPersonal && rol == AppRoles.trabajador;
   final String nombre;
   final DateTime? cumpleanos;
   final String correo;
@@ -29,6 +31,7 @@ class UserModel {
 
   UserModel({
     required this.id,
+    this.panelPersonal = false,
     required this.nombre,
     this.cumpleanos,
     required this.correo,
@@ -46,6 +49,7 @@ class UserModel {
     Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
     return UserModel(
       id: doc.id,
+      panelPersonal: data['panelPersonal'] == true,
       nombre: data['nombre'] ?? '',
       cumpleanos: data['cumpleanos'] != null ? (data['cumpleanos'] as Timestamp).toDate() : null,
       correo: data['correo'] ?? '',
@@ -70,6 +74,7 @@ class UserModel {
       'cumpleanos': cumpleanos != null ? Timestamp.fromDate(cumpleanos!) : null,
       'correo': correo,
       'rol': rol,
+      if (panelPersonal) 'panelPersonal': true,
       'fecha_registro': Timestamp.fromDate(fechaRegistro),
       'fotoUrl': fotoUrl,
       if (horaEntrada != null) 'horaEntrada': horaEntrada,

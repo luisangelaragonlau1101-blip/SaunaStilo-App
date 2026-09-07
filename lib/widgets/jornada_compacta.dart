@@ -11,7 +11,8 @@ String mexicoDayKey(DateTime now) => DateFormat('yyyyMMdd').format(now.toUtc().s
 
 class JornadaCompacta extends StatefulWidget {
   final UserModel usuario;
-  const JornadaCompacta({super.key, required this.usuario});
+  final VoidCallback? onExitConfirmed;
+  const JornadaCompacta({super.key, required this.usuario, this.onExitConfirmed});
   @override
   State<JornadaCompacta> createState() => _JornadaCompactaState();
 }
@@ -55,6 +56,7 @@ class _JornadaCompactaState extends State<JornadaCompacta> {
       });
       if (result.data is! Map || result.data['exito'] != true) throw StateError('El servidor no confirmó el registro. Revisa tu jornada antes de reintentar.');
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(result.data['mensaje']?.toString() ?? 'Registro confirmado por el servidor.')));
+      if (mounted && action == 'salida') widget.onExitConfirmed?.call();
     } on FirebaseFunctionsException catch (e) {
       if (mounted) setState(() => _error = switch (e.code) {
         'not-found' => 'El servicio de asistencia todavía no está publicado en Firebase. Administración debe activar updateAttendance; no se registró una hora local ficticia.',
