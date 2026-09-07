@@ -1,6 +1,6 @@
 import '../services/external_transfer.dart';
 import '../widgets/home_progress_panel.dart';
-import 'stilo_academy_screen.dart';
+import 'training_access_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -91,7 +91,7 @@ class _OperationsHomeState extends State<_OperationsHome> {
       const Text('Tu jornada. Tus proyectos. Tu equipo.', style: TextStyle(color: Colors.white54, fontSize: 13)),
       const SizedBox(height: 18),
       if (alerts.isNotEmpty) Padding(padding: const EdgeInsets.only(bottom: 14), child: OutlinedButton.icon(style: OutlinedButton.styleFrom(foregroundColor: const Color(0xFFFF647A), backgroundColor: const Color(0xFF240B12), side: const BorderSide(color: Color(0xFF8E1538)), minimumSize: const Size.fromHeight(54)), onPressed: () => _open(alerts.first), icon: const Icon(Icons.campaign_rounded), label: const Text('ALERTA GENERAL · TODO EL EQUIPO', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800)))),
-      HomeProgressPanel(user: widget.usuario, onStreak: () => _open(actions.firstWhere((a) => a.id == (widget.usuario.rol == AppRoles.admin ? 'rachas' : 'racha'))), onProfile: () => widget.onTab(4), onLearn: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => StiloAcademyScreen(userId: widget.usuario.id)))),
+      HomeProgressPanel(user: widget.usuario, onStreak: () => _open(actions.firstWhere((a) => a.id == (widget.usuario.rol == AppRoles.admin ? 'rachas' : 'racha'))), onProfile: () => widget.onTab(4), onLearn: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => TrainingAccessScreen(user: widget.usuario)))),
       if (widget.usuario.rol == AppRoles.admin)
         AdminOperationsCard(onAttendance: () => _open(actions.firstWhere((a) => a.id == 'asistencias')), onTeam: () => _open(actions.firstWhere((a) => a.id == 'equipo')))
       else JornadaCompacta(usuario: widget.usuario),

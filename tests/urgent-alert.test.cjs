@@ -33,7 +33,7 @@ test('all-team alert remains restricted to administration in server and UI', () 
   assert.match(catalog, /id: 'alerta_general'/);
   assert.match(catalog, /if \(admin\)/);
   assert.match(screen, /ACTIVAR ALERTA GENERAL/);
-  assert.match(screen, /enviarAlertaGeneral/);
+  assert.match(screen, /personalizedAlertPayloads/);assert.match(screen, /profile.data\(\)\?\['rol'\]\s*!==?\s*'admin'/);assert.match(screen, /batch.commit/);
 });
 
 test('foreground alarm has a single owner and uses the urgent local sound', () => {

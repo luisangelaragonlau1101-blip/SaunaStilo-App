@@ -19,5 +19,5 @@ test('privacy clipboard controls preserve paste and inputs',()=>{
 });
 test('learning stays user-scoped local and the home keeps the general alert',()=>{
  for(const p of ['lib/academy/learning_progress.dart','lib/games/round_match.dart'])assert.doesNotMatch(read(p),/FirebaseFirestore|FirebaseAuth|httpsCallable/);
- const home=read('lib/screens/operations_shell.dart');assert.match(home,/HomeProgressPanel/);assert.ok(home.indexOf("if (alerts.isNotEmpty)")<home.indexOf('HomeProgressPanel(user:'));assert.match(home,/StiloAcademyScreen\(userId: widget.usuario.id\)/);
+ const home=read('lib/screens/operations_shell.dart');assert.match(home,/HomeProgressPanel/);assert.ok(home.indexOf("if (alerts.isNotEmpty)")<home.indexOf('HomeProgressPanel(user:'));assert.match(home,/TrainingAccessScreen\(user: widget.usuario\)/);assert.doesNotMatch(read('lib/widgets/home_progress_panel.dart'),/home-learn|XP idiomas/);
 });

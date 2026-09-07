@@ -1,3 +1,5 @@
+import '../screens/training_access_screen.dart';
+import '../screens/company_manuals_screen.dart';
 import '../screens/stilo_academy_screen.dart';
 import 'package:flutter/material.dart';
 
@@ -99,7 +101,8 @@ class AppActionCatalog {
       if (admin || warehouse) AppAction(id: 'almacen_movimientos', title: 'Control de almacén', subtitle: 'Aprobar salidas, recibir devoluciones e historial', icon: Icons.warehouse_rounded, color: _amber, primary: true, keywords: const ['préstamos', 'salidas', 'entradas', 'aprobar'], builder: (_) => const AdminSolicitudesHerramientasScreen()),
       AppAction(id: 'solicitudes_almacen', title: 'Solicitar al almacén', subtitle: 'Pedir herramienta y consultar tu préstamo', icon: Icons.outbox_rounded, color: _mint, keywords: const ['solicitud','herramientas'], builder: (_) => ControlHerramientasScreen(usuarioId: user.id, usuarioNombre: user.nombre)),
       AppAction(id: 'sin_conexion', title: 'Sin conexión', subtitle: 'Preparar este equipo y guardar borradores', icon: Icons.offline_bolt_rounded, color: _amber, keywords: const ['offline','internet','borradores'], builder: (_) => OfflineDeskScreen(user: user)),
-      AppAction(id: 'idiomas', title: 'Stilo Aprende', subtitle: 'Inglés y francés · lecciones, rachas y avance', icon: Icons.school_rounded, color: _violet, keywords: const ['idiomas','aprender','ingles','frances','lecciones','racha'], builder: (_) => StiloAcademyScreen(userId: user.id)),
+      AppAction(id: 'idiomas', title: 'Idiomas · Stilo Aprende', subtitle: 'Solicitud, autorización y constancia empresarial', icon: Icons.school_rounded, color: _violet, keywords: const ['idiomas','aprender','ingles','frances','lecciones','racha'], builder: (_) => TrainingAccessScreen(user: user)),
+      if (admin) AppAction(id: 'conocimiento_ia', title: 'Conocimiento de la IA', subtitle: 'Publicar manuales y procedimientos autorizados', icon: Icons.auto_stories_rounded, color: _pink, keywords: const ['manuales','conocimiento','procedimientos'], builder: (_) => CompanyManualsScreen(user: user)),
       AppAction(id: 'juegos', title: 'Pausa Stilo · Juegos', subtitle: 'Sin Wi-Fi · hasta 4 en el mismo teléfono', icon: Icons.sports_esports_rounded, color: _violet, keywords: const ['jugar','memoria','gato','cuatro','carrera','territorios','offline'], builder: (_) => TeamGamesScreen(user: user)),
       AppAction(id: 'equipo', title: admin ? 'Administrar perfiles' : 'Nuestro equipo', subtitle: admin ? 'Otorgar insignias y agregar lugares de instalación' : 'Personas, intereses e instalaciones', icon: Icons.groups_outlined, color: _mint, keywords: const ['insignias', 'lugares', 'instalaciones', 'personas'], builder: (_) => PerfilesEquipoScreen(usuarioActual: user)),
       AppAction(id: 'prestamos', title: 'Préstamos de herramienta', subtitle: 'Solicitar, prestar, recibir y devolver', icon: Icons.handyman_outlined, color: _mint, keywords: const ['compañero', 'cajita', 'herramientas'], builder: (_) => PrestamosEquipoScreen(usuario: user)),

@@ -1,3 +1,4 @@
+import '../widgets/company_assistant_panel.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/user_model.dart';
@@ -33,7 +34,7 @@ class _OnlineSmartScreenState extends State<OnlineSmartScreen> {
 
   @override
   Widget build(BuildContext context) => DefaultTabController(
-    length: 2,
+    length: 3,
     child: Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
@@ -47,9 +48,10 @@ class _OnlineSmartScreenState extends State<OnlineSmartScreen> {
           }),
         ],
         bottom: const TabBar(indicatorColor: Color(0xFFB7FF2A), labelColor: Color(0xFFB7FF2A), unselectedLabelColor: Colors.white60,
-          tabs: [Tab(text: 'Asistente'), Tab(text: 'Manual de uso')]),
+          tabs: [Tab(text: 'Asistente'), Tab(text: 'Guía web'), Tab(text: 'Uso de app')]),
       ),
       body: TabBarView(children: [
+        const CompanyAssistantPanel(),
         onlineSmartEmbed(_uri, onVoiceRequest: _voiceRequested),
         ListView(padding: const EdgeInsets.all(18), children: [
           const Text('SAUNA STILO', style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 2)),
@@ -60,7 +62,7 @@ class _OnlineSmartScreenState extends State<OnlineSmartScreen> {
             ExpansionTile(title: Text(question), childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 20), children: [
               Text(LocalGuide.answer(question, widget.usuario.rol) ?? 'En Inicio abre Proyectos, Chats o Todas las opciones. En Asistente puedes preguntar el paso que necesitas.', style: const TextStyle(color: Colors.white70, height: 1.5)),
             ]),
-          const Padding(padding: EdgeInsets.all(16), child: Text('El asistente integrado recibe únicamente lo que escribes en su conversación. No consulta expedientes privados ni realiza registros por ti. Escuchar usa la voz del dispositivo. Voz de Ángel solicita una síntesis autorizada desde Sauna Stilo y requiere activación; no comparte credenciales con la guía.', style: TextStyle(color: Colors.white54, fontSize: 12, height: 1.5))),
+          const Padding(padding: EdgeInsets.all(16), child: Text('La pestaña Asistente consulta manuales publicados y autorizados para tu rol. Guía web conserva el asistente público y no recibe tus manuales ni credenciales. Ninguna pestaña registra actividades por ti. Escuchar usa la voz del dispositivo. Voz de Ángel solicita una síntesis autorizada desde Sauna Stilo y requiere activación; no comparte credenciales con la guía.', style: TextStyle(color: Colors.white54, fontSize: 12, height: 1.5))),
         ]),
       ]),
     ),
