@@ -21,6 +21,7 @@ export function createPersonalService({db,ai,Fault,selectSources}){
    return {history,items:all.filter(i=>!i.archived&&i.date>=day).sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time)),through:new Date(Date.UTC(start.getUTCFullYear(),start.getUTCMonth()+2,0,12)).toISOString().slice(0,10)};
   }
   if(action==='personal-create'){
+   require(u.role==='admin','Las tareas, comidas, compras y eventos los asigna Administración. Para trabajo extra o faltantes usa Reportes.',403);
    const log=await rows(table),data=fields(b,scope==='events');
    require(scope==='events'||data.kind!=='event','Usa la sección Eventos.');
    const steps=b.steps||[];require(Array.isArray(steps)&&steps.length<=25&&steps.every(s=>typeof s==='string'&&s.trim().length>0&&s.length<=180),'Agrega hasta 25 preparativos de 180 caracteres.');data.steps=steps.map(s=>s.trim());
@@ -32,7 +33,7 @@ export function createPersonalService({db,ai,Fault,selectSources}){
    const record={action:b.change,itemId:id};
    if(b.change==='complete'||b.change==='step'){require(typeof b.done==='boolean','Selecciona un estado.');record.done=b.done;}
    if(b.change==='step'){require(item.kind==='event'&&Number.isInteger(b.step)&&b.step>=0&&b.step<item.steps.length,'Preparativo inválido.');record.step=b.step;}
-   if(b.change==='edit'||b.change==='archive')require(u.role==='admin'||item.createdBy===u.uid,'Puedes marcar lo realizado; solo Administración puede cambiar o retirar lo que te asignó.',403);
+   if(b.change==='edit'||b.change==='archive')require(u.role==='admin','Puedes marcar lo realizado; solo Administración puede cambiar o retirar las asignaciones.',403);
    if(b.change==='edit'){const f=fields({...b,kind:item.kind,date:item.date},item.kind==='event');record.data={title:f.title,details:f.details,time:f.time,quantity:f.quantity,theme:f.theme,menu:f.menu,guests:f.guests};}
    await append(table,log,b,u,record);return {id,saved:true};
   }

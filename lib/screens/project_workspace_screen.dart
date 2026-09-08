@@ -1,3 +1,4 @@
+import '../widgets/project_progress_card.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/offline_workspace.dart';
 import 'package:flutter/material.dart';
@@ -19,7 +20,7 @@ class ProjectWorkspaceScreen extends StatelessWidget {
     final admin = usuario.rol == AppRoles.admin;
     final query = admin ? FirebaseFirestore.instance.collection('proyectos') : FirebaseFirestore.instance.collection('proyectos').where('encargados', arrayContains: usuario.id);
     return Scaffold(backgroundColor: Colors.black, appBar: AppBar(title: const Text('Proyectos y grupos'), actions: [
-      IconButton(tooltip: 'Administrar proyectos', icon: const Icon(Icons.tune_rounded), onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => admin ? const ProyectosAdminScreen() : ProyectosTrabajadorScreen(esMaestro: usuario.rol == AppRoles.maestro)))),
+      if (admin) IconButton(tooltip: 'Administrar proyectos', icon: const Icon(Icons.tune_rounded), onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => admin ? const ProyectosAdminScreen() : ProyectosTrabajadorScreen(esMaestro: usuario.rol == AppRoles.maestro)))),
     ]), body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(stream: query.snapshots(includeMetadataChanges: true), builder: (context, snapshot) {
       if (snapshot.hasError) return const Center(child: Padding(padding: EdgeInsets.all(24), child: Text('No se pudieron consultar tus proyectos. Revisa Internet y los permisos de tu cuenta.')));
       if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
@@ -32,6 +33,8 @@ class ProjectWorkspaceScreen extends StatelessWidget {
         for (final project in projects) Card(color: const Color(0xFF111012), margin: const EdgeInsets.only(bottom: 14), child: Padding(padding: const EdgeInsets.all(18), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [const Icon(Icons.workspaces_outline, color: Color(0xFFB7FF2A)), const SizedBox(width: 10), Expanded(child: Text(project.titulo, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 17)))]),
           const SizedBox(height: 14),
+          ProjectProgressCard(projectId: project.id),
+          const SizedBox(height: 12),
           Wrap(spacing: 10, runSpacing: 10, children: [
             FilledButton.icon(icon: const Icon(Icons.forum_outlined), label: const Text('Grupo y evidencias'), onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => ProyectoChatScreen(proyecto: project)))),
             if (admin || usuario.rol == AppRoles.maestro) OutlinedButton.icon(icon: const Icon(Icons.add_task_rounded), label: const Text('Asignar actividad'), onPressed: () => showModalBottomSheet<void>(context: context, isScrollControlled: true, useSafeArea: true, builder: (_) => ModalAsignarActividad(proyectoId: project.id, rolUsuario: usuario.rol))),

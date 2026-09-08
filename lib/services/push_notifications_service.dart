@@ -36,11 +36,11 @@ class PushNotificationsService {
     return _messaging.getNotificationSettings();
   }
 
-  Future<PushActivationResult> activateFor(UserModel user) async {
+  Future<PushActivationResult> activateFor(UserModel user, {bool requestPermission = true}) async {
     try {
       final problem = pushEnvironmentProblem();
       if (problem != null) return PushActivationResult(active: false, message: problem);
-      final settings = await _messaging.requestPermission(
+      final settings = requestPermission ? await _messaging.requestPermission(
         alert: true,
         announcement: false,
         badge: true,
@@ -48,7 +48,7 @@ class PushNotificationsService {
         criticalAlert: false,
         provisional: false,
         sound: true,
-      );
+      ) : await _messaging.getNotificationSettings();
 
       final authorized =
           settings.authorizationStatus == AuthorizationStatus.authorized ||
@@ -90,7 +90,7 @@ class PushNotificationsService {
         message: 'Dispositivo registrado. Las alertas generales usan prioridad alta. Con la app abierta se reproduce la alarma urgente; en segundo plano el sonido depende de los permisos y ajustes del teléfono.',
       );
     } catch (error) {
-      debugPrint('[push] No se pudo activar FCM: $error');
+      debugPrint('[push] Registro no confirmado; revisar desde Configuración.');
       return PushActivationResult(
         active: false,
         message: kIsWeb
@@ -104,7 +104,7 @@ class PushNotificationsService {
     required UserModel user,
     required String token,
   }) async {
-    if (FirebaseAuth.instance.currentUser?.uid != user.id) return;
+    if (FirebaseAuth.instance.currentUser?.uid != user.id) throw StateError('La cuenta cambió durante el registro push.');
     await _firestore.collection('usuarios').doc(user.id).update({
       'fcmTokens': FieldValue.arrayUnion([token]),
       'pushActualizadoEn': FieldValue.serverTimestamp(),

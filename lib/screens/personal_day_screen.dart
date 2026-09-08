@@ -12,6 +12,7 @@ import '../widgets/jornada_compacta.dart';
 import '../widgets/stilo_orbit.dart';
 import 'streak_overview_screen.dart';
 import 'training_access_screen.dart';
+import 'extra_work_screen.dart';
 
 String personalDate(DateTime date) => DateFormat('yyyy-MM-dd').format(date);
 const personalKinds = {'task': 'Pendientes', 'meal': 'Comidas', 'shopping': 'Compras', 'event': 'Eventos'};
@@ -66,10 +67,12 @@ class _PersonalDayState extends State<PersonalDayScreen> with WidgetsBindingObse
     finally { if (mounted) setState(() => _busy = false); }
   }
   Future<void> _edit(String kind, [Map<String,dynamic>? item]) async {
+    if (!_admin) return;
     final date = await showModalBottomSheet<DateTime>(context:context,isScrollControlled:true,useSafeArea:true,backgroundColor:const Color(0xFF111012),shape:const RoundedRectangleBorder(borderRadius:BorderRadius.vertical(top:Radius.circular(30))),builder:(_) => PersonalItemForm(kind:kind,initialDate:_day,item:item,save:(fields,op) => service.call(item==null?'personal-create':'personal-change',{'userId':uid,'scope':kind=='event'?'events':'day',...fields,if(item!=null)...{'id':item['id'],'change':'edit'},'operationId':op})));
     if (mounted && date != null) { _changeDay(date); ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text('Guardado. El plan se comparte con la persona asignada y Administración.'))); }
   }
   Future<void> _archive(Map<String,dynamic> item) async {
+    if (!_admin) return;
     final yes = await showDialog<bool>(context:context,builder:(c)=>AlertDialog(title:const Text('¿Retirar esta actividad?'),content:const Text('Dejará de aparecer como pendiente, pero conservará su historial.'),actions:[TextButton(onPressed:()=>Navigator.pop(c,false),child:const Text('Cancelar')),FilledButton(onPressed:()=>Navigator.pop(c,true),child:const Text('Retirar'))]));
     if (yes != true || !mounted || _busy) return;
     setState(()=>_busy=true);
@@ -80,7 +83,7 @@ class _PersonalDayState extends State<PersonalDayScreen> with WidgetsBindingObse
   Future<void> _help() async {
     final yes=await showDialog<bool>(context:context,builder:(c)=>AlertDialog(title:const Text('Consultar mi plan con Online Smart'),content:const Text('Se utilizarán las comidas, compras y pendientes de esta fecha, además de los manuales autorizados, para orientarte. La IA no modifica tu plan ni registra asistencia.'),actions:[TextButton(onPressed:()=>Navigator.pop(c,false),child:const Text('Cancelar')),FilledButton(onPressed:()=>Navigator.pop(c,true),child:const Text('Consultar'))]));
     if(yes!=true||!mounted)return;
-    Navigator.push(context,MaterialPageRoute<void>(builder:(_)=>Scaffold(backgroundColor:Colors.black,appBar:AppBar(title:const Text('Online Smart · Mi día')),body:CompanyAssistantPanel(service:_PersonalAssistantService(service,uid,personalDate(_day)),description:'Organiza tus actividades con los datos de esta fecha y los manuales autorizados. Las propuestas no cambian el plan hasta que tú las guardes.',example:'Por ejemplo: “¿Qué debo preparar primero?” o “Ayúdame a organizar las compras para la comida”.'))));
+    Navigator.push(context,MaterialPageRoute<void>(builder:(_)=>Scaffold(backgroundColor:Colors.black,appBar:AppBar(title:const Text('Online Smart · Mi día')),body:CompanyAssistantPanel(service:_PersonalAssistantService(service,uid,personalDate(_day)),description:'Organiza tus actividades con los datos de esta fecha y los manuales autorizados. Las propuestas no cambian el plan. Administración autoriza y asigna las actividades.',example:'Por ejemplo: “¿Qué debo preparar primero?” o “Ayúdame a organizar las compras para la comida”.'))));
   }
   void _finished() {
     if(!mounted)return;
@@ -109,7 +112,7 @@ class _PersonalDayState extends State<PersonalDayScreen> with WidgetsBindingObse
         ],
         if(_tab==1)_section('shopping','Lista de compras y faltantes',items.where((i)=>i['kind']=='shopping').toList()),
         if(_tab==2)...[
-          Row(children:[const Expanded(child:Text('Próximos eventos',style:TextStyle(fontSize:22,fontWeight:FontWeight.w800))),IconButton(tooltip:'Agregar evento',onPressed:_busy||_loading?null:()=>_edit('event'),icon:const Icon(Icons.add_circle_rounded,color:Color(0xFFFF729C)))]),
+          Row(children:[const Expanded(child:Text('Próximos eventos',style:TextStyle(fontSize:22,fontWeight:FontWeight.w800))),if(_admin)IconButton(tooltip:'Agregar evento',onPressed:_busy||_loading?null:()=>_edit('event'),icon:const Icon(Icons.add_circle_rounded,color:Color(0xFFFF729C)))]),
           Text('Desde la fecha seleccionada hasta ${_upcoming?['through']??''}. Cambia de mes para consultar fechas posteriores.',style:const TextStyle(color:Colors.white54,fontSize:12)),const SizedBox(height:12),
           if((_upcoming?['items'] as List? ??[]).isEmpty)const Text('Todavía no hay eventos en este periodo.',style:TextStyle(color:Colors.white60)),
           for(final event in (_upcoming?['items'] as List? ??[]))_event(Map<String,dynamic>.from(event as Map)),
@@ -122,6 +125,7 @@ class _PersonalDayState extends State<PersonalDayScreen> with WidgetsBindingObse
           for(final record in (_upcoming?['history'] as List? ??[]).take(50))_history(Map<String,dynamic>.from(record as Map)),
         ],
       ],
+      if (!_admin) Padding(padding: const EdgeInsets.only(top: 14), child: OutlinedButton.icon(onPressed: () => Navigator.push(context, MaterialPageRoute<void>(builder: (_) => ExtraWorkScreen(user: widget.user))), icon: const Icon(Icons.auto_awesome_rounded, color: Color(0xFFFFB876)), label: const Text('Reportar tarea extra o faltante'))),
       const SizedBox(height:22),OutlinedButton.icon(onPressed:_busy||_loading||_error!=null?null:_help,icon:const Icon(Icons.auto_awesome_rounded,color:Color(0xFFC798FF)),label:const Text('Organizar mi día con la IA')),
       const Text('Visible solo para esta persona y Administración. Actualiza para ver las nuevas asignaciones. Completar pendientes no registra automáticamente la salida.',style:TextStyle(color:Colors.white54,fontSize:11,height:1.5)),
       if(widget.embedded)TextButton.icon(onPressed:widget.onOptions,icon:const Icon(Icons.apps_rounded),label:const Text('Todas las opciones de mi cuenta')),
@@ -129,12 +133,12 @@ class _PersonalDayState extends State<PersonalDayScreen> with WidgetsBindingObse
     return widget.embedded?body:Scaffold(backgroundColor:Colors.black,appBar:AppBar(title:const Text('Plan del personal')),body:body);
   }
   Widget _section(String kind,String title,List<Map<String,dynamic>> rows)=>Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
-    Row(children:[Icon(personalIcons[kind],color:personalColors[kind]),const SizedBox(width:10),Expanded(child:Text(title,style:const TextStyle(fontSize:21,fontWeight:FontWeight.w800))),IconButton(tooltip:'Agregar ${personalKinds[kind]}',onPressed:_busy||_loading?null:()=>_edit(kind),icon:Icon(Icons.add_circle_rounded,color:personalColors[kind]))]),
-    if(kind=='shopping')const Padding(padding:EdgeInsets.only(bottom:8),child:Text('Añade lo que hace falta y marca cada artículo cuando se haya comprado.',style:TextStyle(color:Colors.white60,fontSize:12))),
-    if(rows.isEmpty)const Padding(padding:EdgeInsets.symmetric(vertical:12),child:Text('Sin actividades en esta sección. Puedes añadir una.',style:TextStyle(color:Colors.white54))),
+    Row(children:[Icon(personalIcons[kind],color:personalColors[kind]),const SizedBox(width:10),Expanded(child:Text(title,style:const TextStyle(fontSize:21,fontWeight:FontWeight.w800))),if(_admin)IconButton(tooltip:'Agregar ${personalKinds[kind]}',onPressed:_busy||_loading?null:()=>_edit(kind),icon:Icon(Icons.add_circle_rounded,color:personalColors[kind]))]),
+    if(kind=='shopping')const Padding(padding:EdgeInsets.only(bottom:8),child:Text('Marca las compras asignadas. Para informar lo que falta, envía un reporte; Administración actualiza la lista.',style:TextStyle(color:Colors.white60,fontSize:12))),
+    if(rows.isEmpty)const Padding(padding:EdgeInsets.symmetric(vertical:12),child:Text('Sin actividades en esta sección. Administración puede asignarlas.',style:TextStyle(color:Colors.white54))),
     for(final item in rows)_item(item),const SizedBox(height:16),
   ]);
-  Widget _item(Map<String,dynamic> item){final done=item['done']==true,canEdit=_admin||item['createdBy']==widget.user.id;
+  Widget _item(Map<String,dynamic> item){final done=item['done']==true,canEdit=_admin;
     return Card(color:const Color(0xFF121114),shape:RoundedRectangleBorder(borderRadius:BorderRadius.circular(26),side:BorderSide(color:personalColors[item['kind']]!.withValues(alpha:.25))),child:Column(children:[
       CheckboxListTile(key:ValueKey('personal-check-${item['id']}'),controlAffinity:ListTileControlAffinity.leading,value:done,onChanged:_busy||_loading?null:(v)=>_complete(item,v==true),activeColor:personalColors[item['kind']],title:Text(item['title'],style:TextStyle(fontWeight:FontWeight.w800,color:done?Colors.white54:Colors.white,decoration:done?TextDecoration.lineThrough:null)),subtitle:Text([if((item['time']??'')!='')item['time'],if((item['quantity']??'')!='')item['quantity'],if((item['details']??'')!='')item['details'],done?'${item['kind']=='shopping'?'Comprado':'Completado'} · ${item['lastBy']}':'Agregado por ${item['createdByName']}'].join('\n'),style:const TextStyle(height:1.45,color:Colors.white60))),
       if(canEdit)Row(mainAxisAlignment:MainAxisAlignment.end,children:[TextButton(onPressed:_busy?null:()=>_edit(item['kind'],item),child:const Text('Editar')),TextButton(onPressed:_busy?null:()=>_archive(item),child:const Text('Retirar'))]),
@@ -146,7 +150,7 @@ class _PersonalDayState extends State<PersonalDayScreen> with WidgetsBindingObse
     if((item['menu']??'')!='')Padding(padding:const EdgeInsets.symmetric(vertical:9),child:Text('Menú: ${item['menu']}',style:const TextStyle(height:1.5))),
     if((item['details']??'')!='')Text(item['details'],style:const TextStyle(color:Colors.white60)),
     for(var i=0;i<(item['steps'] as List? ??[]).length;i++)CheckboxListTile(contentPadding:EdgeInsets.zero,controlAffinity:ListTileControlAffinity.leading,value:(item['stepsDone'] as List? ??[]).contains(i),onChanged:_busy||_loading?null:(v)=>_complete(item,v==true,step:i),title:Text(item['steps'][i],style:TextStyle(decoration:(item['stepsDone'] as List? ??[]).contains(i)?TextDecoration.lineThrough:null))),
-    Row(children:[Expanded(child:Text('Último cambio: ${item['lastBy']}',style:const TextStyle(color:Colors.white54,fontSize:11))),if(_admin||item['createdBy']==widget.user.id)...[IconButton(tooltip:'Editar evento',onPressed:_busy?null:()=>_edit('event',item),icon:const Icon(Icons.edit_outlined)),IconButton(tooltip:'Retirar evento',onPressed:_busy?null:()=>_archive(item),icon:const Icon(Icons.archive_outlined))]]),
+    Row(children:[Expanded(child:Text('Último cambio: ${item['lastBy']}',style:const TextStyle(color:Colors.white54,fontSize:11))),if(_admin)...[IconButton(tooltip:'Editar evento',onPressed:_busy?null:()=>_edit('event',item),icon:const Icon(Icons.edit_outlined)),IconButton(tooltip:'Retirar evento',onPressed:_busy?null:()=>_archive(item),icon:const Icon(Icons.archive_outlined))]]),
   ])));
   Widget _history(Map<String,dynamic> record)=>ListTile(contentPadding:EdgeInsets.zero,leading:const Icon(Icons.history_rounded,color:Color(0xFFC798FF)),title:Text(record['title']??'Actividad'),subtitle:Text('${const {'create':'Agregado','edit':'Editado','archive':'Retirado','complete':'Estado actualizado','step':'Preparativo actualizado'}[record['action']]??'Cambio'} · ${record['actorName']}\n${record['at']}',style:const TextStyle(fontSize:11,color:Colors.white54)));
 }
