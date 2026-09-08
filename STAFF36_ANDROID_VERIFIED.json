@@ -1,0 +1,31 @@
+{
+  "version": "3.6.0",
+  "file": "Sauna-Stilo-3.6.0-Android.apk",
+  "bytes": 79743033,
+  "sha256": "b748981f79f82baf489af3a72836f6904a2a04f128132b472d4459da6acc2663",
+  "android": {
+    "package": "com.saunastilo.personal",
+    "versionName": "3.6.0",
+    "versionCode": 1788890001
+  },
+  "previousAndroid": {
+    "package": "com.saunastilo.personal",
+    "versionName": "3.5.1",
+    "versionCode": 1788840001
+  },
+  "sameSigningCertificateAs351": true,
+  "signingCertificateSha256": "716e331c62be7c4055e8217ebf771da716ed13c87e10bf55bb98f608625b80bf",
+  "signatureVerified": true,
+  "unsignedBuildSource": "8b6671c24b144ceb6ed3b68abd2b1f5077b93148",
+  "verifiedReadableSource": "06801f2d8d78b0b8c36b29dd6398cc404991d790",
+  "androidBuildAndEmulatorRun": 34172871558,
+  "finalVerificationRun": 34173270699,
+  "emulatorLaunch": "API 35 x86_64 Google APIs: identical payload with QA-only signer installed and launched, no fatal runtime errors",
+  "privateSigning": "Signed locally with the retained owner key, never exported to GitHub or AppDeploy; same certificate and higher version independently checked against the delivered 3.5.1 APK",
+  "actualRetainedSignerUpdateOnPhysicalPhoneTested": false,
+  "realAccountSignInTested": false,
+  "realPushDeliveryTested": false,
+  "productionEmployeeDataModified": false,
+  "firebaseRulesOrFunctionsDeployed": false,
+  "newFirebaseAndroidRegistrationCreated": false
+}
