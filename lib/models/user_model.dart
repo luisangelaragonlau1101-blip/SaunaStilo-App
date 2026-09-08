@@ -12,6 +12,7 @@ class AppRoles {
 class UserModel {
   final String id;
   final bool panelPersonal;
+  final bool panelIngenieria;
   bool get usesPersonalPanel => panelPersonal && rol == AppRoles.trabajador;
   final String nombre;
   final DateTime? cumpleanos;
@@ -32,6 +33,7 @@ class UserModel {
   UserModel({
     required this.id,
     this.panelPersonal = false,
+    this.panelIngenieria = false,
     required this.nombre,
     this.cumpleanos,
     required this.correo,
@@ -50,6 +52,7 @@ class UserModel {
     return UserModel(
       id: doc.id,
       panelPersonal: data['panelPersonal'] == true,
+      panelIngenieria: data['panelIngenieria'] == true,
       nombre: data['nombre'] ?? '',
       cumpleanos: data['cumpleanos'] != null ? (data['cumpleanos'] as Timestamp).toDate() : null,
       correo: data['correo'] ?? '',
@@ -75,6 +78,7 @@ class UserModel {
       'correo': correo,
       'rol': rol,
       if (panelPersonal) 'panelPersonal': true,
+      if (panelIngenieria) 'panelIngenieria': true,
       'fecha_registro': Timestamp.fromDate(fechaRegistro),
       'fotoUrl': fotoUrl,
       if (horaEntrada != null) 'horaEntrada': horaEntrada,

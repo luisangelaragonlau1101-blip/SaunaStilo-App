@@ -1,3 +1,5 @@
+import 'admin_inbox_screen.dart';
+import 'engineering_screen.dart';
 import '../services/external_transfer.dart';
 import '../widgets/home_progress_panel.dart';
 import 'training_access_screen.dart';
@@ -44,7 +46,7 @@ class _OperationsShellState extends State<OperationsShell> {
     if (oldWidget.usuario.id != widget.usuario.id || oldWidget.usuario.rol != widget.usuario.rol) _index = 0;
   }
   void _personalMenu() {
-    final actions = AppActionCatalog.forUser(widget.usuario);
+    final actions = AppActionCatalog.forUser(widget.usuario).where((a) => a.id != 'proyectos').toList();
     showModalBottomSheet<void>(context: context, isScrollControlled: true, useSafeArea: true, backgroundColor: const Color(0xFF111012), builder: (c) => SizedBox(height: MediaQuery.sizeOf(c).height * .82, child: ListView(padding: const EdgeInsets.all(20), children: [const Text('Todas mis opciones', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800)), for (final a in actions) ListTile(leading: Icon(a.icon, color: a.color), title: Text(a.title), subtitle: Text(a.subtitle), onTap: () { Navigator.pop(c); Navigator.of(context).push(MaterialPageRoute<void>(builder: a.builder)); })])));
   }
   Widget _page(int index) => _pages.putIfAbsent(index, () => switch (index) {
@@ -52,7 +54,7 @@ class _OperationsShellState extends State<OperationsShell> {
     2 => MensajesEquipoScreen(usuario: widget.usuario),
     3 => EquipoTareasScreen(usuario: widget.usuario),
     4 => PerfilSocialScreen(usuarioActual: widget.usuario, perfilId: widget.usuario.id),
-    _ => widget.usuario.usesPersonalPanel ? PersonalDayScreen(user: widget.usuario, embedded: true, onProfile: () => setState(() => _index = 4), onOptions: _personalMenu) : _OperationsHome(usuario: widget.usuario, onTab: (i) => setState(() => _index = i)),
+    _ => widget.usuario.panelIngenieria && !widget.usuario.usesPersonalPanel ? EngineeringScreen(user: widget.usuario, embedded: true, onOptions: _personalMenu) : widget.usuario.usesPersonalPanel ? PersonalDayScreen(user: widget.usuario, embedded: true, onProfile: () => setState(() => _index = 4), onOptions: _personalMenu) : _OperationsHome(usuario: widget.usuario, onTab: (i) => setState(() => _index = i)),
   });
   @override
   Widget build(BuildContext context) {
@@ -76,7 +78,7 @@ class _OperationsHomeState extends State<_OperationsHome> {
   String _search = '';
   bool _all = false;
   void _open(AppAction action) {
-    if (action.id == 'proyectos') { Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => ProjectWorkspaceScreen(usuario: widget.usuario))); return; }
+    if (action.id == 'proyectos') { widget.onTab(3); return; }
     if (action.id == 'comunidad') { widget.onTab(1); return; }
     if (action.id == 'mensajes') { widget.onTab(2); return; }
     if (action.id == 'tareas') { widget.onTab(3); return; }
@@ -85,8 +87,8 @@ class _OperationsHomeState extends State<_OperationsHome> {
   }
   @override
   Widget build(BuildContext context) {
-    final actions = AppActionCatalog.forUser(widget.usuario);
-    final quick = actions.where((a) => ['proyectos', 'asistencia', 'inventario', 'racha', 'rachas', 'asistencias', 'prestamos', 'justificar', 'cumpleanos', 'equipo', 'almacen_movimientos', 'solicitudes_almacen', 'sin_conexion', 'juegos'].contains(a.id)).toList();
+    final actions = AppActionCatalog.forUser(widget.usuario).where((a) => a.id != 'proyectos').toList();
+    final quick = actions.where((a) => ['proyectos', 'asistencia', 'inventario', 'racha', 'rachas', 'asistencias', 'prestamos', 'justificar', 'cumpleanos', 'equipo', 'almacen_movimientos', 'solicitudes_almacen', 'sin_conexion', 'juegos', 'tareas', 'trabajo_extra', 'ingenieria'].contains(a.id)).toList();
     final alerts = actions.where((a) => a.id == 'alerta_general').toList();
     return SafeArea(bottom: false, child: ListView(padding: const EdgeInsets.fromLTRB(18, 12, 18, 24), children: [
       Row(children: [Image.asset('assets/logo_saunastilo.png', width: 130, height: 48, fit: BoxFit.contain), const Spacer(), for (final id in ['avisos', 'configuracion']) IconButton(tooltip: actions.firstWhere((a) => a.id == id).title, onPressed: () => _open(actions.firstWhere((a) => a.id == id)), icon: Icon(id == 'avisos' ? Icons.notifications_none_rounded : Icons.tune_rounded))]),
@@ -96,6 +98,7 @@ class _OperationsHomeState extends State<_OperationsHome> {
       const Text('Tu jornada. Tus proyectos. Tu equipo.', style: TextStyle(color: Colors.white54, fontSize: 13)),
       const SizedBox(height: 18),
       if (alerts.isNotEmpty) Padding(padding: const EdgeInsets.only(bottom: 14), child: OutlinedButton.icon(style: OutlinedButton.styleFrom(foregroundColor: const Color(0xFFFF647A), backgroundColor: const Color(0xFF240B12), side: const BorderSide(color: Color(0xFF8E1538)), minimumSize: const Size.fromHeight(54)), onPressed: () => _open(alerts.first), icon: const Icon(Icons.campaign_rounded), label: const Text('ALERTA GENERAL · TODO EL EQUIPO', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800)))),
+      if (widget.usuario.rol == AppRoles.admin) Padding(padding: const EdgeInsets.only(bottom: 14), child: FilledButton.icon(onPressed: () => Navigator.push(context, MaterialPageRoute<void>(builder: (_) => AdminInboxScreen(user: widget.usuario))), icon: const Icon(Icons.inbox_rounded), label: const Text('Solicitudes por revisar · Administración'))),
       HomeProgressPanel(user: widget.usuario, onStreak: () => _open(actions.firstWhere((a) => a.id == (widget.usuario.rol == AppRoles.admin ? 'rachas' : 'racha'))), onProfile: () => widget.onTab(4), onLearn: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => TrainingAccessScreen(user: widget.usuario)))),
       if (widget.usuario.rol == AppRoles.admin)
         AdminOperationsCard(onAttendance: () => _open(actions.firstWhere((a) => a.id == 'asistencias')), onTeam: () => _open(actions.firstWhere((a) => a.id == 'equipo')))

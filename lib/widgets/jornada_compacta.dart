@@ -45,14 +45,17 @@ class _JornadaCompactaState extends State<JornadaCompacta> {
     }
     setState(() { _busy = true; _error = null; });
     try {
+      Position? position;
+      if (action != 'solicitar_comida') {
       if (!await Geolocator.isLocationServiceEnabled()) throw StateError('Activa la ubicación del teléfono para registrar tu jornada.');
       var permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) permission = await Geolocator.requestPermission();
       if (permission == LocationPermission.denied || permission == LocationPermission.deniedForever) throw StateError('Autoriza la ubicación de Sauna Stilo en los ajustes del teléfono o navegador.');
-      final position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high).timeout(const Duration(seconds: 25));
+      position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high).timeout(const Duration(seconds: 25));
       if (position.accuracy > 60) throw StateError('La ubicación tiene poca precisión. Acércate a una zona despejada e intenta de nuevo.');
+      }
       final result = await FirebaseFunctions.instanceFor(region: 'us-central1').httpsCallable('updateAttendance', options: HttpsCallableOptions(timeout: const Duration(seconds: 35))).call({
-        'accion': action, 'latitud': position.latitude, 'longitud': position.longitude,
+        'accion': action, if (position != null) ...{'latitud': position.latitude, 'longitud': position.longitude},
       });
       if (result.data is! Map || result.data['exito'] != true) throw StateError('El servidor no confirmó el registro. Revisa tu jornada antes de reintentar.');
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(result.data['mensaje']?.toString() ?? 'Registro confirmado por el servidor.')));
@@ -85,6 +88,9 @@ class _JornadaCompactaState extends State<JornadaCompacta> {
       final entered = data['horaEntrada'] is Timestamp;
       final left = data['horaSalida'] is Timestamp;
       final ready = snapshot.hasData && !snapshot.hasError;
+      final mealStarted = data['salidaComidaReal'] is Timestamp;
+      final mealReturned = data['regresoComidaReal'] is Timestamp;
+      final mealPending = data['salidaComidaSolicitada'] is Timestamp && !mealStarted;
       return Container(padding: const EdgeInsets.all(18), decoration: BoxDecoration(color: const Color(0xFF111012), borderRadius: BorderRadius.circular(24), border: Border.all(color: const Color(0xFF452332))), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [const Icon(Icons.fingerprint_rounded, color: Color(0xFFB7FF2A)), const SizedBox(width: 9), const Expanded(child: Text('Mi jornada', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800))), Text(left ? 'FINALIZADA' : entered ? 'EN CURSO' : 'HOY', style: const TextStyle(color: Color(0xFFB7FF2A), fontSize: 10, fontWeight: FontWeight.w800))]),
         const SizedBox(height: 14),
@@ -95,6 +101,7 @@ class _JornadaCompactaState extends State<JornadaCompacta> {
         if (_error != null) Padding(padding: const EdgeInsets.only(top: 12), child: Semantics(liveRegion: true, child: Text(_error!, style: const TextStyle(color: Colors.orangeAccent, fontSize: 12, height: 1.4)))),
         const SizedBox(height: 14),
         Row(children: [Expanded(child: FilledButton.icon(onPressed: !ready || _busy || entered ? null : () => _register('entrada'), icon: const Icon(Icons.login_rounded), label: const Text('Entrada'))), const SizedBox(width: 10), Expanded(child: OutlinedButton.icon(onPressed: !ready || _busy || !entered || left ? null : () => _register('salida'), icon: const Icon(Icons.logout_rounded), label: const Text('Salida')))]),
+        if (entered) ...[const SizedBox(height: 16), Container(padding: const EdgeInsets.all(14), decoration: BoxDecoration(color: const Color(0xFF2A1720), borderRadius: BorderRadius.circular(22)), child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [Row(children: [const Icon(Icons.restaurant_rounded, color: Color(0xFFFFB876)), const SizedBox(width: 9), const Expanded(child: Text('Hora de comida', style: TextStyle(fontWeight: FontWeight.w800))), Text(mealReturned ? 'REGISTRADA' : mealStarted ? 'EN COMIDA' : mealPending ? 'POR APROBAR' : 'PENDIENTE', style: const TextStyle(fontSize: 10, color: Color(0xFFFFB876)))]), const SizedBox(height: 9), Text('Salida ${_hour(data['salidaComidaReal'])} · Regreso ${_hour(data['regresoComidaReal'])}', style: const TextStyle(color: Colors.white70)), const SizedBox(height: 8), if (!left && !mealStarted && !mealPending) OutlinedButton.icon(onPressed: !ready || _busy ? null : () => _register('solicitar_comida'), icon: const Icon(Icons.lunch_dining_rounded), label: const Text('Solicitar hora de comida')), if (mealPending) const Text('Tu solicitud está en la bandeja de Administración. No necesitas reenviarla.', style: TextStyle(color: Colors.white60, fontSize: 12)), if (!left && mealStarted && !mealReturned) FilledButton.icon(onPressed: !ready || _busy ? null : () => _register('regreso_comida'), icon: const Icon(Icons.keyboard_return_rounded), label: const Text('Ya regresé de comer'))]))],
         if (_busy) const Padding(padding: EdgeInsets.only(top: 10), child: LinearProgressIndicator()),
         TextButton(onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => JornadaScreen(usuario: widget.usuario))), child: const Text('Comida, historial y detalles de jornada')),
       ]));

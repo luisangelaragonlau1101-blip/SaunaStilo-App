@@ -1,3 +1,4 @@
+import '../screens/engineering_screen.dart';
 import '../services/external_transfer.dart';
 import 'screen_security_guard.dart';
 import 'personal_panel_control.dart';
@@ -23,6 +24,7 @@ class TeamProfileDetails extends StatelessWidget {
     final badges = data['insigniasAdmin'] is List ? (data['insigniasAdmin'] as List).whereType<Map>().toList() : <Map>[];
     final places = data['lugaresInstalacion'] is List ? (data['lugaresInstalacion'] as List).whereType<Map>().toList() : <Map>[];
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      if (_admin) EngineeringAccessControl(administrator: usuarioActual, profileId: perfilId, profile: data),
       if (_admin) CapturePolicyControl(profileId: perfilId, enabled: data['bloquearCapturas'] == true),
       if (_admin && data['rol'] == AppRoles.trabajador) PersonalPanelControl(administrator: usuarioActual, profileId: perfilId, name: data['nombre']?.toString() ?? 'Personal', enabled: data['panelPersonal'] == true),
       const SizedBox(height: 18),

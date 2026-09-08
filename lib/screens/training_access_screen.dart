@@ -63,10 +63,12 @@ class _TrainingAccessState extends State<TrainingAccessScreen>{
 }
 class TrainingAdminScreen extends StatefulWidget{
  final UserModel user;
- const TrainingAdminScreen({super.key,required this.user});
+ final String? initialUserId, initialName;
+ const TrainingAdminScreen({super.key,required this.user,this.initialUserId,this.initialName});
  @override State<TrainingAdminScreen> createState()=>_TrainingAdminState();
 }
 class _TrainingAdminState extends State<TrainingAdminScreen>{
+ @override void initState(){super.initState();_uid=widget.initialUserId;_name=widget.initialName;if(_uid!=null)_load();}
  final service=CompanyLearningService();String? _uid,_name,_error;Map<String,dynamic>? _state;bool _busy=false;
  Future<void> _select(String uid,String name)async{setState((){_uid=uid;_name=name;_state=null;_error=null;});await _load();}
  Future<void> _load()async{final uid=_uid;if(uid==null)return;try{final s=await service.call('training-state',{'userId':uid});if(mounted&&_uid==uid)setState(()=>_state=s);}catch(e){if(mounted)setState(()=>_error=CompanyLearningService.message(e));}}

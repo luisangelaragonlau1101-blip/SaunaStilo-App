@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:audioplayers/audioplayers.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -37,6 +38,8 @@ class _AvisosSonorosState extends State<AvisosSonoros> with WidgetsBindingObserv
   Set<String>? _idsConocidos;
   final Set<String> _alarmasPendientes = <String>{};
   bool _configurandoPush = false;
+  DateTime? _lastPassivePush;
+  String? _passiveUid;
   bool _alarmaActiva = false;
   bool _dialogoAlarmaVisible = false;
   bool _avisoPersonalVisible = false;
@@ -84,6 +87,9 @@ class _AvisosSonorosState extends State<AvisosSonoros> with WidgetsBindingObserv
 
   Future<void> _preparePushNotifications() async {
     if (!mounted || _configurandoPush) return;
+    final uid = widget.usuario.id;
+    if (_passiveUid == uid && _lastPassivePush != null && DateTime.now().difference(_lastPassivePush!) < const Duration(minutes: 10)) return;
+    _passiveUid = uid; _lastPassivePush = DateTime.now();
     _configurandoPush = true;
     try {
       final settings = await _pushService.currentSettings();
@@ -92,11 +98,15 @@ class _AvisosSonorosState extends State<AvisosSonoros> with WidgetsBindingObserv
           settings.authorizationStatus == AuthorizationStatus.provisional;
 
       if (authorized) {
-        final result = await _pushService.activateFor(widget.usuario);
-        if (!result.active && mounted) {
-          _showPushAction(result.message);
-        }
+        final result = await _pushService.activateFor(widget.usuario, requestPermission: false);
+        final preferences = await SharedPreferences.getInstance();
+        await preferences.setString('sauna.push.lastStatus.$uid', result.message);
       } else if (mounted) {
+        final preferences = await SharedPreferences.getInstance();
+        final key = 'sauna.push.promptShown.$uid';
+        if (preferences.getBool(key) == true || !mounted || widget.usuario.id != uid) return;
+        await preferences.setBool(key, true);
+        if (!mounted || widget.usuario.id != uid) return;
         _showPushAction(
           'Activa las notificaciones para recibir tareas y solicitudes aunque la app esté cerrada.',
         );
@@ -209,7 +219,8 @@ class _AvisosSonorosState extends State<AvisosSonoros> with WidgetsBindingObserv
               ),
             );
         }, onError: (Object _) {
-          if (mounted) _showPushAction('No se pudieron sincronizar los avisos. Revisa la conexión; no se ha confirmado su recepción.');
+          // A Firestore error is not a missing OS permission. Do not prompt repeatedly.
+          debugPrint('[avisos] Sincronización pendiente; revisar permisos y conexión.');
         });
   }
 

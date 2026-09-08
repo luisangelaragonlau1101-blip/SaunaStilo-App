@@ -1,3 +1,7 @@
+import '../screens/admin_inbox_screen.dart';
+import '../screens/notification_health_screen.dart';
+import '../screens/extra_work_screen.dart';
+import '../screens/engineering_screen.dart';
 import '../screens/training_access_screen.dart';
 import '../screens/company_manuals_screen.dart';
 import '../screens/personal_day_screen.dart';
@@ -106,6 +110,10 @@ class AppActionCatalog {
       AppAction(id: 'sin_conexion', title: 'Sin conexión', subtitle: 'Preparar este equipo y guardar borradores', icon: Icons.offline_bolt_rounded, color: _amber, keywords: const ['offline','internet','borradores'], builder: (_) => OfflineDeskScreen(user: user)),
       AppAction(id: 'idiomas', title: 'Idiomas · Stilo Aprende', subtitle: 'Solicitud, autorización y constancia empresarial', icon: Icons.school_rounded, color: _violet, keywords: const ['idiomas','aprender','ingles','frances','lecciones','racha'], builder: (_) => TrainingAccessScreen(user: user)),
       if (admin) AppAction(id: 'conocimiento_ia', title: 'Conocimiento de la IA', subtitle: 'Publicar manuales y procedimientos autorizados', icon: Icons.auto_stories_rounded, color: _pink, keywords: const ['manuales','conocimiento','procedimientos'], builder: (_) => CompanyManualsScreen(user: user)),
+      AppAction(id: 'estado_notificaciones', title: 'Notificaciones y sonido', subtitle: 'Revisar este teléfono y probar el sonido local', icon: Icons.notifications_active_rounded, color: _pink, builder: (_) => NotificationHealthScreen(user: user)),
+      if (admin) AppAction(id: 'bandeja_admin', title: 'Solicitudes por revisar', subtitle: 'Herramientas, comida, idiomas y trabajo extra', icon: Icons.inbox_rounded, color: _pink, keywords: const ['aprobar', 'solicitudes', 'pendientes'], builder: (_) => AdminInboxScreen(user: user)),
+      AppAction(id: 'trabajo_extra', title: 'Lo que hice de más', subtitle: 'Reportar trabajo realizado o faltantes; no crea tareas', icon: Icons.auto_awesome_rounded, color: _mint, keywords: const ['extra', 'reporte', 'faltante'], builder: (_) => ExtraWorkScreen(user: user)),
+      if (admin || user.panelIngenieria) AppAction(id: 'ingenieria', title: 'Ingeniería industrial', subtitle: 'Producción, calidad, tiempos y mejora continua', icon: Icons.precision_manufacturing_rounded, color: _pink, builder: (_) => EngineeringScreen(user: user)),
       AppAction(id: 'juegos', title: 'Pausa Stilo · Juegos', subtitle: 'Sin Wi-Fi · hasta 4 en el mismo teléfono', icon: Icons.sports_esports_rounded, color: _violet, keywords: const ['jugar','memoria','gato','cuatro','carrera','territorios','offline'], builder: (_) => TeamGamesScreen(user: user)),
       AppAction(id: 'equipo', title: admin ? 'Administrar perfiles' : 'Nuestro equipo', subtitle: admin ? 'Otorgar insignias y agregar lugares de instalación' : 'Personas, intereses e instalaciones', icon: Icons.groups_outlined, color: _mint, keywords: const ['insignias', 'lugares', 'instalaciones', 'personas'], builder: (_) => PerfilesEquipoScreen(usuarioActual: user)),
       AppAction(id: 'prestamos', title: 'Préstamos de herramienta', subtitle: 'Solicitar, prestar, recibir y devolver', icon: Icons.handyman_outlined, color: _mint, keywords: const ['compañero', 'cajita', 'herramientas'], builder: (_) => PrestamosEquipoScreen(usuario: user)),

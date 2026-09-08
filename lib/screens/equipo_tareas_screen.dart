@@ -1,3 +1,7 @@
+import 'project_workspace_screen.dart';
+import 'extra_work_screen.dart';
+import '../workflow/staff_policy.dart';
+import '../widgets/project_progress_card.dart';
 import '../widgets/task_creation_choice.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -21,7 +25,7 @@ class _EquipoTareasScreenState extends State<EquipoTareasScreen> {
   String _proyectoTitulo = 'Mis tareas';
   bool _soloPendientes = true;
   bool get _admin => widget.usuario.rol == AppRoles.admin;
-  bool get _puedeAsignar => _admin || widget.usuario.rol == AppRoles.maestro;
+  bool get _puedeAsignar => canAssignWork(widget.usuario.rol);
 
   Future<void> _crearTarea() async {
     if (!_puedeAsignar) return;
@@ -64,17 +68,18 @@ class _EquipoTareasScreenState extends State<EquipoTareasScreen> {
     if (_proyectoId != null) { query = query.where('proyectoId', isEqualTo: _proyectoId); }
     else if (!_admin) { query = query.where('asignadoATrabajadorId', isEqualTo: widget.usuario.id); }
     return Scaffold(backgroundColor: Colors.black,
-      appBar: AppBar(title: Text(_admin ? 'Tareas del equipo' : 'Mis tareas'), actions: [
-        if (_puedeAsignar) IconButton(tooltip: 'Crear y asignar tarea', onPressed: _crearTarea, icon: const Icon(Icons.add_task_rounded)),
-      ]),
+      appBar: AppBar(title: const Text('Proyectos y tareas')),
       body: Column(children: [
         Padding(padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10), child: Wrap(spacing: 8, runSpacing: 6, children: [
+          ActionChip(avatar: const Icon(Icons.workspaces_rounded, size: 18), label: const Text('Proyectos y avance'), onPressed: () => Navigator.push(context, MaterialPageRoute<void>(builder: (_) => ProjectWorkspaceScreen(usuario: widget.usuario)))),
           ActionChip(avatar: const Icon(Icons.folder_open_rounded, size: 18), label: Text(_proyectoId == null ? 'Por proyecto' : _proyectoTitulo), onPressed: _seleccionarProyecto),
           if (_proyectoId != null) ActionChip(label: const Text('Ver mis tareas'), onPressed: () => setState(() => _proyectoId = null)),
           FilterChip(label: const Text('Pendientes'), selected: _soloPendientes, onSelected: (v) => setState(() => _soloPendientes = v)),
         ])),
         if (_puedeAsignar) Padding(padding: const EdgeInsets.fromLTRB(16, 0, 16, 12), child: SizedBox(width: double.infinity,
           child: FilledButton.icon(onPressed: _crearTarea, icon: const Icon(Icons.add_rounded), label: const Text('Crear actividad y asignar tarea')))),
+        if (!_puedeAsignar) Padding(padding: const EdgeInsets.fromLTRB(16, 0, 16, 10), child: Column(children: [const Text('Completa tus asignaciones y añade evidencias. No puedes cambiar sus instrucciones ni asignarte tareas.', style: TextStyle(color: Colors.white60, fontSize: 12)), TextButton.icon(onPressed: () => Navigator.push(context, MaterialPageRoute<void>(builder: (_) => ExtraWorkScreen(user: widget.usuario))), icon: const Icon(Icons.auto_awesome_rounded, color: Color(0xFFFFB876)), label: const Text('Reportar trabajo extra ya realizado'))])),
+        if (_proyectoId != null) Padding(padding: const EdgeInsets.symmetric(horizontal: 16), child: ProjectProgressCard(projectId: _proyectoId!)),
         Expanded(child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(stream: query.snapshots(includeMetadataChanges: true), builder: (context, snapshot) {
           if (snapshot.hasError) return const Center(child: Padding(padding: EdgeInsets.all(24), child: Text('No pudimos consultar estas tareas. Revisa tu conexión o pide a Administración que confirme tu asignación al proyecto.')));
           if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
