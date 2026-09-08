@@ -1,0 +1,121 @@
+name: Verify staff workflow release
+on:
+  push:
+    branches: [feat/staff-workflows-36]
+    paths: ['.maintenance/**', '.github/workflows/staff36-build.yml', '.github/workflows/team-release-review.yml']
+permissions:
+  contents: read
+concurrency:
+  group: staff36-prepare
+  cancel-in-progress: true
+defaults:
+  run:
+    shell: bash
+jobs:
+  verify:
+    uses: ./.github/workflows/team-release-review.yml
+  android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 .maintenance/apply36.py
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - name: Build unsigned payload only; retained signing key never enters CI
+        run: |
+          mkdir -p android-report payload/sign-tools
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('android/app/build.gradle.kts');s=p.read_text()
+          start=s.index('gradle.taskGraph.whenReady {');end=s.index('\nandroid {',start)
+          s=s[:start]+s[end:]
+          assert 'signingConfig = signingConfigs.findByName("companyRelease")' in s
+          s=s.replace('signingConfig = signingConfigs.findByName("companyRelease")','signingConfig = null')
+          p.write_text(s)
+          PY
+          flutter build apk --release >android-report/build.txt 2>&1
+          python3 .maintenance/package36.py
+          SDK="${ANDROID_HOME:-$ANDROID_SDK_ROOT}"
+          ALIGN="$(find "$SDK/build-tools" -name zipalign | sort -V | tail -1)"
+          SIGNER="$(find "$SDK/build-tools" -name apksigner | sort -V | tail -1)"
+          "$ALIGN" -P 16 -f 4 android-report/un-aligned.apk payload/sauna-3.6.0-unsigned.apk
+          "$ALIGN" -c -P 16 4 payload/sauna-3.6.0-unsigned.apk
+          cp "$(dirname "$SIGNER")/lib/apksigner.jar" payload/sign-tools/
+          cp android-report/manifest-patch.json payload/
+          sha256sum payload/sauna-3.6.0-unsigned.apk >payload/sha256.txt
+          git rev-parse HEAD >payload/source-commit.txt
+          keytool -genkeypair -keystore /tmp/qa-only.p12 -storetype PKCS12 -storepass qa-only-not-shipped -keypass qa-only-not-shipped -alias qa -dname 'CN=Isolated QA Only' -keyalg RSA -keysize 2048 -validity 2 >/dev/null 2>&1
+          "$SIGNER" sign --ks /tmp/qa-only.p12 --ks-pass pass:qa-only-not-shipped --ks-key-alias qa --out /tmp/sauna-qa.apk payload/sauna-3.6.0-unsigned.apk
+          "$SIGNER" verify --verbose /tmp/sauna-qa.apk >android-report/qa-only-signature.txt
+      - name: Enable isolated emulator
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          disable-animations: true
+          script: |
+            adb install /tmp/sauna-qa.apk
+            adb logcat -c
+            adb shell am start -W -n com.saunastilo.personal/com.saunastylo.saunastylo.MainActivity >android-report/launch.txt
+            sleep 15
+            adb shell pidof com.saunastilo.personal >android-report/pid.txt
+            adb logcat -d -s AndroidRuntime:E flutter:E >android-report/runtime.txt
+            test -s android-report/pid.txt
+            if grep -q 'FATAL EXCEPTION' android-report/runtime.txt; then exit 1; fi
+      - name: Remove temporary signing inputs and preserve unsigned deliverable
+        run: |
+          rm -f /tmp/qa-only.p12 /tmp/sauna-qa.apk /tmp/sauna-qa.apk.idsig android-report/un-aligned.apk
+          cp android-report/launch.txt android-report/pid.txt android-report/runtime.txt payload/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: staff36-unsigned-android
+          path: payload
+          retention-days: 3
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: staff36-android-report
+          path: |
+            android-report/*.txt
+            android-report/*.json
+          retention-days: 7
+  preserve:
+    needs: [verify, android]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          python3 .maintenance/apply36.py
+          git diff --check
+          git add lib test tests tools pubspec.yaml STAFF36_RELEASE.md
+          git rm .maintenance/staff36.*.bin .maintenance/apply36.py .maintenance/package36.py
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'feat: controlled staff tasks, lunch, admin inbox and engineering'
+          git push origin HEAD:feat/staff-workflows-36
+          git archive HEAD > source.tar
+          git rev-parse HEAD > tested-source.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: staff36-verified-source
+          path: |
+            source.tar
+            tested-source.txt
+          retention-days: 3
