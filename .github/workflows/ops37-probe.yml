@@ -1,0 +1,21 @@
+name: Read-only operations diagnosis
+on:
+  push:
+    branches: [fix/reliable-operations-37]
+    paths: ['.github/workflows/ops37-probe.yml']
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: |
+          mkdir -p report
+          node <<'JS'
+          const fs=require('node:fs');(async()=>{const r={at:new Date().toISOString(),endpoints:[]};for(const name of ['updateAttendance','assignProjectActivity']){const url='https://us-central1-saunastiloapp-17e15.cloudfunctions.net/'+name;try{const response=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({data:{}}),signal:AbortSignal.timeout(15000)});const text=await response.text();r.endpoints.push({name,status:response.status,unauthenticated:text.includes('UNAUTHENTICATED'),callableReachable:response.status===401&&text.includes('UNAUTHENTICATED')});}catch(e){r.endpoints.push({name,error:e.name})}}console.log(JSON.stringify(r,null,2));fs.writeFileSync('report/operations-reachability.json',JSON.stringify(r,null,2))})()
+          JS
+      - uses: actions/upload-artifact@v4
+        with: {name: ops37-reachability, path: report, retention-days: 7}
