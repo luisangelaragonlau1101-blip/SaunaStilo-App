@@ -84,6 +84,8 @@ const synthesizeAdminVoice = onCall(
 
 module.exports = {
   ...base,
+  // Keep the installed APK endpoint while using the audited attendance ledger.
+  ...require('./attendance-functions'),
   saunaAssistantV2,
   getAdminVoiceStatus,
   enrollAdminVoice,

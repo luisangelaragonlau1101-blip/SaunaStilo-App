@@ -1,0 +1,40 @@
+name: Verify attendance ledger repair
+on:
+  push:
+    branches: [fix/attendance-meals-payroll-20260923]
+permissions:
+  contents: read
+defaults:
+  run:
+    shell: bash
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Validate the backwards-compatible attendance service
+        run: |
+          mkdir -p attendance-report
+          node --check functions/attendance-ledger.js
+          node --check functions/attendance-functions.js
+          bash -n tools/activate-attendance.sh
+          node --test tests/attendance-ledger.test.cjs | tee attendance-report/unit.txt
+          npm --prefix functions ci --ignore-scripts --no-audit --no-fund
+          node -e "const f=require('./functions/app');if(!f.updateAttendance||!f.reconcileAttendance)throw Error('Missing export')"
+      - name: Check real Firestore transaction retries and administrative reconciliation in isolated emulator
+        run: |
+          npx --yes firebase-tools emulators:exec --project demo-sauna-attendance --only firestore 'node --test tools/attendance-emulator.test.cjs' | tee attendance-report/emulator.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: attendance-ledger-verification
+          path: attendance-report
+          retention-days: 14
