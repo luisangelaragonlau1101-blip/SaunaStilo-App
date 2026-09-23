@@ -1,0 +1,22 @@
+name: Reliable operations source review
+on:
+  push:
+    branches: [fix/reliable-operations-37]
+    paths: ['.github/workflows/reliable37.yml']
+permissions:
+  contents: read
+jobs:
+  source:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          mkdir -p export
+          git archive HEAD > export/source.tar
+          git rev-parse HEAD > export/source-commit.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: reliable37-source
+          path: export
+          retention-days: 7
