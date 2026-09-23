@@ -1,0 +1,18 @@
+name: Review operations 3.7
+on:
+  push:
+    branches: [fix/operations-permissions-offline-37]
+permissions:
+  contents: read
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - run: git archive HEAD -o source.tar
+      - uses: actions/upload-artifact@v4
+        with:
+          name: operations37-source
+          path: source.tar
+          retention-days: 3
