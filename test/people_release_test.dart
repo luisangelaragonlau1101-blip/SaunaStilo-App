@@ -22,7 +22,7 @@ void main() {
   test('all roles can reach people and loans, workers reach justifications', () {
     for (final role in ['admin','maestro','trabajador','almacenista']) {
       final ids = AppActionCatalog.forUser(user(role)).map((a)=>a.id).toList();
-      expect(ids,containsAll(['equipo','prestamos','cumpleanos','insignias']));
+      expect(ids,containsAll(['equipo','prestamos','cumpleanos','perfil']));
       expect(ids.contains('justificar'),role!='admin');
       expect(ids.contains('alerta_general'),role=='admin');
       expect(ids.toSet().length,ids.length);
