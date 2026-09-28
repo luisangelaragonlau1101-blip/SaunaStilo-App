@@ -575,10 +575,17 @@ Future<void> _escanearCodigoFormulario() async {
   Future<void> _pickInventoryPhoto(ImageSource source) async {
     if (_isSaving) return;
     try {
-      final files = source == ImageSource.gallery ? await FilePicker.pickFiles(type: FileType.image, allowMultiple: false) : null;
-      final file = source == ImageSource.gallery ? (files == null || files.isEmpty ? null : files.single) : await ImagePicker().pickImage(source: source, maxWidth: 1200, imageQuality: 75);
-      if (file == null) return;
-      final bytes = await file.readAsBytes();
+      final Uint8List bytes;
+      if (source == ImageSource.gallery) {
+        final files = await FilePicker.pickFiles(type: FileType.image, allowMultiple: false);
+        if (files.isEmpty) return;
+        if (await files.single.length() > 8 * 1024 * 1024) throw StateError('La foto debe pesar menos de 8 MB.');
+        bytes = await files.single.readAsBytes();
+      } else {
+        final file = await ImagePicker().pickImage(source: source, maxWidth: 1200, imageQuality: 75);
+        if (file == null) return;
+        bytes = await file.readAsBytes();
+      }
       if (bytes.isEmpty || bytes.length > 8 * 1024 * 1024) throw StateError('Usa una foto de menos de 8 MB.');
       if (mounted) setState(() => _imagenBytes = bytes);
     } catch (_) {
