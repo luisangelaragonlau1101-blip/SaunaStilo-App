@@ -167,30 +167,12 @@ class AppActionCatalog {
       ),
       AppAction(
         id: 'perfil',
-        title: 'Mi perfil',
-        subtitle: 'Avances, logros y cuenta',
+        title: 'Perfil y configuración',
+        subtitle: 'Cuenta, ajustes, insignias y registros',
+        keywords: const ['configuracion', 'ajustes', 'insignias', 'racha', 'nomina'],
         icon: Icons.account_circle_rounded,
         color: _blue,
-        builder: (_) => PerfilSocialScreen(
-          usuarioActual: user,
-          perfilId: user.id,
-        ),
-      ),
-      AppAction(
-        id: 'configuracion',
-        title: 'Configuración',
-        subtitle: 'Cuenta, permisos y preferencias',
-        icon: Icons.tune_rounded,
-        color: const Color(0xFFD7D3D6),
         builder: (_) => ConfiguracionScreen(usuario: user),
-      ),
-      AppAction(
-        id: 'insignias',
-        title: 'Insignias',
-        subtitle: 'Reconocimientos y logros',
-        icon: Icons.workspace_premium_rounded,
-        color: const Color(0xFFD7FF74),
-        builder: (_) => ReconocimientosScreen(usuario: user),
       ),
       const AppAction(
         id: 'cumpleanos',

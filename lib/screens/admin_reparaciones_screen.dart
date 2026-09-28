@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+import '../widgets/inventory_photo.dart';
 import '../models/insumo_model.dart'; 
 
 class AdminReparacionesScreen extends StatefulWidget {
@@ -61,7 +61,7 @@ class _AdminReparacionesScreenState extends State<AdminReparacionesScreen> {
               maxScale: 4,
               child: Hero(
                 tag: heroTag,
-                child: CachedNetworkImage(
+                child: InventoryPhoto(
                   imageUrl: imageUrl,
                   fit: BoxFit.contain,
                   placeholder: (context, url) => const Center(child: CircularProgressIndicator(color: colorRosaVibrante)),
@@ -257,7 +257,7 @@ Future<void> _marcarComoReparado(BuildContext context, String insumoId) async {
                               tag: heroTag,
                               child: ClipRRect(
                                 borderRadius: BorderRadius.circular(8),
-                                child: CachedNetworkImage(
+                                child: InventoryPhoto(
                                   imageUrl: insumo.imagenUrl!,
                                   width: 70,
                                   height: 70,

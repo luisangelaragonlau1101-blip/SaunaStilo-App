@@ -2,7 +2,7 @@ import '../services/external_transfer.dart';
 import '../widgets/warehouse_header.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+import '../widgets/inventory_photo.dart';
 import '../services/inventario_service.dart';
 import '../models/insumo_model.dart';
 import 'trabajador_categorias_screen.dart'; 
@@ -133,7 +133,7 @@ class _InventarioTrabajadorScreenState extends State<InventarioTrabajadorScreen>
               maxScale: 4,
               child: Hero(
                 tag: heroTag,
-                child: CachedNetworkImage(
+                child: InventoryPhoto(
                   imageUrl: imageUrl,
                   fit: BoxFit.contain,
                   placeholder: (context, url) => const Center(child: CircularProgressIndicator(color: colorRosaVibrante)),
@@ -329,7 +329,7 @@ class _InventarioTrabajadorScreenState extends State<InventarioTrabajadorScreen>
                                           tag: insumo.id, 
                                           child: ClipRRect(
                                             borderRadius: BorderRadius.circular(8),
-                                            child: CachedNetworkImage(
+                                            child: InventoryPhoto(
                                               imageUrl: insumo.imagenUrl!,
                                               width: 65,
                                               height: 65,

@@ -9,7 +9,7 @@ void main() {
     for (final role in ['admin','almacenista','maestro','trabajador']) {
       final ids = AppActionCatalog.forUser(user(role)).map((a) => a.id).toList();
       expect(ids.toSet().length, ids.length);
-      expect(ids, containsAll(['ia', 'guia', 'mensajes', 'configuracion']));
+      expect(ids, containsAll(['ia', 'guia', 'mensajes', 'perfil']));
     }
   });
   test('Private commercial modules and voice studio remain admin-only', () {
@@ -25,7 +25,7 @@ void main() {
     expect(guideIds, contains('guia'));
     expect(actions.where((a)=>a.matches('guía')).map((a)=>a.id).toSet(), guideIds);
     expect(actions.where((a)=>a.matches('mi voz')).single.id,'voz');
-    expect(actions.where((a)=>a.matches('configuracion')).single.id,'configuracion');
+    expect(actions.where((a)=>a.matches('configuracion')).single.id,'perfil');
     expect(actions.where((a)=>a.matches('zzzz-no-existe')),isEmpty);
   });
   test('Included guide explains operation without querying live data', () {

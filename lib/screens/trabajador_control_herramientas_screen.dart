@@ -1,3 +1,4 @@
+import '../widgets/inventory_photo.dart';
 import '../services/external_transfer.dart';
 import 'dart:typed_data';
 import 'dart:ui';
@@ -658,10 +659,10 @@ class _ControlHerramientasScreenState extends State<ControlHerramientasScreen> {
                                       child: imageUrl != null && imageUrl.isNotEmpty
                                           ? ClipRRect(
                                               borderRadius: BorderRadius.circular(12),
-                                              child: Image.network(
-                                                imageUrl,
+                                              child: InventoryPhoto(
+                                                imageUrl: imageUrl,
                                                 fit: BoxFit.cover,
-                                                errorBuilder: (context, error, stackTrace) => Icon(
+                                                errorWidget: (context, url, error) => Icon(
                                                   Icons.image_not_supported_outlined,
                                                   color: colorTextoSecundario.withOpacity(0.5),
                                                 ),

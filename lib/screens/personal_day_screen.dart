@@ -1,3 +1,4 @@
+import '../widgets/home_shortcuts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -95,6 +96,7 @@ class _PersonalDayState extends State<PersonalDayScreen> with WidgetsBindingObse
         Row(children:[Image.asset('assets/logo_saunastilo.png',width:124,height:48),const Spacer(),IconButton(tooltip:'Todas mis opciones',onPressed:widget.onOptions,icon:const Icon(Icons.apps_rounded))]),
         const SizedBox(height:14),Text('Hola, ${widget.user.nombre.split(' ').first}',style:const TextStyle(fontSize:28,fontWeight:FontWeight.w900)),
         const Text('Tu día, organizado contigo.',style:TextStyle(color:Colors.white60)),const SizedBox(height:18),
+        MainHomeShortcuts(user: widget.user), const SizedBox(height: 14),
         HomeProgressPanel(user:widget.user,onStreak:()=>Navigator.push(context,MaterialPageRoute<void>(builder:(_)=>StreakOverviewScreen(user:widget.user))),onProfile:widget.onProfile??(){},onLearn:()=>Navigator.push(context,MaterialPageRoute<void>(builder:(_)=>TrainingAccessScreen(user:widget.user)))),
         JornadaCompacta(usuario:widget.user,onExitConfirmed:_finished),const SizedBox(height:18),
       ],

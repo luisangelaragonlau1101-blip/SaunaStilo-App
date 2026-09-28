@@ -1,3 +1,4 @@
+import '../widgets/home_shortcuts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
@@ -55,8 +56,9 @@ class _EngineeringState extends State<EngineeringScreen> {
     final list = records ?? <Map<String, dynamic>>[];
     final content = SafeArea(bottom: false, child: RefreshIndicator(onRefresh: _load, child: ListView(physics: const AlwaysScrollableScrollPhysics(), padding: const EdgeInsets.all(18), children: [
       if (widget.embedded) Row(children: [Image.asset('assets/logo_saunastilo.png', width: 128, height: 48), const Spacer(), IconButton(tooltip: 'Todas mis opciones', onPressed: widget.onOptions, icon: const Icon(Icons.apps_rounded))]),
+      if (widget.embedded) MainHomeShortcuts(user: widget.user),
       Container(padding: const EdgeInsets.all(20), decoration: BoxDecoration(borderRadius: BorderRadius.circular(30), gradient: const LinearGradient(colors: [Color(0xFF351326), Color(0xFF13121B)]), border: Border.all(color: const Color(0xFF6E4069))), child: Row(children: [const StiloOrbitIcon(icon: Icons.precision_manufacturing_rounded, color: Color(0xFFC798FF), size: 54, active: true), const SizedBox(width: 14), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('Hola, ${widget.user.nombre.split(' ').first}', style: const TextStyle(color: Colors.white60)), const Text('Ingeniería industrial', style: TextStyle(fontSize: 25, fontWeight: FontWeight.w900)), const SizedBox(height: 5), const Text('Producción · calidad · tiempos · mejoras', style: TextStyle(fontSize: 12, color: Colors.white60))]))])),
-      if (widget.embedded && widget.user.rol != AppRoles.admin) Padding(padding: const EdgeInsets.only(top: 14), child: JornadaCompacta(usuario: widget.user)),
+      if (widget.embedded) Padding(padding: const EdgeInsets.only(top: 14), child: JornadaCompacta(usuario: widget.user)),
       const SizedBox(height: 16), Wrap(spacing: 8, runSpacing: 8, children: [Chip(avatar: const Icon(Icons.analytics_rounded), label: Text('${list.length} registros')), Chip(avatar: const Icon(Icons.verified_rounded, color: Color(0xFFB7FF2A)), label: Text('${list.where((r) => r['status'] == 'cerrado').length} cerrados'))]),
       OutlinedButton.icon(onPressed: busy ? null : () async { final d = await showDatePicker(context: context, initialDate: day, firstDate: DateTime(2020), lastDate: DateTime(2099)); if (d != null && mounted) { setState(() { day = d; records = null; }); await _load(); } }, icon: const Icon(Icons.event_rounded), label: Text('Fecha · ${staffDate(day)}')),
       FilledButton.icon(onPressed: busy ? null : () async { await Navigator.push(context, MaterialPageRoute<void>(builder: (_) => EngineeringForm(date: day, service: service))); if (mounted) await _load(); }, icon: const Icon(Icons.add_chart_rounded), label: const Text('Registrar medición o mejora')),

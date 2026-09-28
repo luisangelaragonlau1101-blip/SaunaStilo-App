@@ -29,7 +29,7 @@ test('dashboard retains the all-team alert ahead of secondary actions', () => {
   const dashboard=read('lib/screens/futuristic_dashboard_screen.dart');
   assert.match(dashboard,/\['alerta_general', 'asistencia', 'tareas', 'mensajes'/);
   const shell=read('lib/screens/operations_shell.dart');
-  for(const name of ['Inicio','Comunidad','Chats','Tareas','Perfil'])assert.ok(shell.includes(`label: '${name}'`));
+  for(const name of ['Inicio','Comunidad','Mensajes','Tareas','Perfil'])assert.ok(shell.includes(`label: '${name}'`));
   assert.match(shell,/IndexedStack/);
 });
 test('private chats preserve members and do not lose a saved message when push fails', () => {

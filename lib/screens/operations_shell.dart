@@ -1,4 +1,6 @@
+import '../widgets/home_shortcuts.dart';
 import 'daily_tasks_screen.dart';
+import 'configuracion_screen.dart';
 import 'admin_inbox_screen.dart';
 import 'engineering_screen.dart';
 import '../services/external_transfer.dart';
@@ -26,7 +28,7 @@ import 'equipo_tareas_screen.dart';
 const operationsDestinations = <NavigationDestination>[
   NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home_rounded), label: 'Inicio'),
   NavigationDestination(icon: Icon(Icons.auto_awesome_mosaic_outlined), selectedIcon: Icon(Icons.auto_awesome_mosaic_rounded), label: 'Comunidad'),
-  NavigationDestination(icon: Icon(Icons.forum_outlined), selectedIcon: Icon(Icons.forum_rounded), label: 'Chats'),
+  NavigationDestination(icon: Icon(Icons.forum_outlined), selectedIcon: Icon(Icons.forum_rounded), label: 'Mensajes'),
   NavigationDestination(icon: Icon(Icons.assignment_outlined), selectedIcon: Icon(Icons.assignment_rounded), label: 'Tareas'),
   NavigationDestination(icon: Icon(Icons.person_outline_rounded), selectedIcon: Icon(Icons.person_rounded), label: 'Perfil'),
 ];
@@ -47,14 +49,14 @@ class _OperationsShellState extends State<OperationsShell> {
     if (oldWidget.usuario.id != widget.usuario.id || oldWidget.usuario.rol != widget.usuario.rol) _index = 0;
   }
   void _personalMenu() {
-    final actions = AppActionCatalog.forUser(widget.usuario).where((a) => a.id != 'proyectos').toList();
+    final actions = AppActionCatalog.forUser(widget.usuario).where((a) => !['proyectos', 'configuracion', 'insignias', 'asistencia'].contains(a.id)).toList();
     showModalBottomSheet<void>(context: context, isScrollControlled: true, useSafeArea: true, backgroundColor: const Color(0xFF111012), builder: (c) => SizedBox(height: MediaQuery.sizeOf(c).height * .82, child: ListView(padding: const EdgeInsets.all(20), children: [const Text('Todas mis opciones', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800)), for (final a in actions) ListTile(leading: Icon(a.icon, color: a.color), title: Text(a.title), subtitle: Text(a.subtitle), onTap: () { Navigator.pop(c); Navigator.of(context).push(MaterialPageRoute<void>(builder: a.builder)); })])));
   }
   Widget _page(int index) => _pages.putIfAbsent(index, () => switch (index) {
     1 => BlogInternoScreen(usuario: widget.usuario),
     2 => MensajesEquipoScreen(usuario: widget.usuario),
     3 => EquipoTareasScreen(usuario: widget.usuario),
-    4 => PerfilSocialScreen(usuarioActual: widget.usuario, perfilId: widget.usuario.id),
+    4 => ConfiguracionScreen(usuario: widget.usuario, embedded: true),
     _ => widget.usuario.panelIngenieria && !widget.usuario.usesPersonalPanel ? EngineeringScreen(user: widget.usuario, embedded: true, onOptions: _personalMenu) : widget.usuario.usesPersonalPanel ? PersonalDayScreen(user: widget.usuario, embedded: true, onProfile: () => setState(() => _index = 4), onOptions: _personalMenu) : _OperationsHome(usuario: widget.usuario, onTab: (i) => setState(() => _index = i)),
   });
   @override
@@ -83,16 +85,16 @@ class _OperationsHomeState extends State<_OperationsHome> {
     if (action.id == 'comunidad') { widget.onTab(1); return; }
     if (action.id == 'mensajes') { widget.onTab(2); return; }
     if (action.id == 'tareas') { widget.onTab(3); return; }
-    if (action.id == 'perfil') { widget.onTab(4); return; }
+    if (action.id == 'perfil' || action.id == 'configuracion') { widget.onTab(4); return; }
     Navigator.of(context).push(MaterialPageRoute<void>(builder: action.id == 'ia' || action.id == 'guia' ? (_) => OnlineSmartScreen(usuario: widget.usuario, modoGuia: action.id == 'guia') : action.builder));
   }
   @override
   Widget build(BuildContext context) {
-    final actions = AppActionCatalog.forUser(widget.usuario).where((a) => a.id != 'proyectos').toList();
+    final actions = AppActionCatalog.forUser(widget.usuario).where((a) => !['proyectos', 'configuracion', 'insignias', 'asistencia'].contains(a.id)).toList();
     final quick = actions.where((a) => ['proyectos', 'asistencia', 'inventario', 'racha', 'rachas', 'asistencias', 'prestamos', 'justificar', 'cumpleanos', 'equipo', 'almacen_movimientos', 'solicitudes_almacen', 'sin_conexion', 'juegos', 'tareas', 'trabajo_extra', 'ingenieria'].contains(a.id)).toList();
     final alerts = actions.where((a) => a.id == 'alerta_general').toList();
     return SafeArea(bottom: false, child: ListView(padding: const EdgeInsets.fromLTRB(18, 12, 18, 24), children: [
-      Row(children: [Image.asset('assets/logo_saunastilo.png', width: 130, height: 48, fit: BoxFit.contain), const Spacer(), for (final id in ['avisos', 'configuracion']) IconButton(tooltip: actions.firstWhere((a) => a.id == id).title, onPressed: () => _open(actions.firstWhere((a) => a.id == id)), icon: Icon(id == 'avisos' ? Icons.notifications_none_rounded : Icons.tune_rounded))]),
+      Row(children: [Image.asset('assets/logo_saunastilo.png', width: 130, height: 48, fit: BoxFit.contain), const Spacer(), for (final id in ['avisos', 'perfil']) IconButton(tooltip: actions.firstWhere((a) => a.id == id).title, onPressed: () => _open(actions.firstWhere((a) => a.id == id)), icon: Icon(id == 'avisos' ? Icons.notifications_none_rounded : Icons.tune_rounded))]),
       const SizedBox(height: 15),
       Text('Hola, ${widget.usuario.nombre.split(' ').first}', style: const TextStyle(fontSize: 27, fontWeight: FontWeight.w800, letterSpacing: -.7)),
       const SizedBox(height: 5),
@@ -100,10 +102,12 @@ class _OperationsHomeState extends State<_OperationsHome> {
       const SizedBox(height: 18),
       if (alerts.isNotEmpty) Padding(padding: const EdgeInsets.only(bottom: 14), child: OutlinedButton.icon(style: OutlinedButton.styleFrom(foregroundColor: const Color(0xFFFF647A), backgroundColor: const Color(0xFF240B12), side: const BorderSide(color: Color(0xFF8E1538)), minimumSize: const Size.fromHeight(54)), onPressed: () => _open(alerts.first), icon: const Icon(Icons.campaign_rounded), label: const Text('ALERTA GENERAL · TODO EL EQUIPO', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800)))),
       if (widget.usuario.rol == AppRoles.admin) Padding(padding: const EdgeInsets.only(bottom: 14), child: FilledButton.icon(onPressed: () => Navigator.push(context, MaterialPageRoute<void>(builder: (_) => AdminInboxScreen(user: widget.usuario))), icon: const Icon(Icons.inbox_rounded), label: const Text('Solicitudes por revisar · Administración'))),
+      MainHomeShortcuts(user: widget.usuario, onTab: widget.onTab),
+      const SizedBox(height: 16),
       HomeProgressPanel(user: widget.usuario, onStreak: () => _open(actions.firstWhere((a) => a.id == (widget.usuario.rol == AppRoles.admin ? 'rachas' : 'racha'))), onProfile: () => widget.onTab(4), onLearn: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => TrainingAccessScreen(user: widget.usuario)))),
       if (widget.usuario.rol == AppRoles.admin)
-        AdminOperationsCard(onAttendance: () => _open(actions.firstWhere((a) => a.id == 'asistencias')), onTeam: () => _open(actions.firstWhere((a) => a.id == 'equipo')))
-      else JornadaCompacta(usuario: widget.usuario),
+        AdminOperationsCard(onAttendance: () => _open(actions.firstWhere((a) => a.id == 'asistencias')), onTeam: () => _open(actions.firstWhere((a) => a.id == 'equipo'))),
+      JornadaCompacta(usuario: widget.usuario),
       const SizedBox(height: 16),
       Row(children: [const Expanded(child: Text('Mis tareas', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800))), TextButton(onPressed: () => widget.onTab(3), child: const Text('Ver todas'))]),
       OutlinedButton.icon(onPressed: () => Navigator.push(context, MaterialPageRoute<void>(builder: (_) => DailyTasksScreen(user: widget.usuario))), icon: const Icon(Icons.today), label: const Text('Tareas del día · asignaciones y evidencias')),

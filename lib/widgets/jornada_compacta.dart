@@ -2,7 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/user_model.dart';
-import '../screens/jornada_screen.dart';
+import '../screens/payroll_records_screen.dart';
 import '../services/asistencia_service.dart';
 import '../services/attendance_gateway_service.dart';
 import '../services/company_learning_service.dart';
@@ -24,6 +24,7 @@ class _JornadaCompactaState extends State<JornadaCompacta> with WidgetsBindingOb
   Stream<Map<String, dynamic>>? _journal;
   Map<String, dynamic>? _confirmed;
   bool _busy = false;
+  bool _manual = false;
   String? _error;
 
   @override
@@ -35,7 +36,7 @@ class _JornadaCompactaState extends State<JornadaCompacta> with WidgetsBindingOb
   void _connect() {
     _service = widget.service ?? AsistenciaService();
     _confirmed = null;
-    _journal = widget.usuario.rol == AppRoles.admin ? null : _service.gateway.watchDay(widget.usuario.id);
+    _journal = _service.gateway.watchDay(widget.usuario.id);
   }
   @override
   void didUpdateWidget(covariant JornadaCompacta oldWidget) {
@@ -53,7 +54,7 @@ class _JornadaCompactaState extends State<JornadaCompacta> with WidgetsBindingOb
       ? DateFormat('HH:mm').format(value.toDate().toUtc().subtract(const Duration(hours: 6))) : '—';
 
   Future<void> _register(String action) async {
-    if (_busy || widget.usuario.rol == AppRoles.admin) return;
+    if (_busy || (widget.usuario.rol == AppRoles.admin && !_manual)) return;
     if (action == 'salida') {
       final confirmed = await showDialog<bool>(context: context, builder: (c) => AlertDialog(
         title: const Text('¿Registrar tu salida?'),
@@ -65,7 +66,7 @@ class _JornadaCompactaState extends State<JornadaCompacta> with WidgetsBindingOb
     }
     setState(() { _busy = true; _error = null; });
     try {
-      final result = await _service.registrarMovimiento(action);
+      final result = await _service.registrarMovimiento(action, manual: _manual);
       if (result['exito'] != true) throw StateError('No se confirmó el movimiento. Actualiza tu jornada.');
       if (!mounted) return;
       setState(() => _confirmed = result);
@@ -78,7 +79,6 @@ class _JornadaCompactaState extends State<JornadaCompacta> with WidgetsBindingOb
 
   @override
   Widget build(BuildContext context) {
-    if (widget.usuario.rol == AppRoles.admin) return const SizedBox.shrink();
     return StreamBuilder<Map<String, dynamic>>(
       stream: _journal,
       builder: (context, snapshot) {
@@ -87,7 +87,7 @@ class _JornadaCompactaState extends State<JornadaCompacta> with WidgetsBindingOb
         if (_confirmed != null && live != null) {
           final saved = _confirmed!['data'] as Map;
           final current = live['data'] as Map;
-          if (_confirmed!['day'] != live['day'] || ['horaEntrada', 'salidaComidaSolicitada', 'regresoComidaReal', 'horaSalida'].every((k) => saved[k] == null || current[k] != null)) _confirmed = null;
+          if (_confirmed!['day'] != live['day'] || ['horaEntrada', 'salidaComidaSolicitada', 'salidaComidaReal', 'regresoComidaReal', 'horaSalida'].every((k) => saved[k] == null || current[k] != null)) _confirmed = null;
         }
         final record = _confirmed ?? live;
         final data = Map<String, dynamic>.from(record?['data'] as Map? ?? {});
@@ -96,7 +96,8 @@ class _JornadaCompactaState extends State<JornadaCompacta> with WidgetsBindingOb
         final mealStarted = data['salidaComidaReal'] is Timestamp;
         final mealReturned = data['regresoComidaReal'] is Timestamp;
         final mealPending = data['salidaComidaSolicitada'] is Timestamp && !mealStarted;
-        final ready = record != null && !snapshot.hasError && !_busy;
+        _manual = record?['supportsManual'] == true;
+        final ready = record != null && !snapshot.hasError && !_busy && (widget.usuario.rol != AppRoles.admin || _manual);
         return Container(
           padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(color: const Color(0xFF111012), borderRadius: BorderRadius.circular(24), border: Border.all(color: const Color(0xFF452332))),
@@ -110,15 +111,17 @@ class _JornadaCompactaState extends State<JornadaCompacta> with WidgetsBindingOb
             const SizedBox(height: 6),
             Text('Horario: ${widget.usuario.horaEntrada ?? '09:00'}–${widget.usuario.horaSalida ?? '19:00'} · Ciudad de México', style: const TextStyle(color: Colors.white54, fontSize: 11)),
             const SizedBox(height: 14),
+            if (_manual) const Text('Registro manual con hora del servidor. No solicita ubicación.', style: TextStyle(color: Colors.white60, fontSize: 12)),
+            if (!_manual && widget.usuario.rol == AppRoles.admin) const Text('Tu registro personal sencillo está pendiente de la actualización del servicio.', style: TextStyle(color: Colors.orangeAccent)),
             FilledButton.icon(key: const ValueKey('attendance-entry'), onPressed: ready && !entered ? () => _register('entrada') : null, icon: const Icon(Icons.login_rounded), label: Text(entered ? 'Entrada registrada' : 'Registrar entrada')),
             if (entered) ...[
               const SizedBox(height: 16),
               const Text('Hora de comida', style: TextStyle(fontWeight: FontWeight.w800)),
               const SizedBox(height: 8),
               Text('Salida ${_hour(data['salidaComidaReal'])} · Regreso ${_hour(data['regresoComidaReal'])}', style: const TextStyle(color: Colors.white70)),
-              if (!left && !mealStarted && !mealPending)
-                OutlinedButton.icon(key: const ValueKey('attendance-meal'), onPressed: ready ? () => _register('solicitar_comida') : null, icon: const Icon(Icons.restaurant_rounded), label: const Text('Solicitar hora de comida')),
-              if (mealPending) const Padding(padding: EdgeInsets.symmetric(vertical: 8), child: Text('Solicitud guardada. Espera la autorización de Administración.', style: TextStyle(color: Color(0xFFFFB876)))),
+              if (!left && !mealStarted && (!mealPending || _manual))
+                OutlinedButton.icon(key: const ValueKey('attendance-meal'), onPressed: ready ? () => _register(_manual ? 'salida_comida' : 'solicitar_comida') : null, icon: const Icon(Icons.restaurant_rounded), label: Text(_manual ? 'Salir a comer' : 'Solicitar hora de comida')),
+              if (mealPending && !_manual) const Padding(padding: EdgeInsets.symmetric(vertical: 8), child: Text('Solicitud guardada. Espera la autorización de Administración.', style: TextStyle(color: Color(0xFFFFB876)))),
               if (!left && mealStarted && !mealReturned)
                 FilledButton.icon(key: const ValueKey('attendance-return'), onPressed: ready ? () => _register('regreso_comida') : null, icon: const Icon(Icons.keyboard_return_rounded), label: const Text('Ya regresé de comer')),
               if (mealReturned) const Text('Regreso de comida registrado', style: TextStyle(color: Color(0xFFB7FF2A))),
@@ -128,7 +131,7 @@ class _JornadaCompactaState extends State<JornadaCompacta> with WidgetsBindingOb
             if (_busy || snapshot.connectionState == ConnectionState.waiting) const Padding(padding: EdgeInsets.symmetric(vertical: 10), child: LinearProgressIndicator()),
             if (record?['pendingSync'] == true) const Padding(padding: EdgeInsets.only(top: 10), child: Text('Horario guardado. Se actualizará en nómina cuando Administración abra Asistencias.', style: TextStyle(color: Colors.white60, fontSize: 12))),
             if (snapshot.hasError || _error != null) Padding(padding: const EdgeInsets.only(top: 12), child: Semantics(liveRegion: true, child: Text(_error ?? CompanyLearningService.message(snapshot.error!), style: const TextStyle(color: Colors.orangeAccent)))),
-            if (widget.showDetails) TextButton(onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => JornadaScreen(usuario: widget.usuario))), child: const Text('Comida, historial y detalles')),
+            if (widget.showDetails) TextButton(onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => PayrollRecordsScreen(user: widget.usuario))), child: const Text('Ver mis registros y nómina')),
           ]),
         );
       },

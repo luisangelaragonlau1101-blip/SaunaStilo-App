@@ -64,9 +64,10 @@ class AttendanceGatewayService {
 
   static void refresh() => _changes.add(null);
 
-  Future<Map<String, dynamic>> record(String movement, {double? latitude, double? longitude}) async {
+  Future<Map<String, dynamic>> record(String movement, {double? latitude, double? longitude, bool manual = false}) async {
     final result = decodeDay(await api.call('attendance-record', {
       'movement': movement,
+      if (manual) 'manual': true,
       if (latitude != null) 'latitud': latitude,
       if (longitude != null) 'longitud': longitude,
     }));
@@ -75,7 +76,7 @@ class AttendanceGatewayService {
     return result;
   }
 
-  Future<List<AsistenciaModel>> history(String userId, DateTime start, DateTime end) async {
+  Future<List<Map<String, dynamic>>> receiptHistory(String userId, DateTime start, DateTime end) async {
     final days = <String>[];
     final lastDay = dayKey(today);
     for (var day = DateTime(start.year, start.month, start.day);
@@ -84,10 +85,17 @@ class AttendanceGatewayService {
     }
     if (days.isEmpty) return [];
     final response = await api.call('attendance-history', {'userId': userId, 'days': days});
-    return (response['items'] as List).map((item) => decodeDay(Map<String, dynamic>.from(item as Map)))
-        .where((item) => (item['data'] as Map).isNotEmpty)
-        .map((item) => AsistenciaModel.fromData(item['asistenciaId'] as String, item['data'] as Map<String, dynamic>)).toList();
+    return (response['items'] as List).map((item) => decodeDay(Map<String, dynamic>.from(item as Map))).toList();
   }
+
+  Future<List<AsistenciaModel>> history(String userId, DateTime start, DateTime end) async =>
+      (await receiptHistory(userId, start, end)).where((item) => (item['data'] as Map).isNotEmpty)
+          .map((item) => AsistenciaModel.fromData(item['asistenciaId'] as String, item['data'] as Map<String, dynamic>)).toList();
+
+  Stream<List<Map<String, dynamic>>> watchRecentReceipts(String userId) => _watch(() {
+    final now = today;
+    return receiptHistory(userId, now.subtract(const Duration(days: 6)), now);
+  });
 
   Stream<List<AsistenciaModel>> watchHistory(String userId, DateTime start, DateTime end) =>
       _watch(() => history(userId, start, end));

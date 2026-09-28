@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+import '../widgets/inventory_photo.dart';
 import 'package:intl/intl.dart';
 import '../models/insumo_model.dart';
 
@@ -188,7 +188,7 @@ class _InsumoDetalleScreenState extends State<InsumoDetalleScreen> {
             maxScale: 4,
             child: Hero(
               tag: heroTag,
-              child: CachedNetworkImage(
+              child: InventoryPhoto(
                 imageUrl: imageUrl,
                 fit: BoxFit.contain,
                 placeholder: (context, url) => const Center(child: CircularProgressIndicator(color: colorAcento)),
@@ -254,7 +254,7 @@ class _InsumoDetalleScreenState extends State<InsumoDetalleScreen> {
                     tag: widget.insumo.id,
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(12),
-                      child: CachedNetworkImage(
+                      child: InventoryPhoto(
                         imageUrl: widget.insumo.imagenUrl!,
                         width: 90,
                         height: 90,

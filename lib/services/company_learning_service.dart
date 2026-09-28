@@ -13,12 +13,16 @@ class CompanyLearningService {
   if(user==null)throw StateError('Inicia sesión en Sauna Stilo.');
   final token=await user.getIdToken();
   if(token==null||token.isEmpty)throw StateError('No se pudo validar tu sesión. Inicia sesión nuevamente.');
-  final response=await http.post(endpoint,headers:{'Content-Type':'application/json','X-Sauna-Token':token},body:jsonEncode({...data,'action':action})).timeout(const Duration(seconds:65));
+  var response=await http.post(endpoint,headers:{'Content-Type':'application/json','X-Sauna-Token':token},body:jsonEncode({...data,'action':action})).timeout(const Duration(seconds:65));
+  if(response.statusCode==401 && FirebaseAuth.instance.currentUser?.uid==user.uid){
+   final renewed=await user.getIdToken(true);
+   if(renewed!=null && renewed.isNotEmpty)response=await http.post(endpoint,headers:{'Content-Type':'application/json','X-Sauna-Token':renewed},body:jsonEncode({...data,'action':action})).timeout(const Duration(seconds:65));
+  }
   if(FirebaseAuth.instance.currentUser?.uid!=user.uid)throw StateError('La sesión cambió. Abre la pantalla con tu cuenta.');
   dynamic decoded;try{decoded=jsonDecode(response.body);}catch(_){throw StateError('El servicio no respondió correctamente. Reintenta sin salir.');}
   if(response.statusCode!=200){final message=decoded is Map ? decoded['error']??decoded['message'] : null;throw StateError(message is String?message:'No se confirmó la operación. Vuelve a consultar su estado.');}
   if(decoded is! Map)throw StateError('La respuesta del servicio no tiene el formato esperado.');
   return Map<String,dynamic>.from(decoded);
  }
- static String message(Object error)=>error is StateError?error.message.toString():'No se confirmó la operación. Revisa conexión y permisos.';
+ static String message(Object error)=>error is StateError?error.message.toString():'No se confirmó la operación. Revisa tu conexión y vuelve a intentar.';
 }

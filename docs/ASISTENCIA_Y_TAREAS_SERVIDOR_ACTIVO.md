@@ -1,4 +1,22 @@
-# Asistencia y tareas con el servicio existente
+# Estado de la reparación del 28 de septiembre de 2026
+
+El cambio de web agrega fotos pequeñas guardadas en la ficha del producto, accesos principales para todos los perfiles, un solo perfil con configuración, reconocimientos en el detalle de nómina y rachas que incluyen comprobantes recientes. Las fotos se reducen a PNG de hasta 500 KiB; se conservan las fotos anteriores con URL. Se usa la autorización de almacén que ya tiene Firestore; no hay cambios de reglas.
+
+**Pendiente de publicar en el backend:** el registro manual de entrada, salida a comer, regreso y salida para los cuatro roles. El servidor de AppDeploy rechazó nuevas publicaciones por su cuota diaria (`CREDITS_USAGE_LIMIT_REACHED`) hasta `2026-09-29T00:00:00Z` (18:00 del 28 de septiembre en Ciudad de México). No se reintentó antes del reinicio. El código y las pruebas están en `tools/online-smart34/attendance.mjs` y `attendance.test.mjs`. Debe publicarse ese archivo como `backend/attendance.mjs`, previa lectura del snapshot actual e instrucciones de despliegue.
+
+La web detecta `supportsManual: true` devuelto por el servidor antes de habilitar el nuevo flujo. Hasta que el backend se publique conserva el flujo de ubicación existente para trabajadores y muestra a los administradores que su registro sencillo sigue pendiente. **Compilar/publicar la web no activa por sí solo el cambio del servidor.**
+
+El nuevo registro usa hora del servidor y conserva auditoría por usuario, duplicados idempotentes, correcciones administrativas y sincronización de nómina. Identifica la ubicación como no verificada y nunca inventa coordenadas. Los botones no guardan localmente horarios como si fueran confirmados. No requiere aprobar la comida cuando se utiliza explícitamente el nuevo registro manual; las solicitudes antiguas mantienen su autorización.
+
+El historial administrativo se abre con los registros existentes y sincroniza en segundo plano; muestra un aviso persistente mientras haya movimientos sin confirmar. Los reportes finales siguen exigiendo una sincronización completa. Los importes y las reglas de cálculo de nómina no cambian. La vista personal muestra datos registrados, no un recibo emitido. Rachas e insignias se muestran como información sin efecto en el pago.
+
+## Bloqueo externo observado y validación
+
+El 28 de septiembre, a las 21:58 UTC, el navegador mostró el aviso del proveedor “This app is paused / This app has reached its credit limit”. La guía externa no acepta interacción mientras está pausada; esto explica el botón deshabilitado del chequeo de navegador. No se eludió la pausa ni se cambiaron cuotas, permisos o planes. El mismo servicio aloja jornadas y tareas, por lo que su disponibilidad debe comprobarse después del reinicio; no se promete reactivación automática.
+
+La revisión pasó 121 pruebas Node, las pruebas aisladas de reglas, el análisis Flutter, 80 pruebas Flutter y la compilación web. El chequeo completo de navegador permanece fallido por la pausa externa; los chequeos posteriores de ese paso no se ejecutaron. La publicación web permite entregar fotos y vistas basadas en Firestore, pero no resuelve ni declara operativo ese servicio. Las pruebas conservan sus condiciones de éxito y el fallo externo no se marca como aprobado.
+
+## Arquitectura publicada anteriormente
 
 La web usa el backend autenticado ya desplegado de Online Smart. No necesita publicar `updateAttendance`, cambiar reglas de Firebase ni introducir credenciales administrativas.
 

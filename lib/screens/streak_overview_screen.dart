@@ -1,3 +1,6 @@
+import '../services/attendance_history_service.dart';
+import '../services/attendance_gateway_service.dart';
+import '../widgets/attendance_admin_sync.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
@@ -14,17 +17,19 @@ class StreakOverviewScreen extends StatelessWidget{
   Widget build(BuildContext context){
     final admin=user.rol==AppRoles.admin;
     final db=FirebaseFirestore.instance;
-    final query=admin?db.collection('asistencias'):db.collection('asistencias').where('trabajadorId',isEqualTo:user.id);
-    return Scaffold(backgroundColor:Colors.black,appBar:AppBar(title:Text(admin?'Rachas del equipo':'Mi constancia')),body:StreamBuilder<QuerySnapshot<Map<String,dynamic>>>(stream:query.snapshots(includeMetadataChanges:true),builder:(c,s){
+    final query=AttendanceHistoryService.watch(user.id, team: admin);
+    return Scaffold(backgroundColor:Colors.black,appBar:AppBar(title:Text(admin?'Rachas del equipo':'Mi constancia')),body:StreamBuilder<AttendanceHistory>(stream:query,builder:(c,s){
       if(s.hasError)return const Center(child:Padding(padding:EdgeInsets.all(24),child:Text('No se pudieron consultar las rachas. Solo Administración puede ver los registros del equipo completo.')));
       if(!s.hasData)return const Center(child:CircularProgressIndicator());
       final groups=<String,List<AsistenciaModel>>{};
-      for(final d in s.data!.docs){final a=AsistenciaModel.fromFirestore(d);groups.putIfAbsent(a.trabajadorId,()=>[]).add(a);}
+      for(final a in s.data!.rows){groups.putIfAbsent(a.trabajadorId,()=>[]).add(a);}
       if(!admin)groups.putIfAbsent(user.id,()=>[]);
       return ListView(padding:const EdgeInsets.all(20),children:[
+        if(admin)AttendanceAdminSync(day:AttendanceGatewayService.today),
         const Row(children:[StiloOrbitIcon(icon:Icons.local_fire_department_rounded,color:Color(0xFFFFB876),size:54,active:true),SizedBox(width:14),Expanded(child:Text('Cada día cuenta',style:TextStyle(fontSize:25,fontWeight:FontWeight.w800)))]),
         const SizedBox(height:12),const Text('A tiempo: suma un día. Justificada: conserva la secuencia sin sumar. Los demás estados la reinician. Se cuentan los días registrados; un día sin registro no se inventa como asistencia ni como falta.',style:TextStyle(color:Colors.white70,height:1.5)),
-        OfflineDataBadge(cached:s.data!.metadata.isFromCache),
+        OfflineDataBadge(cached:s.data!.cached),
+        if(s.data!.notice!=null)Text(s.data!.notice!,style:const TextStyle(color:Colors.orangeAccent)),
         if(groups.isEmpty)const ListTile(title:Text('Todavía no hay registros para calcular una racha.')),
         for(final group in groups.entries)_card(context,group.key,group.value,admin),
       ]);

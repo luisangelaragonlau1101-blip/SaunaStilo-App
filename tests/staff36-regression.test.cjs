@@ -6,8 +6,8 @@ test('background permission checks never ask Android again and a denied permissi
  assert.match(push,/requestPermission \? await _messaging.requestPermission/);
  assert.doesNotMatch(receiver,/if \(mounted\) _showPushAction\('No se pudieron sincronizar/);
 });
-test('meal controls reuse the verified attendance actions and administrators never register their own attendance',()=>{
- const source=read('lib/widgets/jornada_compacta.dart');assert.match(source,/_register\('solicitar_comida'\)/);assert.match(source,/_register\('regreso_comida'\)/);assert.match(source,/widget.usuario.rol == AppRoles.admin\) return const SizedBox.shrink/);assert.match(source,/result\['exito'\] != true/);
+test('meal controls use the server capability and only confirmed writes complete the shift',()=>{
+ const source=read('lib/widgets/jornada_compacta.dart');assert.match(source,/_manual \? 'salida_comida' : 'solicitar_comida'/);assert.match(source,/_register\('regreso_comida'\)/);assert.match(source,/AppRoles.admin && !_manual/);assert.match(source,/result\['exito'\] != true/);
 });
 test('personal tasks and shopping creation and edits are administrative while extra reports are separate',()=>{
  const panel=read('lib/screens/personal_day_screen.dart'),service=read('tools/online-smart34/personal-day.mjs');
@@ -15,6 +15,6 @@ test('personal tasks and shopping creation and edits are administrative while ex
  assert.match(service,/u.role==='admin','Las tareas, comidas, compras y eventos/);assert.doesNotMatch(service,/u.role==='admin'\|\|item.createdBy===u.uid/);
 });
 test('home exposes one canonical project-task workflow, inbox and no secret-derived privileges',()=>{
- const home=read('lib/screens/operations_shell.dart');assert.match(home,/a.id != 'proyectos'/);assert.match(home,/AdminInboxScreen/);assert.match(home,/EngineeringScreen/);
+ const home=read('lib/screens/operations_shell.dart');assert.match(home,/!\['proyectos', 'configuracion', 'insignias', 'asistencia'\]\.contains\(a.id\)/);assert.match(home,/AdminInboxScreen/);assert.match(home,/EngineeringScreen/);
  const permissions=read('lib/screens/engineering_screen.dart');assert.match(permissions,/widget.administrator.rol != AppRoles.admin/);assert.doesNotMatch(permissions,/Osiris|Naomi|Zaldívar/);
 });
