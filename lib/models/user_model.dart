@@ -20,6 +20,13 @@ class UserModel {
   final String rol; 
   final DateTime fechaRegistro;
   final String? fotoUrl;
+
+  // Stories allow only a short avatar reference. Keep inline pixels on the
+  // profile; the story still retains its author's ID, name and initials.
+  String get fotoUrlParaHistoria {
+    final value = fotoUrl ?? '';
+    return value.startsWith('data:') || value.length > 2048 ? '' : value;
+  }
   
   // --- CAMPOS DE HORARIO ---
   final String? horaEntrada;

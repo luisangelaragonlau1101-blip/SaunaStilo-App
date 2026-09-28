@@ -9,9 +9,20 @@ import 'package:saunastilo/widgets/personal_header.dart';
 import 'package:saunastilo/screens/human_resources_screen.dart';
 import 'package:saunastilo/screens/business_workspace_screen.dart';
 
-UserModel member(String role, {bool engineering = false, DateTime? birthday}) => UserModel(id: 'test', nombre: 'Persona QA', correo: 'qa@example.invalid', rol: role, fechaRegistro: DateTime(2026), panelIngenieria: engineering, cumpleanos: birthday);
+UserModel member(String role, {bool engineering = false, DateTime? birthday, String? photo}) => UserModel(id: 'test', nombre: 'Persona QA', correo: 'qa@example.invalid', rol: role, fechaRegistro: DateTime(2026), panelIngenieria: engineering, cumpleanos: birthday, fotoUrl: photo);
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  test('inline profile photos never exceed the story avatar reference limit', () {
+    final inline = 'data:image/png;base64,${List.filled(3000, 'A').join()}';
+    final user = member('trabajador', photo: inline);
+    expect(user.fotoUrlParaHistoria, isEmpty);
+    expect(user.fotoUrl, inline);
+    expect(user.toFirestore()['fotoUrl'], inline);
+    const previous = 'https://example.invalid/avatar.png';
+    expect(member('trabajador', photo: previous).fotoUrlParaHistoria, previous);
+    expect(member('trabajador', photo: '$previous${List.filled(2050, 'a').join()}').fotoUrlParaHistoria, isEmpty);
+    expect(member('trabajador').fotoUrlParaHistoria, isEmpty);
+  });
   test('appearance survives reload and never crosses accounts', () async {
     SharedPreferences.setMockInitialValues({});
     final prefs = AppearanceController();

@@ -1,6 +1,6 @@
 const test=require('node:test');const fs=require('node:fs');
 const {initializeTestEnvironment,assertSucceeds,assertFails}=require('@firebase/rules-unit-testing');
-const {doc,setDoc,getDoc,updateDoc,deleteDoc}=require('firebase/firestore');
+const {doc,setDoc,getDoc,updateDoc,deleteDoc,serverTimestamp,Timestamp}=require('firebase/firestore');
 let env;
 test.before(async()=>{if(!process.env.FIRESTORE_EMULATOR_HOST)throw Error('Isolated emulator required');env=await initializeTestEnvironment({projectId:'demo-sauna-social-audio',firestore:{rules:fs.readFileSync('firestore.rules','utf8')}});await env.withSecurityRulesDisabled(async c=>{for(const [id,rol] of [['admin','admin'],['a','trabajador'],['b','maestro']])await setDoc(doc(c.firestore(),'usuarios',id),{rol,nombre:id,correo:id+'@example.invalid'});});});
 test.after(async()=>{if(env)await env.cleanup();});
@@ -26,4 +26,13 @@ test('notes are shared team posts with durable owner update and delete',async()=
  await assertFails(updateDoc(doc(b,...path),{notaTexto:'Editar nota ajena'}));
  await assertSucceeds(updateDoc(doc(a,...path),{notaTexto:'Actualizada'}));
  await assertFails(deleteDoc(doc(b,...path)));await assertSucceeds(deleteDoc(doc(a,...path)));
+});
+test('inline profile photo keeps story creation within the existing avatar size limit',async()=>{
+ const a=env.authenticatedContext('a').firestore(),b=env.authenticatedContext('b').firestore();
+ const inline='data:image/png;base64,'+'A'.repeat(3000);
+ await assertSucceeds(updateDoc(doc(a,'usuarios','a'),{fotoUrl:inline}));
+ const story={autorId:'a',autorNombre:'a',autorRol:'trabajador',texto:'Nota de prueba',imagenUrl:'',imagenRuta:'',creadaEn:serverTimestamp(),expiraEn:Timestamp.fromMillis(Date.now()+24*60*60*1000)};
+ await assertFails(setDoc(doc(a,'historias_sociales','oversized-avatar'),{...story,autorFotoUrl:inline}));
+ await assertSucceeds(setDoc(doc(a,'historias_sociales','bounded-avatar'),{...story,autorFotoUrl:''}));
+ await assertSucceeds(getDoc(doc(b,'historias_sociales','bounded-avatar')));
 });
