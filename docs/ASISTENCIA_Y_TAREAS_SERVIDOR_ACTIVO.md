@@ -1,4 +1,16 @@
-# Asistencia y tareas con el servicio existente
+# Estado de la reparación del 28 de septiembre de 2026
+
+El cambio de web agrega fotos pequeñas guardadas en la ficha del producto, accesos principales para todos los perfiles, un solo perfil con configuración, reconocimientos en el detalle de nómina y rachas que incluyen comprobantes recientes. Las fotos se reducen a PNG de hasta 500 KiB; se conservan las fotos anteriores con URL. Se usa la autorización de almacén que ya tiene Firestore; no hay cambios de reglas.
+
+**Pendiente de publicar en el backend:** el registro manual de entrada, salida a comer, regreso y salida para los cuatro roles. El servidor de AppDeploy rechazó nuevas publicaciones por su cuota diaria (`CREDITS_USAGE_LIMIT_REACHED`) hasta `2026-09-29T00:00:00Z` (18:00 del 28 de septiembre en Ciudad de México). No se reintentó antes del reinicio. El código y las pruebas están en `tools/online-smart34/attendance.mjs` y `attendance.test.mjs`. Debe publicarse ese archivo como `backend/attendance.mjs`, previa lectura del snapshot actual e instrucciones de despliegue.
+
+La web detecta `supportsManual: true` devuelto por el servidor antes de habilitar el nuevo flujo. Hasta que el backend se publique conserva el flujo de ubicación existente para trabajadores y muestra a los administradores que su registro sencillo sigue pendiente. **Compilar/publicar la web no activa por sí solo el cambio del servidor.**
+
+El nuevo registro usa hora del servidor y conserva auditoría por usuario, duplicados idempotentes, correcciones administrativas y sincronización de nómina. Identifica la ubicación como no verificada y nunca inventa coordenadas. Los botones no guardan localmente horarios como si fueran confirmados. No requiere aprobar la comida cuando se utiliza explícitamente el nuevo registro manual; las solicitudes antiguas mantienen su autorización.
+
+Los importes y las reglas de cálculo de nómina no cambian. La vista personal muestra datos registrados, no un recibo emitido. Rachas e insignias se muestran como información sin efecto en el pago.
+
+## Arquitectura publicada anteriormente
 
 La web usa el backend autenticado ya desplegado de Online Smart. No necesita publicar `updateAttendance`, cambiar reglas de Firebase ni introducir credenciales administrativas.
 

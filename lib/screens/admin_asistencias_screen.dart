@@ -1,3 +1,5 @@
+import '../widgets/payroll_recognitions.dart';
+import '../services/recorded_streak.dart';
 import '../services/external_transfer.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -1374,7 +1376,9 @@ class _AdminAsistenciasScreenState extends State<AdminAsistenciasScreen> {
                             return Center(child: CircularProgressIndicator(color: primaryPurple));
                           }
 
+                          if (snapshot.hasError) return const Center(child: Text('No se pudo cargar el historial para nómina. Reintenta.'));
                           var allDocs = snapshot.data?.docs ?? [];
+                          final recordedStreak = RecordedStreak.from(allDocs.map((d) { final a = AsistenciaModel.fromFirestore(d); return AttendancePoint(a.fecha, a.estatus); }).toList());
                           
                           var docsSemana = allDocs.where((doc) {
                             var data = doc.data() as Map<String, dynamic>;
@@ -1502,6 +1506,7 @@ class _AdminAsistenciasScreenState extends State<AdminAsistenciasScreen> {
                                         padding: EdgeInsets.symmetric(vertical: 12),
                                         child: Divider(color: Colors.white10, height: 1),
                                       ),
+                                      PayrollRecognitions(profileId: trabajadorId),
                                       Row(
                                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                         crossAxisAlignment: CrossAxisAlignment.end,
@@ -1509,6 +1514,7 @@ class _AdminAsistenciasScreenState extends State<AdminAsistenciasScreen> {
                                           Column(
                                             crossAxisAlignment: CrossAxisAlignment.start,
                                             children: [
+                                              Text('Racha registrada: ${recordedStreak.current} · Mejor: ${recordedStreak.best}', style: const TextStyle(fontSize: 11)),
                                               Text("PAGO ESTIMADO", style: GoogleFonts.inter(color: textMuted, fontSize: 11, fontWeight: FontWeight.bold)),
                                               const SizedBox(height: 4),
                                               Text(

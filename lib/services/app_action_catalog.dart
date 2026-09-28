@@ -167,7 +167,7 @@ class AppActionCatalog {
       ),
       AppAction(
         id: 'perfil',
-        title: 'Mi perfil',
+        title: 'Perfil y configuración',
         subtitle: 'Avances, logros y cuenta',
         icon: Icons.account_circle_rounded,
         color: _blue,
@@ -190,7 +190,7 @@ class AppActionCatalog {
         subtitle: 'Reconocimientos y logros',
         icon: Icons.workspace_premium_rounded,
         color: const Color(0xFFD7FF74),
-        builder: (_) => ReconocimientosScreen(usuario: user),
+        builder: (_) => ConfiguracionScreen(usuario: user),
       ),
       const AppAction(
         id: 'cumpleanos',

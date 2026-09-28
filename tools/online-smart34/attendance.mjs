@@ -9,6 +9,7 @@ const WORKERS = new Set(['trabajador', 'maestro', 'almacenista']);
 export const MOVEMENTS = Object.freeze({
   entrada: 'horaEntrada',
   solicitar_comida: 'salidaComidaSolicitada',
+  salida_comida: 'salidaComidaReal',
   regreso_comida: 'regresoComidaReal',
   salida: 'horaSalida',
 });
@@ -197,9 +198,10 @@ export function projectDay(base, events, uid, day) {
             data.estatusJustificacion === 'aprobada'
               ? 'justificado'
               : e.arrivalStatus,
-          ubicacionValida: true,
-          latitudRegistro: e.latitud,
-          longitudRegistro: e.longitud,
+          ubicacionValida: e.manual !== true,
+          registroManual: e.manual === true,
+          latitudRegistro: e.manual === true ? null : e.latitud,
+          longitudRegistro: e.manual === true ? null : e.longitud,
         });
         if (!data.estatusComida) patch.estatusComida = 'ninguna';
       } else {
@@ -209,10 +211,11 @@ export function projectDay(base, events, uid, day) {
         patch[field] = e.at;
         if (movement === 'solicitar_comida' && !data.salidaComidaReal)
           patch.estatusComida = 'pendiente_aprobacion';
+        if (movement === 'salida_comida') Object.assign(patch, {estatusComida: 'comiendo', registroComidaManual: true});
         if (movement === 'regreso_comida')
           Object.assign(patch, {
             estatusComida: 'finalizada',
-            ubicacionRegresoComidaValida: true,
+            ubicacionRegresoComidaValida: e.manual !== true,
           });
       }
       Object.assign(data, patch);
@@ -354,6 +357,7 @@ export function createAttendanceService({
     return { ...projectDay(base.data, events, uid, day), base, events };
   }
   const view = (s, uid, day) => ({
+    supportsManual: true,
     asistenciaId: `${uid}_${day}`,
     day,
     data: s.data,
@@ -499,7 +503,7 @@ export function createAttendanceService({
     }
     check(action === 'attendance-record', 'Acción no reconocida.', 404);
     check(
-      WORKERS.has(u.role) && uid === u.uid,
+      (WORKERS.has(u.role) || (u.role === 'admin' && b.manual === true)) && uid === u.uid,
       'Administración supervisa; cada integrante registra su propia jornada.',
       403,
     );
@@ -528,10 +532,11 @@ export function createAttendanceService({
       409,
     );
     check(
-      movement === 'solicitar_comida' || inZone(b.latitud, b.longitud),
+      b.manual === true || movement === 'solicitar_comida' || inZone(b.latitud, b.longitud),
       'Debes estar en una zona autorizada de Sauna Stilo. No se guardó el movimiento.',
       409,
     );
+    check(movement !== 'salida_comida' || b.manual === true, 'Usa el registro sencillo para iniciar tu comida.');
     const at = clock().toISOString();
     check(
       dayKey(new Date(at)) === day,
@@ -555,7 +560,7 @@ export function createAttendanceService({
         'Primero registra tu entrada en una jornada abierta.',
         409,
       );
-      if (movement === 'solicitar_comida')
+      if (movement === 'solicitar_comida' || movement === 'salida_comida')
         check(
           !d.salidaComidaReal && !d.regresoComidaReal,
           'La comida ya tiene movimientos.',
@@ -567,7 +572,7 @@ export function createAttendanceService({
             ms(d.salidaComidaReal) >= ms(d.horaEntrada) &&
             ms(d.salidaComidaReal) <= ms(at) &&
             d.estatusComida === 'comiendo',
-          'Administración debe autorizar primero tu salida a comer.',
+          'Registra tu salida a comer; las solicitudes anteriores requieren autorización.',
           409,
         );
     }
@@ -593,8 +598,9 @@ export function createAttendanceService({
         movement,
         at,
         actorId: u.uid,
+        manual: b.manual === true,
         arrivalStatus: arrival(u, new Date(at)),
-        ...(movement !== 'solicitar_comida'
+        ...(b.manual !== true && movement !== 'solicitar_comida'
           ? { latitud: b.latitud, longitud: b.longitud }
           : {}),
       },
@@ -612,6 +618,7 @@ export function createAttendanceService({
     );
     const messages = {
       entrada: 'Entrada guardada.',
+      salida_comida: 'Salida a comer guardada.',
       solicitar_comida:
         'Solicitud de comida guardada. Espera la autorización de Administración.',
       regreso_comida: 'Regreso de comida guardado.',

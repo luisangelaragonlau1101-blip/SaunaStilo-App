@@ -148,3 +148,32 @@ test('Mexico date rolls over at 06:00 UTC, not the device date', () => {
   assert.equal(dayKey(new Date('2026-09-29T05:59:59Z')), day);
   assert.equal(dayKey(new Date('2026-09-29T06:00:00Z')), '20260929');
 });
+
+test('simple manual day needs no coordinates or meal approval, preserves server times and marks location unverified', async () => {
+  for (const role of ['trabajador','maestro','almacenista','admin']) {
+    const f = fixture(), person = {...worker, role};
+    const manual = movement => f.call('attendance-record', {movement, manual: true}, person);
+    const first = await manual('entrada');
+    assert.equal(first.supportsManual, true);
+    assert.equal(first.data.registroManual, true);
+    assert.equal(first.data.ubicacionValida, false);
+    assert.equal(first.data.latitudRegistro, null);
+    f.time('2026-09-28T20:00:00Z'); await manual('salida_comida');
+    f.time('2026-09-28T20:30:00Z'); await manual('regreso_comida');
+    f.time('2026-09-29T01:00:00Z'); const last = await manual('salida');
+    assert.equal(last.data.estatusComida,'finalizada');
+    assert.equal(last.data.ubicacionRegresoComidaValida,false);
+    assert.equal(last.data.resumenJornada.minutosComida,30);
+    assert.equal((await manual('entrada')).data.horaEntrada,first.data.horaEntrada);
+    await f.sync(); assert.equal(f.stored().horaSalida,last.data.horaSalida);
+  }
+});
+
+test('manual mode never impersonates another account, backdates or reports a failed receipt as saved', async () => {
+  const f=fixture();
+  await assert.rejects(f.call('attendance-record',{movement:'entrada',manual:true,userId:'other'}),{status:403});
+  await assert.rejects(f.call('attendance-record',{movement:'entrada',manual:true,day:'20260927'}),{status:409});
+  f.failWrite(true);
+  await assert.rejects(f.call('attendance-record',{movement:'entrada',manual:true}),{status:503});
+  assert.equal((await f.call('attendance-state')).data.horaEntrada,undefined);
+});

@@ -64,9 +64,10 @@ class AttendanceGatewayService {
 
   static void refresh() => _changes.add(null);
 
-  Future<Map<String, dynamic>> record(String movement, {double? latitude, double? longitude}) async {
+  Future<Map<String, dynamic>> record(String movement, {double? latitude, double? longitude, bool manual = false}) async {
     final result = decodeDay(await api.call('attendance-record', {
       'movement': movement,
+      if (manual) 'manual': true,
       if (latitude != null) 'latitud': latitude,
       if (longitude != null) 'longitud': longitude,
     }));

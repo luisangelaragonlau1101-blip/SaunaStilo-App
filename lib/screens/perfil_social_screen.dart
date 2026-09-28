@@ -1,4 +1,5 @@
 import '../services/external_transfer.dart';
+import 'configuracion_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -26,6 +27,7 @@ class PerfilSocialScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (_esPropio) return ConfiguracionScreen(usuario: usuarioActual);
     return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
       stream: FirebaseFirestore.instance.collection('usuarios').doc(perfilId).snapshots(),
       builder: (context, perfilSnapshot) {

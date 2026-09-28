@@ -1,10 +1,11 @@
 import '../services/external_transfer.dart';
 import '../widgets/warehouse_header.dart';
 import 'dart:typed_data';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+import '../widgets/inventory_photo.dart';
 import '../services/inventario_service.dart';
 import '../models/insumo_model.dart';
 
@@ -574,13 +575,14 @@ Future<void> _escanearCodigoFormulario() async {
   Future<void> _pickInventoryPhoto(ImageSource source) async {
     if (_isSaving) return;
     try {
-      final file = await ImagePicker().pickImage(source: source, maxWidth: 1600, imageQuality: 80);
+      final files = source == ImageSource.gallery ? await FilePicker.pickFiles(type: FileType.image, allowMultiple: false) : null;
+      final file = source == ImageSource.gallery ? (files == null || files.isEmpty ? null : files.single) : await ImagePicker().pickImage(source: source, maxWidth: 1200, imageQuality: 75);
       if (file == null) return;
       final bytes = await file.readAsBytes();
       if (bytes.isEmpty || bytes.length > 8 * 1024 * 1024) throw StateError('Usa una foto de menos de 8 MB.');
       if (mounted) setState(() => _imagenBytes = bytes);
     } catch (_) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No se pudo leer la foto. Revisa el permiso y elige una imagen de menos de 8 MB.')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No se pudo leer la foto. Elige un archivo JPG, PNG o WebP de menos de 8 MB.')));
     }
   }
   void _mostrarOpcionesImagen() {
@@ -601,7 +603,7 @@ Future<void> _escanearCodigoFormulario() async {
               ),
               ListTile(
                 leading: const Icon(Icons.photo_library, color: colorAzul),
-                title: const Text('Elegir de Galería', style: TextStyle(color: Colors.white)),
+                title: const Text('Elegir archivo de foto', style: TextStyle(color: Colors.white)),
                 onTap: () async {
                   Navigator.pop(context);
                   await _pickInventoryPhoto(ImageSource.gallery);
@@ -630,7 +632,7 @@ Future<void> _escanearCodigoFormulario() async {
           child: _imagenBytes != null
               ? Image.memory(_imagenBytes!, fit: BoxFit.cover)
               : (_urlImagenActual != null && _urlImagenActual!.isNotEmpty)
-                  ? CachedNetworkImage(
+                  ? InventoryPhoto(
                       imageUrl: _urlImagenActual!,
                       fit: BoxFit.cover,
                       placeholder: (context, url) => const Center(child: CircularProgressIndicator(color: colorRosaVibrante)),

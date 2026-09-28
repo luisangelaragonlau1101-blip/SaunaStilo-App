@@ -1,3 +1,4 @@
+import '../services/attendance_history_service.dart';
 import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -22,14 +23,14 @@ class _HomeProgressState extends State<HomeProgressPanel>{
  @override void dispose(){LearningStore.revision.removeListener(_refresh);super.dispose();}
  @override Widget build(BuildContext context){
   final admin=widget.user.rol==AppRoles.admin,db=FirebaseFirestore.instance;
-  final attendance=admin?db.collection('asistencias'):db.collection('asistencias').where('trabajadorId',isEqualTo:widget.user.id);
-  return StreamBuilder<QuerySnapshot<Map<String,dynamic>>>(stream:attendance.snapshots(includeMetadataChanges:true),builder:(context,s){
+  final attendance=AttendanceHistoryService.watch(widget.user.id, team: admin);
+  return StreamBuilder<AttendanceHistory>(stream:attendance,builder:(context,s){
    final groups=<String,List<AttendancePoint>>{};
-   for(final row in s.data?.docs??<QueryDocumentSnapshot<Map<String,dynamic>>>[]){try{final a=AsistenciaModel.fromFirestore(row);groups.putIfAbsent(a.trabajadorId,()=>[]).add(AttendancePoint(a.fecha,a.estatus.trim().toLowerCase()));}catch(_){}}
+   for(final a in s.data?.rows??<AsistenciaModel>[]){try{groups.putIfAbsent(a.trabajadorId,()=>[]).add(AttendancePoint(a.fecha,a.estatus.trim().toLowerCase()));}catch(_){}}
    final streak=groups.values.map(RecordedStreak.from).fold<int>(0,(best,r)=>max(best,r.current));
    return StreamBuilder<DocumentSnapshot<Map<String,dynamic>>>(stream:db.collection('usuarios').doc(widget.user.id).snapshots(),builder:(context,profile){
     final raw=profile.data?.data()?['insigniasAdmin'];final badges=raw is List?raw.whereType<Map>().toList():<Map>[];
-    return HomeProgressView(admin:admin,streak:s.hasData?'$streak':'—',badges:badges,loadingBadges:!profile.hasData,workUnavailable:s.hasError||profile.hasError,cached:s.data?.metadata.isFromCache==true,
+    return HomeProgressView(admin:admin,streak:s.hasData?'$streak':'—',badges:badges,loadingBadges:!profile.hasData,workUnavailable:s.hasError||profile.hasError||s.data?.notice!=null,cached:s.data?.cached==true,
       learning:_learning,learningError:_learningError,onStreak:widget.onStreak,onProfile:widget.onProfile,onLearn:widget.onLearn);
    });
   });

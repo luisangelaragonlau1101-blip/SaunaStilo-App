@@ -18,7 +18,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:intl/intl.dart';
 
 // --- IMPORT PARA LAS IMÁGENES ---
-import 'package:cached_network_image/cached_network_image.dart';
+import '../widgets/inventory_photo.dart';
 
 // --- IMPORT PARA LA REPARACIÓN ---
 import 'admin_reparaciones_screen.dart';
@@ -325,7 +325,7 @@ class _InventarioAdminScreenState extends State<InventarioAdminScreen> {
               maxScale: 4,
               child: Hero(
                 tag: heroTag,
-                child: CachedNetworkImage(
+                child: InventoryPhoto(
                   imageUrl: imageUrl,
                   fit: BoxFit.contain,
                   placeholder: (context, url) => const Center(child: CircularProgressIndicator(color: colorRosaVibrante)),
@@ -597,7 +597,7 @@ class _InventarioAdminScreenState extends State<InventarioAdminScreen> {
                                           tag: insumo.id, // Vinculamos la animación con el ID único del insumo
                                           child: ClipRRect(
                                             borderRadius: BorderRadius.circular(8),
-                                            child: CachedNetworkImage(
+                                            child: InventoryPhoto(
                                               imageUrl: insumo.imagenUrl!,
                                               width: 65,
                                               height: 65,

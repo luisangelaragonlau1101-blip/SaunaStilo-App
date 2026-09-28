@@ -23,7 +23,7 @@ class AttendanceApiFake extends CompanyLearningService {
 }
 class AttendanceServiceFake extends AsistenciaService {
   AttendanceServiceFake(AttendanceApiFake api) : super(gateway: AttendanceGatewayService(api: api));
-  @override Future<Map<String, dynamic>> registrarMovimiento(String action) => gateway.record(action, latitude: 19.26247565075755, longitude: -98.89430986717343);
+  @override Future<Map<String, dynamic>> registrarMovimiento(String action, {bool manual = false}) => gateway.record(action, latitude: 19.26247565075755, longitude: -98.89430986717343);
 }
 final person = UserModel(id: 'worker', nombre: 'Persona de prueba', correo: 'test@example.invalid', rol: 'trabajador', fechaRegistro: DateTime(2026));
 

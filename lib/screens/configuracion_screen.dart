@@ -1,3 +1,9 @@
+import '../widgets/team_profile_details.dart';
+import '../widgets/profile_networks.dart';
+import 'streak_overview_screen.dart';
+import 'payroll_records_screen.dart';
+import 'admin_asistencias_screen.dart';
+import 'perfiles_equipo_screen.dart';
 import '../services/external_transfer.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -13,8 +19,9 @@ import 'admin_modal_horario.dart'; // <-- IMPORTAMOS EL MODAL DE HORARIOS
 
 class ConfiguracionScreen extends StatefulWidget {
   final UserModel usuario;
+  final bool embedded;
 
-  const ConfiguracionScreen({Key? key, required this.usuario}) : super(key: key);
+  const ConfiguracionScreen({Key? key, required this.usuario, this.embedded = false}) : super(key: key);
 
   @override
   State<ConfiguracionScreen> createState() => _ConfiguracionScreenState();
@@ -224,6 +231,8 @@ class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
     return StreamBuilder<DocumentSnapshot>(
       stream: FirebaseFirestore.instance.collection('usuarios').doc(widget.usuario.id).snapshots(),
       builder: (context, snapshot) {
+        if (snapshot.hasError) return const Scaffold(body: Center(child: Text('No se pudo cargar tu perfil. Vuelve a abrirlo.')));
+        if (snapshot.hasData && !snapshot.data!.exists) return const Scaffold(body: Center(child: Text('Tu perfil no está disponible.')));
         if (!snapshot.hasData) {
           return const Scaffold(backgroundColor: colorFondo, body: Center(child: CircularProgressIndicator(color: colorMorado)));
         }
@@ -265,7 +274,7 @@ class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
                   padding: const EdgeInsets.all(20.0),
                   child: Row(
                     children: [
-                      Container(
+                      if (!widget.embedded) Container(
                         decoration: BoxDecoration(
                           color: colorTarjeta,
                           borderRadius: BorderRadius.circular(12),
@@ -290,6 +299,9 @@ class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     physics: const BouncingScrollPhysics(),
                     children: [
+                      ListTile(leading: const Icon(Icons.receipt_long_outlined), title: const Text('Nómina y registros'), subtitle: const Text('Horarios, bonos y descuentos guardados'), onTap: () => Navigator.push(context, MaterialPageRoute<void>(builder: (_) => isAdmin ? AdminAsistenciasScreen(nombreAdmin: usuarioActualizado.nombre) : PayrollRecordsScreen(user: usuarioActualizado)))),
+                      ListTile(leading: const Icon(Icons.local_fire_department_outlined), title: const Text('Rachas de asistencia'), onTap: () => Navigator.push(context, MaterialPageRoute<void>(builder: (_) => StreakOverviewScreen(user: usuarioActualizado)))),
+                      if (isAdmin) ListTile(leading: const Icon(Icons.military_tech_outlined), title: const Text('Otorgar insignias al equipo'), onTap: () => Navigator.push(context, MaterialPageRoute<void>(builder: (_) => PerfilesEquipoScreen(usuarioActual: usuarioActualizado)))),
                       // --- SECCIÓN DE PERFIL VISUAL ---
                       Center(
                         child: Column(
@@ -377,6 +389,9 @@ class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
                         ),
                       ),
                       
+                      const SizedBox(height: 20),
+                      TeamProfileDetails(usuarioActual: usuarioActualizado, perfilId: usuarioActualizado.id, data: rawData),
+                      ProfileNetworks(profileId: usuarioActualizado.id, editable: true, data: rawData['redesSociales']),
                       const SizedBox(height: 40),
 
                       Text(

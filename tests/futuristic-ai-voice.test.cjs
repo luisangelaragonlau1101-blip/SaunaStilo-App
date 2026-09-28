@@ -36,7 +36,7 @@ test('every role uses the daily operations shell and retains all role-filtered a
   assert.match(bridge, /OperationsShell/);
   assert.match(shell, /AppActionCatalog\.forUser/);
   assert.match(shell, /alerta_general/);
-  for (const label of ['Inicio', 'Comunidad', 'Chats', 'Tareas', 'Perfil']) assert.ok(shell.includes("label: '" + label + "'"));
+  for (const label of ['Inicio', 'Comunidad', 'Mensajes', 'Tareas', 'Perfil']) assert.ok(shell.includes("label: '" + label + "'"));
   assert.match(shell, /JornadaCompacta/);
   assert.match(shell, /OperationsTaskList/);
 });

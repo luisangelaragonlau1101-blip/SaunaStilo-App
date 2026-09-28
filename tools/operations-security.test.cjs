@@ -93,3 +93,11 @@ test('complete legal games include the last cell, a win, a draw and reject play 
   await assertFails(updateDoc(doc(db(saved.turno),'partidas_equipo',id),{estado:'jugando',resultado:'',actualizadaEn:serverTimestamp()}));
  }
 });
+
+ test('product photo is saved with the product using existing warehouse authorization', async()=>{
+  const photo='data:image/png;base64,iVBORw0KGgo=';
+  const product=doc(db('warehouse'),'insumos_inventario','photo-product');
+  await assertSucceeds(setDoc(product,{nombre:'Prueba de foto',imagen_url:photo,cantidad_disponible:1}));
+  assert.equal((await assertSucceeds(getDoc(doc(db('worker'),'insumos_inventario','photo-product')))).data().imagen_url,photo);
+  await assertFails(updateDoc(doc(db('worker'),'insumos_inventario','photo-product'),{imagen_url:'forged'}));
+ });

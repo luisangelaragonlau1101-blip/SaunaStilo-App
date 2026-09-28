@@ -13,7 +13,8 @@ class AsistenciaService {
   final AttendanceGatewayService gateway;
   AsistenciaService({AttendanceGatewayService? gateway}) : gateway = gateway ?? AttendanceGatewayService();
 
-  Future<Map<String, dynamic>> registrarMovimiento(String accion) async {
+  Future<Map<String, dynamic>> registrarMovimiento(String accion, {bool manual = false}) async {
+    if (manual) return gateway.record(accion, manual: true);
     if (accion == 'solicitar_comida') return _actualizarAsistenciaBackend(accion: accion);
     final location = await validarUbicacionesMultiples(zonasAsistenciaSauna);
     if (location['valido'] != true) throw StateError(location['error']?.toString() ?? 'Debes estar en una zona autorizada.');

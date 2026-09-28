@@ -14,7 +14,7 @@ class RecordedStreak {
     int current=0,best=0;
     for(final p in unique.values){
       if(p.status=='a_tiempo'){current++;if(current>best)best=current;}
-      else if(p.status!='justificada'){current=0;}
+      else if(!['justificada', 'justificado'].contains(p.status)){current=0;}
     }
     return RecordedStreak(current,best,unique.length);
   }
