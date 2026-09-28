@@ -1,3 +1,4 @@
+import '../presentation/appearance.dart';
 import '../services/external_transfer.dart';
 import 'dart:async';
 
@@ -25,11 +26,11 @@ class GuiaInteligenteScreen extends StatefulWidget {
 }
 
 class _GuiaInteligenteScreenState extends State<GuiaInteligenteScreen> {
-  static const _bg = Colors.black;
-  static const _panel = Color(0xFF111111);
-  static const _cyan = Color(0xFFB7FF2A);
-  static const _mint = Color(0xFFC6FF68);
-  static const _violet = Color(0xFFB82B55);
+  static Color get _bg => StiloColors.background;
+  static Color get _panel => StiloColors.surface;
+  static Color get _cyan => StiloColors.accent;
+  static final _mint = Color(0xFFC6FF68);
+  static final _violet = Color(0xFFB82B55);
 
   final _controller = TextEditingController();
   final _scroll = ScrollController();
@@ -51,7 +52,7 @@ class _GuiaInteligenteScreenState extends State<GuiaInteligenteScreen> {
     _tts.setLanguage('es-MX');
     _tts.setSpeechRate(.72);
     _messages.add(
-      const _GuideMessage(
+      _GuideMessage(
         text:
             'Soy tu Guía de Sauna Stilo. Dime qué quieres hacer y te indico dónde entrar y qué tocar. Para otras preguntas abriré Online Smart dentro de la aplicación.',
         user: false,
@@ -72,6 +73,7 @@ class _GuiaInteligenteScreenState extends State<GuiaInteligenteScreen> {
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context);
     final actions = AppActionCatalog.forUser(widget.usuario)
         .where((action) => action.id != 'guia')
         .take(6)
@@ -89,11 +91,11 @@ class _GuiaInteligenteScreenState extends State<GuiaInteligenteScreen> {
               height: 40,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(14),
-                gradient: const LinearGradient(colors: [_mint, _cyan]),
+                gradient: LinearGradient(colors: [_mint, _cyan]),
               ),
-              child: const Icon(Icons.explore_rounded, color: Colors.black),
+              child: Icon(Icons.explore_rounded, color: StiloColors.background),
             ),
-            const SizedBox(width: 10),
+            SizedBox(width: 10),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -132,7 +134,7 @@ class _GuiaInteligenteScreenState extends State<GuiaInteligenteScreen> {
             },
             icon: Icon(
               _speak ? Icons.volume_up_rounded : Icons.volume_off_rounded,
-              color: _speak ? _cyan : Colors.white38,
+              color: _speak ? _cyan : StiloColors.text.withValues(alpha: .38),
             ),
           ),
         ],
@@ -140,14 +142,14 @@ class _GuiaInteligenteScreenState extends State<GuiaInteligenteScreen> {
       body: Column(
         children: [
           _status(),
-          TextButton.icon(onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => OnlineSmartScreen(usuario: widget.usuario))), icon: const Icon(Icons.auto_awesome_outlined), label: const Text('Conversar con Online Smart')),
+          TextButton.icon(onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => OnlineSmartScreen(usuario: widget.usuario))), icon: Icon(Icons.auto_awesome_outlined), label: Text('Conversar con Online Smart')),
           SizedBox(height: 48, child: ListView(
-            scrollDirection: Axis.horizontal, padding: const EdgeInsets.symmetric(horizontal: 14),
+            scrollDirection: Axis.horizontal, padding: EdgeInsets.symmetric(horizontal: 14),
             children: ['¿Cómo registro mi jornada?', '¿Dónde pido una herramienta?', '¿Cómo envío un mensaje?', '¿Cómo grabo mi voz?'].map((q) => Padding(
-              padding: const EdgeInsets.only(right: 8), child: ActionChip(label: Text(q), onPressed: _thinking ? null : () => _ask(q)))).toList(),
+              padding: EdgeInsets.only(right: 8), child: ActionChip(label: Text(q), onPressed: _thinking ? null : () => _ask(q)))).toList(),
           )),
           _modules(actions),
-          const Divider(height: 1, color: Colors.white10),
+          Divider(height: 1, color: StiloColors.text.withValues(alpha: .10)),
           Expanded(child: _conversation()),
           _composer(),
         ],
@@ -157,22 +159,22 @@ class _GuiaInteligenteScreenState extends State<GuiaInteligenteScreen> {
 
   Widget _status() {
     return Container(
-      margin: const EdgeInsets.fromLTRB(14, 6, 14, 8),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+      margin: EdgeInsets.fromLTRB(14, 6, 14, 8),
+      padding: EdgeInsets.symmetric(horizontal: 14, vertical: 11),
       decoration: BoxDecoration(
-        color: const Color(0xFF0C1817),
+        color: StiloColors.surface,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: _mint.withOpacity(.2)),
       ),
       child: Row(
         children: [
-          const Icon(Icons.language_rounded, color: _mint, size: 18),
-          const SizedBox(width: 8),
+          Icon(Icons.language_rounded, color: _mint, size: 18),
+          SizedBox(width: 8),
           Expanded(
             child: Text(
               'Pasos de uso sin conexión al motor de IA. Para otras preguntas, abre Online Smart; tus permisos no cambian.',
               style: GoogleFonts.inter(
-                color: Colors.white60,
+                color: StiloColors.text.withValues(alpha: .60),
                 fontSize: 10.7,
                 height: 1.35,
               ),
@@ -188,9 +190,9 @@ class _GuiaInteligenteScreenState extends State<GuiaInteligenteScreen> {
       height: 88,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+        padding: EdgeInsets.symmetric(horizontal: 14, vertical: 6),
         itemCount: actions.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        separatorBuilder: (_, __) => SizedBox(width: 8),
         itemBuilder: (_, index) {
           final action = actions[index];
           return InkWell(
@@ -200,7 +202,7 @@ class _GuiaInteligenteScreenState extends State<GuiaInteligenteScreen> {
             ),
             child: Container(
               width: 122,
-              padding: const EdgeInsets.all(11),
+              padding: EdgeInsets.all(11),
               decoration: BoxDecoration(
                 color: _panel,
                 borderRadius: BorderRadius.circular(17),
@@ -210,14 +212,14 @@ class _GuiaInteligenteScreenState extends State<GuiaInteligenteScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Icon(action.icon, color: action.color, size: 19),
-                  const SizedBox(width: 7),
+                  SizedBox(width: 7),
                   Expanded(
                     child: Text(
                       action.title,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: GoogleFonts.inter(
-                        color: Colors.white,
+                        color: StiloColors.text,
                         fontSize: 10.5,
                         fontWeight: FontWeight.w800,
                       ),
@@ -235,12 +237,12 @@ class _GuiaInteligenteScreenState extends State<GuiaInteligenteScreen> {
   Widget _conversation() {
     return ListView.builder(
       controller: _scroll,
-      padding: const EdgeInsets.fromLTRB(14, 14, 14, 16),
+      padding: EdgeInsets.fromLTRB(14, 14, 14, 16),
       itemCount: _messages.length + (_thinking ? 1 : 0),
       itemBuilder: (_, index) {
         if (_thinking && index == _messages.length) {
           return _bubble(
-            const _GuideMessage(
+            _GuideMessage(
               text: 'Consultando la app y la web…',
               user: false,
             ),
@@ -256,14 +258,14 @@ class _GuiaInteligenteScreenState extends State<GuiaInteligenteScreen> {
     return Align(
       alignment: message.user ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
-        constraints: const BoxConstraints(maxWidth: 680),
-        margin: const EdgeInsets.only(bottom: 10),
-        padding: const EdgeInsets.all(14),
+        constraints: BoxConstraints(maxWidth: 680),
+        margin: EdgeInsets.only(bottom: 10),
+        padding: EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: message.user ? const Color(0xFF153027) : _panel,
+          color: message.user ? StiloColors.surface : _panel,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: message.user ? _mint.withOpacity(.18) : Colors.white10,
+            color: message.user ? _mint.withOpacity(.18) : StiloColors.text.withValues(alpha: .10),
           ),
         ),
         child: Column(
@@ -277,18 +279,18 @@ class _GuiaInteligenteScreenState extends State<GuiaInteligenteScreen> {
                   color: message.user ? _cyan : _mint,
                   size: 15,
                 ),
-                const SizedBox(width: 6),
+                SizedBox(width: 6),
                 Text(
                   message.user ? 'Tú' : 'Guía Sauna Stilo',
                   style: GoogleFonts.inter(
-                    color: Colors.white54,
+                    color: StiloColors.text.withValues(alpha: .54),
                     fontSize: 9.5,
                     fontWeight: FontWeight.w900,
                   ),
                 ),
                 if (loading) ...[
-                  const SizedBox(width: 8),
-                  const SizedBox(
+                  SizedBox(width: 8),
+                  SizedBox(
                     width: 11,
                     height: 11,
                     child: CircularProgressIndicator(
@@ -299,7 +301,7 @@ class _GuiaInteligenteScreenState extends State<GuiaInteligenteScreen> {
                 ],
               ],
             ),
-            const SizedBox(height: 7),
+            SizedBox(height: 7),
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -307,7 +309,7 @@ class _GuiaInteligenteScreenState extends State<GuiaInteligenteScreen> {
                   child: Text(
                     message.text,
                     style: GoogleFonts.inter(
-                      color: Colors.white,
+                      color: StiloColors.text,
                       fontSize: 13.5,
                       height: 1.48,
                     ),
@@ -318,16 +320,16 @@ class _GuiaInteligenteScreenState extends State<GuiaInteligenteScreen> {
                     visualDensity: VisualDensity.compact,
                     tooltip: 'Escuchar',
                     onPressed: () => _speakText(message.text),
-                    icon: const Icon(
+                    icon: Icon(
                       Icons.volume_up_rounded,
-                      color: Colors.white38,
+                      color: StiloColors.text.withValues(alpha: .38),
                       size: 18,
                     ),
                   ),
               ],
             ),
             if (message.sources.isNotEmpty) ...[
-              const SizedBox(height: 9),
+              SizedBox(height: 9),
               Wrap(
                 spacing: 7,
                 runSpacing: 7,
@@ -335,17 +337,17 @@ class _GuiaInteligenteScreenState extends State<GuiaInteligenteScreen> {
                     .take(5)
                     .map(
                       (source) => ActionChip(
-                        avatar: const Icon(Icons.open_in_new_rounded, size: 13),
+                        avatar: Icon(Icons.open_in_new_rounded, size: 13),
                         label: Text(
                           source.title,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
                         onPressed: () => _openSource(source.url),
-                        backgroundColor: Colors.white.withOpacity(.04),
-                        side: const BorderSide(color: Colors.white12),
+                        backgroundColor: StiloColors.text.withOpacity(.04),
+                        side: BorderSide(color: StiloColors.text.withValues(alpha: .12)),
                         labelStyle: GoogleFonts.inter(
-                          color: Colors.white60,
+                          color: StiloColors.text.withValues(alpha: .60),
                           fontSize: 9.5,
                         ),
                       ),
@@ -360,7 +362,7 @@ class _GuiaInteligenteScreenState extends State<GuiaInteligenteScreen> {
   }
 
   Widget _composer() {
-    const suggestions = <String>[
+    final suggestions = <String>[
       '¿Cómo uso esta app?',
       '¿Qué debo hacer hoy?',
       'Explícame las notificaciones',
@@ -369,10 +371,10 @@ class _GuiaInteligenteScreenState extends State<GuiaInteligenteScreen> {
     return SafeArea(
       top: false,
       child: Container(
-        padding: const EdgeInsets.fromLTRB(10, 8, 10, 11),
-        decoration: const BoxDecoration(
-          color: Color(0xFF0A0D11),
-          border: Border(top: BorderSide(color: Colors.white10)),
+        padding: EdgeInsets.fromLTRB(10, 8, 10, 11),
+        decoration: BoxDecoration(
+          color: StiloColors.surface,
+          border: Border(top: BorderSide(color: StiloColors.text.withValues(alpha: .10))),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -382,20 +384,20 @@ class _GuiaInteligenteScreenState extends State<GuiaInteligenteScreen> {
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 itemCount: suggestions.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 7),
+                separatorBuilder: (_, __) => SizedBox(width: 7),
                 itemBuilder: (_, index) => ActionChip(
                   onPressed: _thinking ? null : () => _ask(suggestions[index]),
                   label: Text(suggestions[index]),
                   backgroundColor: _panel,
-                  side: const BorderSide(color: Colors.white10),
+                  side: BorderSide(color: StiloColors.text.withValues(alpha: .10)),
                   labelStyle: GoogleFonts.inter(
-                    color: Colors.white60,
+                    color: StiloColors.text.withValues(alpha: .60),
                     fontSize: 10,
                   ),
                 ),
               ),
             ),
-            const SizedBox(height: 6),
+            SizedBox(height: 6),
             Row(
               children: [
                 IconButton.filledTonal(
@@ -405,13 +407,13 @@ class _GuiaInteligenteScreenState extends State<GuiaInteligenteScreen> {
                     _listening ? Icons.mic_rounded : Icons.mic_none_rounded,
                   ),
                 ),
-                const SizedBox(width: 6),
+                SizedBox(width: 6),
                 Expanded(
                   child: TextField(contextMenuBuilder: privacyTextMenu,
                     controller: _controller,
                     enabled: !_thinking,
                     onSubmitted: _ask,
-                    style: GoogleFonts.inter(color: Colors.white, fontSize: 14),
+                    style: GoogleFonts.inter(color: StiloColors.text, fontSize: 14),
                     decoration: InputDecoration(
                       hintText: _listening
                           ? 'Te escucho…'
@@ -425,11 +427,11 @@ class _GuiaInteligenteScreenState extends State<GuiaInteligenteScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(width: 6),
+                SizedBox(width: 6),
                 IconButton.filled(
                   tooltip: 'Enviar',
                   onPressed: _thinking ? null : () => _ask(_controller.text),
-                  icon: const Icon(Icons.arrow_upward_rounded),
+                  icon: Icon(Icons.arrow_upward_rounded),
                 ),
               ],
             ),
@@ -518,15 +520,15 @@ class _GuiaInteligenteScreenState extends State<GuiaInteligenteScreen> {
       },
     );
     if (!available) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No hay dictado disponible. Revisa el permiso de micrófono o escribe tu pregunta.')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('No hay dictado disponible. Revisa el permiso de micrófono o escribe tu pregunta.')));
       return;
     }
     if (!mounted) return;
     setState(() => _listening = true);
     await _speech.listen(
       localeId: 'es_MX',
-      listenFor: const Duration(seconds: 40),
-      pauseFor: const Duration(seconds: 4),
+      listenFor: Duration(seconds: 40),
+      pauseFor: Duration(seconds: 4),
       onResult: (result) {
         if (!mounted) return;
         setState(() => _controller.text = result.recognizedWords);
@@ -563,7 +565,7 @@ class _GuiaInteligenteScreenState extends State<GuiaInteligenteScreen> {
     }
     if (!mounted || request != _speechRequest) return;
     try { await _tts.speak(spoken); } catch (_) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('La voz no pudo reproducirse. La respuesta permanece en pantalla.')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('La voz no pudo reproducirse. La respuesta permanece en pantalla.')));
     }
   }
 
@@ -578,7 +580,7 @@ class _GuiaInteligenteScreenState extends State<GuiaInteligenteScreen> {
       if (!_scroll.hasClients) return;
       _scroll.animateTo(
         _scroll.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 300),
+        duration: Duration(milliseconds: 300),
         curve: Curves.easeOutCubic,
       );
     });
@@ -590,7 +592,7 @@ class _GuideMessage {
   final bool user;
   final List<AiAssistantSource> sources;
 
-  const _GuideMessage({
+  _GuideMessage({
     required this.text,
     required this.user,
     this.sources = const <AiAssistantSource>[],

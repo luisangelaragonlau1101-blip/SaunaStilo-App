@@ -1,3 +1,4 @@
+import '../presentation/appearance.dart';
 import '../services/external_transfer.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -6,9 +7,9 @@ import '../services/proyecto_service.dart';
 import '../models/proyecto_model.dart';
 import 'crear_proyecto_admin_screen.dart';
 import 'proyecto_detalle_admin_screen.dart';
-import 'editar_proyecto_admin_screen.dart'; 
+import 'editar_proyecto_admin_screen.dart';
 
-import 'dart:io'; 
+import 'dart:io';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:csv/csv.dart';
@@ -27,14 +28,14 @@ class ProyectosAdminScreen extends StatefulWidget {
 
 class _ProyectosAdminScreenState extends State<ProyectosAdminScreen> {
   final ProyectoService _proyectoService = ProyectoService();
-  
+
   // Controladores y variables de búsqueda
   final TextEditingController _searchController = TextEditingController();
-  final FocusNode _searchFocusNode = FocusNode(); 
-  String _searchQuery = ''; 
+  final FocusNode _searchFocusNode = FocusNode();
+  String _searchQuery = '';
 
   // Variable para el filtro de estatus
-  late String _filtroEstatus; 
+  late String _filtroEstatus;
 
   // Diccionario para cargar los clientes una sola vez y buscar rápido
   Map<String, String> _clientesDict = {};
@@ -43,9 +44,9 @@ class _ProyectosAdminScreenState extends State<ProyectosAdminScreen> {
   @override
   void initState() {
     super.initState();
-    
+
     _filtroEstatus = widget.filtroInicial ?? 'todos';
-    
+
     _cargarClientesParaBuscador();
 
     // Forzamos el redibujado de la pantalla al cambiar el foco
@@ -57,7 +58,7 @@ class _ProyectosAdminScreenState extends State<ProyectosAdminScreen> {
   @override
   void dispose() {
     _searchController.dispose();
-    _searchFocusNode.dispose(); 
+    _searchFocusNode.dispose();
     super.dispose();
   }
 
@@ -87,62 +88,63 @@ class _ProyectosAdminScreenState extends State<ProyectosAdminScreen> {
       case 'finalizado': return Colors.greenAccent;
       case 'en_proceso': return Colors.cyanAccent;
       case 'pendiente': return Colors.orangeAccent;
-      default: return Colors.white54;
+      default: return StiloColors.text.withValues(alpha: .54);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context);
     return Scaffold(
-      backgroundColor: const Color(0xFF121212),
+      backgroundColor: StiloColors.surface,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF121212),
+        backgroundColor: StiloColors.surface,
         elevation: 0,
-        title: Text('PROYECTOS', style: GoogleFonts.inter(fontSize: 16, color: Colors.white, fontWeight: FontWeight.w700, letterSpacing: 1.5)),
+        title: Text('PROYECTOS', style: GoogleFonts.inter(fontSize: 16, color: StiloColors.text, fontWeight: FontWeight.w700, letterSpacing: 1.5)),
         centerTitle: true,
         actions: [
           IconButton(
-            icon: const Icon(Icons.picture_as_pdf, color: Color(0xFF8B5CF6)),
+            icon: Icon(Icons.picture_as_pdf, color: StiloColors.accent),
             onPressed: _mostrarModalReporte,
           )
         ],
       ),
-      body: _isLoadingClientes 
-      ? const Center(child: CircularProgressIndicator(color: Color(0xFF8B5CF6)))
+      body: _isLoadingClientes
+      ? Center(child: CircularProgressIndicator(color: StiloColors.accent))
       : Column(
           children: [
             // --- BARRA DE BÚSQUEDA ---
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+              padding: EdgeInsets.fromLTRB(16, 8, 16, 16),
               child: TextField(contextMenuBuilder: privacyTextMenu,
                 controller: _searchController,
-                focusNode: _searchFocusNode, 
+                focusNode: _searchFocusNode,
                 onTap: () {
                   setState(() {});
                 },
                 onTapOutside: (event) {
                   _searchFocusNode.unfocus();
                 },
-                style: const TextStyle(color: Colors.white),
+                style: TextStyle(color: StiloColors.text),
                 decoration: InputDecoration(
                   hintText: 'Buscar por título, cliente o estatus...',
-                  hintStyle: const TextStyle(color: Colors.white54),
-                  prefixIcon: const Icon(Icons.search, color: Color(0xFF8B5CF6)),
-                  suffixIcon: (_searchQuery.isNotEmpty || _searchFocusNode.hasFocus) 
+                  hintStyle: TextStyle(color: StiloColors.text.withValues(alpha: .54)),
+                  prefixIcon: Icon(Icons.search, color: StiloColors.accent),
+                  suffixIcon: (_searchQuery.isNotEmpty || _searchFocusNode.hasFocus)
                     ? IconButton(
-                        icon: const Icon(Icons.clear, color: Colors.white54),
+                        icon: Icon(Icons.clear, color: StiloColors.text.withValues(alpha: .54)),
                         onPressed: () {
                           _searchController.clear();
                           setState(() => _searchQuery = '');
-                          _searchFocusNode.unfocus(); 
+                          _searchFocusNode.unfocus();
                         },
                       )
-                    : const SizedBox.shrink(),
+                    : SizedBox.shrink(),
                   filled: true,
-                  fillColor: const Color(0xFF1E1E1E),
-                  contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                  fillColor: StiloColors.surface,
+                  contentPadding: EdgeInsets.symmetric(vertical: 0),
                   enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide.none),
-                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: const BorderSide(color: Color(0xFF8B5CF6), width: 1.5)),
+                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide(color: StiloColors.accent, width: 1.5)),
                 ),
                 onChanged: (value) {
                   setState(() {
@@ -155,20 +157,20 @@ class _ProyectosAdminScreenState extends State<ProyectosAdminScreen> {
             // --- FILTROS DE ESTATUS (CHIPS) ---
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: EdgeInsets.symmetric(horizontal: 16),
               child: Row(
                 children: [
                   _buildFiltroChip('Todos', 'todos'),
-                  const SizedBox(width: 8),
+                  SizedBox(width: 8),
                   _buildFiltroChip('Pendientes', 'pendiente'),
-                  const SizedBox(width: 8),
+                  SizedBox(width: 8),
                   _buildFiltroChip('En Proceso', 'en_proceso'),
-                  const SizedBox(width: 8),
+                  SizedBox(width: 8),
                   _buildFiltroChip('Finalizados', 'finalizado'),
                 ],
               ),
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
 
             // --- LISTA DE PROYECTOS ---
             Expanded(
@@ -176,10 +178,10 @@ class _ProyectosAdminScreenState extends State<ProyectosAdminScreen> {
                 stream: _proyectoService.getProyectos(),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator(color: Color(0xFF8B5CF6)));
+                    return Center(child: CircularProgressIndicator(color: StiloColors.accent));
                   }
                   if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                    return Center(child: Text('No hay proyectos creados.', style: GoogleFonts.inter(color: Colors.white54)));
+                    return Center(child: Text('No hay proyectos creados.', style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .54))));
                   }
 
                   final proyectos = snapshot.data!.where((p) {
@@ -196,11 +198,11 @@ class _ProyectosAdminScreenState extends State<ProyectosAdminScreen> {
                   }).toList();
 
                   if (proyectos.isEmpty) {
-                     return Center(child: Text('No se encontraron resultados.', style: GoogleFonts.inter(color: Colors.white54)));
+                     return Center(child: Text('No se encontraron resultados.', style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .54))));
                   }
 
                   return ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    padding: EdgeInsets.symmetric(horizontal: 16),
                     itemCount: proyectos.length,
                     itemBuilder: (context, index) {
                       final proyecto = proyectos[index];
@@ -208,13 +210,13 @@ class _ProyectosAdminScreenState extends State<ProyectosAdminScreen> {
                       String nombreClienteReal = _clientesDict[proyecto.idCliente] ?? 'Cliente desconocido';
 
                       return Card(
-                        color: const Color(0xFF1E1E1E),
-                        margin: const EdgeInsets.only(bottom: 12),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: const BorderSide(color: Colors.white12)),
+                        color: StiloColors.surface,
+                        margin: EdgeInsets.only(bottom: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: StiloColors.text.withValues(alpha: .12))),
                         child: InkWell(
                           borderRadius: BorderRadius.circular(16),
                           onTap: () {
-                            _searchFocusNode.unfocus(); 
+                            _searchFocusNode.unfocus();
                             Navigator.push(context, MaterialPageRoute(builder: (context) => ProyectoDetalleAdminScreen(proyecto: proyecto)));
                           },
                           // -----------------------------------------------------------
@@ -228,18 +230,18 @@ class _ProyectosAdminScreenState extends State<ProyectosAdminScreen> {
                                 .snapshots(),
                             builder: (context, notifSnapshot) {
                               int notificaciones = notifSnapshot.hasData ? notifSnapshot.data!.docs.length : 0;
-                              
+
                               return Padding(
-                                padding: const EdgeInsets.all(16),
+                                padding: EdgeInsets.all(16),
                                 child: Row(
                                   children: [
                                     Container(
-                                      padding: const EdgeInsets.all(12),
+                                      padding: EdgeInsets.all(12),
                                       decoration: BoxDecoration(color: statusColor.withOpacity(0.1), borderRadius: BorderRadius.circular(14)),
                                       child: Icon(Icons.construction, color: statusColor, size: 24),
                                     ),
-                                    const SizedBox(width: 16),
-                                    
+                                    SizedBox(width: 16),
+
                                     Expanded(
                                       child: Column(
                                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -247,13 +249,13 @@ class _ProyectosAdminScreenState extends State<ProyectosAdminScreen> {
                                           Row(
                                             children: [
                                               Expanded(
-                                                child: Text(proyecto.titulo, style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                                child: Text(proyecto.titulo, style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 16, color: StiloColors.text), maxLines: 1, overflow: TextOverflow.ellipsis),
                                               ),
                                               // --- INDICADOR DE CAMPANITA DE ALERTA ---
                                               if (notificaciones > 0)
                                                 Container(
-                                                  margin: const EdgeInsets.only(left: 8),
-                                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                                  margin: EdgeInsets.only(left: 8),
+                                                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                                   decoration: BoxDecoration(
                                                     color: Colors.amber.withOpacity(0.15),
                                                     borderRadius: BorderRadius.circular(10),
@@ -262,38 +264,38 @@ class _ProyectosAdminScreenState extends State<ProyectosAdminScreen> {
                                                   child: Row(
                                                     mainAxisSize: MainAxisSize.min,
                                                     children: [
-                                                      const Icon(Icons.notifications_active, color: Colors.amber, size: 14),
-                                                      const SizedBox(width: 4),
+                                                      Icon(Icons.notifications_active, color: Colors.amber, size: 14),
+                                                      SizedBox(width: 4),
                                                       Text(notificaciones.toString(), style: GoogleFonts.inter(color: Colors.amber, fontSize: 12, fontWeight: FontWeight.bold)),
                                                     ],
                                                   ),
                                                 )
                                             ],
                                           ),
-                                          const SizedBox(height: 6),
-                                          
+                                          SizedBox(height: 6),
+
                                           Row(
                                             children: [
-                                              const Icon(Icons.person, color: Colors.white54, size: 14),
-                                              const SizedBox(width: 4),
+                                              Icon(Icons.person, color: StiloColors.text.withValues(alpha: .54), size: 14),
+                                              SizedBox(width: 4),
                                               Expanded(
                                                 child: Text(
-                                                  nombreClienteReal, 
-                                                  style: GoogleFonts.inter(fontSize: 13, color: Colors.white54),
+                                                  nombreClienteReal,
+                                                  style: GoogleFonts.inter(fontSize: 13, color: StiloColors.text.withValues(alpha: .54)),
                                                   maxLines: 1, overflow: TextOverflow.ellipsis,
                                                 ),
                                               ),
                                             ],
                                           ),
-                                          const SizedBox(height: 8),
+                                          SizedBox(height: 8),
 
                                           Wrap(
-                                            spacing: 8.0,    
-                                            runSpacing: 4.0, 
+                                            spacing: 8.0,
+                                            runSpacing: 4.0,
                                             crossAxisAlignment: WrapCrossAlignment.center,
                                             children: [
                                               Container(
-                                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                                 decoration: BoxDecoration(
                                                   color: statusColor.withOpacity(0.1),
                                                   borderRadius: BorderRadius.circular(8),
@@ -304,7 +306,7 @@ class _ProyectosAdminScreenState extends State<ProyectosAdminScreen> {
                                                   style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.bold, color: statusColor, letterSpacing: 0.5),
                                                 ),
                                               ),
-                                              
+
                                               if (proyecto.estatus == 'pendiente')
                                                 FutureBuilder<DocumentSnapshot>(
                                                   future: FirebaseFirestore.instance
@@ -315,25 +317,25 @@ class _ProyectosAdminScreenState extends State<ProyectosAdminScreen> {
                                                       .get(),
                                                   builder: (context, finanzasSnapshot) {
                                                     if (finanzasSnapshot.connectionState == ConnectionState.waiting || !finanzasSnapshot.hasData || !finanzasSnapshot.data!.exists) {
-                                                      return const SizedBox();
+                                                      return SizedBox();
                                                     }
-                                                    
+
                                                     final data = finanzasSnapshot.data!.data() as Map<String, dynamic>?;
-                                                    if (data == null) return const SizedBox();
+                                                    if (data == null) return SizedBox();
 
                                                     double cotizacion = (data['cotizacion'] ?? 0.0).toDouble();
                                                     double montoPagado = (data['monto_pagado'] ?? 0.0).toDouble();
                                                     double restante = cotizacion - montoPagado;
 
-                                                    if (restante <= 0) return const SizedBox();
+                                                    if (restante <= 0) return SizedBox();
 
                                                     return Padding(
-                                                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                                                      padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
                                                       child: Text(
                                                         "Resta: \$${restante.toStringAsFixed(2)}",
                                                         style: GoogleFonts.inter(
-                                                          fontSize: 11, 
-                                                          fontWeight: FontWeight.w600, 
+                                                          fontSize: 11,
+                                                          fontWeight: FontWeight.w600,
                                                           color: Colors.orangeAccent,
                                                         ),
                                                       ),
@@ -345,13 +347,13 @@ class _ProyectosAdminScreenState extends State<ProyectosAdminScreen> {
                                         ],
                                       ),
                                     ),
-                                    
+
                                     Column(
                                       children: [
                                         IconButton(
-                                          icon: const Icon(Icons.edit_outlined, color: Colors.white54, size: 22),
+                                          icon: Icon(Icons.edit_outlined, color: StiloColors.text.withValues(alpha: .54), size: 22),
                                           onPressed: () {
-                                            _searchFocusNode.unfocus(); 
+                                            _searchFocusNode.unfocus();
                                             Navigator.push(
                                               context,
                                               MaterialPageRoute(builder: (context) => EditarProyectoAdminScreen(proyecto: proyecto)),
@@ -359,7 +361,7 @@ class _ProyectosAdminScreenState extends State<ProyectosAdminScreen> {
                                           },
                                         ),
                                         IconButton(
-                                          icon: const Icon(Icons.delete_outline, color: Color(0xFFE57373), size: 22),
+                                          icon: Icon(Icons.delete_outline, color: Color(0xFFE57373), size: 22),
                                           onPressed: () {
                                             _searchFocusNode.unfocus();
                                             _confirmarEliminacion(proyecto);
@@ -385,13 +387,13 @@ class _ProyectosAdminScreenState extends State<ProyectosAdminScreen> {
           ],
         ),
       floatingActionButton: FloatingActionButton.extended(
-        backgroundColor: const Color(0xFF8B5CF6), 
+        backgroundColor: StiloColors.accent,
         onPressed: () {
-          _searchFocusNode.unfocus(); 
-          Navigator.push(context, MaterialPageRoute(builder: (context) => const CrearProyectoAdminScreen()));
+          _searchFocusNode.unfocus();
+          Navigator.push(context, MaterialPageRoute(builder: (context) => CrearProyectoAdminScreen()));
         },
-        label: Text('Nuevo Proyecto', style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: Colors.white)),
-        icon: const Icon(Icons.add, color: Colors.white),
+        label: Text('Nuevo Proyecto', style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: StiloColors.text)),
+        icon: Icon(Icons.add, color: StiloColors.text),
       ),
     );
   }
@@ -400,17 +402,17 @@ class _ProyectosAdminScreenState extends State<ProyectosAdminScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF1E1E1E),
+        backgroundColor: StiloColors.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text('¿Eliminar Proyecto?', style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold)),
+        title: Text('¿Eliminar Proyecto?', style: GoogleFonts.inter(color: StiloColors.text, fontWeight: FontWeight.bold)),
         content: Text(
           'Esta acción borrará el proyecto "${proyecto.titulo}" permanentemente de la base de datos.',
-          style: GoogleFonts.inter(color: Colors.white70),
+          style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .70)),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancelar', style: TextStyle(color: Colors.white54)),
+            child: Text('Cancelar', style: TextStyle(color: StiloColors.text.withValues(alpha: .54))),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
@@ -420,7 +422,7 @@ class _ProyectosAdminScreenState extends State<ProyectosAdminScreen> {
                 await _proyectoService.eliminarProyecto(proyecto.id);
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Proyecto eliminado correctamente'), backgroundColor: Colors.green)
+                    SnackBar(content: Text('Proyecto eliminado correctamente'), backgroundColor: Colors.green)
                   );
                 }
               } catch (e) {
@@ -431,7 +433,7 @@ class _ProyectosAdminScreenState extends State<ProyectosAdminScreen> {
                 }
               }
             },
-            child: const Text('Eliminar', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            child: Text('Eliminar', style: TextStyle(color: StiloColors.text, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -447,39 +449,39 @@ class _ProyectosAdminScreenState extends State<ProyectosAdminScreen> {
       builder: (context) => StatefulBuilder(
         builder: (context, setStateModal) => Dialog(
           backgroundColor: Colors.transparent,
-          insetPadding: const EdgeInsets.all(20),
+          insetPadding: EdgeInsets.all(20),
           child: Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(color: const Color(0xFF1E1E1E), borderRadius: BorderRadius.circular(28)),
+            padding: EdgeInsets.all(24),
+            decoration: BoxDecoration(color: StiloColors.surface, borderRadius: BorderRadius.circular(28)),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.picture_as_pdf, color: Color(0xFF8B5CF6), size: 48),
-                const SizedBox(height: 16),
-                Text('Generar Reporte', style: GoogleFonts.inter(fontSize: 20, color: Colors.white, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 24),
+                Icon(Icons.picture_as_pdf, color: StiloColors.accent, size: 48),
+                SizedBox(height: 16),
+                Text('Generar Reporte', style: GoogleFonts.inter(fontSize: 20, color: StiloColors.text, fontWeight: FontWeight.bold)),
+                SizedBox(height: 24),
                 _buildDropdownContainer(child: DropdownButtonFormField<int>(
                   value: mesSeleccionado,
-                  dropdownColor: const Color(0xFF2D2D2D),
-                  decoration: const InputDecoration(border: InputBorder.none, labelText: 'Mes', labelStyle: TextStyle(color: Colors.white54)),
-                  style: const TextStyle(color: Colors.white, fontSize: 16),
+                  dropdownColor: StiloColors.surface,
+                  decoration: InputDecoration(border: InputBorder.none, labelText: 'Mes', labelStyle: TextStyle(color: StiloColors.text.withValues(alpha: .54))),
+                  style: TextStyle(color: StiloColors.text, fontSize: 16),
                   items: List.generate(12, (i) => DropdownMenuItem(value: i + 1, child: Text(DateFormat('MMMM', 'es').format(DateTime(0, i + 1)).toUpperCase()))),
                   onChanged: (val) => setStateModal(() => mesSeleccionado = val!),
                 )),
-                const SizedBox(height: 12),
+                SizedBox(height: 12),
                 _buildDropdownContainer(child: DropdownButtonFormField<int>(
                   value: anioSeleccionado,
-                  dropdownColor: const Color(0xFF2D2D2D),
-                  decoration: const InputDecoration(border: InputBorder.none, labelText: 'Año', labelStyle: TextStyle(color: Colors.white54)),
-                  style: const TextStyle(color: Colors.white, fontSize: 16),
+                  dropdownColor: StiloColors.surface,
+                  decoration: InputDecoration(border: InputBorder.none, labelText: 'Año', labelStyle: TextStyle(color: StiloColors.text.withValues(alpha: .54))),
+                  style: TextStyle(color: StiloColors.text, fontSize: 16),
                   items: List.generate(5, (i) => DropdownMenuItem(value: DateTime.now().year - i, child: Text((DateTime.now().year - i).toString()))),
                   onChanged: (val) => setStateModal(() => anioSeleccionado = val!),
                 )),
-                const SizedBox(height: 32),
+                SizedBox(height: 32),
                 SizedBox(width: double.infinity, child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF8B5CF6), padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                  style: ElevatedButton.styleFrom(backgroundColor: StiloColors.accent, padding: EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
                   onPressed: () { Navigator.pop(context); _generarDescargarReporte(mesSeleccionado, anioSeleccionado); },
-                  child: const Text('EXPORTAR DOCUMENTOS', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  child: Text('EXPORTAR DOCUMENTOS', style: TextStyle(color: StiloColors.text, fontWeight: FontWeight.bold)),
                 ))
               ],
             ),
@@ -490,19 +492,19 @@ class _ProyectosAdminScreenState extends State<ProyectosAdminScreen> {
   }
 
   Widget _buildDropdownContainer({required Widget child}) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 16),
-    decoration: BoxDecoration(color: const Color(0xFF2D2D2D), borderRadius: BorderRadius.circular(12)),
+    padding: EdgeInsets.symmetric(horizontal: 16),
+    decoration: BoxDecoration(color: StiloColors.surface, borderRadius: BorderRadius.circular(12)),
     child: child,
   );
 
   Future<void> _generarDescargarReporte(int mes, int anio) async {
-    showDialog(context: context, barrierDismissible: false, builder: (_) => const Center(child: CircularProgressIndicator(color: Color(0xFF8B5CF6))));
+    showDialog(context: context, barrierDismissible: false, builder: (_) => Center(child: CircularProgressIndicator(color: StiloColors.accent)));
 
     try {
       final datosReporte = await _proyectoService.obtenerReporteProyectos(anio, mes);
       if (datosReporte.isEmpty) {
         if (mounted) Navigator.pop(context);
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Sin proyectos finalizados en ese periodo.')));
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Sin proyectos finalizados en ese periodo.')));
         return;
       }
 
@@ -513,7 +515,7 @@ class _ProyectosAdminScreenState extends State<ProyectosAdminScreen> {
       String csvPath = "${output.path}/$prefix.csv";
 
       final pdf = pw.Document();
-      
+
       double totalRecaudado = datosReporte.fold(0.0, (sum, item) => sum + (item['monto'] as double));
       int totalProyectos = datosReporte.length;
 
@@ -525,7 +527,7 @@ class _ProyectosAdminScreenState extends State<ProyectosAdminScreen> {
               mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
               children: [
                 pw.Text('SAUNASTILO', style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold, color: PdfColor.fromHex("#090909"))),
-                pw.Text('$nombreMes $anio', style: const pw.TextStyle(fontSize: 14)),
+                pw.Text('$nombreMes $anio', style: pw.TextStyle(fontSize: 14)),
               ],
             ),
             pw.Divider(color: PdfColor.fromHex("#8B5CF6")),
@@ -548,28 +550,28 @@ class _ProyectosAdminScreenState extends State<ProyectosAdminScreen> {
 
             pw.Table(
               border: pw.TableBorder.all(color: PdfColors.grey300),
-              columnWidths: const {
-                0: pw.FlexColumnWidth(2), 
-                1: pw.FlexColumnWidth(3), 
-                2: pw.FlexColumnWidth(2), 
-                3: pw.FlexColumnWidth(1.5), 
-                4: pw.FlexColumnWidth(1.5), 
+              columnWidths: {
+                0: pw.FlexColumnWidth(2),
+                1: pw.FlexColumnWidth(3),
+                2: pw.FlexColumnWidth(2),
+                3: pw.FlexColumnWidth(1.5),
+                4: pw.FlexColumnWidth(1.5),
               },
               children: [
                 pw.TableRow(
                   decoration: pw.BoxDecoration(color: PdfColors.grey200),
-                  children: ['ID REGISTRO', 'TÍTULO', 'CLIENTE', 'FECHA', 'MONTO'].map((h) => 
-                    pw.Padding(padding: const pw.EdgeInsets.all(8), child: pw.Text(h, style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9)))
+                  children: ['ID REGISTRO', 'TÍTULO', 'CLIENTE', 'FECHA', 'MONTO'].map((h) =>
+                    pw.Padding(padding: pw.EdgeInsets.all(8), child: pw.Text(h, style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9)))
                   ).toList(),
                 ),
                 ...datosReporte.map((r) {
                   Proyecto p = r['proyecto'] as Proyecto;
                   return pw.TableRow(children: [
-                    pw.Padding(padding: const pw.EdgeInsets.all(8), child: pw.Text(p.id.substring(0, 8).toUpperCase(), style: const pw.TextStyle(fontSize: 8))),
-                    pw.Padding(padding: const pw.EdgeInsets.all(8), child: pw.Text(p.titulo, style: const pw.TextStyle(fontSize: 9))),
-                    pw.Padding(padding: const pw.EdgeInsets.all(8), child: pw.Text(_clientesDict[p.idCliente] ?? 'N/A', style: const pw.TextStyle(fontSize: 9))),
-                    pw.Padding(padding: const pw.EdgeInsets.all(8), child: pw.Text(DateFormat('dd/MM/yyyy').format(p.fechaEntrega), style: const pw.TextStyle(fontSize: 9))),
-                    pw.Padding(padding: const pw.EdgeInsets.all(8), child: pw.Text('\$${(r['monto'] as double).toStringAsFixed(2)}', style: const pw.TextStyle(fontSize: 9))),
+                    pw.Padding(padding: pw.EdgeInsets.all(8), child: pw.Text(p.id.substring(0, 8).toUpperCase(), style: pw.TextStyle(fontSize: 8))),
+                    pw.Padding(padding: pw.EdgeInsets.all(8), child: pw.Text(p.titulo, style: pw.TextStyle(fontSize: 9))),
+                    pw.Padding(padding: pw.EdgeInsets.all(8), child: pw.Text(_clientesDict[p.idCliente] ?? 'N/A', style: pw.TextStyle(fontSize: 9))),
+                    pw.Padding(padding: pw.EdgeInsets.all(8), child: pw.Text(DateFormat('dd/MM/yyyy').format(p.fechaEntrega), style: pw.TextStyle(fontSize: 9))),
+                    pw.Padding(padding: pw.EdgeInsets.all(8), child: pw.Text('\$${(r['monto'] as double).toStringAsFixed(2)}', style: pw.TextStyle(fontSize: 9))),
                   ]);
                 }).toList(),
               ],
@@ -584,7 +586,7 @@ class _ProyectosAdminScreenState extends State<ProyectosAdminScreen> {
       for (var r in datosReporte) {
         csvData.add([(r['proyecto'] as Proyecto).titulo, _clientesDict[(r['proyecto'] as Proyecto).idCliente] ?? 'N/A', (r['monto'] as double).toStringAsFixed(2)]);
       }
-      await File(csvPath).writeAsString(const ListToCsvConverter().convert(csvData));
+      await File(csvPath).writeAsString(ListToCsvConverter().convert(csvData));
 
       if (mounted) Navigator.pop(context);
 
@@ -592,23 +594,23 @@ class _ProyectosAdminScreenState extends State<ProyectosAdminScreen> {
         showDialog(
           context: context,
           builder: (context) => AlertDialog(
-            backgroundColor: const Color(0xFF1E1E1E),
-            title: const Text('Reporte generado', style: TextStyle(color: Colors.white)),
-            content: const Text('¿Qué archivo deseas compartir?', style: TextStyle(color: Colors.white70)),
+            backgroundColor: StiloColors.surface,
+            title: Text('Reporte generado', style: TextStyle(color: StiloColors.text)),
+            content: Text('¿Qué archivo deseas compartir?', style: TextStyle(color: StiloColors.text.withValues(alpha: .70))),
             actions: [
               TextButton(
                 onPressed: () {
                   Navigator.pop(context);
                   ExternalTransfer.block(context);
                 },
-                child: const Text('Compartir PDF', style: TextStyle(color: Colors.purpleAccent)),
+                child: Text('Compartir PDF', style: TextStyle(color: Colors.purpleAccent)),
               ),
               TextButton(
                 onPressed: () {
                   Navigator.pop(context);
                   ExternalTransfer.block(context);
                 },
-                child: const Text('Compartir CSV', style: TextStyle(color: Colors.blueAccent)),
+                child: Text('Compartir CSV', style: TextStyle(color: Colors.blueAccent)),
               ),
             ],
           ),
@@ -623,8 +625,8 @@ class _ProyectosAdminScreenState extends State<ProyectosAdminScreen> {
   pw.Widget _buildDashboardCard(pw.Document pdf, String title, String value, PdfColor color) {
     return pw.Expanded(
       child: pw.Container(
-        padding: const pw.EdgeInsets.all(15),
-        decoration: pw.BoxDecoration(border: pw.Border.all(color: color, width: 2), borderRadius: const pw.BorderRadius.all(pw.Radius.circular(5))),
+        padding: pw.EdgeInsets.all(15),
+        decoration: pw.BoxDecoration(border: pw.Border.all(color: color, width: 2), borderRadius: pw.BorderRadius.all(pw.Radius.circular(5))),
         child: pw.Column(
           crossAxisAlignment: pw.CrossAxisAlignment.start,
           children: [
@@ -639,17 +641,17 @@ class _ProyectosAdminScreenState extends State<ProyectosAdminScreen> {
 
   Widget _buildFiltroChip(String label, String value) {
     final isSelected = _filtroEstatus == value;
-    Color statusColor = value == 'todos' ? Colors.white : _getStatusColor(value);
+    Color statusColor = value == 'todos' ? StiloColors.text : _getStatusColor(value);
 
     return ChoiceChip(
       label: Text(label),
       labelStyle: TextStyle(
-        color: isSelected ? const Color(0xFF121212) : Colors.white70,
+        color: isSelected ? StiloColors.surface : StiloColors.text.withValues(alpha: .70),
         fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
       ),
       selected: isSelected,
       selectedColor: statusColor,
-      backgroundColor: const Color(0xFF1E1E1E),
+      backgroundColor: StiloColors.surface,
       showCheckmark: false,
       side: BorderSide(
         color: isSelected ? Colors.transparent : statusColor.withOpacity(0.5),

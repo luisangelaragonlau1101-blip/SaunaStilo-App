@@ -1,3 +1,4 @@
+import '../presentation/appearance.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import '../services/company_learning_service.dart';
@@ -8,7 +9,7 @@ import 'official_voice_reply.dart';
 class CompanyAssistantPanel extends StatefulWidget {
   final CompanyLearningService? service;
   final String description, example;
-  const CompanyAssistantPanel({super.key, this.service,
+  CompanyAssistantPanel({super.key, this.service,
     this.description = 'Inteligencia artificial mexicana creada por ANGEL ZALDÍVAR. Pregunta cómo realizar una actividad; consultaré los manuales publicados para tu cuenta.',
     this.example = 'Ejemplo: “¿Cómo uso el control del sauna?”\nIncluye el modelo o equipo para encontrar el procedimiento correcto.'});
   @override State<CompanyAssistantPanel> createState() => _CompanyAssistantState();
@@ -63,27 +64,27 @@ class _CompanyAssistantState extends State<CompanyAssistantPanel> with WidgetsBi
     );
   }
   @override Widget build(BuildContext context) => Column(children: [
-    Expanded(child: ListView(padding: const EdgeInsets.all(18), children: [
-      const Text('Online Smart · Sauna Stilo', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800)),
-      const SizedBox(height: 8), Text(widget.description, style: const TextStyle(color: Colors.white60, height: 1.5)),
-      SwitchListTile(contentPadding: EdgeInsets.zero, secondary: const Icon(Icons.record_voice_over_rounded, color: Color(0xFFC798FF)), title: const Text('Responder también con voz'), subtitle: const Text('Voz del dispositivo · respuesta completa'), value: _autoRead, onChanged: (v) { if (!v) _stop(); setState(() => _autoRead = v); }),
-      if (_speaking) TextButton.icon(onPressed: _stop, icon: const Icon(Icons.stop_circle_rounded, color: Color(0xFFFF729C)), label: const Text('Detener lectura')),
-      if (_messages.isEmpty) Padding(padding: const EdgeInsets.symmetric(vertical: 24), child: Text(widget.example, style: const TextStyle(color: Colors.white70))),
+    Expanded(child: ListView(padding: EdgeInsets.all(18), children: [
+      Text('Online Smart · Sauna Stilo', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800)),
+      SizedBox(height: 8), Text(widget.description, style: TextStyle(color: StiloColors.text.withValues(alpha: .60), height: 1.5)),
+      SwitchListTile(contentPadding: EdgeInsets.zero, secondary: Icon(Icons.record_voice_over_rounded, color: StiloColors.accent), title: Text('Responder también con voz'), subtitle: Text('Voz del dispositivo · respuesta completa'), value: _autoRead, onChanged: (v) { if (!v) _stop(); setState(() => _autoRead = v); }),
+      if (_speaking) TextButton.icon(onPressed: _stop, icon: Icon(Icons.stop_circle_rounded, color: Color(0xFFFF729C)), label: Text('Detener lectura')),
+      if (_messages.isEmpty) Padding(padding: EdgeInsets.symmetric(vertical: 24), child: Text(widget.example, style: TextStyle(color: StiloColors.text.withValues(alpha: .70)))),
       for (final m in _messages) Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        Card(color: const Color(0xFF2A101C), child: Padding(padding: const EdgeInsets.all(16), child: Text(m['question'], style: const TextStyle(fontWeight: FontWeight.w700)))),
-        Card(child: Padding(padding: const EdgeInsets.all(17), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(m['text'], style: const TextStyle(height: 1.55)), const SizedBox(height: 10),
-          Text(m['hasManuals'] == true ? 'Respuesta con manuales autorizados' : 'Sin un manual coincidente · orientación general', style: const TextStyle(fontSize: 11, color: Color(0xFFC798FF))),
-          TextButton.icon(onPressed: () => _speak(m['text']), icon: const Icon(Icons.volume_up_rounded), label: const Text('Escuchar · voz del dispositivo')),
-          TextButton.icon(onPressed: () => _officialVoice(m['text']), icon: const Icon(Icons.graphic_eq_rounded), label: const Text('Escuchar · voz de Ángel')),
-          for (final source in (m['sources'] as List? ?? [])) ExpansionTile(title: Text('${source['title']} · v${source['version']}'), subtitle: Text('Fragmento ${source['section']}'), children: [Padding(padding: const EdgeInsets.all(12), child: Text(source['text'], style: const TextStyle(color: Colors.white70, height: 1.5)))]),
+        Card(color: StiloColors.surface, child: Padding(padding: EdgeInsets.all(16), child: Text(m['question'], style: TextStyle(fontWeight: FontWeight.w700)))),
+        Card(child: Padding(padding: EdgeInsets.all(17), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(m['text'], style: TextStyle(height: 1.55)), SizedBox(height: 10),
+          Text(m['hasManuals'] == true ? 'Respuesta con manuales autorizados' : 'Sin un manual coincidente · orientación general', style: TextStyle(fontSize: 11, color: StiloColors.accent)),
+          TextButton.icon(onPressed: () => _speak(m['text']), icon: Icon(Icons.volume_up_rounded), label: Text('Escuchar · voz del dispositivo')),
+          TextButton.icon(onPressed: () => _officialVoice(m['text']), icon: Icon(Icons.graphic_eq_rounded), label: Text('Escuchar · voz de Ángel')),
+          for (final source in (m['sources'] as List? ?? [])) ExpansionTile(title: Text('${source['title']} · v${source['version']}'), subtitle: Text('Fragmento ${source['section']}'), children: [Padding(padding: EdgeInsets.all(12), child: Text(source['text'], style: TextStyle(color: StiloColors.text.withValues(alpha: .70), height: 1.5)))]),
         ]))),
       ]),
-      if (_error != null) Padding(padding: const EdgeInsets.all(12), child: Text(_error!, style: const TextStyle(color: Colors.orangeAccent))),
+      if (_error != null) Padding(padding: EdgeInsets.all(12), child: Text(_error!, style: TextStyle(color: Colors.orangeAccent))),
     ])),
-    SafeArea(top: false, child: Padding(padding: const EdgeInsets.fromLTRB(16, 8, 16, 12), child: Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
-      Expanded(child: TextField(contextMenuBuilder: privacyTextMenu, controller: input, enabled: !_busy, minLines: 1, maxLines: 4, maxLength: 2500, decoration: const InputDecoration(hintText: '¿Cómo le hago con…?', counterText: ''), onSubmitted: (_) => _send())),
-      const SizedBox(width: 8), IconButton.filled(tooltip: 'Enviar pregunta', onPressed: _busy ? null : _send, icon: _busy ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.send_rounded)),
+    SafeArea(top: false, child: Padding(padding: EdgeInsets.fromLTRB(16, 8, 16, 12), child: Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
+      Expanded(child: TextField(contextMenuBuilder: privacyTextMenu, controller: input, enabled: !_busy, minLines: 1, maxLines: 4, maxLength: 2500, decoration: InputDecoration(hintText: '¿Cómo le hago con…?', counterText: ''), onSubmitted: (_) => _send())),
+      SizedBox(width: 8), IconButton.filled(tooltip: 'Enviar pregunta', onPressed: _busy ? null : _send, icon: _busy ? SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : Icon(Icons.send_rounded)),
     ]))),
   ]);
 }

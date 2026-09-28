@@ -1,9 +1,10 @@
+import '../presentation/appearance.dart';
 import '../services/external_transfer.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../services/proveedor_service.dart';
 import '../models/proveedor_model.dart';
-import 'proveedor_detalle_screen.dart'; 
+import 'proveedor_detalle_screen.dart';
 
 class ProveedoresScreen extends StatefulWidget {
   const ProveedoresScreen({Key? key}) : super(key: key);
@@ -14,7 +15,7 @@ class ProveedoresScreen extends StatefulWidget {
 
 class _ProveedoresScreenState extends State<ProveedoresScreen> {
   final ProveedorService _proveedorService = ProveedorService();
-  
+
   // --- VARIABLES PARA EL BUSCADOR ---
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode(); // <-- Agregado el FocusNode
@@ -29,7 +30,7 @@ class _ProveedoresScreenState extends State<ProveedoresScreen> {
         _searchQuery = _searchController.text.toLowerCase();
       });
     });
-    
+
     // <-- Escuchamos el foco para forzar el redibujado de la "x"
     _searchFocusNode.addListener(() {
       setState(() {});
@@ -45,18 +46,19 @@ class _ProveedoresScreenState extends State<ProveedoresScreen> {
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context);
     return Scaffold(
-      backgroundColor: const Color(0xFF121212),
+      backgroundColor: StiloColors.surface,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF121212),
+        backgroundColor: StiloColors.surface,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white),
+        iconTheme: IconThemeData(color: StiloColors.text),
         title: Text(
           'PROVEEDORES',
           style: GoogleFonts.inter(
-            fontSize: 16, 
-            color: Colors.white, 
-            fontWeight: FontWeight.w700, 
+            fontSize: 16,
+            color: StiloColors.text,
+            fontWeight: FontWeight.w700,
             letterSpacing: 1.5
           ),
         ),
@@ -66,7 +68,7 @@ class _ProveedoresScreenState extends State<ProveedoresScreen> {
         children: [
           // --- BARRA DE BÚSQUEDA ---
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+            padding: EdgeInsets.fromLTRB(16, 8, 16, 16),
             child: TextField(contextMenuBuilder: privacyTextMenu,
               controller: _searchController,
               focusNode: _searchFocusNode,
@@ -76,34 +78,34 @@ class _ProveedoresScreenState extends State<ProveedoresScreen> {
               onTapOutside: (event) {
                 _searchFocusNode.unfocus();
               },
-              style: GoogleFonts.inter(color: Colors.white),
+              style: GoogleFonts.inter(color: StiloColors.text),
               decoration: InputDecoration(
                 hintText: 'Buscar por empresa, encargado, teléfono...',
-                hintStyle: GoogleFonts.inter(color: Colors.white38),
-                prefixIcon: const Icon(Icons.search, color: Colors.white54),
+                hintStyle: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .38)),
+                prefixIcon: Icon(Icons.search, color: StiloColors.text.withValues(alpha: .54)),
                 // --- BOTÓN "X" SIEMPRE QUE ESTÉ ENFOCADO O CON TEXTO ---
                 suffixIcon: (_searchQuery.isNotEmpty || _searchFocusNode.hasFocus)
                     ? IconButton(
-                        icon: const Icon(Icons.close, color: Colors.white70),
+                        icon: Icon(Icons.close, color: StiloColors.text.withValues(alpha: .70)),
                         onPressed: () {
                           _searchController.clear();
                           setState(() {
-                            _searchQuery = ''; 
+                            _searchQuery = '';
                           });
-                          _searchFocusNode.unfocus(); 
+                          _searchFocusNode.unfocus();
                         },
                       )
-                    : const SizedBox.shrink(), // Evita bugs de renderizado
+                    : SizedBox.shrink(), // Evita bugs de renderizado
                 filled: true,
-                fillColor: const Color(0xFF1E1E1E),
-                contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                fillColor: StiloColors.surface,
+                contentPadding: EdgeInsets.symmetric(vertical: 0),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
                   borderSide: BorderSide.none,
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
-                  borderSide: const BorderSide(color: Color(0xFF3B82F6), width: 1),
+                  borderSide: BorderSide(color: Color(0xFF3B82F6), width: 1),
                 ),
               ),
             ),
@@ -115,14 +117,14 @@ class _ProveedoresScreenState extends State<ProveedoresScreen> {
               stream: _proveedorService.getProveedores(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(
+                  return Center(
                     child: CircularProgressIndicator(color: Color(0xFF3B82F6))
                   );
                 }
                 if (snapshot.hasError) {
                   return Center(
                     child: Text(
-                      'Error: ${snapshot.error}', 
+                      'Error: ${snapshot.error}',
                       style: GoogleFonts.inter(color: Colors.redAccent)
                     )
                   );
@@ -130,8 +132,8 @@ class _ProveedoresScreenState extends State<ProveedoresScreen> {
                 if (!snapshot.hasData || snapshot.data!.isEmpty) {
                   return Center(
                     child: Text(
-                      'Aún no hay proveedores registrados.', 
-                      style: GoogleFonts.inter(color: Colors.white54)
+                      'Aún no hay proveedores registrados.',
+                      style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .54))
                     )
                   );
                 }
@@ -153,12 +155,12 @@ class _ProveedoresScreenState extends State<ProveedoresScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.search_off, size: 48, color: Colors.white24),
-                        const SizedBox(height: 16),
+                        Icon(Icons.search_off, size: 48, color: StiloColors.text.withValues(alpha: .24)),
+                        SizedBox(height: 16),
                         Text(
                           'No se encontraron resultados para "$_searchQuery".',
                           textAlign: TextAlign.center,
-                          style: GoogleFonts.inter(color: Colors.white54),
+                          style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .54)),
                         ),
                       ],
                     ),
@@ -166,17 +168,17 @@ class _ProveedoresScreenState extends State<ProveedoresScreen> {
                 }
 
                 return ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  padding: EdgeInsets.symmetric(horizontal: 16),
                   itemCount: proveedoresFiltrados.length,
                   itemBuilder: (context, index) {
                     final proveedor = proveedoresFiltrados[index];
                     return Card(
-                      color: const Color(0xFF1E1E1E),
+                      color: StiloColors.surface,
                       elevation: 0,
-                      margin: const EdgeInsets.only(bottom: 12),
+                      margin: EdgeInsets.only(bottom: 12),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
-                        side: const BorderSide(color: Colors.white12, width: 1),
+                        side: BorderSide(color: StiloColors.text.withValues(alpha: .12), width: 1),
                       ),
                       child: InkWell(
                         borderRadius: BorderRadius.circular(16),
@@ -190,19 +192,19 @@ class _ProveedoresScreenState extends State<ProveedoresScreen> {
                           );
                         },
                         child: Padding(
-                          padding: const EdgeInsets.all(16.0),
+                          padding: EdgeInsets.all(16.0),
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Container(
-                                padding: const EdgeInsets.all(12),
+                                padding: EdgeInsets.all(12),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFF3B82F6).withOpacity(0.15),
+                                  color: Color(0xFF3B82F6).withOpacity(0.15),
                                   borderRadius: BorderRadius.circular(14),
                                 ),
-                                child: const Icon(Icons.business, color: Color(0xFF3B82F6), size: 28),
+                                child: Icon(Icons.business, color: Color(0xFF3B82F6), size: 28),
                               ),
-                              const SizedBox(width: 16),
+                              SizedBox(width: 16),
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -210,50 +212,50 @@ class _ProveedoresScreenState extends State<ProveedoresScreen> {
                                     Text(
                                       proveedor.nombreEmpresa,
                                       style: GoogleFonts.inter(
-                                        fontWeight: FontWeight.w500, 
-                                        fontSize: 16, 
-                                        color: Colors.white
+                                        fontWeight: FontWeight.w500,
+                                        fontSize: 16,
+                                        color: StiloColors.text
                                       ),
                                     ),
-                                    const SizedBox(height: 8),
+                                    SizedBox(height: 8),
                                     Row(
                                       children: [
-                                        const Icon(Icons.person_outline, size: 14, color: Color(0xFF81C784)),
-                                        const SizedBox(width: 6),
+                                        Icon(Icons.person_outline, size: 14, color: Color(0xFF81C784)),
+                                        SizedBox(width: 6),
                                         Expanded(
                                           child: Text(
-                                            proveedor.encargadoNegocio, 
-                                            style: GoogleFonts.inter(fontSize: 13, color: Colors.white70),
+                                            proveedor.encargadoNegocio,
+                                            style: GoogleFonts.inter(fontSize: 13, color: StiloColors.text.withValues(alpha: .70)),
                                             maxLines: 1,
                                             overflow: TextOverflow.ellipsis,
                                           ),
                                         ),
                                       ],
                                     ),
-                                    const SizedBox(height: 4),
+                                    SizedBox(height: 4),
                                     Row(
                                       children: [
-                                        const Icon(Icons.phone_outlined, size: 14, color: Color(0xFF64B5F6)),
-                                        const SizedBox(width: 6),
+                                        Icon(Icons.phone_outlined, size: 14, color: Color(0xFF64B5F6)),
+                                        SizedBox(width: 6),
                                         Text(
-                                          proveedor.telefonoEmpresa, 
-                                          style: GoogleFonts.inter(fontSize: 13, color: Colors.white70)
+                                          proveedor.telefonoEmpresa,
+                                          style: GoogleFonts.inter(fontSize: 13, color: StiloColors.text.withValues(alpha: .70))
                                         ),
                                       ],
                                     ),
-                                    const SizedBox(height: 4),
+                                    SizedBox(height: 4),
                                     Row(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        const Padding(
+                                        Padding(
                                           padding: EdgeInsets.only(top: 2.0),
-                                          child: Icon(Icons.location_on_outlined, size: 14, color: Colors.white38),
+                                          child: Icon(Icons.location_on_outlined, size: 14, color: StiloColors.text.withValues(alpha: .38)),
                                         ),
-                                        const SizedBox(width: 6),
+                                        SizedBox(width: 6),
                                         Expanded(
                                           child: Text(
-                                            proveedor.ubicacion, 
-                                            style: GoogleFonts.inter(fontSize: 13, color: Colors.white54),
+                                            proveedor.ubicacion,
+                                            style: GoogleFonts.inter(fontSize: 13, color: StiloColors.text.withValues(alpha: .54)),
                                             maxLines: 2,
                                             overflow: TextOverflow.ellipsis,
                                           ),
@@ -266,21 +268,21 @@ class _ProveedoresScreenState extends State<ProveedoresScreen> {
                               Column(
                                 children: [
                                   IconButton(
-                                    icon: const Icon(Icons.edit_outlined, color: Colors.white54, size: 22),
+                                    icon: Icon(Icons.edit_outlined, color: StiloColors.text.withValues(alpha: .54), size: 22),
                                     onPressed: () {
                                       _searchFocusNode.unfocus();
                                       _abrirFormularioProveedor(proveedor: proveedor);
                                     },
-                                    constraints: const BoxConstraints(),
-                                    padding: const EdgeInsets.only(bottom: 12),
+                                    constraints: BoxConstraints(),
+                                    padding: EdgeInsets.only(bottom: 12),
                                   ),
                                   IconButton(
-                                    icon: const Icon(Icons.delete_outline, color: Color(0xFFE57373), size: 22),
+                                    icon: Icon(Icons.delete_outline, color: Color(0xFFE57373), size: 22),
                                     onPressed: () {
                                       _searchFocusNode.unfocus();
                                       _confirmarEliminacion(proveedor);
                                     },
-                                    constraints: const BoxConstraints(),
+                                    constraints: BoxConstraints(),
                                     padding: EdgeInsets.zero,
                                   ),
                                 ],
@@ -298,13 +300,13 @@ class _ProveedoresScreenState extends State<ProveedoresScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        backgroundColor: Colors.white,
+        backgroundColor: StiloColors.text,
         onPressed: () {
           _searchFocusNode.unfocus();
           _abrirFormularioProveedor();
         },
-        label: Text('Nuevo Proveedor', style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: Colors.black)),
-        icon: const Icon(Icons.add, color: Colors.black),
+        label: Text('Nuevo Proveedor', style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: StiloColors.background)),
+        icon: Icon(Icons.add, color: StiloColors.background),
       ),
     );
   }
@@ -315,7 +317,7 @@ class _ProveedoresScreenState extends State<ProveedoresScreen> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => _FormularioProveedorModal(
-        proveedor: proveedor, 
+        proveedor: proveedor,
         proveedorService: _proveedorService
       ),
     );
@@ -325,13 +327,13 @@ class _ProveedoresScreenState extends State<ProveedoresScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF1E1E1E),
-        title: Text('¿Eliminar proveedor?', style: GoogleFonts.inter(color: Colors.white)),
-        content: Text('Esta acción eliminará de forma permanente a ${proveedor.nombreEmpresa}.', style: GoogleFonts.inter(color: Colors.white70)),
+        backgroundColor: StiloColors.surface,
+        title: Text('¿Eliminar proveedor?', style: GoogleFonts.inter(color: StiloColors.text)),
+        content: Text('Esta acción eliminará de forma permanente a ${proveedor.nombreEmpresa}.', style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .70))),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context), 
-            child: Text('Cancelar', style: GoogleFonts.inter(color: Colors.white54))
+            onPressed: () => Navigator.pop(context),
+            child: Text('Cancelar', style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .54)))
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
@@ -339,7 +341,7 @@ class _ProveedoresScreenState extends State<ProveedoresScreen> {
               Navigator.pop(context);
               await _proveedorService.deleteProveedor(proveedor.id);
             },
-            child: Text('Eliminar', style: GoogleFonts.inter(color: Colors.white)),
+            child: Text('Eliminar', style: GoogleFonts.inter(color: StiloColors.text)),
           ),
         ],
       ),
@@ -389,11 +391,12 @@ class _FormularioProveedorModalState extends State<_FormularioProveedorModal> {
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context);
     return Container(
-      decoration: const BoxDecoration(
-        color: Color(0xFF1E1E1E),
+      decoration: BoxDecoration(
+        color: StiloColors.surface,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        border: Border(top: BorderSide(color: Colors.white12, width: 1)),
+        border: Border(top: BorderSide(color: StiloColors.text.withValues(alpha: .12), width: 1)),
       ),
       padding: EdgeInsets.only(
         top: 24,
@@ -410,22 +413,22 @@ class _FormularioProveedorModalState extends State<_FormularioProveedorModal> {
             children: [
               Text(
                 widget.proveedor == null ? 'Registrar Proveedor' : 'Editar Proveedor',
-                style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w700, color: Colors.white),
+                style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w700, color: StiloColors.text),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
               _crearTextField(
                 controller: _empresaController,
                 label: 'Nombre de la Empresa',
                 icon: Icons.business,
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               _crearTextField(
                 controller: _encargadoController,
                 label: 'Encargado del Negocio',
                 icon: Icons.person_outline,
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               Row(
                 children: [
                   Expanded(
@@ -436,7 +439,7 @@ class _FormularioProveedorModalState extends State<_FormularioProveedorModal> {
                       keyboardType: TextInputType.phone,
                     ),
                   ),
-                  const SizedBox(width: 16),
+                  SizedBox(width: 16),
                   Expanded(
                     child: _crearTextField(
                       controller: _telefonoPersonalController,
@@ -447,24 +450,24 @@ class _FormularioProveedorModalState extends State<_FormularioProveedorModal> {
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               _crearTextField(
                 controller: _ubicacionController,
                 label: 'Ubicación / Dirección',
                 icon: Icons.location_on_outlined,
                 maxLines: 2,
               ),
-              const SizedBox(height: 30),
+              SizedBox(height: 30),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  foregroundColor: Colors.black,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  backgroundColor: StiloColors.text,
+                  foregroundColor: StiloColors.background,
+                  padding: EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
                 onPressed: _guardando ? null : _guardarFormulario,
                 child: _guardando
-                    ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.black, strokeWidth: 2))
+                    ? SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: StiloColors.background, strokeWidth: 2))
                     : Text(
                         widget.proveedor == null ? 'GUARDAR PROVEEDOR' : 'GUARDAR CAMBIOS',
                         style: GoogleFonts.inter(fontWeight: FontWeight.w600, letterSpacing: 0.5),
@@ -488,20 +491,20 @@ class _FormularioProveedorModalState extends State<_FormularioProveedorModal> {
       controller: controller,
       keyboardType: keyboardType,
       maxLines: maxLines,
-      style: GoogleFonts.inter(color: Colors.white),
+      style: GoogleFonts.inter(color: StiloColors.text),
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: GoogleFonts.inter(color: Colors.white54),
-        prefixIcon: Icon(icon, color: Colors.white54),
+        labelStyle: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .54)),
+        prefixIcon: Icon(icon, color: StiloColors.text.withValues(alpha: .54)),
         filled: true,
-        fillColor: const Color(0xFF121212),
+        fillColor: StiloColors.surface,
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.white12),
+          borderSide: BorderSide(color: StiloColors.text.withValues(alpha: .12)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF3B82F6)), 
+          borderSide: BorderSide(color: Color(0xFF3B82F6)),
         ),
       ),
       validator: (value) => value!.isEmpty ? 'Requerido' : null,
@@ -520,9 +523,9 @@ class _FormularioProveedorModalState extends State<_FormularioProveedorModal> {
           encargadoNegocio: _encargadoController.text.trim(),
           telefonoEmpresa: _telefonoController.text.trim(),
           telefonoPersonal: _telefonoPersonalController.text.trim(),
-          ubicacion: _ubicacionController.text.trim(), 
+          ubicacion: _ubicacionController.text.trim(),
         );
-        await widget.proveedorService.addProveedor(nuevoProveedor); 
+        await widget.proveedorService.addProveedor(nuevoProveedor);
       } else {
         final proveedorEditado = Proveedor(
           id: widget.proveedor!.id,
@@ -532,7 +535,7 @@ class _FormularioProveedorModalState extends State<_FormularioProveedorModal> {
           telefonoPersonal: _telefonoPersonalController.text.trim(),
           ubicacion: _ubicacionController.text.trim(),
         );
-        await widget.proveedorService.updateProveedor(proveedorEditado); 
+        await widget.proveedorService.updateProveedor(proveedorEditado);
       }
       if (mounted) Navigator.pop(context);
     } catch (e) {

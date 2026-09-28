@@ -1,3 +1,5 @@
+import '../widgets/inline_photo.dart';
+import '../presentation/appearance.dart';
 import '../services/external_transfer.dart';
 import 'dart:async';
 
@@ -27,19 +29,19 @@ class BlogInternoScreen extends StatefulWidget {
 }
 
 class _BlogInternoScreenState extends State<BlogInternoScreen> {
-  static const _fondo = Color(0xFF050506);
-  static const _linea = Color(0xFF30272D);
-  static const _superficie = Color(0xFF111012);
-  static const _rosa = Color(0xFFB7FF2A);
-  static const _naranja = Color(0xFF8E1538);
-  static const _morado = Color(0xFFC13CFF);
+  static Color get _fondo => StiloColors.background;
+  static Color get _linea => StiloColors.surface;
+  static Color get _superficie => StiloColors.surface;
+  static Color get _rosa => StiloColors.accent;
+  static final _naranja = Color(0xFF8E1538);
+  static Color get _morado => StiloColors.accent;
   final SocialService _social = SocialService();
   Timer? _relojHistorias;
 
   @override
   void initState() {
     super.initState();
-    _relojHistorias = Timer.periodic(const Duration(minutes: 1), (_) {
+    _relojHistorias = Timer.periodic(Duration(minutes: 1), (_) {
       if (mounted) setState(() {});
     });
   }
@@ -52,6 +54,7 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context);
     return Scaffold(
       backgroundColor: _fondo,
       appBar: AppBar(
@@ -63,7 +66,7 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
         title: Text(
           'STILO COMMUNITY',
           style: GoogleFonts.montserrat(
-            color: Colors.white,
+            color: StiloColors.text,
             fontSize: 18,
             fontWeight: FontWeight.w900,
             letterSpacing: 2,
@@ -73,7 +76,7 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
           IconButton(
             tooltip: 'Nueva publicación',
             onPressed: _crearPublicacion,
-            icon: const Icon(Icons.add_circle_outline_rounded, size: 27),
+            icon: Icon(Icons.add_circle_outline_rounded, size: 27),
           ),
           IconButton(
             tooltip: 'Notificaciones',
@@ -83,7 +86,7 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
                 builder: (_) => NotificacionesScreen(usuario: widget.usuario),
               ),
             ),
-            icon: const Icon(Icons.favorite_border_rounded, size: 27),
+            icon: Icon(Icons.favorite_border_rounded, size: 27),
           ),
           IconButton(
             tooltip: 'Equipo',
@@ -94,10 +97,10 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
                     PerfilesEquipoScreen(usuarioActual: widget.usuario),
               ),
             ),
-            icon: const Icon(Icons.people_outline_rounded, size: 27),
+            icon: Icon(Icons.people_outline_rounded, size: 27),
           ),
         ],
-        bottom: const PreferredSize(
+        bottom: PreferredSize(
           preferredSize: Size.fromHeight(1),
           child: Divider(height: 1, color: _linea),
         ),
@@ -106,8 +109,8 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
         stream: _social.publicaciones(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
-              child: CircularProgressIndicator(color: Colors.white),
+            return Center(
+              child: CircularProgressIndicator(color: StiloColors.text),
             );
           }
           if (snapshot.hasError) {
@@ -122,18 +125,18 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
           posts.sort((a, b) => _fecha(b.data()).compareTo(_fecha(a.data())));
 
           return RefreshIndicator(
-            color: Colors.white,
+            color: StiloColors.text,
             backgroundColor: _superficie,
             onRefresh: () async =>
-                Future<void>.delayed(const Duration(milliseconds: 450)),
+                Future<void>.delayed(Duration(milliseconds: 450)),
             child: ListView(
-              physics: const AlwaysScrollableScrollPhysics(
+              physics: AlwaysScrollableScrollPhysics(
                 parent: BouncingScrollPhysics(),
               ),
-              padding: const EdgeInsets.only(bottom: 34),
+              padding: EdgeInsets.only(bottom: 34),
               children: [
                 _historiasEquipo(),
-                const Divider(height: 1, color: _linea),
+                Divider(height: 1, color: _linea),
                 if (posts.isEmpty) _estadoVacio() else ...posts.map(_publicacion),
               ],
             ),
@@ -151,15 +154,15 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
         final historias = snapshot.data
                 ?.where((historia) => historia.estaVigente(ahora))
                 .toList(growable: false) ??
-            const <HistoriaSocialModel>[];
+            <HistoriaSocialModel>[];
         return SizedBox(
           height: 120,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
-            physics: const BouncingScrollPhysics(),
-            padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
+            physics: BouncingScrollPhysics(),
+            padding: EdgeInsets.fromLTRB(12, 12, 12, 10),
             itemCount: historias.length + 1,
-            separatorBuilder: (_, __) => const SizedBox(width: 12),
+            separatorBuilder: (_, __) => SizedBox(width: 12),
             itemBuilder: (_, index) {
               if (index == 0) return _botonCrearHistoria();
               final historia = historias[index - 1];
@@ -176,8 +179,8 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
                           Container(
                             width: 69,
                             height: 69,
-                            padding: const EdgeInsets.all(2.5),
-                            decoration: const BoxDecoration(
+                            padding: EdgeInsets.all(2.5),
+                            decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               gradient: LinearGradient(
                                 colors: [_morado, _rosa, _naranja],
@@ -186,8 +189,8 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
                               ),
                             ),
                             child: Container(
-                              padding: const EdgeInsets.all(2.5),
-                              decoration: const BoxDecoration(
+                              padding: EdgeInsets.all(2.5),
+                              decoration: BoxDecoration(
                                 color: _fondo,
                                 shape: BoxShape.circle,
                               ),
@@ -199,7 +202,7 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
                             ),
                           ),
                           if (historia.texto.isNotEmpty)
-                            const Positioned(
+                            Positioned(
                               right: 0,
                               bottom: 0,
                               child: CircleAvatar(
@@ -207,20 +210,20 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
                                 backgroundColor: _morado,
                                 child: Icon(
                                   Icons.notes_rounded,
-                                  color: Colors.white,
+                                  color: StiloColors.text,
                                   size: 12,
                                 ),
                               ),
                             ),
                         ],
                       ),
-                      const SizedBox(height: 6),
+                      SizedBox(height: 6),
                       Text(
                         _primerNombre(historia.autorNombre),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: GoogleFonts.inter(
-                          color: Colors.white,
+                          color: StiloColors.text,
                           fontSize: 10.5,
                           fontWeight: FontWeight.w500,
                         ),
@@ -250,10 +253,10 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
                 Container(
                   width: 69,
                   height: 69,
-                  padding: const EdgeInsets.all(2),
+                  padding: EdgeInsets.all(2),
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white24),
+                    border: Border.all(color: StiloColors.text.withValues(alpha: .24)),
                   ),
                   child: _avatar(
                     nombre: widget.usuario.nombre,
@@ -261,7 +264,7 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
                     radio: 30,
                   ),
                 ),
-                const Positioned(
+                Positioned(
                   right: -1,
                   bottom: -1,
                   child: CircleAvatar(
@@ -269,20 +272,20 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
                     backgroundColor: Color(0xFF1689FF),
                     child: Icon(
                       Icons.add_rounded,
-                      color: Colors.white,
+                      color: StiloColors.text,
                       size: 17,
                     ),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 6),
+            SizedBox(height: 6),
             Text(
               'Tu historia',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: GoogleFonts.inter(
-                color: Colors.white,
+                color: StiloColors.text,
                 fontSize: 10.5,
                 fontWeight: FontWeight.w500,
               ),
@@ -302,7 +305,7 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
       isScrollControlled: true,
       useSafeArea: true,
       backgroundColor: _fondo,
-      shape: const RoundedRectangleBorder(
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (modalContext) => StatefulBuilder(
@@ -322,26 +325,26 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
                     width: 42,
                     height: 4,
                     decoration: BoxDecoration(
-                      color: Colors.white24,
+                      color: StiloColors.text.withValues(alpha: .24),
                       borderRadius: BorderRadius.circular(4),
                     ),
                   ),
                 ),
-                const SizedBox(height: 13),
+                SizedBox(height: 13),
                 Row(
                   children: [
                     IconButton(
                       onPressed: publicando
                           ? null
                           : () => Navigator.pop(modalContext),
-                      icon: const Icon(Icons.close_rounded),
+                      icon: Icon(Icons.close_rounded),
                     ),
                     Expanded(
                       child: Text(
                         'Nueva historia o nota',
                         textAlign: TextAlign.center,
                         style: GoogleFonts.inter(
-                          color: Colors.white,
+                          color: StiloColors.text,
                           fontSize: 16,
                           fontWeight: FontWeight.w800,
                         ),
@@ -389,7 +392,7 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
                       child: Text(
                         'COMPARTIR',
                         style: GoogleFonts.inter(
-                          color: const Color(0xFF5BA8FF),
+                          color: Color(0xFF5BA8FF),
                           fontSize: 11.5,
                           fontWeight: FontWeight.w900,
                         ),
@@ -397,7 +400,7 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
                     ),
                   ],
                 ),
-                const Divider(color: _linea),
+                Divider(color: _linea),
                 TextField(contextMenuBuilder: privacyTextMenu,
                   controller: texto,
                   minLines: 3,
@@ -406,19 +409,19 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
                   autofocus: true,
                   textCapitalization: TextCapitalization.sentences,
                   style: GoogleFonts.inter(
-                    color: Colors.white,
+                    color: StiloColors.text,
                     fontSize: 16,
                     height: 1.4,
                   ),
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     hintText: 'Escribe una nota para el equipo…',
-                    hintStyle: TextStyle(color: Colors.white38),
+                    hintStyle: TextStyle(color: StiloColors.text.withValues(alpha: .38)),
                     border: InputBorder.none,
-                    counterStyle: TextStyle(color: Colors.white38),
+                    counterStyle: TextStyle(color: StiloColors.text.withValues(alpha: .38)),
                   ),
                 ),
                 if (imagen != null) ...[
-                  const SizedBox(height: 8),
+                  SizedBox(height: 8),
                   FutureBuilder<Widget>(
                     future: _preview(imagen!),
                     builder: (_, preview) => Stack(
@@ -428,7 +431,7 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
                           child: AspectRatio(
                             aspectRatio: 4 / 5,
                             child: preview.data ??
-                                const ColoredBox(color: _superficie),
+                                ColoredBox(color: _superficie),
                           ),
                         ),
                         Positioned(
@@ -436,19 +439,19 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
                           top: 8,
                           child: IconButton.filled(
                             style: IconButton.styleFrom(
-                              backgroundColor: Colors.black87,
+                              backgroundColor: StiloColors.background.withValues(alpha: .87),
                             ),
                             onPressed: publicando
                                 ? null
                                 : () => setModalState(() => imagen = null),
-                            icon: const Icon(Icons.close_rounded),
+                            icon: Icon(Icons.close_rounded),
                           ),
                         ),
                       ],
                     ),
                   ),
                 ],
-                const SizedBox(height: 12),
+                SizedBox(height: 12),
                 Container(
                   decoration: BoxDecoration(
                     border: Border.all(color: _linea),
@@ -458,11 +461,11 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
                     children: [
                       Expanded(
                         child: ListTile(
-                          contentPadding: const EdgeInsets.symmetric(
+                          contentPadding: EdgeInsets.symmetric(
                             horizontal: 12,
                           ),
-                          leading: const Icon(Icons.photo_camera_outlined),
-                          title: const Text('Cámara'),
+                          leading: Icon(Icons.photo_camera_outlined),
+                          title: Text('Cámara'),
                           onTap: publicando
                               ? null
                               : () => _elegirFotoHistoria(
@@ -477,11 +480,11 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
                       Container(width: 1, height: 46, color: _linea),
                       Expanded(
                         child: ListTile(
-                          contentPadding: const EdgeInsets.symmetric(
+                          contentPadding: EdgeInsets.symmetric(
                             horizontal: 12,
                           ),
-                          leading: const Icon(Icons.photo_library_outlined),
-                          title: const Text('Galería'),
+                          leading: Icon(Icons.photo_library_outlined),
+                          title: Text('Galería'),
                           onTap: publicando
                               ? null
                               : () => _elegirFotoHistoria(
@@ -497,16 +500,16 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
                   ),
                 ),
                 if (publicando) ...[
-                  const SizedBox(height: 18),
-                  const LinearProgressIndicator(
-                    color: Colors.white,
+                  SizedBox(height: 18),
+                  LinearProgressIndicator(
+                    color: StiloColors.text,
                     backgroundColor: _linea,
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: 8),
                   Text(
                     'Compartiendo con el equipo…',
                     style: GoogleFonts.inter(
-                      color: Colors.white54,
+                      color: StiloColors.text.withValues(alpha: .54),
                       fontSize: 11,
                     ),
                   ),
@@ -579,18 +582,18 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
             .map((e) => e.toString())
             .where((url) => url.isNotEmpty)
             .toList(growable: false)
-        : const <String>[];
+        : <String>[];
     final videos = data['videos'] is Iterable
         ? (data['videos'] as Iterable)
             .map((e) => e.toString())
             .where((url) => url.isNotEmpty)
             .toList(growable: false)
-        : const <String>[];
+        : <String>[];
     final likes = data['likesPor'] is Iterable
         ? (data['likesPor'] as Iterable)
             .map((e) => e.toString())
             .toList(growable: false)
-        : const <String>[];
+        : <String>[];
     final comentarios = data['comentariosCount'] is num
         ? (data['comentariosCount'] as num).toInt()
         : 0;
@@ -600,25 +603,25 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(13, 10, 8, 9),
+          padding: EdgeInsets.fromLTRB(13, 10, 8, 9),
           child: Row(
             children: [
               InkWell(
                 onTap: autorId.isEmpty ? null : () => _abrirPerfil(autorId),
-                customBorder: const CircleBorder(),
+                customBorder: CircleBorder(),
                 child: Container(
                   width: 43,
                   height: 43,
-                  padding: const EdgeInsets.all(2),
-                  decoration: const BoxDecoration(
+                  padding: EdgeInsets.all(2),
+                  decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     gradient: LinearGradient(
                       colors: [_morado, _rosa, _naranja],
                     ),
                   ),
                   child: Container(
-                    padding: const EdgeInsets.all(2),
-                    decoration: const BoxDecoration(
+                    padding: EdgeInsets.all(2),
+                    decoration: BoxDecoration(
                       color: _fondo,
                       shape: BoxShape.circle,
                     ),
@@ -626,7 +629,7 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
                   ),
                 ),
               ),
-              const SizedBox(width: 10),
+              SizedBox(width: 10),
               Expanded(
                 child: InkWell(
                   onTap: autorId.isEmpty ? null : () => _abrirPerfil(autorId),
@@ -641,15 +644,15 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: GoogleFonts.inter(
-                                color: Colors.white,
+                                color: StiloColors.text,
                                 fontSize: 13,
                                 fontWeight: FontWeight.w800,
                               ),
                             ),
                           ),
                           if (rol == AppRoles.admin) ...[
-                            const SizedBox(width: 5),
-                            const Icon(
+                            SizedBox(width: 5),
+                            Icon(
                               Icons.verified_rounded,
                               color: Color(0xFF1689FF),
                               size: 15,
@@ -657,13 +660,13 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
                           ],
                         ],
                       ),
-                      const SizedBox(height: 2),
+                      SizedBox(height: 2),
                       Text(
                         rol == AppRoles.admin
                             ? 'Administración · Sauna Stilo'
                             : 'Avance del equipo',
                         style: GoogleFonts.inter(
-                          color: Colors.white54,
+                          color: StiloColors.text.withValues(alpha: .54),
                           fontSize: 10.5,
                         ),
                       ),
@@ -674,7 +677,7 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
               IconButton(
                 tooltip: 'Ver perfil',
                 onPressed: autorId.isEmpty ? null : () => _abrirPerfil(autorId),
-                icon: const Icon(Icons.more_horiz_rounded, color: Colors.white),
+                icon: Icon(Icons.more_horiz_rounded, color: StiloColors.text),
               ),
             ],
           ),
@@ -685,11 +688,11 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
         if (imagenes.isEmpty && videos.isEmpty && texto.isNotEmpty)
           Container(
             width: double.infinity,
-            constraints: const BoxConstraints(minHeight: 190),
-            padding: const EdgeInsets.all(27),
-            decoration: const BoxDecoration(
+            constraints: BoxConstraints(minHeight: 190),
+            padding: EdgeInsets.all(27),
+            decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [Color(0xFF171717), Color(0xFF080808)],
+                colors: [StiloColors.surface, StiloColors.background],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -699,7 +702,7 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
               texto,
               textAlign: TextAlign.center,
               style: GoogleFonts.montserrat(
-                color: Colors.white,
+                color: StiloColors.text,
                 fontSize: 20,
                 height: 1.35,
                 fontWeight: FontWeight.w700,
@@ -707,7 +710,7 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
             ),
           ),
         Padding(
-          padding: const EdgeInsets.fromLTRB(6, 3, 6, 0),
+          padding: EdgeInsets.fromLTRB(6, 3, 6, 0),
           child: Row(
             children: [
               IconButton(
@@ -718,35 +721,35 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
                   yaLeGusta
                       ? Icons.favorite_rounded
                       : Icons.favorite_border_rounded,
-                  color: yaLeGusta ? _rosa : Colors.white,
+                  color: yaLeGusta ? _rosa : StiloColors.text,
                   size: 28,
                 ),
               ),
               IconButton(
                 tooltip: 'Comentar',
                 onPressed: () => _abrirComentarios(doc.id, autorId),
-                icon: const Icon(
+                icon: Icon(
                   Icons.chat_bubble_outline_rounded,
-                  color: Colors.white,
+                  color: StiloColors.text,
                   size: 26,
                 ),
               ),
               IconButton(
                 tooltip: 'Enviar sugerencia',
                 onPressed: () => _abrirComentarios(doc.id, autorId),
-                icon: const Icon(
+                icon: Icon(
                   Icons.near_me_outlined,
-                  color: Colors.white,
+                  color: StiloColors.text,
                   size: 26,
                 ),
               ),
-              const Spacer(),
+              Spacer(),
               IconButton(
                 tooltip: 'Ver perfil',
                 onPressed: autorId.isEmpty ? null : () => _abrirPerfil(autorId),
-                icon: const Icon(
+                icon: Icon(
                   Icons.person_outline_rounded,
-                  color: Colors.white,
+                  color: StiloColors.text,
                   size: 27,
                 ),
               ),
@@ -754,7 +757,7 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
           ),
         ),
         Padding(
-          padding: const EdgeInsets.fromLTRB(13, 0, 13, 12),
+          padding: EdgeInsets.fromLTRB(13, 0, 13, 12),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -762,12 +765,12 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
                 Text(
                   likes.length == 1 ? '1 Me gusta' : '${likes.length} Me gusta',
                   style: GoogleFonts.inter(
-                    color: Colors.white,
+                    color: StiloColors.text,
                     fontSize: 12.5,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
-              if (likes.isNotEmpty) const SizedBox(height: 7),
+              if (likes.isNotEmpty) SizedBox(height: 7),
               if (texto.isNotEmpty &&
                   (imagenes.isNotEmpty || videos.isNotEmpty))
                 Text.rich(
@@ -775,35 +778,35 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
                     children: [
                       TextSpan(
                         text: '$nombre  ',
-                        style: const TextStyle(fontWeight: FontWeight.w800),
+                        style: TextStyle(fontWeight: FontWeight.w800),
                       ),
                       TextSpan(text: texto),
                     ],
                   ),
                   style: GoogleFonts.inter(
-                    color: Colors.white,
+                    color: StiloColors.text,
                     fontSize: 13,
                     height: 1.35,
                   ),
                 ),
               if (comentarios > 0) ...[
-                const SizedBox(height: 7),
+                SizedBox(height: 7),
                 InkWell(
                   onTap: () => _abrirComentarios(doc.id, autorId),
                   child: Text(
                     'Ver ${comentarios == 1 ? 'el comentario' : 'los $comentarios comentarios'}',
                     style: GoogleFonts.inter(
-                      color: Colors.white54,
+                      color: StiloColors.text.withValues(alpha: .54),
                       fontSize: 12.5,
                     ),
                   ),
                 ),
               ],
-              const SizedBox(height: 6),
+              SizedBox(height: 6),
               Text(
                 DateFormat('d MMMM · HH:mm', 'es').format(_fecha(data)),
                 style: GoogleFonts.inter(
-                  color: Colors.white38,
+                  color: StiloColors.text.withValues(alpha: .38),
                   fontSize: 9.5,
                   fontWeight: FontWeight.w600,
                 ),
@@ -811,7 +814,7 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
             ],
           ),
         ),
-        const Divider(height: 1, color: _linea),
+        Divider(height: 1, color: _linea),
       ],
     );
   }
@@ -828,7 +831,7 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
       isDismissible: false,
       enableDrag: false,
       backgroundColor: _fondo,
-      shape: const RoundedRectangleBorder(
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (modalContext) => StatefulBuilder(
@@ -848,19 +851,19 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
                     width: 42,
                     height: 4,
                     decoration: BoxDecoration(
-                      color: Colors.white24,
+                      color: StiloColors.text.withValues(alpha: .24),
                       borderRadius: BorderRadius.circular(4),
                     ),
                   ),
                 ),
-                const SizedBox(height: 13),
+                SizedBox(height: 13),
                 Row(
                   children: [
                     IconButton(
                       onPressed: publicando
                           ? null
                           : () => Navigator.pop(modalContext),
-                      icon: const Icon(Icons.close_rounded),
+                      icon: Icon(Icons.close_rounded),
                     ),
                     Expanded(
                       child: Text(
@@ -869,7 +872,7 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
                             : 'Nuevo avance',
                         textAlign: TextAlign.center,
                         style: GoogleFonts.inter(
-                          color: Colors.white,
+                          color: StiloColors.text,
                           fontSize: 16,
                           fontWeight: FontWeight.w800,
                         ),
@@ -890,7 +893,7 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
                       child: Text(
                         'PUBLICAR',
                         style: GoogleFonts.inter(
-                          color: const Color(0xFF5BA8FF),
+                          color: Color(0xFF5BA8FF),
                           fontSize: 12,
                           fontWeight: FontWeight.w900,
                         ),
@@ -898,8 +901,8 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
                     ),
                   ],
                 ),
-                const Divider(color: _linea),
-                const SizedBox(height: 10),
+                Divider(color: _linea),
+                SizedBox(height: 10),
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -908,7 +911,7 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
                       foto: widget.usuario.fotoUrl ?? '',
                       radio: 22,
                     ),
-                    const SizedBox(width: 11),
+                    SizedBox(width: 11),
                     Expanded(
                       child: TextField(contextMenuBuilder: privacyTextMenu,
                         controller: texto,
@@ -917,13 +920,13 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
                         autofocus: true,
                         textCapitalization: TextCapitalization.sentences,
                         style: GoogleFonts.inter(
-                          color: Colors.white,
+                          color: StiloColors.text,
                           fontSize: 15,
                           height: 1.4,
                         ),
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
                           hintText: 'Comparte un avance con el equipo…',
-                          hintStyle: TextStyle(color: Colors.white38),
+                          hintStyle: TextStyle(color: StiloColors.text.withValues(alpha: .38)),
                           border: InputBorder.none,
                         ),
                       ),
@@ -931,13 +934,13 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
                   ],
                 ),
                 if (imagenes.isNotEmpty) ...[
-                  const SizedBox(height: 10),
+                  SizedBox(height: 10),
                   SizedBox(
                     height: 108,
                     child: ListView.separated(
                       scrollDirection: Axis.horizontal,
                       itemCount: imagenes.length,
-                      separatorBuilder: (_, __) => const SizedBox(width: 8),
+                      separatorBuilder: (_, __) => SizedBox(width: 8),
                       itemBuilder: (_, index) => FutureBuilder<Widget>(
                         future: _preview(imagenes[index]),
                         builder: (_, preview) => Stack(
@@ -948,7 +951,7 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
                                 width: 108,
                                 height: 108,
                                 child: preview.data ??
-                                    const ColoredBox(color: _superficie),
+                                    ColoredBox(color: _superficie),
                               ),
                             ),
                             Positioned(
@@ -960,13 +963,13 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
                                     : () => setModalState(
                                           () => imagenes.removeAt(index),
                                         ),
-                                child: const CircleAvatar(
+                                child: CircleAvatar(
                                   radius: 12,
-                                  backgroundColor: Colors.black87,
+                                  backgroundColor: StiloColors.background.withValues(alpha: .87),
                                   child: Icon(
                                     Icons.close_rounded,
                                     size: 15,
-                                    color: Colors.white,
+                                    color: StiloColors.text,
                                   ),
                                 ),
                               ),
@@ -978,16 +981,16 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
                   ),
                 ],
                 if (videos.isNotEmpty) ...[
-                  const SizedBox(height: 10),
+                  SizedBox(height: 10),
                   SizedBox(
                     height: 76,
                     child: ListView.separated(
                       scrollDirection: Axis.horizontal,
                       itemCount: videos.length,
-                      separatorBuilder: (_, __) => const SizedBox(width: 8),
+                      separatorBuilder: (_, __) => SizedBox(width: 8),
                       itemBuilder: (_, index) => Container(
                         width: 190,
-                        padding: const EdgeInsets.fromLTRB(11, 8, 5, 8),
+                        padding: EdgeInsets.fromLTRB(11, 8, 5, 8),
                         decoration: BoxDecoration(
                           color: _superficie,
                           borderRadius: BorderRadius.circular(13),
@@ -995,12 +998,12 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
                         ),
                         child: Row(
                           children: [
-                            const Icon(
+                            Icon(
                               Icons.play_circle_fill_rounded,
-                              color: Colors.white,
+                              color: StiloColors.text,
                               size: 34,
                             ),
-                            const SizedBox(width: 9),
+                            SizedBox(width: 9),
                             Expanded(
                               child: Text(
                                 videos[index].name.isEmpty
@@ -1009,7 +1012,7 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
                                 style: GoogleFonts.inter(
-                                  color: Colors.white70,
+                                  color: StiloColors.text.withValues(alpha: .70),
                                   fontSize: 11,
                                   fontWeight: FontWeight.w600,
                                 ),
@@ -1022,9 +1025,9 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
                                   : () => setModalState(
                                         () => videos.removeAt(index),
                                       ),
-                              icon: const Icon(
+                              icon: Icon(
                                 Icons.close_rounded,
-                                color: Colors.white54,
+                                color: StiloColors.text.withValues(alpha: .54),
                                 size: 18,
                               ),
                             ),
@@ -1034,7 +1037,7 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
                     ),
                   ),
                 ],
-                const SizedBox(height: 18),
+                SizedBox(height: 18),
                 Container(
                   decoration: BoxDecoration(
                     border: Border.all(color: _linea),
@@ -1043,14 +1046,14 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
                   child: Column(
                     children: [
                       ListTile(
-                        leading: const Icon(
+                        leading: Icon(
                           Icons.photo_camera_outlined,
-                          color: Colors.white,
+                          color: StiloColors.text,
                         ),
-                        title: const Text('Tomar fotografía'),
-                        trailing: const Icon(
+                        title: Text('Tomar fotografía'),
+                        trailing: Icon(
                           Icons.chevron_right_rounded,
-                          color: Colors.white38,
+                          color: StiloColors.text.withValues(alpha: .38),
                         ),
                         onTap: publicando
                             ? null
@@ -1065,20 +1068,20 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
                                 }
                               },
                       ),
-                      const Divider(height: 1, indent: 56, color: _linea),
+                      Divider(height: 1, indent: 56, color: _linea),
                       ListTile(
-                        leading: const Icon(
+                        leading: Icon(
                           Icons.photo_library_outlined,
-                          color: Colors.white,
+                          color: StiloColors.text,
                         ),
-                        title: const Text('Elegir fotos de la galería'),
-                        subtitle: const Text(
+                        title: Text('Elegir fotos de la galería'),
+                        subtitle: Text(
                           'Puedes seleccionar varias',
-                          style: TextStyle(color: Colors.white38),
+                          style: TextStyle(color: StiloColors.text.withValues(alpha: .38)),
                         ),
-                        trailing: const Icon(
+                        trailing: Icon(
                           Icons.chevron_right_rounded,
-                          color: Colors.white38,
+                          color: StiloColors.text.withValues(alpha: .38),
                         ),
                         onTap: publicando
                             ? null
@@ -1093,20 +1096,20 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
                                 }
                               },
                       ),
-                      const Divider(height: 1, indent: 56, color: _linea),
+                      Divider(height: 1, indent: 56, color: _linea),
                       ListTile(
-                        leading: const Icon(
+                        leading: Icon(
                           Icons.videocam_outlined,
-                          color: Colors.white,
+                          color: StiloColors.text,
                         ),
-                        title: const Text('Grabar video'),
-                        subtitle: const Text(
+                        title: Text('Grabar video'),
+                        subtitle: Text(
                           'Hasta 50 MB por video',
-                          style: TextStyle(color: Colors.white38),
+                          style: TextStyle(color: StiloColors.text.withValues(alpha: .38)),
                         ),
-                        trailing: const Icon(
+                        trailing: Icon(
                           Icons.chevron_right_rounded,
-                          color: Colors.white38,
+                          color: StiloColors.text.withValues(alpha: .38),
                         ),
                         onTap: publicando
                             ? null
@@ -1117,20 +1120,20 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
                                   videos: videos,
                                 ),
                       ),
-                      const Divider(height: 1, indent: 56, color: _linea),
+                      Divider(height: 1, indent: 56, color: _linea),
                       ListTile(
-                        leading: const Icon(
+                        leading: Icon(
                           Icons.video_library_outlined,
-                          color: Colors.white,
+                          color: StiloColors.text,
                         ),
-                        title: const Text('Elegir video de la galería'),
-                        subtitle: const Text(
+                        title: Text('Elegir video de la galería'),
+                        subtitle: Text(
                           'Puedes agregar más de uno',
-                          style: TextStyle(color: Colors.white38),
+                          style: TextStyle(color: StiloColors.text.withValues(alpha: .38)),
                         ),
-                        trailing: const Icon(
+                        trailing: Icon(
                           Icons.chevron_right_rounded,
-                          color: Colors.white38,
+                          color: StiloColors.text.withValues(alpha: .38),
                         ),
                         onTap: publicando
                             ? null
@@ -1145,16 +1148,16 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
                   ),
                 ),
                 if (publicando) ...[
-                  const SizedBox(height: 18),
-                  const LinearProgressIndicator(
-                    color: Colors.white,
+                  SizedBox(height: 18),
+                  LinearProgressIndicator(
+                    color: StiloColors.text,
                     backgroundColor: _linea,
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: 8),
                   Text(
                     'Publicando contenido…',
                     style: GoogleFonts.inter(
-                      color: Colors.white54,
+                      color: StiloColors.text.withValues(alpha: .54),
                       fontSize: 11,
                     ),
                   ),
@@ -1214,7 +1217,7 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
     try {
       final video = await ImagePicker().pickVideo(
         source: source,
-        maxDuration: const Duration(minutes: 10),
+        maxDuration: Duration(minutes: 10),
       );
       if (video == null) return;
       if (await video.length() > 50 * 1024 * 1024) {
@@ -1263,7 +1266,7 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
       isScrollControlled: true,
       useSafeArea: true,
       backgroundColor: _fondo,
-      shape: const RoundedRectangleBorder(
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (modalContext) => Padding(
@@ -1274,17 +1277,17 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
           height: MediaQuery.of(modalContext).size.height * .82,
           child: Column(
             children: [
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               Container(
                 width: 42,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.white24,
+                  color: StiloColors.text.withValues(alpha: .24),
                   borderRadius: BorderRadius.circular(4),
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 8, 9),
+                padding: EdgeInsets.fromLTRB(16, 12, 8, 9),
                 child: Row(
                   children: [
                     Expanded(
@@ -1299,12 +1302,12 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
                     ),
                     IconButton(
                       onPressed: () => Navigator.pop(modalContext),
-                      icon: const Icon(Icons.close_rounded),
+                      icon: Icon(Icons.close_rounded),
                     ),
                   ],
                 ),
               ),
-              const Divider(height: 1, color: _linea),
+              Divider(height: 1, color: _linea),
               Expanded(
                 child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
                   stream: _social.comentarios(publicacionId),
@@ -1325,14 +1328,14 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
                           'Todavía no hay comentarios.\nInicia la conversación.',
                           textAlign: TextAlign.center,
                           style: GoogleFonts.inter(
-                            color: Colors.white38,
+                            color: StiloColors.text.withValues(alpha: .38),
                             height: 1.5,
                           ),
                         ),
                       );
                     }
                     return ListView.builder(
-                      padding: const EdgeInsets.fromLTRB(14, 12, 14, 18),
+                      padding: EdgeInsets.fromLTRB(14, 12, 14, 18),
                       itemCount: comentarios.length,
                       itemBuilder: (_, index) {
                         final data = comentarios[index].data();
@@ -1347,7 +1350,7 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
                             ? (data['duracionSegundos'] as num).toInt()
                             : 0;
                         return Padding(
-                          padding: const EdgeInsets.only(bottom: 17),
+                          padding: EdgeInsets.only(bottom: 17),
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -1356,7 +1359,7 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
                                 foto: foto,
                                 radio: 19,
                               ),
-                              const SizedBox(width: 10),
+                              SizedBox(width: 10),
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment:
@@ -1367,7 +1370,7 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
                                         children: [
                                           TextSpan(
                                             text: '$autor  ',
-                                            style: const TextStyle(
+                                            style: TextStyle(
                                               fontWeight: FontWeight.w800,
                                             ),
                                           ),
@@ -1376,7 +1379,7 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
                                         ],
                                       ),
                                       style: GoogleFonts.inter(
-                                        color: Colors.white,
+                                        color: StiloColors.text,
                                         fontSize: 13,
                                         height: 1.4,
                                       ),
@@ -1384,20 +1387,20 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
                                     if (audioUrl.isNotEmpty)
                                       Padding(
                                         padding:
-                                            const EdgeInsets.only(top: 7),
+                                            EdgeInsets.only(top: 7),
                                         child: AudioMessagePlayer(
                                           url: audioUrl,
                                           durationSeconds: duracion,
                                         ),
                                       ),
-                                    const SizedBox(height: 4),
+                                    SizedBox(height: 4),
                                     Text(
                                       DateFormat(
                                         'd MMM · HH:mm',
                                         'es',
                                       ).format(_fecha(data)),
                                       style: GoogleFonts.inter(
-                                        color: Colors.white38,
+                                        color: StiloColors.text.withValues(alpha: .38),
                                         fontSize: 9.5,
                                       ),
                                     ),
@@ -1412,11 +1415,11 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
                   },
                 ),
               ),
-              const Divider(height: 1, color: _linea),
+              Divider(height: 1, color: _linea),
               SafeArea(
                 top: false,
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 9, 10, 10),
+                  padding: EdgeInsets.fromLTRB(12, 9, 10, 10),
                   child: Row(
                     children: [
                       _avatar(
@@ -1424,23 +1427,23 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
                         foto: widget.usuario.fotoUrl ?? '',
                         radio: 19,
                       ),
-                      const SizedBox(width: 9),
+                      SizedBox(width: 9),
                       Expanded(
                         child: TextField(contextMenuBuilder: privacyTextMenu,
                           controller: controller,
                           textCapitalization: TextCapitalization.sentences,
                           style: GoogleFonts.inter(
-                            color: Colors.white,
+                            color: StiloColors.text,
                             fontSize: 13,
                           ),
                           decoration: InputDecoration(
                             hintText: 'Agrega un comentario…',
-                            hintStyle: const TextStyle(
-                              color: Colors.white38,
+                            hintStyle: TextStyle(
+                              color: StiloColors.text.withValues(alpha: .38),
                             ),
                             filled: true,
                             fillColor: _superficie,
-                            contentPadding: const EdgeInsets.symmetric(
+                            contentPadding: EdgeInsets.symmetric(
                               horizontal: 14,
                               vertical: 11,
                             ),
@@ -1451,7 +1454,7 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
                           ),
                         ),
                       ),
-                      const SizedBox(width: 5),
+                      SizedBox(width: 5),
                       AudioNoteButton(
                         onAudioReady: (wav, duracion) async {
                           try {
@@ -1488,7 +1491,7 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
                             }
                           }
                         },
-                        icon: const Icon(
+                        icon: Icon(
                           Icons.send_rounded,
                           color: Color(0xFF5BA8FF),
                         ),
@@ -1511,15 +1514,15 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
   }) {
     return CircleAvatar(
       radius: radio,
-      backgroundColor: const Color(0xFF30272D),
-      backgroundImage: foto.isNotEmpty ? NetworkImage(foto) : null,
+      backgroundColor: StiloColors.surface,
+      backgroundImage: foto.isNotEmpty ? stiloImageProvider(foto) : null,
       child: foto.isEmpty
           ? Text(
               nombre.trim().isEmpty
                   ? 'S'
                   : nombre.trim().characters.first.toUpperCase(),
               style: GoogleFonts.inter(
-                color: Colors.white,
+                color: StiloColors.text,
                 fontWeight: FontWeight.w800,
               ),
             )
@@ -1531,9 +1534,9 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
     return Image.memory(
       await imagen.readAsBytes(),
       fit: BoxFit.cover,
-      errorBuilder: (_, __, ___) => const Icon(
+      errorBuilder: (_, __, ___) => Icon(
         Icons.broken_image_outlined,
-        color: Colors.white38,
+        color: StiloColors.text.withValues(alpha: .38),
       ),
     );
   }
@@ -1553,9 +1556,9 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
   void _abrirFoto(String url) {
     showDialog<void>(
       context: context,
-      barrierColor: Colors.black,
+      barrierColor: StiloColors.background,
       builder: (dialogContext) => Dialog.fullscreen(
-        backgroundColor: Colors.black,
+        backgroundColor: StiloColors.background,
         child: Stack(
           children: [
             Positioned.fill(
@@ -1566,9 +1569,9 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
                   child: Image.network(
                     url,
                     fit: BoxFit.contain,
-                    errorBuilder: (_, __, ___) => const Icon(
+                    errorBuilder: (_, __, ___) => Icon(
                       Icons.broken_image_outlined,
-                      color: Colors.white38,
+                      color: StiloColors.text.withValues(alpha: .38),
                       size: 70,
                     ),
                   ),
@@ -1578,10 +1581,10 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
             SafeArea(
               child: IconButton.filled(
                 style: IconButton.styleFrom(
-                  backgroundColor: Colors.black54,
+                  backgroundColor: StiloColors.background.withValues(alpha: .54),
                 ),
                 onPressed: () => Navigator.pop(dialogContext),
-                icon: const Icon(Icons.close_rounded),
+                icon: Icon(Icons.close_rounded),
               ),
             ),
           ],
@@ -1592,7 +1595,7 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
 
   Widget _estadoVacio() {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 78, horizontal: 28),
+      padding: EdgeInsets.symmetric(vertical: 78, horizontal: 28),
       child: Column(
         children: [
           Container(
@@ -1600,37 +1603,37 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
             height: 92,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              border: Border.all(color: Colors.white, width: 2),
+              border: Border.all(color: StiloColors.text, width: 2),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.photo_camera_outlined,
               size: 48,
-              color: Colors.white,
+              color: StiloColors.text,
             ),
           ),
-          const SizedBox(height: 20),
+          SizedBox(height: 20),
           Text(
             'Comparte el trabajo de hoy',
             textAlign: TextAlign.center,
             style: GoogleFonts.montserrat(
-              color: Colors.white,
+              color: StiloColors.text,
               fontSize: 20,
               fontWeight: FontWeight.w800,
             ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
           Text(
             'Publica fotos, videos, avances y comentarios para mantener conectado a todo el equipo.',
             textAlign: TextAlign.center,
             style: GoogleFonts.inter(
-              color: Colors.white54,
+              color: StiloColors.text.withValues(alpha: .54),
               height: 1.45,
             ),
           ),
-          const SizedBox(height: 20),
+          SizedBox(height: 20),
           TextButton(
             onPressed: _crearPublicacion,
-            child: const Text('CREAR PRIMERA PUBLICACIÓN'),
+            child: Text('CREAR PRIMERA PUBLICACIÓN'),
           ),
         ],
       ),
@@ -1640,32 +1643,32 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
   Widget _errorCarga(String mensaje) {
     return Center(
       child: SingleChildScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.all(28),
+        physics: AlwaysScrollableScrollPhysics(),
+        padding: EdgeInsets.all(28),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
+            Icon(
               Icons.lock_outline_rounded,
-              color: Colors.white,
+              color: StiloColors.text,
               size: 54,
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
             Text(
               'No pudimos abrir la comunidad',
               textAlign: TextAlign.center,
               style: GoogleFonts.montserrat(
-                color: Colors.white,
+                color: StiloColors.text,
                 fontSize: 19,
                 fontWeight: FontWeight.w800,
               ),
             ),
-            const SizedBox(height: 9),
+            SizedBox(height: 9),
             Text(
               mensaje,
               textAlign: TextAlign.center,
               style: GoogleFonts.inter(
-                color: Colors.white54,
+                color: StiloColors.text.withValues(alpha: .54),
                 height: 1.45,
               ),
             ),
@@ -1701,7 +1704,7 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
         SnackBar(
           content: Text(mensaje),
           behavior: SnackBarBehavior.floating,
-          backgroundColor: const Color(0xFF30272D),
+          backgroundColor: StiloColors.surface,
         ),
       );
   }
@@ -1724,7 +1727,7 @@ class _VisorHistoriasScreen extends StatefulWidget {
   final UserModel usuario;
   final SocialService social;
 
-  const _VisorHistoriasScreen({
+  _VisorHistoriasScreen({
     required this.historias,
     required this.indiceInicial,
     required this.usuario,
@@ -1757,8 +1760,9 @@ class _VisorHistoriasScreenState extends State<_VisorHistoriasScreen> {
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context);
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: StiloColors.background,
       body: Stack(
         fit: StackFit.expand,
         children: [
@@ -1770,7 +1774,7 @@ class _VisorHistoriasScreenState extends State<_VisorHistoriasScreen> {
           ),
           SafeArea(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(10, 8, 10, 12),
+              padding: EdgeInsets.fromLTRB(10, 8, 10, 12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -1780,22 +1784,22 @@ class _VisorHistoriasScreenState extends State<_VisorHistoriasScreen> {
                       (index) => Expanded(
                         child: Container(
                           height: 3,
-                          margin: const EdgeInsets.symmetric(horizontal: 2),
+                          margin: EdgeInsets.symmetric(horizontal: 2),
                           decoration: BoxDecoration(
                             color: index <= _indice
-                                ? Colors.white
-                                : Colors.white30,
+                                ? StiloColors.text
+                                : StiloColors.text.withValues(alpha: .30),
                             borderRadius: BorderRadius.circular(3),
                           ),
                         ),
                       ),
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  SizedBox(height: 12),
                   Row(
                     children: [
                       _avatarHistoria(_historias[_indice]),
-                      const SizedBox(width: 9),
+                      SizedBox(width: 9),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1805,10 +1809,10 @@ class _VisorHistoriasScreenState extends State<_VisorHistoriasScreen> {
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: GoogleFonts.inter(
-                                color: Colors.white,
+                                color: StiloColors.text,
                                 fontSize: 13,
                                 fontWeight: FontWeight.w800,
-                                shadows: const [Shadow(blurRadius: 8)],
+                                shadows: [Shadow(blurRadius: 8)],
                               ),
                             ),
                             Text(
@@ -1816,9 +1820,9 @@ class _VisorHistoriasScreenState extends State<_VisorHistoriasScreen> {
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: GoogleFonts.inter(
-                                color: Colors.white70,
+                                color: StiloColors.text.withValues(alpha: .70),
                                 fontSize: 10.5,
-                                shadows: const [Shadow(blurRadius: 8)],
+                                shadows: [Shadow(blurRadius: 8)],
                               ),
                             ),
                           ],
@@ -1829,22 +1833,22 @@ class _VisorHistoriasScreenState extends State<_VisorHistoriasScreen> {
                           tooltip: 'Eliminar historia',
                           onPressed: _eliminando ? null : _confirmarEliminar,
                           icon: _eliminando
-                              ? const SizedBox.square(
+                              ? SizedBox.square(
                                   dimension: 20,
                                   child: CircularProgressIndicator(
                                     strokeWidth: 2,
-                                    color: Colors.white,
+                                    color: StiloColors.text,
                                   ),
                                 )
-                              : const Icon(
+                              : Icon(
                                   Icons.more_horiz_rounded,
-                                  color: Colors.white,
+                                  color: StiloColors.text,
                                 ),
                         ),
                       IconButton(
                         tooltip: 'Cerrar',
                         onPressed: () => Navigator.pop(context),
-                        icon: const Icon(Icons.close_rounded, color: Colors.white),
+                        icon: Icon(Icons.close_rounded, color: StiloColors.text),
                       ),
                     ],
                   ),
@@ -1868,34 +1872,34 @@ class _VisorHistoriasScreenState extends State<_VisorHistoriasScreen> {
             fit: BoxFit.cover,
             loadingBuilder: (_, child, progress) => progress == null
                 ? child
-                : const Center(
-                    child: CircularProgressIndicator(color: Colors.white),
+                : Center(
+                    child: CircularProgressIndicator(color: StiloColors.text),
                   ),
-            errorBuilder: (_, __, ___) => const ColoredBox(
-              color: Color(0xFF171717),
+            errorBuilder: (_, __, ___) => ColoredBox(
+              color: StiloColors.surface,
               child: Center(
                 child: Icon(
                   Icons.broken_image_outlined,
-                  color: Colors.white54,
+                  color: StiloColors.text.withValues(alpha: .54),
                   size: 64,
                 ),
               ),
             ),
           )
         else
-          const DecoratedBox(
+          DecoratedBox(
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [Color(0xFF5B247A), Color(0xFF1B1331), Colors.black],
+                colors: [StiloColors.border, StiloColors.surface, StiloColors.background],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
             ),
           ),
-        const DecoratedBox(
+        DecoratedBox(
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              colors: [Colors.black54, Colors.transparent, Colors.black87],
+              colors: [StiloColors.background.withValues(alpha: .54), Colors.transparent, StiloColors.background.withValues(alpha: .87)],
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
               stops: [0, .38, 1],
@@ -1918,12 +1922,12 @@ class _VisorHistoriasScreenState extends State<_VisorHistoriasScreen> {
                   historia.texto,
                   textAlign: TextAlign.center,
                   style: GoogleFonts.montserrat(
-                    color: Colors.white,
+                    color: StiloColors.text,
                     fontSize: tieneImagen ? 22 : 28,
                     height: 1.3,
                     fontWeight: FontWeight.w800,
-                    shadows: const [
-                      Shadow(color: Colors.black87, blurRadius: 12),
+                    shadows: [
+                      Shadow(color: StiloColors.background.withValues(alpha: .87), blurRadius: 12),
                     ],
                   ),
                 ),
@@ -1937,17 +1941,17 @@ class _VisorHistoriasScreenState extends State<_VisorHistoriasScreen> {
   Widget _avatarHistoria(HistoriaSocialModel historia) {
     return CircleAvatar(
       radius: 19,
-      backgroundColor: const Color(0xFF30272D),
+      backgroundColor: StiloColors.surface,
       backgroundImage: historia.autorFotoUrl.isNotEmpty
-          ? NetworkImage(historia.autorFotoUrl)
+          ? stiloImageProvider(historia.autorFotoUrl)
           : null,
       child: historia.autorFotoUrl.isEmpty
           ? Text(
               historia.autorNombre.trim().isEmpty
                   ? 'S'
                   : historia.autorNombre.trim().characters.first.toUpperCase(),
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: StiloColors.text,
                 fontWeight: FontWeight.w800,
               ),
             )
@@ -1964,17 +1968,17 @@ class _VisorHistoriasScreenState extends State<_VisorHistoriasScreen> {
     final confirmar = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        backgroundColor: const Color(0xFF171717),
-        title: const Text('¿Eliminar esta historia?'),
-        content: const Text('Dejará de aparecer inmediatamente para el equipo.'),
+        backgroundColor: StiloColors.surface,
+        title: Text('¿Eliminar esta historia?'),
+        content: Text('Dejará de aparecer inmediatamente para el equipo.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('CANCELAR'),
+            child: Text('CANCELAR'),
           ),
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('ELIMINAR'),
+            child: Text('ELIMINAR'),
           ),
         ],
       ),
@@ -2000,7 +2004,7 @@ class _VisorHistoriasScreenState extends State<_VisorHistoriasScreen> {
       if (!mounted) return;
       setState(() => _eliminando = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No se pudo eliminar la historia.')),
+        SnackBar(content: Text('No se pudo eliminar la historia.')),
       );
     }
   }
@@ -2024,7 +2028,7 @@ class _GaleriaPost extends StatefulWidget {
   final List<String> imagenes;
   final ValueChanged<String> onOpen;
 
-  const _GaleriaPost({
+  _GaleriaPost({
     required this.imagenes,
     required this.onOpen,
   });
@@ -2038,6 +2042,7 @@ class _GaleriaPostState extends State<_GaleriaPost> {
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context);
     return AspectRatio(
       aspectRatio: 1,
       child: Stack(
@@ -2053,18 +2058,18 @@ class _GaleriaPostState extends State<_GaleriaPost> {
                 fit: BoxFit.cover,
                 loadingBuilder: (_, child, progress) => progress == null
                     ? child
-                    : const Center(
+                    : Center(
                         child: CircularProgressIndicator(
-                          color: Colors.white,
+                          color: StiloColors.text,
                           strokeWidth: 2,
                         ),
                       ),
-                errorBuilder: (_, __, ___) => const ColoredBox(
-                  color: Color(0xFF111012),
+                errorBuilder: (_, __, ___) => ColoredBox(
+                  color: StiloColors.surface,
                   child: Center(
                     child: Icon(
                       Icons.broken_image_outlined,
-                      color: Colors.white38,
+                      color: StiloColors.text.withValues(alpha: .38),
                       size: 60,
                     ),
                   ),
@@ -2078,15 +2083,15 @@ class _GaleriaPostState extends State<_GaleriaPost> {
               right: 12,
               child: Container(
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+                    EdgeInsets.symmetric(horizontal: 9, vertical: 5),
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(.72),
+                  color: StiloColors.background.withOpacity(.72),
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: Text(
                   '${_pagina + 1}/${widget.imagenes.length}',
                   style: GoogleFonts.inter(
-                    color: Colors.white,
+                    color: StiloColors.text,
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
                   ),
@@ -2103,14 +2108,14 @@ class _GaleriaPostState extends State<_GaleriaPost> {
                 children: List.generate(
                   widget.imagenes.length,
                   (index) => AnimatedContainer(
-                    duration: const Duration(milliseconds: 180),
+                    duration: Duration(milliseconds: 180),
                     width: index == _pagina ? 7 : 5,
                     height: index == _pagina ? 7 : 5,
-                    margin: const EdgeInsets.symmetric(horizontal: 2),
+                    margin: EdgeInsets.symmetric(horizontal: 2),
                     decoration: BoxDecoration(
                       color: index == _pagina
-                          ? const Color(0xFF1689FF)
-                          : Colors.white54,
+                          ? Color(0xFF1689FF)
+                          : StiloColors.text.withValues(alpha: .54),
                       shape: BoxShape.circle,
                     ),
                   ),
@@ -2126,14 +2131,15 @@ class _GaleriaPostState extends State<_GaleriaPost> {
 class _GaleriaVideosPost extends StatelessWidget {
   final List<String> videos;
 
-  const _GaleriaVideosPost({required this.videos});
+  _GaleriaVideosPost({required this.videos});
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context);
     return Column(
       children: [
         for (var index = 0; index < videos.length; index++) ...[
-          if (index > 0) const SizedBox(height: 2),
+          if (index > 0) SizedBox(height: 2),
           _VideoPost(
             key: ValueKey<String>(videos[index]),
             url: videos[index],
@@ -2172,27 +2178,28 @@ class _VideoPostState extends State<_VideoPost> {
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context);
     return FutureBuilder<void>(
       future: _inicializacion,
       builder: (context, snapshot) {
         if (snapshot.hasError) {
-          return const AspectRatio(
+          return AspectRatio(
             aspectRatio: 16 / 9,
             child: ColoredBox(
-              color: Color(0xFF111012),
+              color: StiloColors.surface,
               child: Center(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
                       Icons.videocam_off_outlined,
-                      color: Colors.white54,
+                      color: StiloColors.text.withValues(alpha: .54),
                       size: 48,
                     ),
                     SizedBox(height: 8),
                     Text(
                       'No se pudo reproducir el video',
-                      style: TextStyle(color: Colors.white54),
+                      style: TextStyle(color: StiloColors.text.withValues(alpha: .54)),
                     ),
                   ],
                 ),
@@ -2201,13 +2208,13 @@ class _VideoPostState extends State<_VideoPost> {
           );
         }
         if (snapshot.connectionState != ConnectionState.done) {
-          return const AspectRatio(
+          return AspectRatio(
             aspectRatio: 16 / 9,
             child: ColoredBox(
-              color: Color(0xFF111012),
+              color: StiloColors.surface,
               child: Center(
                 child: CircularProgressIndicator(
-                  color: Colors.white,
+                  color: StiloColors.text,
                   strokeWidth: 2,
                 ),
               ),
@@ -2219,7 +2226,7 @@ class _VideoPostState extends State<_VideoPost> {
             ? _controller.value.aspectRatio
             : 16 / 9;
         return ColoredBox(
-          color: Colors.black,
+          color: StiloColors.background,
           child: AspectRatio(
             aspectRatio: aspectRatio,
             child: Stack(
@@ -2232,8 +2239,8 @@ class _VideoPostState extends State<_VideoPost> {
                         ? 'Pausar video'
                         : 'Reproducir video',
                     style: IconButton.styleFrom(
-                      backgroundColor: Colors.black.withOpacity(.58),
-                      minimumSize: const Size.square(58),
+                      backgroundColor: StiloColors.background.withOpacity(.58),
+                      minimumSize: Size.square(58),
                     ),
                     onPressed: () async {
                       if (_controller.value.isPlaying) {
@@ -2247,7 +2254,7 @@ class _VideoPostState extends State<_VideoPost> {
                       _controller.value.isPlaying
                           ? Icons.pause_rounded
                           : Icons.play_arrow_rounded,
-                      color: Colors.white,
+                      color: StiloColors.text,
                       size: 33,
                     ),
                   ),
@@ -2259,12 +2266,12 @@ class _VideoPostState extends State<_VideoPost> {
                   child: VideoProgressIndicator(
                     _controller,
                     allowScrubbing: true,
-                    colors: const VideoProgressColors(
-                      playedColor: Color(0xFFB7FF2A),
-                      bufferedColor: Colors.white30,
-                      backgroundColor: Colors.white12,
+                    colors: VideoProgressColors(
+                      playedColor: StiloColors.accent,
+                      bufferedColor: StiloColors.text.withValues(alpha: .30),
+                      backgroundColor: StiloColors.text.withValues(alpha: .12),
                     ),
-                    padding: const EdgeInsets.only(top: 10),
+                    padding: EdgeInsets.only(top: 10),
                   ),
                 ),
               ],

@@ -1,3 +1,4 @@
+import '../presentation/appearance.dart';
 import 'dart:async';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -17,7 +18,7 @@ class AvisosSonoros extends StatefulWidget {
   final UserModel usuario;
   final Widget child;
 
-  const AvisosSonoros({
+  AvisosSonoros({
     super.key,
     required this.usuario,
     required this.child,
@@ -88,7 +89,7 @@ class _AvisosSonorosState extends State<AvisosSonoros> with WidgetsBindingObserv
   Future<void> _preparePushNotifications() async {
     if (!mounted || _configurandoPush) return;
     final uid = widget.usuario.id;
-    if (_passiveUid == uid && _lastPassivePush != null && DateTime.now().difference(_lastPassivePush!) < const Duration(minutes: 10)) return;
+    if (_passiveUid == uid && _lastPassivePush != null && DateTime.now().difference(_lastPassivePush!) < Duration(minutes: 10)) return;
     _passiveUid = uid; _lastPassivePush = DateTime.now();
     _configurandoPush = true;
     try {
@@ -123,13 +124,13 @@ class _AvisosSonorosState extends State<AvisosSonoros> with WidgetsBindingObserv
       ..hideCurrentSnackBar()
       ..showSnackBar(
         SnackBar(
-          duration: const Duration(seconds: 18),
-          backgroundColor: const Color(0xFF171717),
+          duration: Duration(seconds: 18),
+          backgroundColor: StiloColors.surface,
           behavior: SnackBarBehavior.floating,
           content: Text(message),
           action: SnackBarAction(
             label: 'ACTIVAR',
-            textColor: const Color(0xFFB7FF2A),
+            textColor: StiloColors.accent,
             onPressed: _activatePushFromUserAction,
           ),
         ),
@@ -147,8 +148,8 @@ class _AvisosSonorosState extends State<AvisosSonoros> with WidgetsBindingObserv
       ..showSnackBar(
         SnackBar(
           backgroundColor: result.active
-              ? const Color(0xFF12372A)
-              : const Color(0xFF3A1D1D),
+              ? StiloColors.surface
+              : StiloColors.surface,
           behavior: SnackBarBehavior.floating,
           content: Text(result.message),
         ),
@@ -206,13 +207,13 @@ class _AvisosSonorosState extends State<AvisosSonoros> with WidgetsBindingObserv
             ..hideCurrentSnackBar()
             ..showSnackBar(
               SnackBar(
-                backgroundColor: const Color(0xFF171717),
+                backgroundColor: StiloColors.surface,
                 behavior: SnackBarBehavior.floating,
                 action: SnackBarAction(label: 'ABRIR', onPressed: () => _openNotice(aviso.id)),
                 content: Row(
                   children: [
-                    const Icon(Icons.notifications_active_rounded, color: Color(0xFFB7FF2A)),
-                    const SizedBox(width: 11),
+                    Icon(Icons.notifications_active_rounded, color: StiloColors.accent),
+                    SizedBox(width: 11),
                     Expanded(child: Text('${aviso.titulo}\n${aviso.mensaje}')),
                   ],
                 ),
@@ -234,14 +235,14 @@ class _AvisosSonorosState extends State<AvisosSonoros> with WidgetsBindingObserv
         await _player.setReleaseMode(ReleaseMode.loop);
         await _player.play(AssetSource('sounds/urgent_alarm.ogg'), volume: 1);
         _soundTimeout?.cancel();
-        _soundTimeout = Timer(const Duration(seconds: 8), () { if (!_alarmaActiva) unawaited(_player.stop()); });
+        _soundTimeout = Timer(Duration(seconds: 8), () { if (!_alarmaActiva) unawaited(_player.stop()); });
       } catch (_) {}
       if (!mounted) return;
       open = await showDialog<bool>(context: context, builder: (c) => AlertDialog(
-        backgroundColor: const Color(0xFF190A10),
-        title: Row(children: [Icon(aviso.esLlamada ? Icons.call_outlined : Icons.notifications_active_outlined, color: const Color(0xFFB7FF2A)), const SizedBox(width: 12), Expanded(child: Text(aviso.titulo))]),
-        content: SingleChildScrollView(child: Text(aviso.mensaje, style: const TextStyle(fontSize: 18, height: 1.5))),
-        actions: [TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Recibido')),
+        backgroundColor: StiloColors.surface,
+        title: Row(children: [Icon(aviso.esLlamada ? Icons.call_outlined : Icons.notifications_active_outlined, color: StiloColors.accent), SizedBox(width: 12), Expanded(child: Text(aviso.titulo))]),
+        content: SingleChildScrollView(child: Text(aviso.mensaje, style: TextStyle(fontSize: 18, height: 1.5))),
+        actions: [TextButton(onPressed: () => Navigator.pop(c, false), child: Text('Recibido')),
           FilledButton(onPressed: () => Navigator.pop(c, true), child: Text(aviso.esLlamada ? 'Abrir llamada' : 'Ver mensaje'))],
       )) ?? false;
       try { await _notificacionesService.marcarLeida(aviso.id, widget.usuario.id); } catch (_) {}
@@ -286,16 +287,16 @@ class _AvisosSonorosState extends State<AvisosSonoros> with WidgetsBindingObserv
       builder: (dialogContext) => PopScope(
         canPop: false,
         child: AlertDialog(
-          backgroundColor: const Color(0xFF160606),
-          insetPadding: const EdgeInsets.symmetric(horizontal: 18),
+          backgroundColor: StiloColors.surface,
+          insetPadding: EdgeInsets.symmetric(horizontal: 18),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(24),
-            side: const BorderSide(color: Color(0xFFFF3B30), width: 2),
+            side: BorderSide(color: Color(0xFFFF3B30), width: 2),
           ),
-          titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 10),
-          contentPadding: const EdgeInsets.fromLTRB(24, 0, 24, 12),
-          actionsPadding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
-          title: const Row(
+          titlePadding: EdgeInsets.fromLTRB(24, 24, 24, 10),
+          contentPadding: EdgeInsets.fromLTRB(24, 0, 24, 12),
+          actionsPadding: EdgeInsets.fromLTRB(24, 8, 24, 24),
+          title: Row(
             children: [
               Icon(
                 Icons.warning_amber_rounded,
@@ -307,7 +308,7 @@ class _AvisosSonorosState extends State<AvisosSonoros> with WidgetsBindingObserv
                 child: Text(
                   'ALARMA INTERNA',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: StiloColors.text,
                     fontSize: 22,
                     fontWeight: FontWeight.w900,
                     letterSpacing: 1.1,
@@ -322,23 +323,23 @@ class _AvisosSonorosState extends State<AvisosSonoros> with WidgetsBindingObserv
             children: [
               Text(
                 aviso.titulo,
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: StiloColors.text,
                   fontSize: 19,
                   fontWeight: FontWeight.w800,
                 ),
               ),
-              const SizedBox(height: 10),
+              SizedBox(height: 10),
               Text(
                 aviso.mensaje,
-                style: const TextStyle(
+                style: TextStyle(
                   color: Color(0xFFFFD8D5),
                   fontSize: 16,
                   height: 1.35,
                 ),
               ),
-              const SizedBox(height: 14),
-              const Text(
+              SizedBox(height: 14),
+              Text(
                 'Confirma que recibiste esta alerta para detener el sonido.',
                 style: TextStyle(
                   color: Color(0xFFFF9F99),
@@ -354,9 +355,9 @@ class _AvisosSonorosState extends State<AvisosSonoros> with WidgetsBindingObserv
               width: double.maxFinite,
               child: FilledButton.icon(
                 style: FilledButton.styleFrom(
-                  backgroundColor: const Color(0xFFFF3B30),
-                  foregroundColor: Colors.white,
-                  minimumSize: const Size.fromHeight(54),
+                  backgroundColor: Color(0xFFFF3B30),
+                  foregroundColor: StiloColors.text,
+                  minimumSize: Size.fromHeight(54),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
                   ),
@@ -367,8 +368,8 @@ class _AvisosSonorosState extends State<AvisosSonoros> with WidgetsBindingObserv
                     Navigator.of(dialogContext).pop();
                   }
                 },
-                icon: const Icon(Icons.check_circle_outline_rounded),
-                label: const Text(
+                icon: Icon(Icons.check_circle_outline_rounded),
+                label: Text(
                   'DETENER Y CONFIRMAR',
                   style: TextStyle(fontWeight: FontWeight.w900),
                 ),

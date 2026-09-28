@@ -20,6 +20,7 @@ class CompanyLearningService {
   }
   if(FirebaseAuth.instance.currentUser?.uid!=user.uid)throw StateError('La sesión cambió. Abre la pantalla con tu cuenta.');
   dynamic decoded;try{decoded=jsonDecode(response.body);}catch(_){throw StateError('El servicio no respondió correctamente. Reintenta sin salir.');}
+  if(response.statusCode==402 || (decoded is Map && decoded['code']=='APP_TEMPORARILY_UNAVAILABLE'))throw StateError('Este servicio está temporalmente pausado. Intenta más tarde; no se confirmó esta operación.');
   if(response.statusCode!=200){final message=decoded is Map ? decoded['error']??decoded['message'] : null;throw StateError(message is String?message:'No se confirmó la operación. Vuelve a consultar su estado.');}
   if(decoded is! Map)throw StateError('La respuesta del servicio no tiene el formato esperado.');
   return Map<String,dynamic>.from(decoded);

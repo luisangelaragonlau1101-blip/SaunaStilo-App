@@ -1,3 +1,6 @@
+import '../presentation/appearance.dart';
+import '../widgets/personal_header.dart';
+import 'business_workspace_screen.dart';
 import '../widgets/home_shortcuts.dart';
 import 'daily_tasks_screen.dart';
 import 'configuracion_screen.dart';
@@ -25,7 +28,7 @@ import 'online_smart_screen.dart';
 import 'project_workspace_screen.dart';
 import 'equipo_tareas_screen.dart';
 
-const operationsDestinations = <NavigationDestination>[
+final operationsDestinations = <NavigationDestination>[
   NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home_rounded), label: 'Inicio'),
   NavigationDestination(icon: Icon(Icons.auto_awesome_mosaic_outlined), selectedIcon: Icon(Icons.auto_awesome_mosaic_rounded), label: 'Comunidad'),
   NavigationDestination(icon: Icon(Icons.forum_outlined), selectedIcon: Icon(Icons.forum_rounded), label: 'Mensajes'),
@@ -49,8 +52,8 @@ class _OperationsShellState extends State<OperationsShell> {
     if (oldWidget.usuario.id != widget.usuario.id || oldWidget.usuario.rol != widget.usuario.rol) _index = 0;
   }
   void _personalMenu() {
-    final actions = AppActionCatalog.forUser(widget.usuario).where((a) => !['proyectos', 'configuracion', 'insignias', 'asistencia'].contains(a.id)).toList();
-    showModalBottomSheet<void>(context: context, isScrollControlled: true, useSafeArea: true, backgroundColor: const Color(0xFF111012), builder: (c) => SizedBox(height: MediaQuery.sizeOf(c).height * .82, child: ListView(padding: const EdgeInsets.all(20), children: [const Text('Todas mis opciones', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800)), for (final a in actions) ListTile(leading: Icon(a.icon, color: a.color), title: Text(a.title), subtitle: Text(a.subtitle), onTap: () { Navigator.pop(c); Navigator.of(context).push(MaterialPageRoute<void>(builder: a.builder)); })])));
+    final actions = AppActionCatalog.mainMenu(widget.usuario);
+    showModalBottomSheet<void>(context: context, isScrollControlled: true, useSafeArea: true, backgroundColor: StiloColors.surface, builder: (c) => SizedBox(height: MediaQuery.sizeOf(c).height * .82, child: ListView(padding: EdgeInsets.all(20), children: [Text('Todas mis opciones', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800)), for (final a in actions) ListTile(leading: Icon(a.icon, color: a.color), title: Text(a.title), subtitle: Text(a.subtitle), onTap: () { Navigator.pop(c); Navigator.of(context).push(MaterialPageRoute<void>(builder: a.builder)); })])));
   }
   Widget _page(int index) => _pages.putIfAbsent(index, () => switch (index) {
     1 => BlogInternoScreen(usuario: widget.usuario),
@@ -61,10 +64,11 @@ class _OperationsShellState extends State<OperationsShell> {
   });
   @override
   Widget build(BuildContext context) {
+    Theme.of(context);
     _page(_index);
     return PersonalMessageOverlay(usuario: widget.usuario, child: Scaffold(
-      backgroundColor: Colors.black,
-      body: IndexedStack(index: _index, children: List<Widget>.generate(5, (i) => TickerMode(enabled: i == _index, child: _pages[i] ?? const SizedBox.shrink()))),
+      backgroundColor: StiloColors.background,
+      body: IndexedStack(index: _index, children: List<Widget>.generate(5, (i) => TickerMode(enabled: i == _index, child: _pages[i] ?? SizedBox.shrink()))),
       bottomNavigationBar: StiloDock(selectedIndex: _index, destinations: operationsDestinations, onSelected: (i) => setState(() => _index = i)),
     ));
   }
@@ -73,13 +77,16 @@ class _OperationsShellState extends State<OperationsShell> {
 class _OperationsHome extends StatefulWidget {
   final UserModel usuario;
   final ValueChanged<int> onTab;
-  const _OperationsHome({required this.usuario, required this.onTab});
+  _OperationsHome({required this.usuario, required this.onTab});
   @override
   State<_OperationsHome> createState() => _OperationsHomeState();
 }
 class _OperationsHomeState extends State<_OperationsHome> {
   String _search = '';
   bool _all = false;
+  @override void initState() { super.initState(); AppearanceController.instance.addListener(_appearanceChanged); }
+  void _appearanceChanged() { if (mounted) setState(() {}); }
+  @override void dispose() { AppearanceController.instance.removeListener(_appearanceChanged); super.dispose(); }
   void _open(AppAction action) {
     if (action.id == 'proyectos') { widget.onTab(3); return; }
     if (action.id == 'comunidad') { widget.onTab(1); return; }
@@ -90,36 +97,26 @@ class _OperationsHomeState extends State<_OperationsHome> {
   }
   @override
   Widget build(BuildContext context) {
-    final actions = AppActionCatalog.forUser(widget.usuario).where((a) => !['proyectos', 'configuracion', 'insignias', 'asistencia'].contains(a.id)).toList();
-    final quick = actions.where((a) => ['proyectos', 'asistencia', 'inventario', 'racha', 'rachas', 'asistencias', 'prestamos', 'justificar', 'cumpleanos', 'equipo', 'almacen_movimientos', 'solicitudes_almacen', 'sin_conexion', 'juegos', 'tareas', 'trabajo_extra', 'ingenieria'].contains(a.id)).toList();
-    final alerts = actions.where((a) => a.id == 'alerta_general').toList();
-    return SafeArea(bottom: false, child: ListView(padding: const EdgeInsets.fromLTRB(18, 12, 18, 24), children: [
-      Row(children: [Image.asset('assets/logo_saunastilo.png', width: 130, height: 48, fit: BoxFit.contain), const Spacer(), for (final id in ['avisos', 'perfil']) IconButton(tooltip: actions.firstWhere((a) => a.id == id).title, onPressed: () => _open(actions.firstWhere((a) => a.id == id)), icon: Icon(id == 'avisos' ? Icons.notifications_none_rounded : Icons.tune_rounded))]),
-      const SizedBox(height: 15),
-      Text('Hola, ${widget.usuario.nombre.split(' ').first}', style: const TextStyle(fontSize: 27, fontWeight: FontWeight.w800, letterSpacing: -.7)),
-      const SizedBox(height: 5),
-      const Text('Tu jornada. Tus proyectos. Tu equipo.', style: TextStyle(color: Colors.white54, fontSize: 13)),
-      const SizedBox(height: 18),
-      if (alerts.isNotEmpty) Padding(padding: const EdgeInsets.only(bottom: 14), child: OutlinedButton.icon(style: OutlinedButton.styleFrom(foregroundColor: const Color(0xFFFF647A), backgroundColor: const Color(0xFF240B12), side: const BorderSide(color: Color(0xFF8E1538)), minimumSize: const Size.fromHeight(54)), onPressed: () => _open(alerts.first), icon: const Icon(Icons.campaign_rounded), label: const Text('ALERTA GENERAL · TODO EL EQUIPO', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800)))),
-      if (widget.usuario.rol == AppRoles.admin) Padding(padding: const EdgeInsets.only(bottom: 14), child: FilledButton.icon(onPressed: () => Navigator.push(context, MaterialPageRoute<void>(builder: (_) => AdminInboxScreen(user: widget.usuario))), icon: const Icon(Icons.inbox_rounded), label: const Text('Solicitudes por revisar · Administración'))),
+    Theme.of(context);
+    final actions = AppActionCatalog.mainMenu(widget.usuario);
+
+    return SafeArea(bottom: false, child: ListView(padding: EdgeInsets.fromLTRB(18, 12, 18, 24), children: [
+      Row(children: [Image.asset('assets/logo_saunastilo.png', width: 130, height: 48, fit: BoxFit.contain), Spacer(), for (final id in ['avisos', 'perfil']) IconButton(tooltip: actions.firstWhere((a) => a.id == id).title, onPressed: () => _open(actions.firstWhere((a) => a.id == id)), icon: Icon(id == 'avisos' ? Icons.notifications_none_rounded : Icons.tune_rounded))]),
+      SizedBox(height: 15),
+      PersonalHeader(user: widget.usuario, onProfile: () => widget.onTab(4)),
+      SizedBox(height: 18),
       MainHomeShortcuts(user: widget.usuario, onTab: widget.onTab),
-      const SizedBox(height: 16),
-      HomeProgressPanel(user: widget.usuario, onStreak: () => _open(actions.firstWhere((a) => a.id == (widget.usuario.rol == AppRoles.admin ? 'rachas' : 'racha'))), onProfile: () => widget.onTab(4), onLearn: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => TrainingAccessScreen(user: widget.usuario)))),
-      if (widget.usuario.rol == AppRoles.admin)
-        AdminOperationsCard(onAttendance: () => _open(actions.firstWhere((a) => a.id == 'asistencias')), onTeam: () => _open(actions.firstWhere((a) => a.id == 'equipo'))),
+      SizedBox(height: 16),
       JornadaCompacta(usuario: widget.usuario),
-      const SizedBox(height: 16),
-      Row(children: [const Expanded(child: Text('Mis tareas', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800))), TextButton(onPressed: () => widget.onTab(3), child: const Text('Ver todas'))]),
-      OutlinedButton.icon(onPressed: () => Navigator.push(context, MaterialPageRoute<void>(builder: (_) => DailyTasksScreen(user: widget.usuario))), icon: const Icon(Icons.today), label: const Text('Tareas del día · asignaciones y evidencias')),
-      OperationsTaskList(usuario: widget.usuario, compact: true),
-      const SizedBox(height: 16),
-      FilledButton.icon(onPressed: () => widget.onTab(2), icon: const Icon(Icons.contact_phone_outlined), label: const Text('Llamar o escribir a una persona'), style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(52))),
-      const SizedBox(height: 16),
-      Wrap(spacing: 8, runSpacing: 8, children: quick.map((a) => ActionChip(shape: const StadiumBorder(), side: BorderSide(color: stiloAccents[quick.indexOf(a) % stiloAccents.length].withOpacity(.34)), avatar: Icon(a.icon, size: 18, color: stiloAccents[quick.indexOf(a) % stiloAccents.length]), label: Text(a.id == 'ia' ? 'Online Smart' : a.title), onPressed: () => _open(a))).toList()),
-      const SizedBox(height: 20),
-      TextField(contextMenuBuilder: privacyTextMenu, decoration: const InputDecoration(hintText: 'Buscar una opción…', prefixIcon: Icon(Icons.search_rounded)), onChanged: (value) => setState(() => _search = value)),
+      SizedBox(height: 16),
+      if (widget.usuario.rol == AppRoles.admin) Card(child: ListTile(contentPadding: EdgeInsets.all(18), leading: Icon(Icons.business_center_outlined), title: Text('Gestión de la empresa'), subtitle: Text('Recursos Humanos, finanzas y administración'), trailing: Icon(Icons.chevron_right), onTap: () => Navigator.push(context, MaterialPageRoute<void>(builder: (_) => BusinessWorkspaceScreen(user: widget.usuario))))),
+      if (!AppearanceController.instance.compact) HomeProgressPanel(user: widget.usuario,
+        onStreak: () => Navigator.push(context, MaterialPageRoute<void>(builder: AppActionCatalog.forUser(widget.usuario).firstWhere((a) => a.id == (widget.usuario.rol == AppRoles.admin ? 'rachas' : 'racha')).builder)),
+        onProfile: () => widget.onTab(4), onLearn: () => Navigator.push(context, MaterialPageRoute<void>(builder: (_) => TrainingAccessScreen(user: widget.usuario)))),
+      SizedBox(height: 20),
+      TextField(contextMenuBuilder: privacyTextMenu, decoration: InputDecoration(hintText: 'Buscar una opción…', prefixIcon: Icon(Icons.search_rounded)), onChanged: (value) => setState(() => _search = value)),
       TextButton.icon(onPressed: () => setState(() => _all = !_all), icon: Icon(_all ? Icons.expand_less_rounded : Icons.apps_rounded), label: Text(_all ? 'Cerrar menú completo' : 'Todas las opciones de mi cuenta')),
-      if (_all || _search.trim().isNotEmpty) ...actions.where((a) => a.matches(_search)).map((a) => Card(color: const Color(0xFF111012), child: ListTile(leading: Icon(a.icon, color: a.color), title: Text(a.id == 'ia' ? 'Online Smart' : a.title, style: const TextStyle(fontWeight: FontWeight.w700)), subtitle: Text(a.id == 'ia' ? 'Asistente mexicano para tus actividades' : a.subtitle), trailing: const Icon(Icons.arrow_forward_rounded, size: 18), onTap: () => _open(a)))),
+      if (_all || _search.trim().isNotEmpty) ...actions.where((a) => a.matches(_search)).map((a) => Card(color: StiloColors.surface, child: ListTile(leading: Icon(a.icon, color: a.color), title: Text(a.id == 'ia' ? 'Online Smart' : a.title, style: TextStyle(fontWeight: FontWeight.w700)), subtitle: Text(a.id == 'ia' ? 'Asistente mexicano para tus actividades' : a.subtitle), trailing: Icon(Icons.arrow_forward_rounded, size: 18), onTap: () => _open(a)))),
     ]));
   }
 }
@@ -130,14 +127,15 @@ class OperationsTaskList extends StatelessWidget {
   const OperationsTaskList({super.key, required this.usuario, this.compact = false});
   @override
   Widget build(BuildContext context) {
+    Theme.of(context);
     final admin = usuario.rol == AppRoles.admin;
     final query = admin ? FirebaseFirestore.instance.collection('actividades') : FirebaseFirestore.instance.collection('actividades').where('asignadoATrabajadorId', isEqualTo: usuario.id);
     return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(stream: query.snapshots(), builder: (context, snapshot) {
-      if (snapshot.hasError) return const Padding(padding: EdgeInsets.all(16), child: Text('No pudimos consultar las tareas. Revisa conexión y permisos.', style: TextStyle(color: Colors.orangeAccent)));
-      if (!snapshot.hasData) return const Padding(padding: EdgeInsets.all(16), child: LinearProgressIndicator());
+      if (snapshot.hasError) return Padding(padding: EdgeInsets.all(16), child: Text('No pudimos consultar las tareas. Revisa conexión y permisos.', style: TextStyle(color: Colors.orangeAccent)));
+      if (!snapshot.hasData) return Padding(padding: EdgeInsets.all(16), child: LinearProgressIndicator());
       final tasks = snapshot.data!.docs.map((d) => ActividadModel.fromJson(d.data(), d.id)).where((a) => !compact || a.estatus != 'completado').toList()..sort((a,b) => a.fechaTermino.compareTo(b.fechaTermino));
-      if (tasks.isEmpty) return Container(padding: const EdgeInsets.all(20), width: double.infinity, decoration: BoxDecoration(color: const Color(0xFF111012), borderRadius: BorderRadius.circular(20)), child: const Text('No hay tareas pendientes en esta vista.', style: TextStyle(color: Colors.white60)));
-      return Column(children: (compact ? tasks.take(4) : tasks).map((task) => Card(color: const Color(0xFF111012), child: ListTile(contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7), leading: Icon(task.estatus == 'completado' ? Icons.task_alt_rounded : Icons.assignment_outlined, color: const Color(0xFFB7FF2A)), title: Text(task.titulo, style: const TextStyle(fontWeight: FontWeight.w700)), subtitle: Text('${DateFormat('dd/MM HH:mm').format(task.fechaTermino)} · ${task.estatus.replaceAll('_', ' ')}'), trailing: const Icon(Icons.chevron_right_rounded), onTap: () => showModalBottomSheet<void>(context: context, isScrollControlled: true, useSafeArea: true, builder: (_) => admin ? admin_detail.ModalDetalleActividad(actividad: task) : worker_detail.ModalDetalleActividad(actividad: task))))).toList());
+      if (tasks.isEmpty) return Container(padding: EdgeInsets.all(20), width: double.infinity, decoration: BoxDecoration(color: StiloColors.surface, borderRadius: BorderRadius.circular(20)), child: Text('No hay tareas pendientes en esta vista.', style: TextStyle(color: StiloColors.text.withValues(alpha: .60))));
+      return Column(children: (compact ? tasks.take(4) : tasks).map((task) => Card(color: StiloColors.surface, child: ListTile(contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 7), leading: Icon(task.estatus == 'completado' ? Icons.task_alt_rounded : Icons.assignment_outlined, color: StiloColors.accent), title: Text(task.titulo, style: TextStyle(fontWeight: FontWeight.w700)), subtitle: Text('${DateFormat('dd/MM HH:mm').format(task.fechaTermino)} · ${task.estatus.replaceAll('_', ' ')}'), trailing: Icon(Icons.chevron_right_rounded), onTap: () => showModalBottomSheet<void>(context: context, isScrollControlled: true, useSafeArea: true, builder: (_) => admin ? admin_detail.ModalDetalleActividad(actividad: task) : worker_detail.ModalDetalleActividad(actividad: task))))).toList());
     });
   }
 }

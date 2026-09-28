@@ -1,13 +1,14 @@
+import '../presentation/appearance.dart';
 import '../services/external_transfer.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class AdminDetalleCajitaScreen extends StatefulWidget {
-  final String usuarioId; 
+  final String usuarioId;
   final String nombreUsuario;
 
-  const AdminDetalleCajitaScreen({
+  AdminDetalleCajitaScreen({
     super.key,
     required this.usuarioId,
     required this.nombreUsuario,
@@ -18,11 +19,11 @@ class AdminDetalleCajitaScreen extends StatefulWidget {
 }
 
 class _AdminDetalleCajitaScreenState extends State<AdminDetalleCajitaScreen> {
-  static const Color colorFondo = Color(0xFF121212);
-  static const Color colorTarjeta = Color(0xFF1E1E1E);
-  static const Color colorTextoPrimario = Color(0xFFFDFDFD);
-  static const Color colorNaranja = Color(0xFFFF9800);
-  static const Color colorVerde = Color(0xFF00E676);
+  Color get colorFondo => StiloColors.surface;
+  Color get colorTarjeta => StiloColors.surface;
+  Color get colorTextoPrimario => StiloColors.text;
+  Color get colorNaranja => Color(0xFFFF9800);
+  Color get colorVerde => Color(0xFF00E676);
 
   bool _asignando = false;
 
@@ -63,7 +64,7 @@ class _AdminDetalleCajitaScreenState extends State<AdminDetalleCajitaScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(backgroundColor: colorVerde, content: Text("Herramienta asignada con éxito.")),
+          SnackBar(backgroundColor: colorVerde, content: Text("Herramienta asignada con éxito.")),
         );
       }
     } catch (e) {
@@ -85,7 +86,7 @@ class _AdminDetalleCajitaScreenState extends State<AdminDetalleCajitaScreen> {
         DocumentReference cajitaRef = FirebaseFirestore.instance.collection('cajitas_inventario').doc(cajitaId);
 
         DocumentSnapshot insumoSnap = await transaction.get(insumoRef);
-        
+
         // Sumamos 1 al inventario general (si el insumo base aún existe en bd)
         if (insumoSnap.exists) {
           final data = insumoSnap.data() as Map<String, dynamic>;
@@ -101,7 +102,7 @@ class _AdminDetalleCajitaScreenState extends State<AdminDetalleCajitaScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(backgroundColor: colorVerde, content: Text("Herramienta devuelta al almacén.")),
+          SnackBar(backgroundColor: colorVerde, content: Text("Herramienta devuelta al almacén.")),
         );
       }
     } catch (e) {
@@ -119,10 +120,10 @@ class _AdminDetalleCajitaScreenState extends State<AdminDetalleCajitaScreen> {
       await FirebaseFirestore.instance.collection('cajitas_inventario').doc(cajitaId).update({
         'estado': 'mantenimiento',
       });
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(backgroundColor: Colors.orangeAccent, content: Text("Herramienta enviada a reparación.")),
+          SnackBar(backgroundColor: Colors.orangeAccent, content: Text("Herramienta enviada a reparación.")),
         );
       }
     } catch (e) {
@@ -142,7 +143,7 @@ class _AdminDetalleCajitaScreenState extends State<AdminDetalleCajitaScreen> {
       context: context,
       backgroundColor: colorTarjeta,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (context) {
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setModalState) {
@@ -154,31 +155,31 @@ class _AdminDetalleCajitaScreenState extends State<AdminDetalleCajitaScreen> {
               builder: (context, scrollController) {
                 return Column(
                   children: [
-                    const SizedBox(height: 12),
-                    Container(width: 40, height: 5, decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(10))),
-                    const SizedBox(height: 16),
+                    SizedBox(height: 12),
+                    Container(width: 40, height: 5, decoration: BoxDecoration(color: StiloColors.text.withValues(alpha: .24), borderRadius: BorderRadius.circular(10))),
+                    SizedBox(height: 16),
                     Text(
                       "INVENTARIO GENERAL",
                       style: GoogleFonts.inter(color: colorNaranja, fontWeight: FontWeight.bold, letterSpacing: 1),
                     ),
                     Text(
                       "Selecciona la herramienta a entregar",
-                      style: GoogleFonts.inter(color: Colors.white54, fontSize: 12),
+                      style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .54), fontSize: 12),
                     ),
-                    const SizedBox(height: 16),
-                    
+                    SizedBox(height: 16),
+
                     // Barra de búsqueda
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      padding: EdgeInsets.symmetric(horizontal: 16.0),
                       child: TextField(contextMenuBuilder: privacyTextMenu,
                         style: GoogleFonts.inter(color: colorTextoPrimario),
                         decoration: InputDecoration(
                           hintText: 'Buscar por nombre...',
-                          hintStyle: GoogleFonts.inter(color: Colors.white38),
-                          prefixIcon: const Icon(Icons.search, color: Colors.white54),
+                          hintStyle: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .38)),
+                          prefixIcon: Icon(Icons.search, color: StiloColors.text.withValues(alpha: .54)),
                           filled: true,
-                          fillColor: Colors.white10,
-                          contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                          fillColor: StiloColors.text.withValues(alpha: .10),
+                          contentPadding: EdgeInsets.symmetric(vertical: 0),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide.none,
@@ -191,9 +192,9 @@ class _AdminDetalleCajitaScreenState extends State<AdminDetalleCajitaScreen> {
                         },
                       ),
                     ),
-                    
-                    const SizedBox(height: 10),
-                    const Divider(color: Colors.white10),
+
+                    SizedBox(height: 10),
+                    Divider(color: StiloColors.text.withValues(alpha: .10)),
                     Expanded(
                       child: StreamBuilder<QuerySnapshot>(
                         stream: FirebaseFirestore.instance
@@ -201,7 +202,7 @@ class _AdminDetalleCajitaScreenState extends State<AdminDetalleCajitaScreen> {
                             .where('cantidad_disponible', isGreaterThan: 0)
                             .snapshots(),
                         builder: (context, snapshot) {
-                          if (!snapshot.hasData) return const Center(child: CircularProgressIndicator(color: colorNaranja));
+                          if (!snapshot.hasData) return Center(child: CircularProgressIndicator(color: colorNaranja));
 
                           final todosLosInsumos = snapshot.data!.docs;
 
@@ -209,28 +210,28 @@ class _AdminDetalleCajitaScreenState extends State<AdminDetalleCajitaScreen> {
 final insumos = todosLosInsumos.where((doc) {
   final data = doc.data() as Map<String, dynamic>;
   final nombre = (data['nombre'] ?? '').toString().toLowerCase();
-  
+
   // NUEVA REGLA: Si es un producto de la tienda online, lo ocultamos.
   final esProductoTienda = data['es_producto_tienda'] ?? false;
   if (esProductoTienda == true) {
-    return false; 
+    return false;
   }
 
   // El buscador de texto se queda igual
   if (searchQuery.isNotEmpty && !nombre.contains(searchQuery)) {
     return false;
   }
-  
+
   return true;
 }).toList();
 
                           if (insumos.isEmpty) {
                             return Center(
                               child: Text(
-                                searchQuery.isEmpty 
-                                  ? "No hay herramientas disponibles en el almacén." 
-                                  : "No se encontraron herramientas con '$searchQuery'.", 
-                                style: GoogleFonts.inter(color: Colors.white54)
+                                searchQuery.isEmpty
+                                  ? "No hay herramientas disponibles en el almacén."
+                                  : "No se encontraron herramientas con '$searchQuery'.",
+                                style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .54))
                               )
                             );
                           }
@@ -243,11 +244,11 @@ final insumos = todosLosInsumos.where((doc) {
                               final data = doc.data() as Map<String, dynamic>;
 
                               return ListTile(
-                                leading: const Icon(Icons.build_circle_outlined, color: Colors.white38),
+                                leading: Icon(Icons.build_circle_outlined, color: StiloColors.text.withValues(alpha: .38)),
                                 title: Text(data['nombre'] ?? 'Sin nombre', style: GoogleFonts.inter(color: colorTextoPrimario, fontSize: 14, fontWeight: FontWeight.w600)),
-                                subtitle: Text("Stock: ${data['cantidad_disponible']} - ${data['categoria']}", style: GoogleFonts.inter(color: Colors.white54, fontSize: 12)),
+                                subtitle: Text("Stock: ${data['cantidad_disponible']} - ${data['categoria']}", style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .54), fontSize: 12)),
                                 trailing: IconButton(
-                                  icon: const Icon(Icons.add_circle, color: colorVerde),
+                                  icon: Icon(Icons.add_circle, color: colorVerde),
                                   onPressed: () => _asignarHerramienta(doc.id, data),
                                 ),
                               );
@@ -268,6 +269,7 @@ final insumos = todosLosInsumos.where((doc) {
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context);
     return Scaffold(
       backgroundColor: colorFondo,
       appBar: AppBar(
@@ -283,7 +285,7 @@ final insumos = todosLosInsumos.where((doc) {
         children: [
           // Botón superior para asignar
           Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: EdgeInsets.all(16.0),
             child: SizedBox(
               width: double.infinity,
               height: 50,
@@ -295,9 +297,9 @@ final insumos = todosLosInsumos.where((doc) {
                   side: BorderSide(color: colorNaranja.withOpacity(0.5)),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
-                icon: _asignando 
-                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: colorNaranja, strokeWidth: 2))
-                  : const Icon(Icons.add_shopping_cart_rounded),
+                icon: _asignando
+                  ? SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: colorNaranja, strokeWidth: 2))
+                  : Icon(Icons.add_shopping_cart_rounded),
                 label: Text(
                   _asignando ? "ASIGNANDO..." : "ASIGNAR DESDE ALMACÉN",
                   style: GoogleFonts.inter(fontWeight: FontWeight.bold),
@@ -306,9 +308,9 @@ final insumos = todosLosInsumos.where((doc) {
               ),
             ),
           ),
-          
-          const Divider(color: Colors.white10),
-          
+
+          Divider(color: StiloColors.text.withValues(alpha: .10)),
+
           // Lista de herramientas que tiene el usuario
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
@@ -319,7 +321,7 @@ final insumos = todosLosInsumos.where((doc) {
                   .snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator(color: colorNaranja));
+                  return Center(child: CircularProgressIndicator(color: colorNaranja));
                 }
 
                 final herramientas = snapshot.data?.docs ?? [];
@@ -329,26 +331,26 @@ final insumos = todosLosInsumos.where((doc) {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.home_repair_service_outlined, color: Colors.white24, size: 60),
-                        const SizedBox(height: 16),
-                        Text('La cajita está vacía.', style: GoogleFonts.inter(color: Colors.white54)),
+                        Icon(Icons.home_repair_service_outlined, color: StiloColors.text.withValues(alpha: .24), size: 60),
+                        SizedBox(height: 16),
+                        Text('La cajita está vacía.', style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .54))),
                       ],
                     ),
                   );
                 }
 
                 return ListView.builder(
-                  padding: const EdgeInsets.all(16),
+                  padding: EdgeInsets.all(16),
                   itemCount: herramientas.length,
                   itemBuilder: (context, index) {
                     final docId = herramientas[index].id;
                     final data = herramientas[index].data() as Map<String, dynamic>;
                     final insumoBaseId = data['herramienta_base_id'] ?? '';
                     final estado = data['estado'] ?? 'asignado';
-                    
+
                     Color colorEstado = colorVerde;
                     String textoEstado = "EN USO";
-                    
+
                     if (estado == 'en_transito') {
                       colorEstado = Colors.orangeAccent;
                       textoEstado = "PRESTANDO";
@@ -358,17 +360,17 @@ final insumos = todosLosInsumos.where((doc) {
                     }
 
                     return Container(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      padding: const EdgeInsets.all(16),
+                      margin: EdgeInsets.only(bottom: 12),
+                      padding: EdgeInsets.all(16),
                       decoration: BoxDecoration(
                         color: colorTarjeta,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.white.withOpacity(0.05)),
+                        border: Border.all(color: StiloColors.text.withOpacity(0.05)),
                       ),
                       child: Row(
                         children: [
                           Icon(Icons.handyman_rounded, color: colorEstado, size: 24),
-                          const SizedBox(width: 16),
+                          SizedBox(width: 16),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -377,16 +379,16 @@ final insumos = todosLosInsumos.where((doc) {
                                   data['nombre'] ?? 'Herramienta',
                                   style: GoogleFonts.inter(color: colorTextoPrimario, fontWeight: FontWeight.bold, fontSize: 14),
                                 ),
-                                const SizedBox(height: 4),
+                                SizedBox(height: 4),
                                 Text(
                                   data['categoria'] ?? '',
-                                  style: GoogleFonts.inter(color: Colors.white38, fontSize: 12),
+                                  style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .38), fontSize: 12),
                                 ),
                               ],
                             ),
                           ),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                             decoration: BoxDecoration(
                               color: colorEstado.withOpacity(0.1),
                               borderRadius: BorderRadius.circular(6),
@@ -398,7 +400,7 @@ final insumos = todosLosInsumos.where((doc) {
                           ),
                           // Menú de opciones (Devolver / Reparar)
                           PopupMenuButton<String>(
-                            icon: const Icon(Icons.more_vert, color: Colors.white54),
+                            icon: Icon(Icons.more_vert, color: StiloColors.text.withValues(alpha: .54)),
                             color: colorTarjeta,
                             onSelected: (value) {
                               if (value == 'devolver') {
@@ -408,7 +410,7 @@ final insumos = todosLosInsumos.where((doc) {
                               }
                             },
                             itemBuilder: (context) => [
-                              if (estado != 'mantenimiento') 
+                              if (estado != 'mantenimiento')
                                 PopupMenuItem(
                                   value: 'reparacion',
                                   child: Text('Mandar a taller / daño', style: GoogleFonts.inter(color: Colors.orangeAccent)),

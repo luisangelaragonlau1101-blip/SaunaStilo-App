@@ -1,3 +1,4 @@
+import '../presentation/appearance.dart';
 import '../widgets/inventory_photo.dart';
 import '../services/external_transfer.dart';
 import 'dart:typed_data';
@@ -16,11 +17,11 @@ import '../services/notificaciones_service.dart';
 
 class ControlHerramientasScreen extends StatefulWidget {
   final Proyecto? proyecto;
-  
-  final String? usuarioId; 
+
+  final String? usuarioId;
   final String? usuarioNombre;
 
-  const ControlHerramientasScreen({
+  ControlHerramientasScreen({
     Key? key,
     this.proyecto,
     this.usuarioId,
@@ -32,23 +33,23 @@ class ControlHerramientasScreen extends StatefulWidget {
 }
 
 class _ControlHerramientasScreenState extends State<ControlHerramientasScreen> {
-  late String currentUid; 
-  String? nombreUsuario; 
-  bool cargando = false; 
+  late String currentUid;
+  String? nombreUsuario;
+  bool cargando = false;
 
   String _filtroSeleccionado = 'Todas';
   final List<String> _opcionesFiltro = ['Todas', 'Pendientes', 'Aprobadas', 'Rechazadas'];
 
-  static const Color colorFondo = Color(0xFF000000);
-  static const Color colorTarjeta = Color(0xFF111012);
-  static const Color colorTextoPrimario = Color(0xFFFDFDFD);
-  static const Color colorTextoSecundario = Color(0xFFB5ABA5);
-  static const Color colorAcento = Color(0xFFB7FF2A);
-  static const Color colorNaranja = Color(0xFFFF9800);
-  static const Color colorRojo = Color(0xFFFF5252);
-  static const Color colorVerde = Color(0xFF4CAF50);
-  static const Color colorGradiente1 = Color(0xFF351020);
-  static const Color colorGradiente2 = Color(0xFF120C12);
+  Color get colorFondo => StiloColors.background;
+  Color get colorTarjeta => StiloColors.surface;
+  Color get colorTextoPrimario => StiloColors.text;
+  Color get colorTextoSecundario => Color(0xFFB5ABA5);
+  Color get colorAcento => StiloColors.accent;
+  Color get colorNaranja => Color(0xFFFF9800);
+  Color get colorRojo => Color(0xFFFF5252);
+  Color get colorVerde => Color(0xFF4CAF50);
+  Color get colorGradiente1 => StiloColors.surface;
+  Color get colorGradiente2 => StiloColors.surface;
 
   @override
   void initState() {
@@ -58,7 +59,7 @@ class _ControlHerramientasScreenState extends State<ControlHerramientasScreen> {
       nombreUsuario = widget.usuarioNombre;
     } else {
       currentUid = FirebaseAuth.instance.currentUser?.uid ?? '';
-      cargando = true; 
+      cargando = true;
       _cargarDatosUsuario();
     }
   }
@@ -84,6 +85,7 @@ class _ControlHerramientasScreenState extends State<ControlHerramientasScreen> {
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context);
     return Scaffold(
       backgroundColor: colorFondo,
       appBar: AppBar(
@@ -97,25 +99,25 @@ class _ControlHerramientasScreenState extends State<ControlHerramientasScreen> {
           ),
         ),
         centerTitle: true,
-        iconTheme: const IconThemeData(color: colorTextoPrimario),
+        iconTheme: IconThemeData(color: colorTextoPrimario),
       ),
-      body: cargando 
-        ? const Center(child: CircularProgressIndicator(color: colorAcento))
+      body: cargando
+        ? Center(child: CircularProgressIndicator(color: colorAcento))
         : SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-            physics: const BouncingScrollPhysics(),
+            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            physics: BouncingScrollPhysics(),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildHeader(),
-                const SizedBox(height: 32),
+                SizedBox(height: 32),
                 Text(
                   "Historial de Solicitudes",
                   style: GoogleFonts.outfit(color: colorTextoPrimario, fontSize: 18, fontWeight: FontWeight.w600),
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: 16),
                 _buildFiltros(),
-                const SizedBox(height: 16),
+                SizedBox(height: 16),
                 _buildHerramientasSection(),
               ],
             ),
@@ -128,19 +130,19 @@ class _ControlHerramientasScreenState extends State<ControlHerramientasScreen> {
       height: 38,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
-        physics: const BouncingScrollPhysics(),
+        physics: BouncingScrollPhysics(),
         itemCount: _opcionesFiltro.length,
         itemBuilder: (context, index) {
           final filtro = _opcionesFiltro[index];
           final isSelected = _filtroSeleccionado == filtro;
-          
+
           return Padding(
-            padding: const EdgeInsets.only(right: 12.0),
+            padding: EdgeInsets.only(right: 12.0),
             child: ChoiceChip(
               label: Text(
-                filtro, 
+                filtro,
                 style: GoogleFonts.inter(
-                  color: isSelected ? Colors.black : colorTextoSecundario,
+                  color: isSelected ? StiloColors.background : colorTextoSecundario,
                   fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
                   fontSize: 13,
                 )
@@ -148,11 +150,11 @@ class _ControlHerramientasScreenState extends State<ControlHerramientasScreen> {
               selected: isSelected,
               selectedColor: colorAcento,
               backgroundColor: colorTarjeta,
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(20),
                 side: BorderSide(
-                  color: isSelected ? colorAcento : Colors.white.withOpacity(0.1),
+                  color: isSelected ? colorAcento : StiloColors.text.withOpacity(0.1),
                 ),
               ),
               onSelected: (selected) {
@@ -169,9 +171,9 @@ class _ControlHerramientasScreenState extends State<ControlHerramientasScreen> {
 
   Widget _buildHeader() {
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: EdgeInsets.all(24),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
+        gradient: LinearGradient(
           colors: [colorGradiente1, colorGradiente2],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -179,9 +181,9 @@ class _ControlHerramientasScreenState extends State<ControlHerramientasScreen> {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.5), 
+            color: StiloColors.background.withOpacity(0.5),
             blurRadius: 16,
-            offset: const Offset(0, 8),
+            offset: Offset(0, 8),
           )
         ],
       ),
@@ -192,44 +194,44 @@ class _ControlHerramientasScreenState extends State<ControlHerramientasScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.2),
+                    color: StiloColors.background.withOpacity(0.2),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
-                    "PROYECTO ACTUAL", 
-                    style: GoogleFonts.inter(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.2)
+                    "PROYECTO ACTUAL",
+                    style: GoogleFonts.inter(color: StiloColors.text, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.2)
                   ),
                 ),
-                const SizedBox(height: 12),
+                SizedBox(height: 12),
                 Text(
                   widget.proyecto?.titulo ?? "HERRAMIENTAS GENERALES",
-                  style: GoogleFonts.outfit(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold, height: 1.2),
+                  style: GoogleFonts.outfit(color: StiloColors.text, fontSize: 22, fontWeight: FontWeight.bold, height: 1.2),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
           ),
-          const SizedBox(width: 16),
+          SizedBox(width: 16),
           InkWell(
             onTap: () => _mostrarModalSolicitudHerramienta(context),
             borderRadius: BorderRadius.circular(16),
             child: Container(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: colorAcento, 
+                color: colorAcento,
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.2),
+                    color: StiloColors.background.withOpacity(0.2),
                     blurRadius: 8,
-                    offset: const Offset(0, 4),
+                    offset: Offset(0, 4),
                   )
                 ]
               ),
-              child: const Icon(Icons.add_rounded, color: Colors.black, size: 32),
+              child: Icon(Icons.add_rounded, color: StiloColors.background, size: 32),
             ),
           ),
         ],
@@ -241,21 +243,21 @@ class _ControlHerramientasScreenState extends State<ControlHerramientasScreen> {
     Query query = FirebaseFirestore.instance.collection('solicitudes_herramientas')
         .where('trabajadorId', isEqualTo: currentUid)
         .orderBy('fechaSolicitud', descending: true);
-    
+
     if (widget.proyecto != null) {
       query = FirebaseFirestore.instance.collection('solicitudes_herramientas')
         .where('trabajadorId', isEqualTo: currentUid)
         .where('proyectoId', isEqualTo: widget.proyecto!.id)
-        .orderBy('fechaSolicitud', descending: true); 
+        .orderBy('fechaSolicitud', descending: true);
     }
 
     return StreamBuilder<QuerySnapshot>(
       stream: query.snapshots(),
       builder: (context, snapshot) {
-        if (!snapshot.hasData) return const Center(child: CircularProgressIndicator(color: colorAcento));
-        
+        if (!snapshot.hasData) return Center(child: CircularProgressIndicator(color: colorAcento));
+
         if (snapshot.data!.docs.isEmpty) return _buildEmptyState();
-        
+
         List<SolicitudHerramientaModel> solicitudes = snapshot.data!.docs
             .map((doc) => SolicitudHerramientaModel.fromFirestore(doc))
             .toList();
@@ -271,7 +273,7 @@ class _ControlHerramientasScreenState extends State<ControlHerramientasScreen> {
 
         if (solicitudes.isEmpty) {
           return Padding(
-            padding: const EdgeInsets.only(top: 32.0),
+            padding: EdgeInsets.only(top: 32.0),
             child: Center(
               child: Text(
                 "No hay solicitudes ${_filtroSeleccionado.toLowerCase()}",
@@ -280,10 +282,10 @@ class _ControlHerramientasScreenState extends State<ControlHerramientasScreen> {
             ),
           );
         }
-        
+
         return ListView.builder(
           shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
+          physics: NeverScrollableScrollPhysics(),
           itemCount: solicitudes.length,
           itemBuilder: (context, index) {
             return _buildSolicitudCard(solicitudes[index]);
@@ -296,44 +298,44 @@ class _ControlHerramientasScreenState extends State<ControlHerramientasScreen> {
   Widget _buildEmptyState() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 24),
+      padding: EdgeInsets.symmetric(vertical: 48, horizontal: 24),
       decoration: BoxDecoration(
         color: colorTarjeta,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white.withOpacity(0.05)),
+        border: Border.all(color: StiloColors.text.withOpacity(0.05)),
       ),
       child: Column(
         children: [
           Container(
-            padding: const EdgeInsets.all(24),
+            padding: EdgeInsets.all(24),
             decoration: BoxDecoration(
               color: colorFondo,
               shape: BoxShape.circle,
               border: Border.all(color: colorTextoSecundario.withOpacity(0.2)),
             ),
-            child: const Icon(Icons.handyman_rounded, color: colorTextoSecundario, size: 48),
+            child: Icon(Icons.handyman_rounded, color: colorTextoSecundario, size: 48),
           ),
-          const SizedBox(height: 24),
+          SizedBox(height: 24),
           Text(
-            "Sin herramientas", 
+            "Sin herramientas",
             style: GoogleFonts.outfit(color: colorTextoPrimario, fontSize: 20, fontWeight: FontWeight.bold)
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
           Text(
-            "Aún no has solicitado herramientas\no insumos para este proyecto.", 
-            style: GoogleFonts.inter(color: colorTextoSecundario, fontSize: 14), 
+            "Aún no has solicitado herramientas\no insumos para este proyecto.",
+            style: GoogleFonts.inter(color: colorTextoSecundario, fontSize: 14),
             textAlign: TextAlign.center
           ),
-          const SizedBox(height: 24),
+          SizedBox(height: 24),
           OutlinedButton.icon(
             onPressed: () => _mostrarModalSolicitudHerramienta(context),
-            icon: const Icon(Icons.add, size: 18),
-            label: const Text("Solicitar ahora"),
+            icon: Icon(Icons.add, size: 18),
+            label: Text("Solicitar ahora"),
             style: OutlinedButton.styleFrom(
               foregroundColor: colorAcento,
-              side: const BorderSide(color: colorAcento),
+              side: BorderSide(color: colorAcento),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             ),
           )
         ],
@@ -349,7 +351,7 @@ class _ControlHerramientasScreenState extends State<ControlHerramientasScreen> {
 
     Color statusColor;
     IconData statusIcon;
-    
+
     if (estaAtrasada) {
       statusColor = colorRojo;
       statusIcon = Icons.warning_rounded;
@@ -373,16 +375,16 @@ class _ControlHerramientasScreenState extends State<ControlHerramientasScreen> {
     final esPendiente = sol.estatus.trim().toLowerCase() == 'pendiente';
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: colorTarjeta, 
-        borderRadius: BorderRadius.circular(20), 
-        border: Border.all(color: Colors.white.withOpacity(0.05)),
+        color: colorTarjeta,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: StiloColors.text.withOpacity(0.05)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.2),
+            color: StiloColors.background.withOpacity(0.2),
             blurRadius: 8,
-            offset: const Offset(0, 4),
+            offset: Offset(0, 4),
           )
         ]
       ),
@@ -393,34 +395,34 @@ class _ControlHerramientasScreenState extends State<ControlHerramientasScreen> {
           onTap: esPendiente ? () => _mostrarModalEditarSolicitud(context, sol) : null,
           onLongPress: esPendiente ? () => _confirmarEliminacion(context, sol.id) : null,
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(16),
             child: Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(12),
+                  padding: EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: statusColor.withOpacity(0.15),
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Icon(statusIcon, color: statusColor, size: 24),
                 ),
-                const SizedBox(width: 16),
+                SizedBox(width: 16),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        sol.nombreInsumo, 
+                        sol.nombreInsumo,
                         style: GoogleFonts.inter(color: colorTextoPrimario, fontSize: 16, fontWeight: FontWeight.bold),
-                        maxLines: 2, 
+                        maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: 6),
+                      SizedBox(height: 6),
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          const Icon(Icons.business_center_outlined, size: 14, color: colorAcento),
-                          const SizedBox(width: 4),
+                          Icon(Icons.business_center_outlined, size: 14, color: colorAcento),
+                          SizedBox(width: 4),
                           Expanded(
                             child: Text(
                               sol.proyectoNombre ?? "General",
@@ -431,36 +433,36 @@ class _ControlHerramientasScreenState extends State<ControlHerramientasScreen> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 6),
+                      SizedBox(height: 6),
                       Row(
-                        crossAxisAlignment: CrossAxisAlignment.start, 
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Padding(
-                            padding: EdgeInsets.only(top: 2.0), 
+                          Padding(
+                            padding: EdgeInsets.only(top: 2.0),
                             child: Icon(Icons.calendar_today_outlined, size: 13, color: colorTextoSecundario),
                           ),
-                          const SizedBox(width: 4),
+                          SizedBox(width: 4),
                           Expanded(
                             child: Text(
                               "${sol.fechaSolicitud.day.toString().padLeft(2, '0')}/${sol.fechaSolicitud.month.toString().padLeft(2, '0')}/${sol.fechaSolicitud.year} - ${sol.fechaSolicitud.hour.toString().padLeft(2, '0')}:${sol.fechaSolicitud.minute.toString().padLeft(2, '0')}",
                               style: GoogleFonts.inter(color: colorTextoSecundario, fontSize: 12),
-                              overflow: TextOverflow.ellipsis, 
-                              maxLines: 2, 
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 2,
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 6),
+                      SizedBox(height: 6),
                       Wrap(
                         crossAxisAlignment: WrapCrossAlignment.center,
-                        spacing: 6, 
-                        runSpacing: 4, 
+                        spacing: 6,
+                        runSpacing: 4,
                         children: [
-                          const Icon(Icons.inventory_2_outlined, size: 14, color: colorTextoSecundario),
+                          Icon(Icons.inventory_2_outlined, size: 14, color: colorTextoSecundario),
                           Text("Cant: ${sol.cantidad}", style: GoogleFonts.inter(color: colorTextoSecundario, fontSize: 13)),
                           if (sol.esRetornable) ...[
-                            const SizedBox(width: 6),
-                            const Icon(Icons.assignment_return_outlined, size: 14, color: colorTextoSecundario),
+                            SizedBox(width: 6),
+                            Icon(Icons.assignment_return_outlined, size: 14, color: colorTextoSecundario),
                             Text("Retornable", style: GoogleFonts.inter(color: colorTextoSecundario, fontSize: 13)),
                           ]
                         ],
@@ -468,7 +470,7 @@ class _ControlHerramientasScreenState extends State<ControlHerramientasScreen> {
                     ],
                   ),
                 ),
-                const SizedBox(width: 8), 
+                SizedBox(width: 8),
                 _buildEstatusSolicitudAccion(sol, statusColor),
               ],
             ),
@@ -482,9 +484,9 @@ class _ControlHerramientasScreenState extends State<ControlHerramientasScreen> {
     if (sol.estatus == 'aprobada' && sol.esRetornable && !sol.devueltoConfirmadoAdmin && !sol.marcadoDevueltoTrabajador) {
       return ElevatedButton(
         style: ElevatedButton.styleFrom(
-          backgroundColor: colorAcento, 
-          foregroundColor: Colors.black, 
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8), 
+          backgroundColor: colorAcento,
+          foregroundColor: StiloColors.background,
+          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           elevation: 4,
         ),
@@ -499,10 +501,10 @@ class _ControlHerramientasScreenState extends State<ControlHerramientasScreen> {
     else if (sol.estatus != 'pendiente' && sol.estatus != 'rechazada' && !sol.esRetornable) text = "ENTREGADO";
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: statusColor.withOpacity(0.1), 
-        borderRadius: BorderRadius.circular(20), 
+        color: statusColor.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(color: statusColor.withOpacity(0.3))
       ),
       child: Text(text, style: GoogleFonts.inter(color: statusColor, fontSize: 10, fontWeight: FontWeight.w700)),
@@ -513,45 +515,45 @@ class _ControlHerramientasScreenState extends State<ControlHerramientasScreen> {
     InsumoModel? insumoSeleccionado;
     int cantidad = 1;
     bool esRetornable = true;
-    
+
     String searchQuery = "";
     TextEditingController searchController = TextEditingController();
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.transparent, 
+      backgroundColor: Colors.transparent,
       builder: (context) => BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
         child: StatefulBuilder(
           builder: (BuildContext context, StateSetter setModalState) {
             bool sinStock = insumoSeleccionado != null && insumoSeleccionado!.cantidadDisponible == 0;
-            
+
           return Container(
               height: MediaQuery.of(context).size.height * 0.88,
-              decoration: const BoxDecoration(
-                color: colorFondo, 
+              decoration: BoxDecoration(
+                color: colorFondo,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(32))
               ),
               padding: EdgeInsets.only(
-                top: 12, 
-                left: 24, 
-                right: 24, 
-                bottom: MediaQuery.of(context).viewInsets.bottom + 24 
+                top: 12,
+                left: 24,
+                right: 24,
+                bottom: MediaQuery.of(context).viewInsets.bottom + 24
               ),
               child: Column(
                 children: [
                   Container(
                     width: 40, height: 4,
-                    margin: const EdgeInsets.only(bottom: 24),
-                    decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(10)),
+                    margin: EdgeInsets.only(bottom: 24),
+                    decoration: BoxDecoration(color: StiloColors.text.withOpacity(0.2), borderRadius: BorderRadius.circular(10)),
                   ),
                   Align(
                     alignment: Alignment.centerLeft,
                     child: Text("Solicitar Insumo", style: GoogleFonts.outfit(color: colorTextoPrimario, fontSize: 24, fontWeight: FontWeight.bold)),
                   ),
-                  const SizedBox(height: 16),
-                  
+                  SizedBox(height: 16),
+
                   // BUSCADOR
                   TextField(contextMenuBuilder: privacyTextMenu,
                     controller: searchController,
@@ -564,16 +566,16 @@ class _ControlHerramientasScreenState extends State<ControlHerramientasScreen> {
                     decoration: InputDecoration(
                       hintText: "Buscar herramienta...",
                       hintStyle: GoogleFonts.inter(color: colorTextoSecundario),
-                      prefixIcon: const Icon(Icons.search_rounded, color: colorTextoSecundario),
+                      prefixIcon: Icon(Icons.search_rounded, color: colorTextoSecundario),
                       filled: true,
                       fillColor: colorTarjeta,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
                         borderSide: BorderSide.none,
                       ),
-                      suffixIcon: searchQuery.isNotEmpty 
+                      suffixIcon: searchQuery.isNotEmpty
                         ? IconButton(
-                            icon: const Icon(Icons.clear, color: colorTextoSecundario),
+                            icon: Icon(Icons.clear, color: colorTextoSecundario),
                             onPressed: () {
                               searchController.clear();
                               setModalState(() => searchQuery = "");
@@ -582,23 +584,23 @@ class _ControlHerramientasScreenState extends State<ControlHerramientasScreen> {
                         : null,
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  
+                  SizedBox(height: 16),
+
                   Expanded(
                     child: StreamBuilder<QuerySnapshot>(
                       stream: FirebaseFirestore.instance.collection('insumos_inventario').snapshots(),
                       builder: (context, snapshot) {
                         if (snapshot.connectionState == ConnectionState.waiting) {
-                          return const Center(child: CircularProgressIndicator(color: colorAcento));
+                          return Center(child: CircularProgressIndicator(color: colorAcento));
                         }
-                        
+
                         if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
                           return Center(
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                const Icon(Icons.inventory_2_outlined, size: 48, color: colorTextoSecundario),
-                                const SizedBox(height: 16),
+                                Icon(Icons.inventory_2_outlined, size: 48, color: colorTextoSecundario),
+                                SizedBox(height: 16),
                                 Text("No hay herramientas", style: GoogleFonts.inter(color: colorTextoSecundario)),
                               ],
                             ),
@@ -621,29 +623,29 @@ class _ControlHerramientasScreenState extends State<ControlHerramientasScreen> {
                         }
 
                         return ListView.separated(
-                          physics: const BouncingScrollPhysics(),
+                          physics: BouncingScrollPhysics(),
                           itemCount: docs.length,
-                          separatorBuilder: (context, index) => const SizedBox(height: 12),
+                          separatorBuilder: (context, index) => SizedBox(height: 12),
                           itemBuilder: (context, index) {
                             final doc = docs[index];
                             final data = doc.data() as Map<String, dynamic>;
                             final insumo = InsumoModel.fromFirestore(doc);
                             final isSelected = insumoSeleccionado?.id == insumo.id;
                             final noStock = insumo.cantidadDisponible == 0;
-                            
+
                             final imageUrl = data['imagen_url'] as String?;
 
                             return InkWell(
                               onTap: () => setModalState(() => insumoSeleccionado = insumo),
                               borderRadius: BorderRadius.circular(16),
                               child: AnimatedContainer(
-                                duration: const Duration(milliseconds: 200),
-                                padding: const EdgeInsets.all(12),
+                                duration: Duration(milliseconds: 200),
+                                padding: EdgeInsets.all(12),
                                 decoration: BoxDecoration(
                                   color: isSelected ? colorAcento.withOpacity(0.1) : colorTarjeta,
                                   borderRadius: BorderRadius.circular(16),
                                   border: Border.all(
-                                    color: isSelected ? colorAcento : Colors.white.withOpacity(0.05),
+                                    color: isSelected ? colorAcento : StiloColors.text.withOpacity(0.05),
                                     width: isSelected ? 1.5 : 1
                                   ),
                                 ),
@@ -669,28 +671,28 @@ class _ControlHerramientasScreenState extends State<ControlHerramientasScreen> {
                                               ),
                                             )
                                           : Icon(
-                                              Icons.build_circle_outlined, 
+                                              Icons.build_circle_outlined,
                                               color: isSelected ? colorAcento : colorTextoSecundario,
                                             ),
                                     ),
-                                    const SizedBox(width: 16),
+                                    SizedBox(width: 16),
                                     Expanded(
                                       child: Column(
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
                                           Text(
-                                            insumo.nombre, 
+                                            insumo.nombre,
                                             style: GoogleFonts.inter(
-                                              color: colorTextoPrimario, 
+                                              color: colorTextoPrimario,
                                               fontWeight: FontWeight.w600,
                                               fontSize: 15
                                             )
                                           ),
-                                          const SizedBox(height: 4),
+                                          SizedBox(height: 4),
                                           Text(
-                                            noStock ? "Sin stock" : "Disponibles: ${insumo.cantidadDisponible}", 
+                                            noStock ? "Sin stock" : "Disponibles: ${insumo.cantidadDisponible}",
                                             style: GoogleFonts.inter(
-                                              color: noStock ? colorRojo : colorTextoSecundario, 
+                                              color: noStock ? colorRojo : colorTextoSecundario,
                                               fontSize: 12,
                                               fontWeight: noStock ? FontWeight.w600 : FontWeight.normal
                                             )
@@ -699,7 +701,7 @@ class _ControlHerramientasScreenState extends State<ControlHerramientasScreen> {
                                       ),
                                     ),
                                     if (isSelected)
-                                      const Icon(Icons.check_circle_rounded, color: colorAcento)
+                                      Icon(Icons.check_circle_rounded, color: colorAcento)
                                   ],
                                 ),
                               ),
@@ -709,18 +711,18 @@ class _ControlHerramientasScreenState extends State<ControlHerramientasScreen> {
                       },
                     ),
                   ),
-                  
-                const SizedBox(height: 16),
-                  
+
+                SizedBox(height: 16),
+
                   // --- INICIO DE SECCIÓN AÑADIDA: CANTIDAD Y RETORNABLE ---
                   if (insumoSeleccionado != null)
                     Container(
-                      margin: const EdgeInsets.only(bottom: 20),
-                      padding: const EdgeInsets.all(20),
+                      margin: EdgeInsets.only(bottom: 20),
+                      padding: EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        color: colorTarjeta, 
+                        color: colorTarjeta,
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: Colors.white.withOpacity(0.05)),
+                        border: Border.all(color: StiloColors.text.withOpacity(0.05)),
                       ),
                       child: Column(
                         children: [
@@ -730,26 +732,26 @@ class _ControlHerramientasScreenState extends State<ControlHerramientasScreen> {
                               Text("Cantidad:", style: GoogleFonts.inter(color: colorTextoPrimario, fontSize: 16, fontWeight: FontWeight.w500)),
                               Container(
                                 decoration: BoxDecoration(
-                                  color: colorFondo, 
+                                  color: colorFondo,
                                   borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(color: Colors.white.withOpacity(0.1))
+                                  border: Border.all(color: StiloColors.text.withOpacity(0.1))
                                 ),
                                 child: Row(
                                   children: [
                                     IconButton(
-                                      icon: const Icon(Icons.remove_rounded, color: colorTextoSecundario),
+                                      icon: Icon(Icons.remove_rounded, color: colorTextoSecundario),
                                       onPressed: () { if (cantidad > 1) setModalState(() => cantidad--); },
                                     ),
                                     SizedBox(
                                       width: 40,
                                       child: Text(
-                                        "$cantidad", 
-                                        textAlign: TextAlign.center, 
+                                        "$cantidad",
+                                        textAlign: TextAlign.center,
                                         style: GoogleFonts.outfit(color: colorTextoPrimario, fontSize: 20, fontWeight: FontWeight.bold)
                                       ),
                                     ),
                                     IconButton(
-                                      icon: const Icon(Icons.add_rounded, color: colorAcento),
+                                      icon: Icon(Icons.add_rounded, color: colorAcento),
                                       onPressed: () => setModalState(() => cantidad++),
                                     ),
                                   ],
@@ -757,15 +759,15 @@ class _ControlHerramientasScreenState extends State<ControlHerramientasScreen> {
                               )
                             ],
                           ),
-                          const Padding(
+                          Padding(
                             padding: EdgeInsets.symmetric(vertical: 16.0),
-                            child: Divider(color: Colors.white10, height: 1),
+                            child: Divider(color: StiloColors.text.withValues(alpha: .10), height: 1),
                           ),
                           SwitchListTile(
                             title: Text("¿Regresa al almacén después?", style: GoogleFonts.inter(color: colorTextoPrimario, fontSize: 15, fontWeight: FontWeight.w500)),
                             subtitle: Text("Desactiva si el material se queda en la obra", style: GoogleFonts.inter(color: colorTextoSecundario, fontSize: 12)),
                             value: esRetornable,
-                            activeColor: Colors.black,
+                            activeColor: StiloColors.background,
                             activeTrackColor: colorAcento,
                             inactiveThumbColor: colorTextoSecundario,
                             inactiveTrackColor: colorFondo,
@@ -781,8 +783,8 @@ class _ControlHerramientasScreenState extends State<ControlHerramientasScreen> {
                     height: 56,
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: colorAcento, 
-                        foregroundColor: Colors.black, 
+                        backgroundColor: colorAcento,
+                        foregroundColor: StiloColors.background,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                         elevation: insumoSeleccionado == null ? 0 : 8,
                         shadowColor: colorAcento.withOpacity(0.5),
@@ -794,8 +796,8 @@ class _ControlHerramientasScreenState extends State<ControlHerramientasScreen> {
                           id: '',
                           proyectoId: widget.proyecto?.id ?? 'general',
                           // Dejamos las llaves originales para no romper el modelo de la BD
-                          trabajadorId: currentUid, 
-                          trabajadorNombre: nombreUsuario!, 
+                          trabajadorId: currentUid,
+                          trabajadorNombre: nombreUsuario!,
                           insumoId: insumoSeleccionado!.id,
                           nombreInsumo: insumoSeleccionado!.nombre,
                           cantidad: cantidad,
@@ -821,7 +823,7 @@ class _ControlHerramientasScreenState extends State<ControlHerramientasScreen> {
                             titulo: 'Nueva solicitud de almacén',
                             mensaje: '$nombreUsuario solicitó $cantidad × ${insumoSeleccionado!.nombre}',
                             tipo: 'almacen',
-                            rolesDestinatarios: const ['admin', 'almacenista'],
+                            rolesDestinatarios: ['admin', 'almacenista'],
                           ),
                         );
                         await batch.commit();
@@ -853,32 +855,32 @@ class _ControlHerramientasScreenState extends State<ControlHerramientasScreen> {
           child: StatefulBuilder(
             builder: (BuildContext context, StateSetter setModalState) {
               return Container(
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   color: colorFondo,
                   borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
-                ),  
+                ),
                 padding: EdgeInsets.only(top: 12, left: 24, right: 24, bottom: MediaQuery.of(context).viewInsets.bottom + 32),
                 child: Column(
-                  mainAxisSize: MainAxisSize.min, 
+                  mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Center(
                       child: Container(
-                        width: 40, height: 4, margin: const EdgeInsets.only(bottom: 24),
-                        decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(10)),
+                        width: 40, height: 4, margin: EdgeInsets.only(bottom: 24),
+                        decoration: BoxDecoration(color: StiloColors.text.withOpacity(0.2), borderRadius: BorderRadius.circular(10)),
                       ),
                     ),
                     Text("Editar Solicitud", style: GoogleFonts.outfit(color: colorTextoPrimario, fontSize: 24, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 8),
+                    SizedBox(height: 8),
                     Text(sol.nombreInsumo, style: GoogleFonts.inter(color: colorNaranja, fontSize: 16, fontWeight: FontWeight.w500)),
-                    const SizedBox(height: 32),
-                    
+                    SizedBox(height: 32),
+
                     Container(
-                      padding: const EdgeInsets.all(20),
+                      padding: EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        color: colorTarjeta, 
+                        color: colorTarjeta,
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: Colors.white.withOpacity(0.05)),
+                        border: Border.all(color: StiloColors.text.withOpacity(0.05)),
                       ),
                       child: Column(
                         children: [
@@ -888,26 +890,26 @@ class _ControlHerramientasScreenState extends State<ControlHerramientasScreen> {
                               Text("Cantidad:", style: GoogleFonts.inter(color: colorTextoPrimario, fontSize: 16, fontWeight: FontWeight.w500)),
                               Container(
                                 decoration: BoxDecoration(
-                                  color: colorFondo, 
+                                  color: colorFondo,
                                   borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(color: Colors.white.withOpacity(0.1))
+                                  border: Border.all(color: StiloColors.text.withOpacity(0.1))
                                 ),
                                 child: Row(
                                   children: [
                                     IconButton(
-                                      icon: const Icon(Icons.remove_rounded, color: colorTextoSecundario),
+                                      icon: Icon(Icons.remove_rounded, color: colorTextoSecundario),
                                       onPressed: () { if (cantidad > 1) setModalState(() => cantidad--); },
                                     ),
                                     SizedBox(
                                       width: 40,
                                       child: Text(
-                                        "$cantidad", 
-                                        textAlign: TextAlign.center, 
+                                        "$cantidad",
+                                        textAlign: TextAlign.center,
                                         style: GoogleFonts.outfit(color: colorTextoPrimario, fontSize: 20, fontWeight: FontWeight.bold)
                                       ),
                                     ),
                                     IconButton(
-                                      icon: const Icon(Icons.add_rounded, color: colorAcento),
+                                      icon: Icon(Icons.add_rounded, color: colorAcento),
                                       onPressed: () => setModalState(() => cantidad++),
                                     ),
                                   ],
@@ -915,9 +917,9 @@ class _ControlHerramientasScreenState extends State<ControlHerramientasScreen> {
                               )
                             ],
                           ),
-                          const Padding(
+                          Padding(
                             padding: EdgeInsets.symmetric(vertical: 16.0),
-                            child: Divider(color: Colors.white10, height: 1),
+                            child: Divider(color: StiloColors.text.withValues(alpha: .10), height: 1),
                           ),
 
 
@@ -927,7 +929,7 @@ class _ControlHerramientasScreenState extends State<ControlHerramientasScreen> {
                             value: esRetornable,
 
 
-                            activeColor: Colors.black,
+                            activeColor: StiloColors.background,
                             activeTrackColor: colorAcento,
                             inactiveThumbColor: colorTextoSecundario,
                             inactiveTrackColor: colorFondo,
@@ -937,14 +939,14 @@ class _ControlHerramientasScreenState extends State<ControlHerramientasScreen> {
                         ],
                       ),
                     ),
-                    const SizedBox(height: 32),
+                    SizedBox(height: 32),
                     SizedBox(
                       width: double.infinity,
                       height: 56,
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
                           backgroundColor: colorAcento,
-                          foregroundColor: Colors.black,
+                          foregroundColor: StiloColors.background,
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                           elevation: 8,
                           shadowColor: colorAcento.withOpacity(0.5),
@@ -961,11 +963,11 @@ class _ControlHerramientasScreenState extends State<ControlHerramientasScreen> {
                                 behavior: SnackBarBehavior.floating,
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                                 backgroundColor: colorVerde,
-                                margin: const EdgeInsets.all(16),
+                                margin: EdgeInsets.all(16),
                                 content: Row(
                                   children: [
-                                    const Icon(Icons.check_circle_rounded, color: Colors.white),
-                                    const SizedBox(width: 12),
+                                    Icon(Icons.check_circle_rounded, color: StiloColors.text),
+                                    SizedBox(width: 12),
                                     Expanded(child: Text("Solicitud actualizada.", style: GoogleFonts.inter(fontWeight: FontWeight.bold))),
                                   ],
                                 ),
@@ -995,16 +997,16 @@ class _ControlHerramientasScreenState extends State<ControlHerramientasScreen> {
         title: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(8),
+              padding: EdgeInsets.all(8),
               decoration: BoxDecoration(color: colorRojo.withOpacity(0.1), shape: BoxShape.circle),
-              child: const Icon(Icons.warning_rounded, color: colorRojo),
+              child: Icon(Icons.warning_rounded, color: colorRojo),
             ),
-            const SizedBox(width: 12),
+            SizedBox(width: 12),
             Expanded(child: Text("Eliminar", style: GoogleFonts.outfit(color: colorTextoPrimario, fontWeight: FontWeight.bold))),
           ],
         ),
         content: Text("¿Estás seguro de que deseas cancelar esta solicitud?", style: GoogleFonts.inter(color: colorTextoSecundario, height: 1.5)),
-        actionsPadding: const EdgeInsets.only(right: 20, bottom: 20),
+        actionsPadding: EdgeInsets.only(right: 20, bottom: 20),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
@@ -1013,7 +1015,7 @@ class _ControlHerramientasScreenState extends State<ControlHerramientasScreen> {
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: colorRojo,
-              foregroundColor: Colors.white,
+              foregroundColor: StiloColors.text,
               elevation: 0,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
@@ -1026,11 +1028,11 @@ class _ControlHerramientasScreenState extends State<ControlHerramientasScreen> {
                     behavior: SnackBarBehavior.floating,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     backgroundColor: colorRojo,
-                    margin: const EdgeInsets.all(16),
+                    margin: EdgeInsets.all(16),
                     content: Row(
                       children: [
-                        const Icon(Icons.delete_outline, color: Colors.white),
-                        const SizedBox(width: 12),
+                        Icon(Icons.delete_outline, color: StiloColors.text),
+                        SizedBox(width: 12),
                         Expanded(child: Text("Solicitud cancelada. Se conserva su historial.", style: GoogleFonts.inter(fontWeight: FontWeight.bold))),
                       ],
                     ),
@@ -1071,13 +1073,13 @@ class _ReporteDevolucionModalState extends State<ReporteDevolucionModal> {
   Uint8List? _imagenBytes;
   bool _subiendoDatos = false;
 
-  static const Color colorFondo = Color(0xFF000000);
-  static const Color colorTarjeta = Color(0xFF111012);
-  static const Color colorTextoPrimario = Color(0xFFFDFDFD);
-  static const Color colorTextoSecundario = Color(0xFFB5ABA5);
-  static const Color colorAcento = Color(0xFFB7FF2A);
-  static const Color colorNaranja = Color(0xFFFF9800);
-  static const Color colorVerde = Color(0xFF4CAF50);
+  Color get colorFondo => StiloColors.background;
+  Color get colorTarjeta => StiloColors.surface;
+  Color get colorTextoPrimario => StiloColors.text;
+  Color get colorTextoSecundario => Color(0xFFB5ABA5);
+  Color get colorAcento => StiloColors.accent;
+  Color get colorNaranja => Color(0xFFFF9800);
+  Color get colorVerde => Color(0xFF4CAF50);
 
   @override
   void dispose() {
@@ -1088,7 +1090,7 @@ class _ReporteDevolucionModalState extends State<ReporteDevolucionModal> {
   Future<void> _tomarFoto() async {
     final ImagePicker picker = ImagePicker();
     final XFile? image = await picker.pickImage(source: ImageSource.camera, imageQuality: 70);
-    
+
     if (image != null) {
       final bytes=await image.readAsBytes();
       if (!mounted) return;
@@ -1100,16 +1102,16 @@ class _ReporteDevolucionModalState extends State<ReporteDevolucionModal> {
 
   Future<void> _procesarDevolucion() async {
     setState(() => _subiendoDatos = true);
-    
+
     String urlFinalFoto = "";
-    
+
     try {
       if (_imagenLocalRuta != null) {
         final bytes = _imagenBytes ?? await XFile(_imagenLocalRuta!).readAsBytes();
         if (bytes.isEmpty || bytes.length > 5 * 1024 * 1024) throw StateError('Usa una foto menor de 5 MB.');
         String fileName = 'devoluciones/${widget.solicitud.id}_${DateTime.now().millisecondsSinceEpoch}.jpg';
         Reference ref = FirebaseStorage.instance.ref().child(fileName);
-        
+
         UploadTask uploadTask = ref.putData(bytes, SettableMetadata(contentType: 'image/jpeg'));
         TaskSnapshot snapshot = await uploadTask;
         urlFinalFoto = await snapshot.ref.getDownloadURL();
@@ -1130,11 +1132,11 @@ class _ReporteDevolucionModalState extends State<ReporteDevolucionModal> {
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             backgroundColor: colorVerde,
-            margin: const EdgeInsets.all(16),
+            margin: EdgeInsets.all(16),
             content: Row(
               children: [
-                const Icon(Icons.check_circle_rounded, color: Colors.white),
-                const SizedBox(width: 12),
+                Icon(Icons.check_circle_rounded, color: StiloColors.text),
+                SizedBox(width: 12),
                 Expanded(child: Text("Reporte enviado correctamente.", style: GoogleFonts.inter(fontWeight: FontWeight.bold))),
               ],
             ),
@@ -1156,11 +1158,12 @@ class _ReporteDevolucionModalState extends State<ReporteDevolucionModal> {
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context);
     return BackdropFilter(
       filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
       child: Container(
         height: MediaQuery.of(context).size.height * 0.80,
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           color: colorFondo,
           borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
         ),
@@ -1169,35 +1172,35 @@ class _ReporteDevolucionModalState extends State<ReporteDevolucionModal> {
           children: [
             Container(
               width: 40, height: 4,
-              margin: const EdgeInsets.only(bottom: 24),
-              decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(10)),
+              margin: EdgeInsets.only(bottom: 24),
+              decoration: BoxDecoration(color: StiloColors.text.withOpacity(0.2), borderRadius: BorderRadius.circular(10)),
             ),
-            
+
             Expanded(
               child: SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
+                physics: BouncingScrollPhysics(),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text("Reporte de Devolución", style: GoogleFonts.outfit(color: colorTextoPrimario, fontSize: 24, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 6),
+                    SizedBox(height: 6),
                     Text(
-                      "Herramienta: ${widget.solicitud.nombreInsumo}", 
+                      "Herramienta: ${widget.solicitud.nombreInsumo}",
                       style: GoogleFonts.inter(color: colorNaranja, fontSize: 15, fontWeight: FontWeight.w600)
                     ),
-                    const SizedBox(height: 32),
+                    SizedBox(height: 32),
 
                     Container(
                       decoration: BoxDecoration(
                         color: colorTarjeta,
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: _tieneFalla ? colorNaranja.withOpacity(0.5) : Colors.white.withOpacity(0.05)),
+                        border: Border.all(color: _tieneFalla ? colorNaranja.withOpacity(0.5) : StiloColors.text.withOpacity(0.05)),
                       ),
                       child: SwitchListTile(
                         title: Text("¿Presenta falla o daño?", style: GoogleFonts.inter(color: colorTextoPrimario, fontSize: 16, fontWeight: FontWeight.w500)),
                         subtitle: Text("Activa si requiere mantenimiento", style: GoogleFonts.inter(color: colorTextoSecundario, fontSize: 13)),
                         value: _tieneFalla,
-                        activeColor: Colors.black,
+                        activeColor: StiloColors.background,
                         activeTrackColor: colorNaranja,
                         inactiveThumbColor: colorTextoSecundario,
                         inactiveTrackColor: colorFondo,
@@ -1205,16 +1208,16 @@ class _ReporteDevolucionModalState extends State<ReporteDevolucionModal> {
                         onChanged: (bool value) => setState(() => _tieneFalla = value),
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    SizedBox(height: 24),
 
                     Text("Observaciones:", style: GoogleFonts.inter(color: colorTextoPrimario, fontSize: 16, fontWeight: FontWeight.w600)),
-                    const SizedBox(height: 12),
+                    SizedBox(height: 12),
                     TextField(contextMenuBuilder: privacyTextMenu,
                       controller: _observacionesController,
                       maxLines: 4,
                       style: GoogleFonts.inter(color: colorTextoPrimario),
                       decoration: InputDecoration(
-                        hintText: _tieneFalla 
+                        hintText: _tieneFalla
                             ? "Describe detalladamente la falla mecánica..."
                             : "Escribe comentarios adicionales (opcional)...",
                         hintStyle: GoogleFonts.inter(color: colorTextoSecundario, fontSize: 14),
@@ -1222,15 +1225,15 @@ class _ReporteDevolucionModalState extends State<ReporteDevolucionModal> {
                         fillColor: colorTarjeta,
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
                         focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(16), 
+                          borderRadius: BorderRadius.circular(16),
                           borderSide: BorderSide(color: colorNaranja.withOpacity(0.5))
                         ),
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    SizedBox(height: 24),
 
                     Text("Evidencia Fotográfica:", style: GoogleFonts.inter(color: colorTextoPrimario, fontSize: 16, fontWeight: FontWeight.w600)),
-                    const SizedBox(height: 12),
+                    SizedBox(height: 12),
                     GestureDetector(
                       onTap: _subiendoDatos ? null : _tomarFoto,
                       child: Container(
@@ -1240,7 +1243,7 @@ class _ReporteDevolucionModalState extends State<ReporteDevolucionModal> {
                           color: colorTarjeta,
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
-                            color: _imagenLocalRuta != null ? colorVerde.withOpacity(0.5) : Colors.white.withOpacity(0.1),
+                            color: _imagenLocalRuta != null ? colorVerde.withOpacity(0.5) : StiloColors.text.withOpacity(0.1),
                             width: 1.5,
                           ),
                         ),
@@ -1249,11 +1252,11 @@ class _ReporteDevolucionModalState extends State<ReporteDevolucionModal> {
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
                                   Container(
-                                    padding: const EdgeInsets.all(12),
+                                    padding: EdgeInsets.all(12),
                                     decoration: BoxDecoration(color: colorFondo, shape: BoxShape.circle),
-                                    child: const Icon(Icons.camera_alt_outlined, color: colorAcento, size: 28),
+                                    child: Icon(Icons.camera_alt_outlined, color: colorAcento, size: 28),
                                   ),
-                                  const SizedBox(height: 12),
+                                  SizedBox(height: 12),
                                   Text("Tocar para tomar foto", style: GoogleFonts.inter(color: colorTextoSecundario, fontSize: 14)),
                                 ],
                               )
@@ -1264,25 +1267,25 @@ class _ReporteDevolucionModalState extends State<ReporteDevolucionModal> {
                                       borderRadius: BorderRadius.circular(14),
                                       child: Image.memory(
                                         _imagenBytes!,
-                                        width: double.infinity, 
+                                        width: double.infinity,
                                         fit: BoxFit.cover,
-                                        opacity: const AlwaysStoppedAnimation(0.6),
+                                        opacity: AlwaysStoppedAnimation(0.6),
                                       ),
                                     ),
                                   ),
                                   Center(
                                     child: Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                                       decoration: BoxDecoration(
-                                        color: Colors.black.withOpacity(0.6),
+                                        color: StiloColors.background.withOpacity(0.6),
                                         borderRadius: BorderRadius.circular(20),
                                       ),
                                       child: Row(
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
-                                          const Icon(Icons.check_circle_rounded, color: colorVerde, size: 20),
-                                          const SizedBox(width: 8),
-                                          Text("Foto capturada", style: GoogleFonts.inter(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)),
+                                          Icon(Icons.check_circle_rounded, color: colorVerde, size: 20),
+                                          SizedBox(width: 8),
+                                          Text("Foto capturada", style: GoogleFonts.inter(color: StiloColors.text, fontSize: 13, fontWeight: FontWeight.bold)),
                                         ],
                                       ),
                                     ),
@@ -1290,8 +1293,8 @@ class _ReporteDevolucionModalState extends State<ReporteDevolucionModal> {
                                   Positioned(
                                     top: 8, right: 8,
                                     child: IconButton(
-                                      icon: const Icon(Icons.close_rounded, color: Colors.white),
-                                      style: IconButton.styleFrom(backgroundColor: Colors.black45),
+                                      icon: Icon(Icons.close_rounded, color: StiloColors.text),
+                                      style: IconButton.styleFrom(backgroundColor: StiloColors.background.withValues(alpha: .45)),
                                       onPressed: () => setState(() => _imagenLocalRuta = null),
                                     ),
                                   )
@@ -1299,13 +1302,13 @@ class _ReporteDevolucionModalState extends State<ReporteDevolucionModal> {
                               ),
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    SizedBox(height: 16),
                   ],
                 ),
               ),
             ),
-            
-            const SizedBox(height: 16),
+
+            SizedBox(height: 16),
             SizedBox(
               width: double.infinity,
               height: 56,
@@ -1317,12 +1320,12 @@ class _ReporteDevolucionModalState extends State<ReporteDevolucionModal> {
                   shadowColor: colorAcento.withOpacity(0.5),
                 ),
                 onPressed: _subiendoDatos ? null : _procesarDevolucion,
-                child: _subiendoDatos 
-                    ? const SizedBox(
-                        height: 24, width: 24, 
-                        child: CircularProgressIndicator(color: Colors.black, strokeWidth: 3)
+                child: _subiendoDatos
+                    ? SizedBox(
+                        height: 24, width: 24,
+                        child: CircularProgressIndicator(color: StiloColors.background, strokeWidth: 3)
                       )
-                    : Text("Confirmar Entrega", style: GoogleFonts.outfit(color: Colors.black, fontWeight: FontWeight.w700, fontSize: 16)),
+                    : Text("Confirmar Entrega", style: GoogleFonts.outfit(color: StiloColors.background, fontWeight: FontWeight.w700, fontSize: 16)),
               ),
             )
           ],

@@ -1,8 +1,9 @@
+import '../presentation/appearance.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../widgets/inventory_photo.dart';
-import '../models/insumo_model.dart'; 
+import '../models/insumo_model.dart';
 
 class AdminReparacionesScreen extends StatefulWidget {
   const AdminReparacionesScreen({super.key});
@@ -12,16 +13,16 @@ class AdminReparacionesScreen extends StatefulWidget {
 }
 
 class _AdminReparacionesScreenState extends State<AdminReparacionesScreen> {
-  static const Color colorFondo = Color(0xFF000000);
-  static const Color colorTarjeta = Color(0xFF111012);
-  static const Color colorTextoPrimario = Color(0xFFFDFDFD);
-  static const Color colorAcento = Color(0xFFB7FF2A);
-  static const Color colorAzul = Color(0xFFC798FF);
-  static const Color colorRojoCoral = Color(0xFFFF5252);
-  static const Color colorMorado = Color(0xFFC13CFF);
-  static const Color colorRosaVibrante = Color(0xFFFF729C);
-  static const Color colorBlanco = Color(0xFFFFFFFF);
-  static const Color colorVerde1 = Color(0xFF7CE3BD);
+  Color get colorFondo => StiloColors.background;
+  Color get colorTarjeta => StiloColors.surface;
+  Color get colorTextoPrimario => StiloColors.text;
+  Color get colorAcento => StiloColors.accent;
+  Color get colorAzul => StiloColors.accent;
+  Color get colorRojoCoral => Color(0xFFFF5252);
+  Color get colorMorado => StiloColors.accent;
+  Color get colorRosaVibrante => Color(0xFFFF729C);
+  Color get colorBlanco => StiloColors.text;
+  Color get colorVerde1 => Color(0xFF7CE3BD);
 
   Color _obtenerColorBarra(String categoria) {
     switch (categoria.toLowerCase()) {
@@ -52,7 +53,7 @@ class _AdminReparacionesScreenState extends State<AdminReparacionesScreen> {
       builder: (BuildContext context) {
         return Dialog(
           backgroundColor: Colors.transparent,
-          insetPadding: const EdgeInsets.all(10),
+          insetPadding: EdgeInsets.all(10),
           child: GestureDetector(
             onTap: () => Navigator.pop(context),
             child: InteractiveViewer(
@@ -64,8 +65,8 @@ class _AdminReparacionesScreenState extends State<AdminReparacionesScreen> {
                 child: InventoryPhoto(
                   imageUrl: imageUrl,
                   fit: BoxFit.contain,
-                  placeholder: (context, url) => const Center(child: CircularProgressIndicator(color: colorRosaVibrante)),
-                  errorWidget: (context, url, error) => const Icon(Icons.broken_image, color: Colors.white54, size: 50),
+                  placeholder: (context, url) => Center(child: CircularProgressIndicator(color: colorRosaVibrante)),
+                  errorWidget: (context, url, error) => Icon(Icons.broken_image, color: StiloColors.text.withValues(alpha: .54), size: 50),
                 ),
               ),
             ),
@@ -94,7 +95,7 @@ Future<void> _marcarComoReparado(BuildContext context, String insumoId) async {
       final int cantidadReparada = int.tryParse(reparacionDoc.data()['cantidad']?.toString() ?? '1') ?? 1;
 
       final inventarioRef = FirebaseFirestore.instance.collection('insumos_inventario').doc(insumoId);
-      
+
       WriteBatch batch = FirebaseFirestore.instance.batch();
 
       // 2. Actualizamos el inventario principal (A prueba de errores de sincronización)
@@ -114,7 +115,7 @@ Future<void> _marcarComoReparado(BuildContext context, String insumoId) async {
       // Buscar si esta reparación viene de un reporte de daño en un kit de salida
       final dataReparacion = reparacionDoc.data() as Map<String, dynamic>;
       if (dataReparacion['origen'] == 'recepcion_obra_evaluada') {
-         // Necesitaríamos saber el ID del kit (solicitudId) para actualizarlo directamente. 
+         // Necesitaríamos saber el ID del kit (solicitudId) para actualizarlo directamente.
          // O, una forma más robusta:
          final salidasConEsteInsumo = await FirebaseFirestore.instance
             .collection('solicitudes_salida')
@@ -142,7 +143,7 @@ Future<void> _marcarComoReparado(BuildContext context, String insumoId) async {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             backgroundColor: colorVerde1,
             content: Text("Herramienta reparada con éxito. Regresó al stock disponible."),
           ),
@@ -159,12 +160,13 @@ Future<void> _marcarComoReparado(BuildContext context, String insumoId) async {
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context);
     return Scaffold(
       backgroundColor: colorFondo,
       appBar: AppBar(
         backgroundColor: colorFondo,
         elevation: 0,
-        iconTheme: const IconThemeData(color: colorTextoPrimario),
+        iconTheme: IconThemeData(color: colorTextoPrimario),
         title: Text(
           'TALLER Y REPARACIONES',
           style: GoogleFonts.inter(
@@ -183,7 +185,7 @@ Future<void> _marcarComoReparado(BuildContext context, String insumoId) async {
             .snapshots(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator(color: colorTextoPrimario));
+            return Center(child: CircularProgressIndicator(color: colorTextoPrimario));
           }
 
           final docs = snapshot.data?.docs ?? [];
@@ -193,11 +195,11 @@ Future<void> _marcarComoReparado(BuildContext context, String insumoId) async {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.handyman_outlined, color: Colors.white24, size: 60),
-                  const SizedBox(height: 16),
+                  Icon(Icons.handyman_outlined, color: StiloColors.text.withValues(alpha: .24), size: 60),
+                  SizedBox(height: 16),
                   Text(
                     'No hay herramientas dañadas en mantenimiento.',
-                    style: GoogleFonts.inter(color: Colors.white54, fontSize: 14),
+                    style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .54), fontSize: 14),
                   ),
                 ],
               ),
@@ -205,12 +207,12 @@ Future<void> _marcarComoReparado(BuildContext context, String insumoId) async {
           }
 
           return ListView.builder(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             itemCount: docs.length,
             itemBuilder: (context, index) {
               final doc = docs[index];
               final insumo = InsumoModel.fromFirestore(doc);
-              
+
               // Extracción local del campo dinámico
               final dataRaw = doc.data() as Map<String, dynamic>;
               final int enReparacion = dataRaw['en_reparacion'] ?? 0;
@@ -218,17 +220,17 @@ Future<void> _marcarComoReparado(BuildContext context, String insumoId) async {
               final String heroTag = 'reparar_${insumo.id}';
 
               return Container(
-                margin: const EdgeInsets.only(bottom: 16),
+                margin: EdgeInsets.only(bottom: 16),
                 decoration: BoxDecoration(
                   color: colorTarjeta,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: Colors.orangeAccent.withOpacity(0.2), width: 1),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.3),
+                      color: StiloColors.background.withOpacity(0.3),
                       spreadRadius: 1,
                       blurRadius: 6,
-                      offset: const Offset(0, 3),
+                      offset: Offset(0, 3),
                     ),
                   ],
                 ),
@@ -240,7 +242,7 @@ Future<void> _marcarComoReparado(BuildContext context, String insumoId) async {
                         width: 6,
                         decoration: BoxDecoration(
                           color: _obtenerColorBarra(insumo.categoria),
-                          borderRadius: const BorderRadius.only(
+                          borderRadius: BorderRadius.only(
                             topLeft: Radius.circular(12),
                             bottomLeft: Radius.circular(12),
                           ),
@@ -250,7 +252,7 @@ Future<void> _marcarComoReparado(BuildContext context, String insumoId) async {
                       // Imagen del insumo
                       if (insumo.imagenUrl != null && insumo.imagenUrl!.isNotEmpty)
                         Padding(
-                          padding: const EdgeInsets.only(left: 12.0, top: 12.0, bottom: 12.0),
+                          padding: EdgeInsets.only(left: 12.0, top: 12.0, bottom: 12.0),
                           child: GestureDetector(
                             onTap: () => _mostrarImagenExpandida(context, insumo.imagenUrl!, heroTag),
                             child: Hero(
@@ -265,14 +267,14 @@ Future<void> _marcarComoReparado(BuildContext context, String insumoId) async {
                                   placeholder: (context, url) => Container(
                                     width: 70,
                                     height: 70,
-                                    color: Colors.white10,
-                                    child: const Center(child: CircularProgressIndicator(strokeWidth: 2, color: colorRosaVibrante)),
+                                    color: StiloColors.text.withValues(alpha: .10),
+                                    child: Center(child: CircularProgressIndicator(strokeWidth: 2, color: colorRosaVibrante)),
                                   ),
                                   errorWidget: (context, url, error) => Container(
                                     width: 70,
                                     height: 70,
-                                    color: Colors.white10,
-                                    child: const Icon(Icons.broken_image, color: Colors.white54),
+                                    color: StiloColors.text.withValues(alpha: .10),
+                                    child: Icon(Icons.broken_image, color: StiloColors.text.withValues(alpha: .54)),
                                   ),
                                 ),
                               ),
@@ -281,22 +283,22 @@ Future<void> _marcarComoReparado(BuildContext context, String insumoId) async {
                         )
                       else
                         Padding(
-                          padding: const EdgeInsets.only(left: 12.0, top: 12.0, bottom: 12.0),
+                          padding: EdgeInsets.only(left: 12.0, top: 12.0, bottom: 12.0),
                           child: Container(
                             width: 70,
                             height: 70,
                             decoration: BoxDecoration(
-                              color: Colors.white10,
+                              color: StiloColors.text.withValues(alpha: .10),
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            child: const Icon(Icons.build_circle_outlined, color: Colors.white54, size: 30),
+                            child: Icon(Icons.build_circle_outlined, color: StiloColors.text.withValues(alpha: .54), size: 30),
                           ),
                         ),
 
                       // Detalles del insumo y acciones
                       Expanded(
                         child: Padding(
-                          padding: const EdgeInsets.all(14.0),
+                          padding: EdgeInsets.all(14.0),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -311,7 +313,7 @@ Future<void> _marcarComoReparado(BuildContext context, String insumoId) async {
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
-                              const SizedBox(height: 4),
+                              SizedBox(height: 4),
                               Text(
                                 '${insumo.categoria.toUpperCase()} > ${insumo.subcategoria.toUpperCase()}',
                                 style: GoogleFonts.inter(
@@ -319,12 +321,12 @@ Future<void> _marcarComoReparado(BuildContext context, String insumoId) async {
                                   fontSize: 11,
                                 ),
                               ),
-                              const SizedBox(height: 12),
+                              SizedBox(height: 12),
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                     decoration: BoxDecoration(
                                       color: Colors.orange.withOpacity(0.15),
                                       borderRadius: BorderRadius.circular(6),
@@ -343,13 +345,13 @@ Future<void> _marcarComoReparado(BuildContext context, String insumoId) async {
                                       backgroundColor: colorVerde1,
                                       foregroundColor: colorFondo,
                                       elevation: 0,
-                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                                     ),
                                     // --- AQUÍ ESTÁ EL CAMBIO ---
                                     onPressed: () => _marcarComoReparado(context, insumo.id),
                                     // ---------------------------
-                                    icon: const Icon(Icons.build, size: 14),
+                                    icon: Icon(Icons.build, size: 14),
                                     label: Text(
                                       "REPARADA",
                                       style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 11),

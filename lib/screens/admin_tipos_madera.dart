@@ -1,3 +1,4 @@
+import '../presentation/appearance.dart';
 import '../services/external_transfer.dart';
 import 'dart:io';
 import 'package:flutter/material.dart';
@@ -41,18 +42,19 @@ class _CatalogoSaunasScreenState extends State<CatalogoSaunasScreen> {
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context);
     return Scaffold(
-      backgroundColor: const Color(0xFF121212),
+      backgroundColor: StiloColors.surface,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF121212),
+        backgroundColor: StiloColors.surface,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white),
+        iconTheme: IconThemeData(color: StiloColors.text),
         title: Text(
           'TIPOS DE MADERA',
           style: GoogleFonts.inter(
-            fontSize: 16, 
-            color: Colors.white, 
-            fontWeight: FontWeight.w700, 
+            fontSize: 16,
+            color: StiloColors.text,
+            fontWeight: FontWeight.w700,
             letterSpacing: 1.5
           ),
         ),
@@ -62,7 +64,7 @@ class _CatalogoSaunasScreenState extends State<CatalogoSaunasScreen> {
         children: [
           // --- BARRA DE BÚSQUEDA ---
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+            padding: EdgeInsets.fromLTRB(16, 8, 16, 16),
             child: TextField(contextMenuBuilder: privacyTextMenu,
               controller: _searchController,
               focusNode: _searchFocusNode,
@@ -72,26 +74,26 @@ class _CatalogoSaunasScreenState extends State<CatalogoSaunasScreen> {
               onTapOutside: (event) {
                 _searchFocusNode.unfocus();
               },
-              style: const TextStyle(color: Colors.white),
+              style: TextStyle(color: StiloColors.text),
               decoration: InputDecoration(
                 hintText: 'Buscar por nombre o descripción...',
-                hintStyle: GoogleFonts.inter(color: Colors.white54),
-                prefixIcon: const Icon(Icons.search, color: Color(0xFF8B5CF6)),
-                suffixIcon: (_searchQuery.isNotEmpty || _searchFocusNode.hasFocus) 
+                hintStyle: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .54)),
+                prefixIcon: Icon(Icons.search, color: StiloColors.accent),
+                suffixIcon: (_searchQuery.isNotEmpty || _searchFocusNode.hasFocus)
                   ? IconButton(
-                      icon: const Icon(Icons.clear, color: Colors.white54),
+                      icon: Icon(Icons.clear, color: StiloColors.text.withValues(alpha: .54)),
                       onPressed: () {
                         _searchController.clear();
                         setState(() => _searchQuery = '');
                         _searchFocusNode.unfocus(); // Cierra el teclado
                       },
                     )
-                  : const SizedBox.shrink(),
+                  : SizedBox.shrink(),
                 filled: true,
-                fillColor: const Color(0xFF1E1E1E),
-                contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                fillColor: StiloColors.surface,
+                contentPadding: EdgeInsets.symmetric(vertical: 0),
                 enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide.none),
-                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: const BorderSide(color: Color(0xFF8B5CF6), width: 1.5)),
+                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide(color: StiloColors.accent, width: 1.5)),
               ),
               onChanged: (value) {
                 setState(() {
@@ -107,7 +109,7 @@ class _CatalogoSaunasScreenState extends State<CatalogoSaunasScreen> {
               stream: _saunasCollection.snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator(color: Color(0xFF8B5CF6)));
+                  return Center(child: CircularProgressIndicator(color: StiloColors.accent));
                 }
                 if (snapshot.hasError) {
                   return Center(
@@ -116,15 +118,15 @@ class _CatalogoSaunasScreenState extends State<CatalogoSaunasScreen> {
                 }
                 if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
                   return Center(
-                    child: Text('No hay tipos de madera registrados.', style: GoogleFonts.inter(color: Colors.white54))
+                    child: Text('No hay tipos de madera registrados.', style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .54)))
                   );
                 }
 
                 final saunas = snapshot.data!.docs.map((doc) => Sauna.fromFirestore(doc)).toList();
 
                 // Lógica de filtrado
-                final saunasFiltradas = _searchQuery.isEmpty 
-                    ? saunas 
+                final saunasFiltradas = _searchQuery.isEmpty
+                    ? saunas
                     : saunas.where((sauna) {
                         final nombre = sauna.nombre.toLowerCase();
                         final descripcion = sauna.descripcion.toLowerCase();
@@ -133,25 +135,25 @@ class _CatalogoSaunasScreenState extends State<CatalogoSaunasScreen> {
 
                 if (saunasFiltradas.isEmpty) {
                   return Center(
-                    child: Text('No se encontraron resultados.', style: GoogleFonts.inter(color: Colors.white54))
+                    child: Text('No se encontraron resultados.', style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .54)))
                   );
                 }
 
                 return ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   itemCount: saunasFiltradas.length,
                   itemBuilder: (context, index) {
                     final sauna = saunasFiltradas[index];
                     return Card(
-                      color: const Color(0xFF1E1E1E),
+                      color: StiloColors.surface,
                       elevation: 0,
-                      margin: const EdgeInsets.only(bottom: 12),
+                      margin: EdgeInsets.only(bottom: 12),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
-                        side: const BorderSide(color: Colors.white12, width: 1),
+                        side: BorderSide(color: StiloColors.text.withValues(alpha: .12), width: 1),
                       ),
                       child: Padding(
-                        padding: const EdgeInsets.all(16.0),
+                        padding: EdgeInsets.all(16.0),
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -160,7 +162,7 @@ class _CatalogoSaunasScreenState extends State<CatalogoSaunasScreen> {
                               width: 60,
                               height: 60,
                               decoration: BoxDecoration(
-                                color: const Color(0xFF8B5CF6).withOpacity(0.15),
+                                color: StiloColors.accent.withOpacity(0.15),
                                 borderRadius: BorderRadius.circular(14),
                               ),
                               child: ClipRRect(
@@ -169,13 +171,13 @@ class _CatalogoSaunasScreenState extends State<CatalogoSaunasScreen> {
                                     ? Image.network(
                                         sauna.imagenUrl,
                                         fit: BoxFit.cover,
-                                        errorBuilder: (context, error, stackTrace) => const Icon(Icons.forest_outlined, color: Color(0xFF8B5CF6), size: 28),
+                                        errorBuilder: (context, error, stackTrace) => Icon(Icons.forest_outlined, color: StiloColors.accent, size: 28),
                                       )
-                                    : const Icon(Icons.forest_outlined, color: Color(0xFF8B5CF6), size: 28),
+                                    : Icon(Icons.forest_outlined, color: StiloColors.accent, size: 28),
                               ),
                             ),
-                            const SizedBox(width: 16),
-                            
+                            SizedBox(width: 16),
+
                             // Información
                             Expanded(
                               child: Column(
@@ -183,23 +185,23 @@ class _CatalogoSaunasScreenState extends State<CatalogoSaunasScreen> {
                                 children: [
                                   Text(
                                     sauna.nombre,
-                                    style: GoogleFonts.inter(fontWeight: FontWeight.w500, fontSize: 16, color: Colors.white),
+                                    style: GoogleFonts.inter(fontWeight: FontWeight.w500, fontSize: 16, color: StiloColors.text),
                                   ),
-                                  const SizedBox(height: 6),
+                                  SizedBox(height: 6),
                                   Row(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      const Padding(
+                                      Padding(
                                         padding: EdgeInsets.only(top: 2.0),
                                         child: Icon(Icons.description_outlined, size: 14, color: Color(0xFF81C784)),
                                       ),
-                                      const SizedBox(width: 6),
+                                      SizedBox(width: 6),
                                       Expanded(
                                         child: Text(
                                           sauna.descripcion.isNotEmpty ? sauna.descripcion : 'Sin descripción',
                                           maxLines: 2,
                                           overflow: TextOverflow.ellipsis,
-                                          style: GoogleFonts.inter(fontSize: 13, color: Colors.white70),
+                                          style: GoogleFonts.inter(fontSize: 13, color: StiloColors.text.withValues(alpha: .70)),
                                         ),
                                       ),
                                     ],
@@ -207,26 +209,26 @@ class _CatalogoSaunasScreenState extends State<CatalogoSaunasScreen> {
                                 ],
                               ),
                             ),
-                            
+
                             // Botones de acción
                             Column(
                               children: [
                                 IconButton(
-                                  icon: const Icon(Icons.edit_outlined, color: Colors.white54, size: 22),
+                                  icon: Icon(Icons.edit_outlined, color: StiloColors.text.withValues(alpha: .54), size: 22),
                                   onPressed: () {
                                     _searchFocusNode.unfocus();
                                     _abrirFormularioMadera(sauna: sauna);
                                   },
-                                  constraints: const BoxConstraints(),
-                                  padding: const EdgeInsets.only(bottom: 12),
+                                  constraints: BoxConstraints(),
+                                  padding: EdgeInsets.only(bottom: 12),
                                 ),
                                 IconButton(
-                                  icon: const Icon(Icons.delete_outline, color: Color(0xFFE57373), size: 22),
+                                  icon: Icon(Icons.delete_outline, color: Color(0xFFE57373), size: 22),
                                   onPressed: () {
                                     _searchFocusNode.unfocus();
                                     _confirmarEliminacion(sauna);
                                   },
-                                  constraints: const BoxConstraints(),
+                                  constraints: BoxConstraints(),
                                   padding: EdgeInsets.zero,
                                 ),
                               ],
@@ -243,13 +245,13 @@ class _CatalogoSaunasScreenState extends State<CatalogoSaunasScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        backgroundColor: Colors.white,
+        backgroundColor: StiloColors.text,
         onPressed: () {
           _searchFocusNode.unfocus();
           _abrirFormularioMadera();
         },
-        label: Text('Nueva Madera', style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: Colors.black)),
-        icon: const Icon(Icons.add, color: Colors.black),
+        label: Text('Nueva Madera', style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: StiloColors.background)),
+        icon: Icon(Icons.add, color: StiloColors.background),
       ),
     );
   }
@@ -267,28 +269,28 @@ class _CatalogoSaunasScreenState extends State<CatalogoSaunasScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF1E1E1E),
-        title: Text('¿Eliminar ${sauna.nombre}?', style: GoogleFonts.inter(color: Colors.white)),
-        content: Text('Se verificará que no esté en uso en ningún proyecto.', style: GoogleFonts.inter(color: Colors.white70)),
+        backgroundColor: StiloColors.surface,
+        title: Text('¿Eliminar ${sauna.nombre}?', style: GoogleFonts.inter(color: StiloColors.text)),
+        content: Text('Se verificará que no esté en uso en ningún proyecto.', style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .70))),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context), 
-            child: Text('Cancelar', style: GoogleFonts.inter(color: Colors.white54))
+            onPressed: () => Navigator.pop(context),
+            child: Text('Cancelar', style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .54)))
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
             onPressed: () async {
               final nav = Navigator.of(context);
               final scaffold = ScaffoldMessenger.of(context);
-              
+
               try {
                 final proyectosUsando = await _proyectosCollection
-                    .where('id_sauna', isEqualTo: sauna.id) 
+                    .where('id_sauna', isEqualTo: sauna.id)
                     .limit(1)
                     .get();
 
                 if (proyectosUsando.docs.isNotEmpty) {
-                  nav.pop(); 
+                  nav.pop();
                   scaffold.showSnackBar(
                     SnackBar(
                       content: Text('No se puede eliminar: Esta madera está asignada a un proyecto activo.', style: GoogleFonts.inter()),
@@ -300,7 +302,7 @@ class _CatalogoSaunasScreenState extends State<CatalogoSaunasScreen> {
 
                 await _saunasCollection.doc(sauna.id).delete();
                 nav.pop();
-                
+
                 scaffold.showSnackBar(
                   SnackBar(content: Text('Madera eliminada correctamente', style: GoogleFonts.inter()), backgroundColor: Colors.green)
                 );
@@ -312,7 +314,7 @@ class _CatalogoSaunasScreenState extends State<CatalogoSaunasScreen> {
                 );
               }
             },
-            child: Text('Verificar y Eliminar', style: GoogleFonts.inter(color: Colors.white)),
+            child: Text('Verificar y Eliminar', style: GoogleFonts.inter(color: StiloColors.text)),
           ),
         ],
       ),
@@ -335,7 +337,7 @@ class _FormularioMaderaModalState extends State<_FormularioMaderaModal> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _nombreController;
   late TextEditingController _descripcionController;
-  
+
   bool _guardando = false;
   bool _mostrarErrorImagen = false;
   File? _imagenSeleccionada;
@@ -365,7 +367,7 @@ class _FormularioMaderaModalState extends State<_FormularioMaderaModal> {
       if (pickedFile != null) {
         setState(() {
           _imagenSeleccionada = File(pickedFile.path);
-          _mostrarErrorImagen = false; 
+          _mostrarErrorImagen = false;
         });
       }
     } catch (e) {
@@ -377,11 +379,12 @@ class _FormularioMaderaModalState extends State<_FormularioMaderaModal> {
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context);
     return Container(
-      decoration: const BoxDecoration(
-        color: Color(0xFF1E1E1E),
+      decoration: BoxDecoration(
+        color: StiloColors.surface,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        border: Border(top: BorderSide(color: Colors.white12, width: 1)),
+        border: Border(top: BorderSide(color: StiloColors.text.withValues(alpha: .12), width: 1)),
       ),
       padding: EdgeInsets.only(
         top: 24,
@@ -398,11 +401,11 @@ class _FormularioMaderaModalState extends State<_FormularioMaderaModal> {
             children: [
               Text(
                 widget.sauna == null ? 'Registrar Madera' : 'Editar Madera',
-                style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w700, color: Colors.white),
+                style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w700, color: StiloColors.text),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 24),
-              
+              SizedBox(height: 24),
+
               // SECCIÓN DE IMAGEN
               Center(
                 child: GestureDetector(
@@ -411,10 +414,10 @@ class _FormularioMaderaModalState extends State<_FormularioMaderaModal> {
                     width: 120,
                     height: 120,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF121212),
+                      color: StiloColors.surface,
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
-                        color: _mostrarErrorImagen ? Colors.redAccent : const Color(0xFF8B5CF6).withOpacity(0.5), 
+                        color: _mostrarErrorImagen ? Colors.redAccent : StiloColors.accent.withOpacity(0.5),
                         width: 2
                       ),
                     ),
@@ -425,17 +428,17 @@ class _FormularioMaderaModalState extends State<_FormularioMaderaModal> {
                   ),
                 ),
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               Center(
                 child: Text(
                   'Toca para cambiar imagen',
-                  style: GoogleFonts.inter(fontSize: 12, color: Colors.white54),
+                  style: GoogleFonts.inter(fontSize: 12, color: StiloColors.text.withValues(alpha: .54)),
                 ),
               ),
-              
+
               if (_mostrarErrorImagen)
                 Padding(
-                  padding: const EdgeInsets.only(top: 8.0),
+                  padding: EdgeInsets.only(top: 8.0),
                   child: Center(
                     child: Text(
                       '⚠ Selecciona una imagen para continuar',
@@ -443,8 +446,8 @@ class _FormularioMaderaModalState extends State<_FormularioMaderaModal> {
                     ),
                   ),
                 ),
-                
-              const SizedBox(height: 24),
+
+              SizedBox(height: 24),
 
               _crearTextField(
                 controller: _nombreController,
@@ -452,7 +455,7 @@ class _FormularioMaderaModalState extends State<_FormularioMaderaModal> {
                 icon: Icons.forest_outlined,
                 esObligatorio: true,
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               _crearTextField(
                 controller: _descripcionController,
                 label: 'Descripción',
@@ -460,18 +463,18 @@ class _FormularioMaderaModalState extends State<_FormularioMaderaModal> {
                 maxLines: 3,
                 esObligatorio: false,
               ),
-              const SizedBox(height: 30),
-              
+              SizedBox(height: 30),
+
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  foregroundColor: Colors.black,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  backgroundColor: StiloColors.text,
+                  foregroundColor: StiloColors.background,
+                  padding: EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
                 onPressed: _guardando ? null : _guardarFormulario,
                 child: _guardando
-                    ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.black, strokeWidth: 2))
+                    ? SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: StiloColors.background, strokeWidth: 2))
                     : Text(
                         widget.sauna == null ? 'GUARDAR MADERA' : 'GUARDAR CAMBIOS',
                         style: GoogleFonts.inter(fontWeight: FontWeight.w600, letterSpacing: 0.5),
@@ -491,12 +494,12 @@ class _FormularioMaderaModalState extends State<_FormularioMaderaModal> {
     if (widget.sauna != null && widget.sauna!.imagenUrl.isNotEmpty) {
       return Image.network(widget.sauna!.imagenUrl, fit: BoxFit.cover);
     }
-    return const Column(
+    return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Icon(Icons.add_a_photo_outlined, color: Color(0xFF8B5CF6), size: 32),
+        Icon(Icons.add_a_photo_outlined, color: StiloColors.accent, size: 32),
         SizedBox(height: 8),
-        Text('Foto', style: TextStyle(color: Colors.white70, fontSize: 12)),
+        Text('Foto', style: TextStyle(color: StiloColors.text.withValues(alpha: .70), fontSize: 12)),
       ],
     );
   }
@@ -504,22 +507,22 @@ class _FormularioMaderaModalState extends State<_FormularioMaderaModal> {
   void _mostrarOpcionesImagen() {
     showModalBottomSheet(
       context: context,
-      backgroundColor: const Color(0xFF1E1E1E),
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      backgroundColor: StiloColors.surface,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (context) => SafeArea(
         child: Wrap(
           children: [
             ListTile(
-              leading: const Icon(Icons.camera_alt_outlined, color: Colors.white),
-              title: Text('Tomar foto', style: GoogleFonts.inter(color: Colors.white)),
+              leading: Icon(Icons.camera_alt_outlined, color: StiloColors.text),
+              title: Text('Tomar foto', style: GoogleFonts.inter(color: StiloColors.text)),
               onTap: () {
                 Navigator.pop(context);
                 _seleccionarImagen(ImageSource.camera);
               },
             ),
             ListTile(
-              leading: const Icon(Icons.photo_library_outlined, color: Colors.white),
-              title: Text('Elegir de galería', style: GoogleFonts.inter(color: Colors.white)),
+              leading: Icon(Icons.photo_library_outlined, color: StiloColors.text),
+              title: Text('Elegir de galería', style: GoogleFonts.inter(color: StiloColors.text)),
               onTap: () {
                 Navigator.pop(context);
                 _seleccionarImagen(ImageSource.gallery);
@@ -536,25 +539,25 @@ class _FormularioMaderaModalState extends State<_FormularioMaderaModal> {
     required String label,
     required IconData icon,
     int maxLines = 1,
-    bool esObligatorio = true, 
+    bool esObligatorio = true,
   }) {
     return TextFormField(contextMenuBuilder: privacyTextMenu,
       controller: controller,
       maxLines: maxLines,
-      style: GoogleFonts.inter(color: Colors.white),
+      style: GoogleFonts.inter(color: StiloColors.text),
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: GoogleFonts.inter(color: Colors.white54),
-        prefixIcon: Icon(icon, color: Colors.white54),
+        labelStyle: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .54)),
+        prefixIcon: Icon(icon, color: StiloColors.text.withValues(alpha: .54)),
         filled: true,
-        fillColor: const Color(0xFF121212),
+        fillColor: StiloColors.surface,
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.white12),
+          borderSide: BorderSide(color: StiloColors.text.withValues(alpha: .12)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF8B5CF6)),
+          borderSide: BorderSide(color: StiloColors.accent),
         ),
       ),
       validator: (value) {
@@ -583,18 +586,18 @@ class _FormularioMaderaModalState extends State<_FormularioMaderaModal> {
           ),
         );
       }
-      return; 
+      return;
     }
 
     setState(() => _guardando = true);
-    
+
     try {
       String imageUrl = widget.sauna?.imagenUrl ?? '';
 
       if (_imagenSeleccionada != null) {
         final String nombreArchivo = '${DateTime.now().millisecondsSinceEpoch}.jpg';
         final Reference ref = FirebaseStorage.instance.ref().child('saunas_imagenes/$nombreArchivo');
-        
+
         final UploadTask uploadTask = ref.putFile(_imagenSeleccionada!);
         final TaskSnapshot snapshot = await uploadTask;
         imageUrl = await snapshot.ref.getDownloadURL();

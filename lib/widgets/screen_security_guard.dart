@@ -1,3 +1,4 @@
+import '../presentation/appearance.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
@@ -13,7 +14,7 @@ class ScreenSecurityGuard extends StatefulWidget {
   State<ScreenSecurityGuard> createState()=>_GuardState();
 }
 class _GuardState extends State<ScreenSecurityGuard>{
-  static const _channel=MethodChannel('sauna_stilo/security');
+  static final _channel=MethodChannel('sauna_stilo/security');
   StreamSubscription<User?>? _auth;
   StreamSubscription<DocumentSnapshot<Map<String,dynamic>>>? _profile;
   bool _failed=false; int _generation=0;
@@ -35,15 +36,15 @@ class _GuardState extends State<ScreenSecurityGuard>{
   @override
   void dispose(){_auth?.cancel();_profile?.cancel();super.dispose();}
   @override
-  Widget build(BuildContext context)=>Stack(children:[widget.child,if(_failed)Positioned(left:12,right:12,top:0,child:SafeArea(child:Material(color:const Color(0xFF4B172B),borderRadius:BorderRadius.circular(18),child:const Padding(padding:EdgeInsets.all(12),child:Text('Protección de capturas no confirmada. Este APK necesita actualizarse.',textAlign:TextAlign.center,style:TextStyle(color:Colors.white,fontSize:12))))))]);
+  Widget build(BuildContext context)=>Stack(children:[widget.child,if(_failed)Positioned(left:12,right:12,top:0,child:SafeArea(child:Material(color:StiloColors.surface,borderRadius:BorderRadius.circular(18),child:Padding(padding:EdgeInsets.all(12),child:Text('Protección de capturas no confirmada. Este APK necesita actualizarse.',textAlign:TextAlign.center,style:TextStyle(color:StiloColors.text,fontSize:12))))))]);
 }
 
 class CapturePolicyControl extends StatelessWidget {
  final String profileId; final bool enabled;
  const CapturePolicyControl({super.key,required this.profileId,required this.enabled});
  @override
- Widget build(BuildContext context)=>const Card(color:Color(0xFF21111B),child:ListTile(
-  leading:Icon(Icons.security_rounded,color:Color(0xFFC798FF)),title:Text('Protección general de Sauna Stilo'),
+ Widget build(BuildContext context)=>Card(color:StiloColors.surface,child:ListTile(
+  leading:Icon(Icons.security_rounded,color:StiloColors.accent),title:Text('Protección general de Sauna Stilo'),
   subtitle:Text('En el nuevo APK Android, las capturas y la grabación del contenido de la app se bloquean en dispositivos compatibles, para todas las cuentas. No depende de este perfil. No bloquea capturas en Chrome/Safari ni fotografías tomadas con otra cámara.'),
  ));
 }

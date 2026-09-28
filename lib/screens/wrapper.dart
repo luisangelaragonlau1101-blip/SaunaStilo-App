@@ -1,3 +1,4 @@
+import '../widgets/inline_photo.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_fonts/google_fonts.dart'; 
@@ -543,7 +544,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                                   color: Colors.white.withOpacity(0.1),
                                   image: widget.adminUser.fotoUrl != null && widget.adminUser.fotoUrl!.isNotEmpty
                                       ? DecorationImage(
-                                          image: NetworkImage(widget.adminUser.fotoUrl!),
+                                          image: stiloImageProvider(widget.adminUser.fotoUrl!),
                                           fit: BoxFit.cover,
                                         )
                                       : null,
@@ -1763,7 +1764,7 @@ class _AvatarConRachaReal extends StatelessWidget {
                   color: Colors.white.withOpacity(0.1),
                   image: usuario.fotoUrl != null && usuario.fotoUrl!.isNotEmpty
                       ? DecorationImage(
-                          image: NetworkImage(usuario.fotoUrl!),
+                          image: stiloImageProvider(usuario.fotoUrl!),
                           fit: BoxFit.cover,
                         )
                       : null,

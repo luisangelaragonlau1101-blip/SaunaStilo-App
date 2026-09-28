@@ -35,7 +35,8 @@ test('every role uses the daily operations shell and retains all role-filtered a
   const shell = read('lib/screens/operations_shell.dart');
   assert.match(bridge, /OperationsShell/);
   assert.match(shell, /AppActionCatalog\.forUser/);
-  assert.match(shell, /alerta_general/);
+  assert.match(read('lib/screens/business_workspace_screen.dart'), /alerta_general/);
+  assert.match(shell, /BusinessWorkspaceScreen/);
   for (const label of ['Inicio', 'Comunidad', 'Mensajes', 'Tareas', 'Perfil']) assert.ok(shell.includes("label: '" + label + "'"));
   assert.match(shell, /JornadaCompacta/);
   assert.match(shell, /OperationsTaskList/);

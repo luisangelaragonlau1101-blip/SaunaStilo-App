@@ -44,7 +44,7 @@ void main() {
       final ids = AppActionCatalog.forUser(person(role)).map((a) => a.id).toList();
       expect(ids, containsAll(['trabajo_extra', 'estado_notificaciones', 'tareas', 'idiomas']));
       expect(ids.contains('bandeja_admin'), role == 'admin');
-      expect(ids.contains('ingenieria'), role == 'admin');
+      expect(ids.contains('ingenieria'), false);
       expect(ids.toSet().length, ids.length);
     }
     expect(AppActionCatalog.forUser(person('trabajador', engineer: true)).map((a) => a.id), contains('ingenieria'));

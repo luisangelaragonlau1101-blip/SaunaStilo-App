@@ -1,3 +1,4 @@
+import '../presentation/appearance.dart';
 import '../services/external_transfer.dart';
 import '../widgets/warehouse_header.dart';
 import 'dart:typed_data';
@@ -18,8 +19,8 @@ import 'package:flutter/services.dart';
 
 class InsumoFormScreen extends StatefulWidget {
   final InventarioService inventarioService;
-  final InsumoModel? insumo; 
-  
+  final InsumoModel? insumo;
+
   const InsumoFormScreen({super.key, required this.inventarioService, this.insumo});
 
   @override
@@ -28,14 +29,14 @@ class InsumoFormScreen extends StatefulWidget {
 
 class _InsumoFormScreenState extends State<InsumoFormScreen> {
   final _formKey = GlobalKey<FormState>();
-  
+
   final _nombreController = TextEditingController();
   final _descController = TextEditingController();
   final _cantidadController = TextEditingController();
   final _unidadController = TextEditingController();
   final _minController = TextEditingController();
   final _precioController = TextEditingController(text: '0.0');
-  
+
   // --- 2a. NUEVO: CONTROLADOR DEL CÓDIGO DE BARRAS ---
   final _codigoBarrasController = TextEditingController();
 
@@ -46,16 +47,16 @@ class _InsumoFormScreenState extends State<InsumoFormScreen> {
   // --- VARIABLES PARA IMAGEN Y CARGA ---
   Uint8List? _imagenBytes;
   String? _urlImagenActual;
-  bool _isSaving = false; 
+  bool _isSaving = false;
 
   late Future<List<String>> _categoriasFuture;
 
-  static const Color colorFondo = Color(0xFF000000);
-  static const Color colorTarjeta = Color(0xFF111012);
-  static const Color colorRosa = Color(0xFFC798FF);
-  static const Color colorAzul = Color(0xFFC798FF);
-  static const Color colorRosaVibrante = Color(0xFFFF729C);
-  static const Color colorAcento = Color(0xFFB7FF2A); // Agregado para el botón del escáner
+  Color get colorFondo => StiloColors.background;
+  Color get colorTarjeta => StiloColors.surface;
+  Color get colorRosa => StiloColors.accent;
+  Color get colorAzul => StiloColors.accent;
+  Color get colorRosaVibrante => Color(0xFFFF729C);
+  Color get colorAcento => StiloColors.accent; // Agregado para el botón del escáner
 
   @override
   void initState() {
@@ -73,7 +74,7 @@ class _InsumoFormScreenState extends State<InsumoFormScreen> {
       _esProductoTienda = widget.insumo!.esProductoTienda;
       _precioController.text = (widget.insumo!.precio ?? 0.0).toStringAsFixed(2);
       _urlImagenActual = widget.insumo!.imagenUrl;
-      
+
       // --- 2b. NUEVO: INICIALIZAR EL CONTROLADOR SI ESTAMOS EDITANDO ---
       _codigoBarrasController.text = widget.insumo!.codigoBarras ?? '';
     }
@@ -86,7 +87,7 @@ class _InsumoFormScreenState extends State<InsumoFormScreen> {
     _cantidadController.dispose();
     _unidadController.dispose();
     _minController.dispose();
-    _precioController.dispose(); 
+    _precioController.dispose();
     _codigoBarrasController.dispose(); // --- 2c. NUEVO: LIMPIAR MEMORIA ---
     super.dispose();
   }
@@ -100,16 +101,16 @@ Future<void> _escanearCodigoFormulario() async {
       String? res = await Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => const SimpleBarcodeScannerPage(),
+          builder: (context) => SimpleBarcodeScannerPage(),
         ),
       );
 
       if (res != null && res != '-1') {
-        
+
         // --- 1. AQUÍ AGREGAMOS EL SONIDO Y LA VIBRACIÓN ---
         final player = AudioPlayer();
         await player.play(AssetSource('sounds/beep.ogg'));
-        HapticFeedback.heavyImpact(); 
+        HapticFeedback.heavyImpact();
         // --------------------------------------------------
 
         setState(() {
@@ -129,56 +130,56 @@ Future<void> _escanearCodigoFormulario() async {
     final textController = TextEditingController();
     showDialog(
       context: context,
-      barrierDismissible: false, 
+      barrierDismissible: false,
       builder: (context) => AlertDialog(
         backgroundColor: colorTarjeta,
         title: Text(
           esCategoria ? 'NUEVA CATEGORÍA' : 'NUEVA SUBCATEGORÍA',
-          style: GoogleFonts.inter(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+          style: GoogleFonts.inter(color: StiloColors.text, fontSize: 16, fontWeight: FontWeight.bold),
         ),
         content: TextField(contextMenuBuilder: privacyTextMenu,
           controller: textController,
           autofocus: true,
-          style: const TextStyle(color: Colors.white),
-          decoration: const InputDecoration(
+          style: TextStyle(color: StiloColors.text),
+          decoration: InputDecoration(
             labelText: 'Nombre',
-            labelStyle: TextStyle(color: Colors.white70),
+            labelStyle: TextStyle(color: StiloColors.text.withValues(alpha: .70)),
             focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: colorRosaVibrante)),
           ),
         ),
         actions: [
           TextButton(
             onPressed: () {
-              FocusScope.of(context).unfocus(); 
+              FocusScope.of(context).unfocus();
               Navigator.pop(context);
             },
-            child: const Text('CANCELAR', style: TextStyle(color: Colors.white54)),
+            child: Text('CANCELAR', style: TextStyle(color: StiloColors.text.withValues(alpha: .54))),
           ),
           TextButton(
             onPressed: () async {
               String nombreNuevo = textController.text.trim();
-              FocusScope.of(context).unfocus(); 
+              FocusScope.of(context).unfocus();
 
               if (nombreNuevo.isNotEmpty) {
                 if (esCategoria) {
                   await widget.inventarioService.crearCategoria(nombreNuevo);
                   setState(() {
-                    _categoriasFuture = widget.inventarioService.getCategoriasList(); 
-                    _categoriaSeleccionada = nombreNuevo.toLowerCase(); 
-                    _subcategoriaSeleccionada = null; 
+                    _categoriasFuture = widget.inventarioService.getCategoriasList();
+                    _categoriaSeleccionada = nombreNuevo.toLowerCase();
+                    _subcategoriaSeleccionada = null;
                   });
                 } else {
                   await widget.inventarioService.crearSubcategoria(nombreNuevo, _categoriaSeleccionada ?? 'general');
                   setState(() {
-                    _subcategoriaSeleccionada = nombreNuevo; 
+                    _subcategoriaSeleccionada = nombreNuevo;
                   });
                 }
               }
-              Future.delayed(const Duration(milliseconds: 150), () {
+              Future.delayed(Duration(milliseconds: 150), () {
                 if (mounted) Navigator.pop(context);
               });
             },
-            child: const Text('GUARDAR', style: TextStyle(color: colorRosaVibrante, fontWeight: FontWeight.bold)),
+            child: Text('GUARDAR', style: TextStyle(color: colorRosaVibrante, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -187,6 +188,7 @@ Future<void> _escanearCodigoFormulario() async {
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context);
     final bool esEdicion = widget.insumo != null;
 
     return Scaffold(
@@ -194,46 +196,46 @@ Future<void> _escanearCodigoFormulario() async {
       appBar: AppBar(
         backgroundColor: colorFondo,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white),
+        iconTheme: IconThemeData(color: StiloColors.text),
         title: Text(
-          esEdicion ? 'EDITAR INSUMO' : 'NUEVO INSUMO', 
-          style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)
+          esEdicion ? 'EDITAR INSUMO' : 'NUEVO INSUMO',
+          style: GoogleFonts.inter(color: StiloColors.text, fontWeight: FontWeight.bold, fontSize: 18)
         ),
       ),
       body: GestureDetector(
         onTap: () => FocusScope.of(context).unfocus(), // Oculta el teclado al tocar fuera
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
+          padding: EdgeInsets.all(20),
           child: Form(
             key: _formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 WarehouseHeader(title: esEdicion ? 'Actualiza tu inventario' : 'Registra una herramienta', subtitle: 'Foto, identificación y existencias en un solo lugar.'),
-                const SizedBox(height: 22),
+                SizedBox(height: 22),
                 Center(child: _buildImageSelector()),
-                const SizedBox(height: 30),
+                SizedBox(height: 30),
 
                 // --- 4. NUEVO: CAMPO DE CÓDIGO DE BARRAS EN LA UI ---
                 TextFormField(contextMenuBuilder: privacyTextMenu,
                   controller: _codigoBarrasController,
-                  style: const TextStyle(color: Colors.white),
+                  style: TextStyle(color: StiloColors.text),
                   decoration: InputDecoration(
                     labelText: 'Código de Barras (Opcional)',
-                    labelStyle: const TextStyle(color: Colors.white70, fontSize: 14),
-                    enabledBorder: OutlineInputBorder(borderSide: const BorderSide(color: Colors.white24), borderRadius: BorderRadius.circular(20)),
-                    focusedBorder: OutlineInputBorder(borderSide: const BorderSide(color: colorRosaVibrante), borderRadius: BorderRadius.circular(20)),
+                    labelStyle: TextStyle(color: StiloColors.text.withValues(alpha: .70), fontSize: 14),
+                    enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: StiloColors.text.withValues(alpha: .24)), borderRadius: BorderRadius.circular(20)),
+                    focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: colorRosaVibrante), borderRadius: BorderRadius.circular(20)),
                     suffixIcon: IconButton(
-                      icon: const Icon(Icons.qr_code_scanner, color: colorAcento),
+                      icon: Icon(Icons.qr_code_scanner, color: colorAcento),
                       tooltip: 'Escanear Código',
                       onPressed: _escanearCodigoFormulario,
                     ),
                   ),
                 ),
-                const SizedBox(height: 15),
+                SizedBox(height: 15),
 
                 _buildTextField(_nombreController, 'Nombre del Insumo'),
-                const SizedBox(height: 15),
+                SizedBox(height: 15),
 
                 FutureBuilder<List<String>>(
                   future: _categoriasFuture,
@@ -243,15 +245,15 @@ Future<void> _escanearCodigoFormulario() async {
 
                     if (snapshot.hasData) {
                       menuItems = opcionesFirestore.map((e) => DropdownMenuItem(
-                        value: e.toLowerCase(), 
+                        value: e.toLowerCase(),
                         child: Text(
-                          e.toUpperCase(), 
-                          style: const TextStyle(color: Colors.white),
-                          overflow: TextOverflow.ellipsis, 
+                          e.toUpperCase(),
+                          style: TextStyle(color: StiloColors.text),
+                          overflow: TextOverflow.ellipsis,
                         )
                       )).toList();
                     }
-                    menuItems.add(const DropdownMenuItem(
+                    menuItems.add(DropdownMenuItem(
                       value: 'NUEVA_CAT',
                       child: Text('+ CREAR NUEVA...', style: TextStyle(color: colorRosaVibrante, fontWeight: FontWeight.bold)),
                     ));
@@ -263,8 +265,8 @@ Future<void> _escanearCodigoFormulario() async {
                     return DropdownButtonFormField<String>(
                       isExpanded: true,
                       dropdownColor: colorTarjeta,
-                      menuMaxHeight: 250, 
-                      value: valorActual, 
+                      menuMaxHeight: 250,
+                      value: valorActual,
                       decoration: _inputDecoration('Categoría'),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
@@ -279,18 +281,18 @@ Future<void> _escanearCodigoFormulario() async {
                         } else {
                           setState(() {
                             _categoriaSeleccionada = val;
-                            _subcategoriaSeleccionada = null; 
+                            _subcategoriaSeleccionada = null;
                           });
                         }
                       },
                     );
                   },
                 ),
-                const SizedBox(height: 15),
+                SizedBox(height: 15),
 
                 FutureBuilder<List<String>>(
-                  future: _categoriaSeleccionada == null 
-                      ? Future.value(<String>[]) 
+                  future: _categoriaSeleccionada == null
+                      ? Future.value(<String>[])
                       : widget.inventarioService.getSubcategoriasListFiltradas(_categoriaSeleccionada!),
                   builder: (context, snapshot) {
                     List<DropdownMenuItem<String>> menuItems = [];
@@ -299,10 +301,10 @@ Future<void> _escanearCodigoFormulario() async {
                     if (snapshot.hasData && _categoriaSeleccionada != null) {
                       menuItems = opcionesFiltradas
                           .map((e) => DropdownMenuItem(
-                            value: e, 
+                            value: e,
                             child: Text(
-                              e, 
-                              style: const TextStyle(color: Colors.white),
+                              e,
+                              style: TextStyle(color: StiloColors.text),
                               overflow: TextOverflow.ellipsis,
                             )
                           ))
@@ -310,7 +312,7 @@ Future<void> _escanearCodigoFormulario() async {
                     }
 
                     if (_categoriaSeleccionada != null) {
-                      menuItems.add(const DropdownMenuItem(
+                      menuItems.add(DropdownMenuItem(
                         value: 'NUEVA_SUB',
                         child: Text('+ CREAR NUEVA...', style: TextStyle(color: colorRosaVibrante, fontWeight: FontWeight.bold)),
                       ));
@@ -322,13 +324,13 @@ Future<void> _escanearCodigoFormulario() async {
                     }
 
                   return DropdownButtonFormField<String>(
-                      isExpanded: true, 
+                      isExpanded: true,
                       dropdownColor: colorTarjeta,
-                      menuMaxHeight: 250, 
-                      value: valorActual, 
-                      disabledHint: const Text(
-                        'Selecciona una categoría primero', 
-                        style: TextStyle(color: Colors.white38),
+                      menuMaxHeight: 250,
+                      value: valorActual,
+                      disabledHint: Text(
+                        'Selecciona una categoría primero',
+                        style: TextStyle(color: StiloColors.text.withValues(alpha: .38)),
                         overflow: TextOverflow.ellipsis,
                       ),
                       decoration: _inputDecoration('Subcategoría'),
@@ -349,25 +351,25 @@ Future<void> _escanearCodigoFormulario() async {
                     );
                   },
                 ),
-                const SizedBox(height: 15),
+                SizedBox(height: 15),
 
                 _buildTextField(_descController, 'Descripción', isObligatorio: false),
-                const SizedBox(height: 15),
+                SizedBox(height: 15),
 
                 Row(
                   children: [
                     Expanded(child: _buildTextField(_cantidadController, 'Cantidad', isNumber: true)),
-                    const SizedBox(width: 10),
+                    SizedBox(width: 10),
                     Expanded(child: _buildTextField(_unidadController, 'Unidad (m, kg, pz)')),
                   ],
                 ),
-                const SizedBox(height: 15),
+                SizedBox(height: 15),
 
                 _buildTextField(_minController, 'Stock Mínimo', isNumber: true),
-                const SizedBox(height: 10),
-                
+                SizedBox(height: 10),
+
                 CheckboxListTile(
-                  title: const Text("¿Es producto de la tienda online?", style: TextStyle(color: Colors.white, fontSize: 14)),
+                  title: Text("¿Es producto de la tienda online?", style: TextStyle(color: StiloColors.text, fontSize: 14)),
                   value: _esProductoTienda,
                   activeColor: colorRosa,
                   contentPadding: EdgeInsets.zero,
@@ -375,27 +377,27 @@ Future<void> _escanearCodigoFormulario() async {
                 ),
 
                 if (_esProductoTienda) ...[
-                  const SizedBox(height: 10),
+                  SizedBox(height: 10),
                   _buildPrecioField(_precioController, 'Precio del Producto en Tienda (\$)', isNumber: true),
                 ],
 
-                const SizedBox(height: 40),
+                SizedBox(height: 40),
 
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: colorAzul,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    padding: EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                   ),
                   onPressed: _isSaving ? null : _guardarInsumo, // Se desactiva si está guardando
-                  child: _isSaving 
-                    ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                  child: _isSaving
+                    ? SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: StiloColors.text, strokeWidth: 2))
                     : Text(
-                        esEdicion ? 'ACTUALIZAR INSUMO' : 'GUARDAR EN INVENTARIO', 
-                        style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 16)
+                        esEdicion ? 'ACTUALIZAR INSUMO' : 'GUARDAR EN INVENTARIO',
+                        style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: StiloColors.text, fontSize: 16)
                       ),
                 ),
-                const SizedBox(height: 30),
+                SizedBox(height: 30),
               ],
             ),
           ),
@@ -407,9 +409,9 @@ Future<void> _escanearCodigoFormulario() async {
   InputDecoration _inputDecoration(String label) {
     return InputDecoration(
       labelText: label,
-      labelStyle: const TextStyle(color: Colors.white70, fontSize: 14),
-      enabledBorder: OutlineInputBorder(borderSide: const BorderSide(color: Colors.white24), borderRadius: BorderRadius.circular(20)),
-      focusedBorder: OutlineInputBorder(borderSide: const BorderSide(color: colorRosaVibrante), borderRadius: BorderRadius.circular(20)),
+      labelStyle: TextStyle(color: StiloColors.text.withValues(alpha: .70), fontSize: 14),
+      enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: StiloColors.text.withValues(alpha: .24)), borderRadius: BorderRadius.circular(20)),
+      focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: colorRosaVibrante), borderRadius: BorderRadius.circular(20)),
     );
   }
 
@@ -417,9 +419,9 @@ Future<void> _escanearCodigoFormulario() async {
     return TextFormField(contextMenuBuilder: privacyTextMenu,
       controller: controller,
       keyboardType: isNumber ? TextInputType.number : TextInputType.text,
-      style: const TextStyle(color: Colors.white),
+      style: TextStyle(color: StiloColors.text),
       decoration: _inputDecoration(label),
-      validator: isObligatorio 
+      validator: isObligatorio
           ? (value) {
               if (value == null || value.trim().isEmpty) {
                 return 'Este campo es obligatorio';
@@ -429,12 +431,12 @@ Future<void> _escanearCodigoFormulario() async {
           : null,
     );
   }
-  
+
   Widget _buildPrecioField(TextEditingController controller, String label, {bool isNumber = false}) {
     return TextFormField(contextMenuBuilder: privacyTextMenu,
       controller: controller,
-      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-      style: const TextStyle(color: Color(0xFFB7FF2A), fontWeight: FontWeight.bold),
+      keyboardType: TextInputType.numberWithOptions(decimal: true),
+      style: TextStyle(color: StiloColors.accent, fontWeight: FontWeight.bold),
       decoration: _inputDecoration(label),
       validator: (value) {
         if (value == null || value.trim().isEmpty) return 'Este campo es obligatorio';
@@ -453,7 +455,7 @@ Future<void> _escanearCodigoFormulario() async {
   }
 
   void _guardarInsumo() async {
-    FocusScope.of(context).unfocus(); 
+    FocusScope.of(context).unfocus();
 
     bool esFormularioValido = _formKey.currentState!.validate();
 
@@ -466,15 +468,15 @@ Future<void> _escanearCodigoFormulario() async {
       showDialog(
         context: context,
         barrierDismissible: false,
-        builder: (_) => const Center(child: CircularProgressIndicator(color: colorRosaVibrante)),
+        builder: (_) => Center(child: CircularProgressIndicator(color: colorRosaVibrante)),
       );
 
       bool duplicado = await widget.inventarioService.existeNombreInsumo(
         nombreIngresado,
-        excluirId: widget.insumo?.id, 
+        excluirId: widget.insumo?.id,
       );
 
-      if (mounted) Navigator.pop(context); 
+      if (mounted) Navigator.pop(context);
 
       if (duplicado) {
         if (mounted) {
@@ -484,27 +486,27 @@ Future<void> _escanearCodigoFormulario() async {
               backgroundColor: colorTarjeta,
               title: Text(
                 '¡ELEMENTO DUPLICADO!',
-                style: GoogleFonts.inter(color: const Color(0xFFFF5252), fontWeight: FontWeight.bold, fontSize: 16),
+                style: GoogleFonts.inter(color: Color(0xFFFF5252), fontWeight: FontWeight.bold, fontSize: 16),
               ),
             content: Text(
               'Ya existe un insumo o herramienta con el nombre "$nombreIngresado" en el inventario.\n\nPor favor, usa un nombre diferente o edita el stock del elemento existente.',
-              style: const TextStyle(color: Colors.white70, fontSize: 14), 
+              style: TextStyle(color: StiloColors.text.withValues(alpha: .70), fontSize: 14),
             ),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text('ENTENDIDO', style: TextStyle(color: colorRosaVibrante, fontWeight: FontWeight.bold)),
+                  child: Text('ENTENDIDO', style: TextStyle(color: colorRosaVibrante, fontWeight: FontWeight.bold)),
                 ),
               ],
             ),
           );
         }
-        return; 
+        return;
       }
       // --- FIN DE LA VALIDACIÓN ---
 
       double precioValue = double.tryParse(_precioController.text.trim()) ?? 0.0;
-      
+
       // --- 5a. NUEVO: OBTENER EL VALOR DEL CÓDIGO DE BARRAS ---
       String? codigoFinal = _codigoBarrasController.text.trim();
       if (codigoFinal.isEmpty) codigoFinal = null;
@@ -531,15 +533,15 @@ Future<void> _escanearCodigoFormulario() async {
             'unidad_medida': _unidadController.text,
             'stock_minimo': int.tryParse(_minController.text) ?? 0,
             'es_producto_tienda': _esProductoTienda,
-            'precio': _esProductoTienda ? precioValue : 0.0, 
-            'imagen_url': urlFinal, 
+            'precio': _esProductoTienda ? precioValue : 0.0,
+            'imagen_url': urlFinal,
             'codigo_barras': codigoFinal, // --- 5b. NUEVO: GUARDAR EN ACTUALIZACIÓN ---
           };
 
-          await widget.inventarioService.editarInsumo(widget.insumo!.id, datosActualizados); 
+          await widget.inventarioService.editarInsumo(widget.insumo!.id, datosActualizados);
         } else {
           InsumoModel nuevo = InsumoModel(
-            id: '', 
+            id: '',
             categoria: _categoriaSeleccionada!,
             subcategoria: _subcategoriaSeleccionada ?? 'General',
             nombre: nombreIngresado,
@@ -550,7 +552,7 @@ Future<void> _escanearCodigoFormulario() async {
             ultimaActualizacion: DateTime.now(),
             esProductoTienda: _esProductoTienda,
             precio: _esProductoTienda ? precioValue : 0.0,
-            imagenUrl: urlFinal, 
+            imagenUrl: urlFinal,
             codigoBarras: codigoFinal, // --- 5c. NUEVO: GUARDAR EN CREACIÓN ---
           );
 
@@ -589,7 +591,7 @@ Future<void> _escanearCodigoFormulario() async {
       if (bytes.isEmpty || bytes.length > 8 * 1024 * 1024) throw StateError('Usa una foto de menos de 8 MB.');
       if (mounted) setState(() => _imagenBytes = bytes);
     } catch (_) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No se pudo leer la foto. Elige un archivo JPG, PNG o WebP de menos de 8 MB.')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('No se pudo leer la foto. Elige un archivo JPG, PNG o WebP de menos de 8 MB.')));
     }
   }
   void _mostrarOpcionesImagen() {
@@ -601,16 +603,16 @@ Future<void> _escanearCodigoFormulario() async {
           child: Wrap(
             children: [
               ListTile(
-                leading: const Icon(Icons.photo_camera, color: colorRosaVibrante),
-                title: const Text('Tomar Foto', style: TextStyle(color: Colors.white)),
+                leading: Icon(Icons.photo_camera, color: colorRosaVibrante),
+                title: Text('Tomar Foto', style: TextStyle(color: StiloColors.text)),
                 onTap: () async {
                   Navigator.pop(context);
                   await _pickInventoryPhoto(ImageSource.camera);
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.photo_library, color: colorAzul),
-                title: const Text('Elegir archivo de foto', style: TextStyle(color: Colors.white)),
+                leading: Icon(Icons.photo_library, color: colorAzul),
+                title: Text('Elegir archivo de foto', style: TextStyle(color: StiloColors.text)),
                 onTap: () async {
                   Navigator.pop(context);
                   await _pickInventoryPhoto(ImageSource.gallery);
@@ -630,7 +632,7 @@ Future<void> _escanearCodigoFormulario() async {
         height: 140, // Ligeramente más grande para que luzca mejor en pantalla completa
         width: 140,
         decoration: BoxDecoration(
-          color: Colors.white10,
+          color: StiloColors.text.withValues(alpha: .10),
           borderRadius: BorderRadius.circular(28),
           border: Border.all(color: colorRosaVibrante.withOpacity(0.5), width: 1),
         ),
@@ -642,15 +644,15 @@ Future<void> _escanearCodigoFormulario() async {
                   ? InventoryPhoto(
                       imageUrl: _urlImagenActual!,
                       fit: BoxFit.cover,
-                      placeholder: (context, url) => const Center(child: CircularProgressIndicator(color: colorRosaVibrante)),
-                      errorWidget: (context, url, error) => const Icon(Icons.error, color: Colors.white54),
+                      placeholder: (context, url) => Center(child: CircularProgressIndicator(color: colorRosaVibrante)),
+                      errorWidget: (context, url, error) => Icon(Icons.error, color: StiloColors.text.withValues(alpha: .54)),
                     )
-                  : const Column(
+                  : Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.add_a_photo, color: Colors.white54, size: 35),
+                        Icon(Icons.add_a_photo, color: StiloColors.text.withValues(alpha: .54), size: 35),
                         SizedBox(height: 8),
-                        Text('Agregar foto', style: TextStyle(color: Colors.white54, fontSize: 12)),
+                        Text('Agregar foto', style: TextStyle(color: StiloColors.text.withValues(alpha: .54), fontSize: 12)),
                       ],
                     ),
         ),

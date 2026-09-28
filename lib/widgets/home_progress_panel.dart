@@ -1,3 +1,4 @@
+import '../presentation/appearance.dart';
 import '../services/attendance_history_service.dart';
 import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -22,6 +23,7 @@ class _HomeProgressState extends State<HomeProgressPanel>{
  void _refresh()async{final uid=widget.user.id;try{final p=await LearningStore.read(uid);if(mounted&&widget.user.id==uid)setState((){_learning=p;_learningError=false;});}catch(_){if(mounted&&widget.user.id==uid)setState(()=>_learningError=true);}}
  @override void dispose(){LearningStore.revision.removeListener(_refresh);super.dispose();}
  @override Widget build(BuildContext context){
+    Theme.of(context);
   final admin=widget.user.rol==AppRoles.admin,db=FirebaseFirestore.instance;
   final attendance=AttendanceHistoryService.watch(widget.user.id, team: admin);
   return StreamBuilder<AttendanceHistory>(stream:attendance,builder:(context,s){
@@ -40,17 +42,17 @@ class HomeProgressView extends StatelessWidget{
  final bool admin,loadingBadges,workUnavailable,cached,learningError;final String streak;final List<Map> badges;final LearningProgress? learning;
  final VoidCallback onStreak,onProfile,onLearn;
  const HomeProgressView({super.key,required this.admin,required this.streak,required this.badges,this.loadingBadges=false,this.workUnavailable=false,this.cached=false,this.learningError=false,this.learning,required this.onStreak,required this.onProfile,required this.onLearn});
- @override Widget build(BuildContext context)=>Container(key:const ValueKey('home-progress'),margin:const EdgeInsets.only(bottom:18),padding:const EdgeInsets.all(18),decoration:BoxDecoration(borderRadius:BorderRadius.circular(30),gradient:const LinearGradient(begin:Alignment.topLeft,end:Alignment.bottomRight,colors:[Color(0xFF291018),Color(0xFF151116),Color(0xFF090B08)]),border:Border.all(color:const Color(0xFF513041)),boxShadow:const [BoxShadow(color:Color(0x198E1538),blurRadius:24)]),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
-  const Text('CADA PASO CUENTA',style:TextStyle(color:Colors.white60,fontSize:11,letterSpacing:1.6,fontWeight:FontWeight.w800)),const SizedBox(height:14),
+ @override Widget build(BuildContext context)=>Container(key:ValueKey('home-progress'),margin:EdgeInsets.only(bottom:18),padding:EdgeInsets.all(18),decoration:BoxDecoration(borderRadius:BorderRadius.circular(30),gradient:LinearGradient(begin:Alignment.topLeft,end:Alignment.bottomRight,colors:[StiloColors.surface,StiloColors.surface,StiloColors.surface]),border:Border.all(color:StiloColors.border),boxShadow:[BoxShadow(color:Color(0x198E1538),blurRadius:24)]),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+  Text('CADA PASO CUENTA',style:TextStyle(color:StiloColors.text.withValues(alpha: .60),fontSize:11,letterSpacing:1.6,fontWeight:FontWeight.w800)),SizedBox(height:14),
   Wrap(spacing:10,runSpacing:10,children:[
-   _pill(Icons.local_fire_department_rounded,streak,admin?'Mejor secuencia del equipo':'Mi racha registrada',const Color(0xFFFFB876),onStreak),
-   _pill(Icons.workspace_premium_rounded,loadingBadges?'—':'${badges.length}','Insignias otorgadas',const Color(0xFFB7FF2A),onProfile),
+   _pill(Icons.local_fire_department_rounded,streak,admin?'Mejor secuencia del equipo':'Mi racha registrada',Color(0xFFFFB876),onStreak),
+   _pill(Icons.workspace_premium_rounded,loadingBadges?'—':'${badges.length}','Insignias otorgadas',StiloColors.accent,onProfile),
   ]),
-  if(cached)const Padding(padding:EdgeInsets.only(top:9),child:Text('Asistencia: copia local, pendiente de actualización.',style:TextStyle(color:Colors.white54,fontSize:11))),
-  if(workUnavailable)const Padding(padding:EdgeInsets.only(top:9),child:Text('No se pudo actualizar la información laboral.',style:TextStyle(color:Colors.orangeAccent,fontSize:12))),
-  if(badges.isNotEmpty)...[const SizedBox(height:12),Wrap(spacing:7,runSpacing:7,children:[for(final b in badges.take(4))Chip(avatar:Icon(recognitionIcons[b['icono']]??Icons.verified_rounded,size:17,color:stiloAccents[(b['acento'] is int?(b['acento'] as int).abs():0)%stiloAccents.length]),label:Text(b['nombre']?.toString()??'Insignia'))])],
-  const SizedBox(height:9),TextButton.icon(onPressed:onProfile,icon:const Icon(Icons.military_tech_rounded,size:19),label:const Text('Ver todos mis logros')),
+  if(cached)Padding(padding:EdgeInsets.only(top:9),child:Text('Asistencia: copia local, pendiente de actualización.',style:TextStyle(color:StiloColors.text.withValues(alpha: .54),fontSize:11))),
+  if(workUnavailable)Padding(padding:EdgeInsets.only(top:9),child:Text('No se pudo actualizar la información laboral.',style:TextStyle(color:Colors.orangeAccent,fontSize:12))),
+  if(badges.isNotEmpty)...[SizedBox(height:12),Wrap(spacing:7,runSpacing:7,children:[for(final b in badges.take(4))Chip(avatar:Icon(recognitionIcons[b['icono']]??Icons.verified_rounded,size:17,color:stiloAccents[(b['acento'] is int?(b['acento'] as int).abs():0)%stiloAccents.length]),label:Text(b['nombre']?.toString()??'Insignia'))])],
+  SizedBox(height:9),TextButton.icon(onPressed:onProfile,icon:Icon(Icons.military_tech_rounded,size:19),label:Text('Ver todos mis logros')),
 
  ]));
- Widget _pill(IconData icon,String number,String label,Color color,VoidCallback tap)=>InkWell(borderRadius:BorderRadius.circular(24),onTap:tap,child:Container(padding:const EdgeInsets.symmetric(horizontal:13,vertical:12),decoration:BoxDecoration(color:color.withValues(alpha:.07),borderRadius:BorderRadius.circular(24),border:Border.all(color:color.withValues(alpha:.25))),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Row(mainAxisSize:MainAxisSize.min,children:[Icon(icon,color:color,size:25),const SizedBox(width:7),Text(number,style:TextStyle(color:color,fontSize:26,fontWeight:FontWeight.w900))]),const SizedBox(height:4),Text(label,style:const TextStyle(color:Colors.white70,fontSize:10))])));
+ Widget _pill(IconData icon,String number,String label,Color color,VoidCallback tap)=>InkWell(borderRadius:BorderRadius.circular(24),onTap:tap,child:Container(padding:EdgeInsets.symmetric(horizontal:13,vertical:12),decoration:BoxDecoration(color:color.withValues(alpha:.07),borderRadius:BorderRadius.circular(24),border:Border.all(color:color.withValues(alpha:.25))),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Row(mainAxisSize:MainAxisSize.min,children:[Icon(icon,color:color,size:25),SizedBox(width:7),Text(number,style:TextStyle(color:color,fontSize:26,fontWeight:FontWeight.w900))]),SizedBox(height:4),Text(label,style:TextStyle(color:StiloColors.text.withValues(alpha: .70),fontSize:10))])));
 }

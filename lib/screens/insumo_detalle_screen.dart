@@ -1,3 +1,4 @@
+import '../presentation/appearance.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -15,12 +16,12 @@ class InsumoDetalleScreen extends StatefulWidget {
 }
 
 class _InsumoDetalleScreenState extends State<InsumoDetalleScreen> {
-  static const Color colorFondo = Color(0xFF000000);
-  static const Color colorTarjeta = Color(0xFF111012);
-  static const Color colorTextoPrimario = Color(0xFFFDFDFD);
-  static const Color colorTextoSecundario = Colors.white54;
-  static const Color colorAcento = Color(0xFFB7FF2A);
-  
+  Color get colorFondo => StiloColors.background;
+  Color get colorTarjeta => StiloColors.surface;
+  Color get colorTextoPrimario => StiloColors.text;
+  static Color get colorTextoSecundario => StiloColors.text.withValues(alpha: .54);
+  Color get colorAcento => StiloColors.accent;
+
   List<Map<String, dynamic>> _historial = [];
   bool _cargandoHistorial = true;
 
@@ -37,7 +38,7 @@ class _InsumoDetalleScreenState extends State<InsumoDetalleScreen> {
 // --- FUNCIÓN PARA OBTENER CLIENTE Y PROYECTO ---
   Future<String> _obtenerInfoProyecto(String proyectoId) async {
     if (proyectoId.isEmpty || proyectoId == 'general') return '';
-    
+
     // Si ya lo buscamos antes, lo devolvemos rápido de la memoria
     if (_nombresProyectos.containsKey(proyectoId)) {
       return _nombresProyectos[proyectoId]!;
@@ -48,10 +49,10 @@ class _InsumoDetalleScreenState extends State<InsumoDetalleScreen> {
       if (docProy.exists) {
         var dataProy = docProy.data() as Map<String, dynamic>;
         String nombreProy = dataProy['titulo'] ?? 'Proyecto Sin Nombre';
-        
+
         // AQUÍ ESTÁ LA CORRECCIÓN: usamos 'id_cliente' tal como está en tu base de datos
-        String idCliente = dataProy['id_cliente'] ?? ''; 
-        
+        String idCliente = dataProy['id_cliente'] ?? '';
+
         String nombreCliente = 'Cliente Desconocido';
         if (idCliente.isNotEmpty) {
           // Buscamos el cliente (también usando caché por si acaso)
@@ -65,9 +66,9 @@ class _InsumoDetalleScreenState extends State<InsumoDetalleScreen> {
             _nombresClientes[idCliente] = nombreCliente;
           }
         }
-        
+
         // Formato: "Nombre del Cliente - Nombre del Proyecto"
-        String infoFinal = "$nombreCliente | $nombreProy"; 
+        String infoFinal = "$nombreCliente | $nombreProy";
         _nombresProyectos[proyectoId] = infoFinal;
         return infoFinal;
       }
@@ -91,7 +92,7 @@ class _InsumoDetalleScreenState extends State<InsumoDetalleScreen> {
       for (var doc in solHerramientasSnap.docs) {
         var data = doc.data();
         bool esGeneral = data['proyectoId'] == 'general';
-        
+
         String infoProyecto = '';
         if (!esGeneral) {
           infoProyecto = await _obtenerInfoProyecto(data['proyectoId'] ?? '');
@@ -116,7 +117,7 @@ class _InsumoDetalleScreenState extends State<InsumoDetalleScreen> {
 
       for (var doc in reparacionesSnap.docs) {
         var data = doc.data();
-        
+
         // Las reparaciones a veces traen el proyectoId desde donde se reportaron
         String infoProyecto = await _obtenerInfoProyecto(data['proyectoId'] ?? '');
 
@@ -135,13 +136,13 @@ class _InsumoDetalleScreenState extends State<InsumoDetalleScreen> {
       var salidasSnap = await FirebaseFirestore.instance
           .collection('solicitudes_salida')
           .orderBy('fechaSolicitud', descending: true)
-          .limit(50) 
+          .limit(50)
           .get();
 
       for (var doc in salidasSnap.docs) {
         var data = doc.data();
         List articulos = data['articulos'] ?? [];
-        
+
         var articuloEncontrado = articulos.where((a) => (a['insumoId'] == insumoId || a['id'] == insumoId)).firstOrNull;
 
         if (articuloEncontrado != null) {
@@ -179,7 +180,7 @@ class _InsumoDetalleScreenState extends State<InsumoDetalleScreen> {
       context: context,
       builder: (context) => Dialog(
         backgroundColor: Colors.transparent,
-        insetPadding: const EdgeInsets.all(10),
+        insetPadding: EdgeInsets.all(10),
         child: GestureDetector(
           onTap: () => Navigator.pop(context),
           child: InteractiveViewer(
@@ -191,8 +192,8 @@ class _InsumoDetalleScreenState extends State<InsumoDetalleScreen> {
               child: InventoryPhoto(
                 imageUrl: imageUrl,
                 fit: BoxFit.contain,
-                placeholder: (context, url) => const Center(child: CircularProgressIndicator(color: colorAcento)),
-                errorWidget: (context, url, error) => const Icon(Icons.broken_image, color: Colors.white54, size: 50),
+                placeholder: (context, url) => Center(child: CircularProgressIndicator(color: colorAcento)),
+                errorWidget: (context, url, error) => Icon(Icons.broken_image, color: StiloColors.text.withValues(alpha: .54), size: 50),
               ),
             ),
           ),
@@ -203,12 +204,13 @@ class _InsumoDetalleScreenState extends State<InsumoDetalleScreen> {
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context);
     return Scaffold(
       backgroundColor: colorFondo,
       appBar: AppBar(
         backgroundColor: colorFondo,
         elevation: 0,
-        iconTheme: const IconThemeData(color: colorTextoPrimario),
+        iconTheme: IconThemeData(color: colorTextoPrimario),
         title: Text(
           "DETALLE E HISTORIAL",
           style: GoogleFonts.inter(color: colorTextoPrimario, fontWeight: FontWeight.bold, fontSize: 16, letterSpacing: 1.0),
@@ -216,17 +218,17 @@ class _InsumoDetalleScreenState extends State<InsumoDetalleScreen> {
         centerTitle: true,
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildInfoCard(),
-            const SizedBox(height: 32),
+            SizedBox(height: 32),
             Text(
               "HISTORIAL DE MOVIMIENTOS",
               style: GoogleFonts.inter(color: colorTextoSecundario, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1.1),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
             _buildHistorialList(),
           ],
         ),
@@ -236,11 +238,11 @@ class _InsumoDetalleScreenState extends State<InsumoDetalleScreen> {
 
   Widget _buildInfoCard() {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: colorTarjeta,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white10),
+        border: Border.all(color: StiloColors.text.withValues(alpha: .10)),
       ),
       child: Column(
         children: [
@@ -267,10 +269,10 @@ class _InsumoDetalleScreenState extends State<InsumoDetalleScreen> {
                 Container(
                   width: 90,
                   height: 90,
-                  decoration: BoxDecoration(color: Colors.white10, borderRadius: BorderRadius.circular(12)),
-                  child: const Icon(Icons.inventory_2_outlined, color: Colors.white54, size: 36),
+                  decoration: BoxDecoration(color: StiloColors.text.withValues(alpha: .10), borderRadius: BorderRadius.circular(12)),
+                  child: Icon(Icons.inventory_2_outlined, color: StiloColors.text.withValues(alpha: .54), size: 36),
                 ),
-              const SizedBox(width: 16),
+              SizedBox(width: 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -279,14 +281,14 @@ class _InsumoDetalleScreenState extends State<InsumoDetalleScreen> {
                       widget.insumo.nombre,
                       style: GoogleFonts.inter(color: colorTextoPrimario, fontSize: 18, fontWeight: FontWeight.bold),
                     ),
-                    const SizedBox(height: 4),
+                    SizedBox(height: 4),
                     Text(
                       '${widget.insumo.categoria.toUpperCase()} > ${widget.insumo.subcategoria.toUpperCase()}',
                       style: GoogleFonts.inter(color: colorTextoSecundario, fontSize: 12),
                     ),
-                    const SizedBox(height: 8),
+                    SizedBox(height: 8),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
                         color: Colors.greenAccent.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(6),
@@ -302,13 +304,13 @@ class _InsumoDetalleScreenState extends State<InsumoDetalleScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 20),
-          const Divider(color: Colors.white10),
-          const SizedBox(height: 12),
+          SizedBox(height: 20),
+          Divider(color: StiloColors.text.withValues(alpha: .10)),
+          SizedBox(height: 12),
           _buildDetailRow(Icons.qr_code, "Código de Barras", widget.insumo.codigoBarras ?? "Sin código"),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
           _buildDetailRow(Icons.storefront, "Producto de Tienda", widget.insumo.esProductoTienda ? "Sí" : "No"),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
           _buildDetailRow(Icons.warning_amber_rounded, "Stock Mínimo", "${widget.insumo.stockMinimo} ${widget.insumo.unidadMedida}"),
         ],
       ),
@@ -319,7 +321,7 @@ class _InsumoDetalleScreenState extends State<InsumoDetalleScreen> {
     return Row(
       children: [
         Icon(icon, color: colorAcento, size: 20),
-        const SizedBox(width: 12),
+        SizedBox(width: 12),
         Text("$label: ", style: GoogleFonts.inter(color: colorTextoSecundario, fontSize: 13)),
         Expanded(
           child: Text(value, style: GoogleFonts.inter(color: colorTextoPrimario, fontSize: 14, fontWeight: FontWeight.w600), textAlign: TextAlign.right),
@@ -330,19 +332,19 @@ class _InsumoDetalleScreenState extends State<InsumoDetalleScreen> {
 
   Widget _buildHistorialList() {
     if (_cargandoHistorial) {
-      return const Center(child: Padding(padding: EdgeInsets.all(32), child: CircularProgressIndicator(color: colorAcento)));
+      return Center(child: Padding(padding: EdgeInsets.all(32), child: CircularProgressIndicator(color: colorAcento)));
     }
 
     if (_historial.isEmpty) {
       return Container(
         width: double.infinity,
-        padding: const EdgeInsets.all(32),
+        padding: EdgeInsets.all(32),
         decoration: BoxDecoration(color: colorTarjeta, borderRadius: BorderRadius.circular(16)),
         child: Column(
           children: [
-            const Icon(Icons.history_toggle_off, color: Colors.white24, size: 48),
-            const SizedBox(height: 16),
-            Text("No hay movimientos registrados", style: GoogleFonts.inter(color: Colors.white54)),
+            Icon(Icons.history_toggle_off, color: StiloColors.text.withValues(alpha: .24), size: 48),
+            SizedBox(height: 16),
+            Text("No hay movimientos registrados", style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .54))),
           ],
         ),
       );
@@ -350,9 +352,9 @@ class _InsumoDetalleScreenState extends State<InsumoDetalleScreen> {
 
     return ListView.separated(
       shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
+      physics: NeverScrollableScrollPhysics(),
       itemCount: _historial.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 12),
+      separatorBuilder: (_, __) => SizedBox(height: 12),
       itemBuilder: (context, index) {
         final item = _historial[index];
         final Color iconColor = item['color'];
@@ -360,40 +362,40 @@ class _InsumoDetalleScreenState extends State<InsumoDetalleScreen> {
         final String proyectoInfo = item['proyectoInfo'] ?? '';
 
         return Container(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: colorTarjeta,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.white.withOpacity(0.05)),
+            border: Border.all(color: StiloColors.text.withOpacity(0.05)),
           ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                padding: const EdgeInsets.all(10),
+                padding: EdgeInsets.all(10),
                 decoration: BoxDecoration(
                   color: iconColor.withOpacity(0.15),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(item['icono'], color: iconColor, size: 22),
               ),
-              const SizedBox(width: 16),
+              SizedBox(width: 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(item['tipo'], style: GoogleFonts.inter(color: colorTextoPrimario, fontWeight: FontWeight.bold, fontSize: 14)),
-                    const SizedBox(height: 4),
+                    SizedBox(height: 4),
                     Text(item['descripcion'], style: GoogleFonts.inter(color: colorTextoSecundario, fontSize: 13, height: 1.3)),
-                    
+
                     // --- NUEVA SECCIÓN VISUAL PARA EL CLIENTE Y PROYECTO ---
                     if (proyectoInfo.isNotEmpty) ...[
-                      const SizedBox(height: 6),
+                      SizedBox(height: 6),
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Icon(Icons.business_center_outlined, size: 14, color: Colors.cyanAccent),
-                          const SizedBox(width: 6),
+                          Icon(Icons.business_center_outlined, size: 14, color: Colors.cyanAccent),
+                          SizedBox(width: 6),
                           Expanded(
                             child: Text(
                               proyectoInfo,
@@ -405,20 +407,20 @@ class _InsumoDetalleScreenState extends State<InsumoDetalleScreen> {
                     ],
                     // --------------------------------------------------------
 
-                    const SizedBox(height: 12),
+                    SizedBox(height: 12),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(fechaStr, style: GoogleFonts.inter(color: Colors.white38, fontSize: 11)),
+                        Text(fechaStr, style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .38), fontSize: 11)),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.1),
+                            color: StiloColors.text.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(4)
                           ),
                           child: Text(
-                            item['estatus'].toString().toUpperCase(), 
-                            style: GoogleFonts.inter(color: Colors.white70, fontSize: 9, fontWeight: FontWeight.bold)
+                            item['estatus'].toString().toUpperCase(),
+                            style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .70), fontSize: 9, fontWeight: FontWeight.bold)
                           ),
                         )
                       ],

@@ -1,3 +1,4 @@
+import '../presentation/appearance.dart';
 import '../services/external_transfer.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -5,13 +6,13 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/proyecto_service.dart';
 import '../models/proyecto_model.dart';
 // Importamos la pantalla de detalles que creamos para el almacenista
-import 'proyecto_detalle_almacenista_screen.dart'; 
+import 'proyecto_detalle_almacenista_screen.dart';
 
 class ProyectosAlmacenistaScreen extends StatefulWidget {
   final String? filtroInicial;
 
   const ProyectosAlmacenistaScreen({
-    Key? key, 
+    Key? key,
     this.filtroInicial,
   }) : super(key: key);
 
@@ -21,11 +22,11 @@ class ProyectosAlmacenistaScreen extends StatefulWidget {
 
 class _ProyectosAlmacenistaScreenState extends State<ProyectosAlmacenistaScreen> {
   final ProyectoService _proyectoService = ProyectoService();
-  
+
   // Controladores y variables de búsqueda
   final TextEditingController _searchController = TextEditingController();
-  final FocusNode _searchFocusNode = FocusNode(); 
-  String _searchQuery = ''; 
+  final FocusNode _searchFocusNode = FocusNode();
+  String _searchQuery = '';
 
   // Variable para el filtro de estatus
   late String _filtroEstatus;
@@ -37,7 +38,7 @@ class _ProyectosAlmacenistaScreenState extends State<ProyectosAlmacenistaScreen>
   @override
   void initState() {
     super.initState();
-    
+
     _filtroEstatus = widget.filtroInicial ?? 'todos';
     _cargarClientesParaBuscador();
 
@@ -50,7 +51,7 @@ class _ProyectosAlmacenistaScreenState extends State<ProyectosAlmacenistaScreen>
   @override
   void dispose() {
     _searchController.dispose();
-    _searchFocusNode.dispose(); 
+    _searchFocusNode.dispose();
     super.dispose();
   }
 
@@ -80,56 +81,57 @@ class _ProyectosAlmacenistaScreenState extends State<ProyectosAlmacenistaScreen>
       case 'finalizado': return Colors.greenAccent;
       case 'en_proceso': return Colors.cyanAccent;
       case 'pendiente': return Colors.orangeAccent;
-      default: return Colors.white54;
+      default: return StiloColors.text.withValues(alpha: .54);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context);
     return Scaffold(
-      backgroundColor: const Color(0xFF121212),
+      backgroundColor: StiloColors.surface,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF121212),
+        backgroundColor: StiloColors.surface,
         elevation: 0,
-        title: Text('PROYECTOS', style: GoogleFonts.inter(fontSize: 16, color: Colors.white, fontWeight: FontWeight.w700, letterSpacing: 1.5)),
+        title: Text('PROYECTOS', style: GoogleFonts.inter(fontSize: 16, color: StiloColors.text, fontWeight: FontWeight.w700, letterSpacing: 1.5)),
         centerTitle: true,
       ),
-      body: _isLoadingClientes 
-      ? const Center(child: CircularProgressIndicator(color: Color(0xFF8B5CF6)))
+      body: _isLoadingClientes
+      ? Center(child: CircularProgressIndicator(color: StiloColors.accent))
       : Column(
           children: [
             // --- BARRA DE BÚSQUEDA ---
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+              padding: EdgeInsets.fromLTRB(16, 8, 16, 16),
               child: TextField(contextMenuBuilder: privacyTextMenu,
                 controller: _searchController,
-                focusNode: _searchFocusNode, 
+                focusNode: _searchFocusNode,
                 onTap: () {
                   setState(() {});
                 },
                 onTapOutside: (event) {
                   _searchFocusNode.unfocus();
                 },
-                style: const TextStyle(color: Colors.white),
+                style: TextStyle(color: StiloColors.text),
                 decoration: InputDecoration(
                   hintText: 'Buscar por título, cliente o estatus...',
-                  hintStyle: const TextStyle(color: Colors.white54),
-                  prefixIcon: const Icon(Icons.search, color: Color(0xFFFF9800)), // Color naranja para almacén
-                  suffixIcon: (_searchQuery.isNotEmpty || _searchFocusNode.hasFocus) 
+                  hintStyle: TextStyle(color: StiloColors.text.withValues(alpha: .54)),
+                  prefixIcon: Icon(Icons.search, color: Color(0xFFFF9800)), // Color naranja para almacén
+                  suffixIcon: (_searchQuery.isNotEmpty || _searchFocusNode.hasFocus)
                     ? IconButton(
-                        icon: const Icon(Icons.clear, color: Colors.white54),
+                        icon: Icon(Icons.clear, color: StiloColors.text.withValues(alpha: .54)),
                         onPressed: () {
                           _searchController.clear();
                           setState(() => _searchQuery = '');
-                          _searchFocusNode.unfocus(); 
+                          _searchFocusNode.unfocus();
                         },
                       )
-                    : const SizedBox.shrink(),
+                    : SizedBox.shrink(),
                   filled: true,
-                  fillColor: const Color(0xFF1E1E1E),
-                  contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                  fillColor: StiloColors.surface,
+                  contentPadding: EdgeInsets.symmetric(vertical: 0),
                   enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide.none),
-                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: const BorderSide(color: Color(0xFFFF9800), width: 1.5)),
+                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide(color: Color(0xFFFF9800), width: 1.5)),
                 ),
                 onChanged: (value) {
                   setState(() {
@@ -142,20 +144,20 @@ class _ProyectosAlmacenistaScreenState extends State<ProyectosAlmacenistaScreen>
             // --- FILTROS DE ESTATUS (CHIPS) ---
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: EdgeInsets.symmetric(horizontal: 16),
               child: Row(
                 children: [
                   _buildFiltroChip('Todos', 'todos'),
-                  const SizedBox(width: 8),
+                  SizedBox(width: 8),
                   _buildFiltroChip('Pendientes', 'pendiente'),
-                  const SizedBox(width: 8),
+                  SizedBox(width: 8),
                   _buildFiltroChip('En Proceso', 'en_proceso'),
-                  const SizedBox(width: 8),
+                  SizedBox(width: 8),
                   _buildFiltroChip('Finalizados', 'finalizado'),
                 ],
               ),
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
 
             // --- LISTA DE PROYECTOS ---
             Expanded(
@@ -163,10 +165,10 @@ class _ProyectosAlmacenistaScreenState extends State<ProyectosAlmacenistaScreen>
                 stream: _proyectoService.getProyectos(),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator(color: Color(0xFFFF9800)));
+                    return Center(child: CircularProgressIndicator(color: Color(0xFFFF9800)));
                   }
                   if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                    return Center(child: Text('No hay proyectos asignados.', style: GoogleFonts.inter(color: Colors.white54)));
+                    return Center(child: Text('No hay proyectos asignados.', style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .54))));
                   }
 
                   final proyectos = snapshot.data!.where((p) {
@@ -183,11 +185,11 @@ class _ProyectosAlmacenistaScreenState extends State<ProyectosAlmacenistaScreen>
                   }).toList();
 
                   if (proyectos.isEmpty) {
-                     return Center(child: Text('No se encontraron resultados.', style: GoogleFonts.inter(color: Colors.white54)));
+                     return Center(child: Text('No se encontraron resultados.', style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .54))));
                   }
 
                   return ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    padding: EdgeInsets.symmetric(horizontal: 16),
                     itemCount: proyectos.length,
                     itemBuilder: (context, index) {
                       final proyecto = proyectos[index];
@@ -195,62 +197,62 @@ class _ProyectosAlmacenistaScreenState extends State<ProyectosAlmacenistaScreen>
                       String nombreClienteReal = _clientesDict[proyecto.idCliente] ?? 'Cliente desconocido';
 
                       return Card(
-                        color: const Color(0xFF1E1E1E),
-                        margin: const EdgeInsets.only(bottom: 12),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: const BorderSide(color: Colors.white12)),
+                        color: StiloColors.surface,
+                        margin: EdgeInsets.only(bottom: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: StiloColors.text.withValues(alpha: .12))),
                         child: InkWell(
                           borderRadius: BorderRadius.circular(16),
                           onTap: () {
-                            _searchFocusNode.unfocus(); 
-                            
+                            _searchFocusNode.unfocus();
+
                             // NAVEGACIÓN DIRECTA A LA PANTALLA DEL ALMACENISTA
                             Navigator.push(
-                              context, 
+                              context,
                               MaterialPageRoute(
                                 builder: (context) => ProyectoDetalleAlmacenistaScreen(proyecto: proyecto)
                               )
                             );
                           },
                           child: Padding(
-                            padding: const EdgeInsets.all(16),
+                            padding: EdgeInsets.all(16),
                             child: Row(
                               children: [
                                 Container(
-                                  padding: const EdgeInsets.all(12),
+                                  padding: EdgeInsets.all(12),
                                   decoration: BoxDecoration(color: statusColor.withOpacity(0.1), borderRadius: BorderRadius.circular(14)),
                                   child: Icon(Icons.construction, color: statusColor, size: 24),
                                 ),
-                                const SizedBox(width: 16),
-                                
+                                SizedBox(width: 16),
+
                                 Expanded(
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      Text(proyecto.titulo, style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white), maxLines: 1, overflow: TextOverflow.ellipsis),
-                                      const SizedBox(height: 6),
-                                      
+                                      Text(proyecto.titulo, style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 16, color: StiloColors.text), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                      SizedBox(height: 6),
+
                                       Row(
                                         children: [
-                                          const Icon(Icons.person, color: Colors.white54, size: 14),
-                                          const SizedBox(width: 4),
+                                          Icon(Icons.person, color: StiloColors.text.withValues(alpha: .54), size: 14),
+                                          SizedBox(width: 4),
                                           Expanded(
                                             child: Text(
-                                              nombreClienteReal, 
-                                              style: GoogleFonts.inter(fontSize: 13, color: Colors.white54),
+                                              nombreClienteReal,
+                                              style: GoogleFonts.inter(fontSize: 13, color: StiloColors.text.withValues(alpha: .54)),
                                               maxLines: 1, overflow: TextOverflow.ellipsis,
                                             ),
                                           ),
                                         ],
                                       ),
-                                      const SizedBox(height: 8),
+                                      SizedBox(height: 8),
 
                                       Wrap(
-                                        spacing: 8.0,    
-                                        runSpacing: 4.0, 
+                                        spacing: 8.0,
+                                        runSpacing: 4.0,
                                         crossAxisAlignment: WrapCrossAlignment.center,
                                         children: [
                                           Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                             decoration: BoxDecoration(
                                               color: statusColor.withOpacity(0.1),
                                               borderRadius: BorderRadius.circular(8),
@@ -268,7 +270,7 @@ class _ProyectosAlmacenistaScreenState extends State<ProyectosAlmacenistaScreen>
                                 ),
 
                                 // --- BURBUJA DE NOTIFICACIÓN DE KITS ---
-                                const SizedBox(width: 8),
+                                SizedBox(width: 8),
                                 StreamBuilder<QuerySnapshot>(
                                   stream: FirebaseFirestore.instance
                                       .collection('solicitudes_salida')
@@ -277,26 +279,26 @@ class _ProyectosAlmacenistaScreenState extends State<ProyectosAlmacenistaScreen>
                                       .snapshots(),
                                   builder: (context, snapshot) {
                                     int pendientes = snapshot.hasData ? snapshot.data!.docs.length : 0;
-                                    
-                                    if (pendientes == 0) return const SizedBox.shrink(); 
+
+                                    if (pendientes == 0) return SizedBox.shrink();
 
                                     return Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                       decoration: BoxDecoration(
                                         color: Colors.redAccent,
                                         borderRadius: BorderRadius.circular(12),
                                         boxShadow: [
-                                          BoxShadow(color: Colors.redAccent.withOpacity(0.4), blurRadius: 8, offset: const Offset(0, 2))
+                                          BoxShadow(color: Colors.redAccent.withOpacity(0.4), blurRadius: 8, offset: Offset(0, 2))
                                         ]
                                       ),
                                       child: Row(
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
-                                          const Icon(Icons.notification_important, color: Colors.white, size: 14),
-                                          const SizedBox(width: 4),
+                                          Icon(Icons.notification_important, color: StiloColors.text, size: 14),
+                                          SizedBox(width: 4),
                                           Text(
-                                            "$pendientes", 
-                                            style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)
+                                            "$pendientes",
+                                            style: GoogleFonts.inter(color: StiloColors.text, fontWeight: FontWeight.bold, fontSize: 12)
                                           ),
                                         ],
                                       ),
@@ -321,17 +323,17 @@ class _ProyectosAlmacenistaScreenState extends State<ProyectosAlmacenistaScreen>
 
   Widget _buildFiltroChip(String label, String value) {
     final isSelected = _filtroEstatus == value;
-    Color statusColor = value == 'todos' ? Colors.white : _getStatusColor(value);
+    Color statusColor = value == 'todos' ? StiloColors.text : _getStatusColor(value);
 
     return ChoiceChip(
       label: Text(label),
       labelStyle: TextStyle(
-        color: isSelected ? const Color(0xFF121212) : Colors.white70,
+        color: isSelected ? StiloColors.surface : StiloColors.text.withValues(alpha: .70),
         fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
       ),
       selected: isSelected,
       selectedColor: statusColor,
-      backgroundColor: const Color(0xFF1E1E1E),
+      backgroundColor: StiloColors.surface,
       showCheckmark: false,
       side: BorderSide(
         color: isSelected ? Colors.transparent : statusColor.withOpacity(0.5),

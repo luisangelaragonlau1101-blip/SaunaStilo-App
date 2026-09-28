@@ -1,3 +1,4 @@
+import '../presentation/appearance.dart';
 import '../services/external_transfer.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -37,18 +38,19 @@ class _CatalogoSaunasTrabajadorScreenState extends State<CatalogoSaunasTrabajado
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context);
     return Scaffold(
-      backgroundColor: const Color(0xFF121212),
+      backgroundColor: StiloColors.surface,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF121212),
+        backgroundColor: StiloColors.surface,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white),
+        iconTheme: IconThemeData(color: StiloColors.text),
         title: Text(
           'TIPOS DE MADERA',
           style: GoogleFonts.inter(
-            fontSize: 16, 
-            color: Colors.white, 
-            fontWeight: FontWeight.w700, 
+            fontSize: 16,
+            color: StiloColors.text,
+            fontWeight: FontWeight.w700,
             letterSpacing: 1.5
           ),
         ),
@@ -58,7 +60,7 @@ class _CatalogoSaunasTrabajadorScreenState extends State<CatalogoSaunasTrabajado
         children: [
           // --- BARRA DE BÚSQUEDA ---
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+            padding: EdgeInsets.fromLTRB(16, 8, 16, 16),
             child: TextField(contextMenuBuilder: privacyTextMenu,
               controller: _searchController,
               focusNode: _searchFocusNode,
@@ -68,26 +70,26 @@ class _CatalogoSaunasTrabajadorScreenState extends State<CatalogoSaunasTrabajado
               onTapOutside: (event) {
                 _searchFocusNode.unfocus();
               },
-              style: const TextStyle(color: Colors.white),
+              style: TextStyle(color: StiloColors.text),
               decoration: InputDecoration(
                 hintText: 'Buscar por nombre o descripción...',
-                hintStyle: GoogleFonts.inter(color: Colors.white54),
-                prefixIcon: const Icon(Icons.search, color: Color(0xFF8B5CF6)),
-                suffixIcon: (_searchQuery.isNotEmpty || _searchFocusNode.hasFocus) 
+                hintStyle: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .54)),
+                prefixIcon: Icon(Icons.search, color: StiloColors.accent),
+                suffixIcon: (_searchQuery.isNotEmpty || _searchFocusNode.hasFocus)
                   ? IconButton(
-                      icon: const Icon(Icons.clear, color: Colors.white54),
+                      icon: Icon(Icons.clear, color: StiloColors.text.withValues(alpha: .54)),
                       onPressed: () {
                         _searchController.clear();
                         setState(() => _searchQuery = '');
                         _searchFocusNode.unfocus(); // Cierra el teclado
                       },
                     )
-                  : const SizedBox.shrink(),
+                  : SizedBox.shrink(),
                 filled: true,
-                fillColor: const Color(0xFF1E1E1E),
-                contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                fillColor: StiloColors.surface,
+                contentPadding: EdgeInsets.symmetric(vertical: 0),
                 enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide.none),
-                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: const BorderSide(color: Color(0xFF8B5CF6), width: 1.5)),
+                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide(color: StiloColors.accent, width: 1.5)),
               ),
               onChanged: (value) {
                 setState(() {
@@ -103,7 +105,7 @@ class _CatalogoSaunasTrabajadorScreenState extends State<CatalogoSaunasTrabajado
               stream: _saunasCollection.snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator(color: Color(0xFF8B5CF6)));
+                  return Center(child: CircularProgressIndicator(color: StiloColors.accent));
                 }
                 if (snapshot.hasError) {
                   return Center(
@@ -112,15 +114,15 @@ class _CatalogoSaunasTrabajadorScreenState extends State<CatalogoSaunasTrabajado
                 }
                 if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
                   return Center(
-                    child: Text('No hay tipos de madera registrados.', style: GoogleFonts.inter(color: Colors.white54))
+                    child: Text('No hay tipos de madera registrados.', style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .54)))
                   );
                 }
 
                 final saunas = snapshot.data!.docs.map((doc) => Sauna.fromFirestore(doc)).toList();
 
                 // Lógica de filtrado
-                final saunasFiltradas = _searchQuery.isEmpty 
-                  ? saunas 
+                final saunasFiltradas = _searchQuery.isEmpty
+                  ? saunas
                   : saunas.where((sauna) {
                       final nombre = sauna.nombre.toLowerCase();
                       final descripcion = sauna.descripcion.toLowerCase();
@@ -129,25 +131,25 @@ class _CatalogoSaunasTrabajadorScreenState extends State<CatalogoSaunasTrabajado
 
                 if (saunasFiltradas.isEmpty) {
                   return Center(
-                    child: Text('No se encontraron resultados.', style: GoogleFonts.inter(color: Colors.white54))
+                    child: Text('No se encontraron resultados.', style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .54)))
                   );
                 }
 
                 return ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   itemCount: saunasFiltradas.length,
                   itemBuilder: (context, index) {
                     final sauna = saunasFiltradas[index];
                     return Card(
-                      color: const Color(0xFF1E1E1E),
+                      color: StiloColors.surface,
                       elevation: 0,
-                      margin: const EdgeInsets.only(bottom: 12),
+                      margin: EdgeInsets.only(bottom: 12),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
-                        side: const BorderSide(color: Colors.white12, width: 1),
+                        side: BorderSide(color: StiloColors.text.withValues(alpha: .12), width: 1),
                       ),
                       child: Padding(
-                        padding: const EdgeInsets.all(16.0),
+                        padding: EdgeInsets.all(16.0),
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -156,7 +158,7 @@ class _CatalogoSaunasTrabajadorScreenState extends State<CatalogoSaunasTrabajado
                               width: 60,
                               height: 60,
                               decoration: BoxDecoration(
-                                color: const Color(0xFF8B5CF6).withOpacity(0.15),
+                                color: StiloColors.accent.withOpacity(0.15),
                                 borderRadius: BorderRadius.circular(14),
                               ),
                               child: ClipRRect(
@@ -165,13 +167,13 @@ class _CatalogoSaunasTrabajadorScreenState extends State<CatalogoSaunasTrabajado
                                     ? Image.network(
                                         sauna.imagenUrl,
                                         fit: BoxFit.cover,
-                                        errorBuilder: (context, error, stackTrace) => const Icon(Icons.forest_outlined, color: Color(0xFF8B5CF6), size: 28),
+                                        errorBuilder: (context, error, stackTrace) => Icon(Icons.forest_outlined, color: StiloColors.accent, size: 28),
                                       )
-                                    : const Icon(Icons.forest_outlined, color: Color(0xFF8B5CF6), size: 28),
+                                    : Icon(Icons.forest_outlined, color: StiloColors.accent, size: 28),
                               ),
                             ),
-                            const SizedBox(width: 16),
-                            
+                            SizedBox(width: 16),
+
                             // Información (ahora ocupa todo el espacio restante)
                             Expanded(
                               child: Column(
@@ -179,23 +181,23 @@ class _CatalogoSaunasTrabajadorScreenState extends State<CatalogoSaunasTrabajado
                                 children: [
                                   Text(
                                     sauna.nombre,
-                                    style: GoogleFonts.inter(fontWeight: FontWeight.w500, fontSize: 16, color: Colors.white),
+                                    style: GoogleFonts.inter(fontWeight: FontWeight.w500, fontSize: 16, color: StiloColors.text),
                                   ),
-                                  const SizedBox(height: 6),
+                                  SizedBox(height: 6),
                                   Row(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      const Padding(
+                                      Padding(
                                         padding: EdgeInsets.only(top: 2.0),
                                         child: Icon(Icons.description_outlined, size: 14, color: Color(0xFF81C784)),
                                       ),
-                                      const SizedBox(width: 6),
+                                      SizedBox(width: 6),
                                       Expanded(
                                         child: Text(
                                           sauna.descripcion.isNotEmpty ? sauna.descripcion : 'Sin descripción',
                                           maxLines: 2,
                                           overflow: TextOverflow.ellipsis,
-                                          style: GoogleFonts.inter(fontSize: 13, color: Colors.white70),
+                                          style: GoogleFonts.inter(fontSize: 13, color: StiloColors.text.withValues(alpha: .70)),
                                         ),
                                       ),
                                     ],

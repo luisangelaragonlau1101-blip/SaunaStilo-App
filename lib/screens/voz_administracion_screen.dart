@@ -1,3 +1,4 @@
+import '../presentation/appearance.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
@@ -20,12 +21,12 @@ class VozAdministracionScreen extends StatefulWidget {
 enum _VoiceSlot { consent, reference }
 
 class _VozAdministracionScreenState extends State<VozAdministracionScreen> {
-  static const _bg = Color(0xFF000000);
-  static const _panel = Color(0xFF111012);
-  static const _cyan = Color(0xFFB7FF2A);
-  static const _mint = Color(0xFFC6FF68);
-  static const _violet = Color(0xFFD7859D);
-  static const _consentText = 'Soy el propietario de esta voz y doy mi consentimiento para que Google la utilice para crear un modelo de voz sintética.';
+  static Color get _bg => StiloColors.background;
+  static Color get _panel => StiloColors.surface;
+  static Color get _cyan => StiloColors.accent;
+  static final _mint = Color(0xFFC6FF68);
+  static Color get _violet => StiloColors.accent;
+  static final _consentText = 'Soy el propietario de esta voz y doy mi consentimiento para que Google la utilice para crear un modelo de voz sintética.';
   final _voice = CustomVoiceService();
   final _recorder = AudioRecorder();
   final _player = AudioPlayer();
@@ -71,71 +72,72 @@ class _VozAdministracionScreenState extends State<VozAdministracionScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (!_admin) return const Scaffold(backgroundColor: _bg, body: SafeArea(child: Center(child: Padding(
-      padding: EdgeInsets.all(28), child: Text('Este estudio de voz está disponible únicamente para Administración.', textAlign: TextAlign.center, style: TextStyle(color: Colors.white70, fontSize: 16)),
+    Theme.of(context);
+    if (!_admin) return Scaffold(backgroundColor: _bg, body: SafeArea(child: Center(child: Padding(
+      padding: EdgeInsets.all(28), child: Text('Este estudio de voz está disponible únicamente para Administración.', textAlign: TextAlign.center, style: TextStyle(color: StiloColors.text.withValues(alpha: .70), fontSize: 16)),
     ))));
     return Scaffold(
       backgroundColor: _bg,
       appBar: AppBar(backgroundColor: _bg, surfaceTintColor: Colors.transparent, title: Text('Estudio de voz', style: GoogleFonts.inter(fontWeight: FontWeight.w900))),
-      body: ListView(padding: const EdgeInsets.fromLTRB(18, 8, 18, 40), children: [
-        _hero(), const SizedBox(height: 14), _statusCard(),
-        const Padding(padding: EdgeInsets.symmetric(vertical: 12), child: Text(
+      body: ListView(padding: EdgeInsets.fromLTRB(18, 8, 18, 40), children: [
+        _hero(), SizedBox(height: 14), _statusCard(),
+        Padding(padding: EdgeInsets.symmetric(vertical: 12), child: Text(
           'Grabar y escuchar funciona en tu dispositivo aunque el servidor de voz no esté activado. Crear una voz sintética es un paso diferente.',
-          style: TextStyle(color: Colors.white70, fontSize: 12, height: 1.5),
+          style: TextStyle(color: StiloColors.text.withValues(alpha: .70), fontSize: 12, height: 1.5),
         )),
         Wrap(spacing: 8, children: [
-          TextButton.icon(onPressed: _locked || _checkingStatus ? null : _loadStatus, icon: const Icon(Icons.refresh), label: const Text('Comprobar servicio')),
-          TextButton.icon(onPressed: _locked ? null : _activationHelp, icon: const Icon(Icons.help_outline_rounded), label: const Text('Cómo activar el servicio')),
+          TextButton.icon(onPressed: _locked || _checkingStatus ? null : _loadStatus, icon: Icon(Icons.refresh), label: Text('Comprobar servicio')),
+          TextButton.icon(onPressed: _locked ? null : _activationHelp, icon: Icon(Icons.help_outline_rounded), label: Text('Cómo activar el servicio')),
         ]),
-        const SizedBox(height: 14),
+        SizedBox(height: 14),
         _recordCard(slot: _VoiceSlot.consent, step: '01', title: 'Consentimiento', detail: 'Graba exactamente esta frase. El proveedor exige este consentimiento para crear la voz sintética.', script: _consentText, bytes: _consentAudio, color: _violet),
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
         _recordCard(slot: _VoiceSlot.reference, step: '02', title: 'Muestra de tu voz', detail: 'Habla natural, con energía y pausas. Acércate a 10 segundos y evita ruido de fondo.', script: 'Ejemplo: “Hola equipo, soy Ángel. Estoy aquí para ayudarles a trabajar mejor, resolver dudas y avanzar cada proyecto con calidad.”', bytes: _referenceAudio, color: _cyan),
-        const SizedBox(height: 16), _activateCard(),
-        if (_message != null) ...[const SizedBox(height: 12), _messageCard(_message!)],
-        const SizedBox(height: 18),
-        Text('Las muestras permanecen en esta pantalla hasta que las envías para crear la voz; al salir se descartan. La aplicación no muestra la voz como activa hasta recibir confirmación real del servidor. En Online Smart, Escuchar usa el dispositivo. El botón Voz de Ángel permite solicitar la voz oficial después de activarla.', textAlign: TextAlign.center, style: GoogleFonts.inter(color: Colors.white54, fontSize: 10.8, height: 1.5)),
+        SizedBox(height: 16), _activateCard(),
+        if (_message != null) ...[SizedBox(height: 12), _messageCard(_message!)],
+        SizedBox(height: 18),
+        Text('Las muestras permanecen en esta pantalla hasta que las envías para crear la voz; al salir se descartan. La aplicación no muestra la voz como activa hasta recibir confirmación real del servidor. En Online Smart, Escuchar usa el dispositivo. El botón Voz de Ángel permite solicitar la voz oficial después de activarla.', textAlign: TextAlign.center, style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .54), fontSize: 10.8, height: 1.5)),
       ]),
     );
   }
   Widget _hero() => Container(
-    padding: const EdgeInsets.all(22),
-    decoration: BoxDecoration(borderRadius: BorderRadius.circular(28), gradient: const LinearGradient(colors: [Color(0xFF2B0B18), Color(0xFF100C0E)], begin: Alignment.topLeft, end: Alignment.bottomRight), border: Border.all(color: const Color(0xFF632A3E))),
+    padding: EdgeInsets.all(22),
+    decoration: BoxDecoration(borderRadius: BorderRadius.circular(28), gradient: LinearGradient(colors: [StiloColors.surface, StiloColors.surface], begin: Alignment.topLeft, end: Alignment.bottomRight), border: Border.all(color: StiloColors.border)),
     child: Row(children: [
-      Container(width: 60, height: 60, decoration: BoxDecoration(borderRadius: BorderRadius.circular(21), color: const Color(0xFF35101E), border: Border.all(color: const Color(0xFF8E1538))), child: const Icon(Icons.graphic_eq_rounded, color: _cyan, size: 30)),
-      const SizedBox(width: 15),
+      Container(width: 60, height: 60, decoration: BoxDecoration(borderRadius: BorderRadius.circular(21), color: StiloColors.surface, border: Border.all(color: Color(0xFF8E1538))), child: Icon(Icons.graphic_eq_rounded, color: _cyan, size: 30)),
+      SizedBox(width: 15),
       Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text('TU VOZ · SAUNA STILO', style: GoogleFonts.inter(color: _violet, fontSize: 9.5, letterSpacing: 1, fontWeight: FontWeight.w900)),
-        const SizedBox(height: 4),
-        Text('Tu identidad también se escucha.', style: GoogleFonts.montserrat(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 19)),
+        SizedBox(height: 4),
+        Text('Tu identidad también se escucha.', style: GoogleFonts.montserrat(color: StiloColors.text, fontWeight: FontWeight.w900, fontSize: 19)),
       ])),
     ]),
   );
   Widget _statusCard() {
     final active = _status?.enabled == true && _statusError == null;
-    return Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: _panel, borderRadius: BorderRadius.circular(22), border: Border.all(color: Colors.white10)), child: Row(children: [
-      Container(width: 10, height: 10, decoration: BoxDecoration(color: active ? _mint : Colors.white24, shape: BoxShape.circle)),
-      const SizedBox(width: 10),
-      Expanded(child: Text(_checkingStatus ? 'Consultando estado de la voz…' : _statusError ?? _status?.message ?? 'Servicio de voz pendiente de activación.', style: GoogleFonts.inter(color: Colors.white70, fontSize: 11.5, height: 1.4))),
-      IconButton(tooltip: 'Actualizar', onPressed: _locked || _checkingStatus ? null : _loadStatus, icon: const Icon(Icons.refresh_rounded, color: Colors.white54)),
+    return Container(padding: EdgeInsets.all(16), decoration: BoxDecoration(color: _panel, borderRadius: BorderRadius.circular(22), border: Border.all(color: StiloColors.text.withValues(alpha: .10))), child: Row(children: [
+      Container(width: 10, height: 10, decoration: BoxDecoration(color: active ? _mint : StiloColors.text.withValues(alpha: .24), shape: BoxShape.circle)),
+      SizedBox(width: 10),
+      Expanded(child: Text(_checkingStatus ? 'Consultando estado de la voz…' : _statusError ?? _status?.message ?? 'Servicio de voz pendiente de activación.', style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .70), fontSize: 11.5, height: 1.4))),
+      IconButton(tooltip: 'Actualizar', onPressed: _locked || _checkingStatus ? null : _loadStatus, icon: Icon(Icons.refresh_rounded, color: StiloColors.text.withValues(alpha: .54))),
     ]));
   }
   Widget _recordCard({required _VoiceSlot slot, required String step, required String title, required String detail, required String script, required Uint8List? bytes, required Color color}) {
     final recording = _recording == slot;
-    return Container(padding: const EdgeInsets.all(18), decoration: BoxDecoration(color: _panel, borderRadius: BorderRadius.circular(24), border: Border.all(color: color.withOpacity(.22))), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+    return Container(padding: EdgeInsets.all(18), decoration: BoxDecoration(color: _panel, borderRadius: BorderRadius.circular(24), border: Border.all(color: color.withOpacity(.22))), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Text('$step · ${title.toUpperCase()}', style: GoogleFonts.inter(color: color, fontWeight: FontWeight.w900, letterSpacing: .8)),
-      const SizedBox(height: 7), Text(detail, style: GoogleFonts.inter(color: Colors.white54, fontSize: 11.5, height: 1.45)),
-      const SizedBox(height: 12),
-      Container(width: double.infinity, padding: const EdgeInsets.all(13), decoration: BoxDecoration(color: Colors.black26, borderRadius: BorderRadius.circular(16)), child: Text(script, style: GoogleFonts.inter(color: const Color(0xC7FFFFFF), fontSize: 12.2, height: 1.45, fontStyle: FontStyle.italic))),
-      const SizedBox(height: 13),
+      SizedBox(height: 7), Text(detail, style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .54), fontSize: 11.5, height: 1.45)),
+      SizedBox(height: 12),
+      Container(width: double.infinity, padding: EdgeInsets.all(13), decoration: BoxDecoration(color: StiloColors.background.withValues(alpha: .26), borderRadius: BorderRadius.circular(16)), child: Text(script, style: GoogleFonts.inter(color: Color(0xC7FFFFFF), fontSize: 12.2, height: 1.45, fontStyle: FontStyle.italic))),
+      SizedBox(height: 13),
       Row(children: [
         Expanded(child: FilledButton.icon(
           onPressed: _busy || (_recording != null && !recording) ? null : () => recording ? _stopRecording() : _startRecording(slot),
-          style: FilledButton.styleFrom(backgroundColor: recording ? Colors.redAccent : color, foregroundColor: Colors.black, minimumSize: const Size(0, 48), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
+          style: FilledButton.styleFrom(backgroundColor: recording ? Colors.redAccent : color, foregroundColor: StiloColors.background, minimumSize: Size(0, 48), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
           icon: Icon(recording ? Icons.stop_rounded : Icons.mic_rounded),
           label: Text(recording ? 'DETENER · ${10 - _seconds}s' : bytes == null ? 'GRABAR' : 'VOLVER A GRABAR', style: GoogleFonts.inter(fontWeight: FontWeight.w900)),
         )),
-        if (bytes != null) ...[const SizedBox(width: 8), IconButton.filledTonal(tooltip: 'Escuchar grabación', onPressed: _locked ? null : () => _previewRecording(bytes), icon: const Icon(Icons.play_arrow_rounded))],
+        if (bytes != null) ...[SizedBox(width: 8), IconButton.filledTonal(tooltip: 'Escuchar grabación', onPressed: _locked ? null : () => _previewRecording(bytes), icon: Icon(Icons.play_arrow_rounded))],
       ]),
     ]));
   }
@@ -143,38 +145,38 @@ class _VozAdministracionScreenState extends State<VozAdministracionScreen> {
     final ready = _consentAudio != null && _referenceAudio != null;
     final configured = _status?.configured == true;
     final enabled = _status?.enabled == true;
-    return Container(padding: const EdgeInsets.all(18), decoration: BoxDecoration(color: const Color(0xFF11120B), borderRadius: BorderRadius.circular(24), border: Border.all(color: _mint.withOpacity(.24))), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+    return Container(padding: EdgeInsets.all(18), decoration: BoxDecoration(color: StiloColors.surface, borderRadius: BorderRadius.circular(24), border: Border.all(color: _mint.withOpacity(.24))), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Text('03 · ACTIVAR EN SAUNA STILO', style: GoogleFonts.inter(color: _mint, fontWeight: FontWeight.w900, letterSpacing: .8)),
-      const SizedBox(height: 8),
-      Text(configured ? 'Ya existe una voz configurada. Puedes probarla, pausarla o reemplazarla por nuevas grabaciones.' : 'Cuando estén listas las dos grabaciones, el servidor solicitará la creación de tu voz personalizada. Requiere que Firebase esté publicado y Google autorice Instant Custom Voice.', style: GoogleFonts.inter(color: Colors.white60, fontSize: 11.5, height: 1.45)),
-      const SizedBox(height: 13),
+      SizedBox(height: 8),
+      Text(configured ? 'Ya existe una voz configurada. Puedes probarla, pausarla o reemplazarla por nuevas grabaciones.' : 'Cuando estén listas las dos grabaciones, el servidor solicitará la creación de tu voz personalizada. Requiere que Firebase esté publicado y Google autorice Instant Custom Voice.', style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .60), fontSize: 11.5, height: 1.45)),
+      SizedBox(height: 13),
       if (!configured) SizedBox(width: double.infinity, child: FilledButton.icon(
         onPressed: ready && !_locked ? _enroll : null,
-        style: FilledButton.styleFrom(backgroundColor: _mint, foregroundColor: Colors.black, minimumSize: const Size(0, 50)),
-        icon: _busy ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black)) : const Icon(Icons.auto_awesome_rounded),
+        style: FilledButton.styleFrom(backgroundColor: _mint, foregroundColor: StiloColors.background, minimumSize: Size(0, 50)),
+        icon: _busy ? SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: StiloColors.background)) : Icon(Icons.auto_awesome_rounded),
         label: Text(_busy ? 'PROCESANDO…' : 'CREAR MI VOZ', style: GoogleFonts.inter(fontWeight: FontWeight.w900)),
       )) else Wrap(spacing: 8, runSpacing: 8, children: [
-        FilledButton.icon(onPressed: _locked ? null : _testVoice, icon: const Icon(Icons.play_arrow_rounded), label: const Text('PROBAR MI VOZ')),
+        FilledButton.icon(onPressed: _locked ? null : _testVoice, icon: Icon(Icons.play_arrow_rounded), label: Text('PROBAR MI VOZ')),
         OutlinedButton.icon(onPressed: _locked ? null : () => _toggleEnabled(!enabled), icon: Icon(enabled ? Icons.pause_rounded : Icons.play_circle_outline_rounded), label: Text(enabled ? 'DESACTIVAR' : 'ACTIVAR')),
-        if (ready) OutlinedButton.icon(onPressed: _locked ? null : _enroll, icon: const Icon(Icons.refresh_rounded), label: const Text('REEMPLAZAR VOZ')),
+        if (ready) OutlinedButton.icon(onPressed: _locked ? null : _enroll, icon: Icon(Icons.refresh_rounded), label: Text('REEMPLAZAR VOZ')),
       ]),
     ]));
   }
-  Widget _messageCard(String message) => Container(padding: const EdgeInsets.all(14), decoration: BoxDecoration(color: const Color(0xFF171319), borderRadius: BorderRadius.circular(18), border: Border.all(color: _violet.withOpacity(.2))), child: Row(children: [
-    const Icon(Icons.info_outline_rounded, color: _violet), const SizedBox(width: 9), Expanded(child: Text(message, style: GoogleFonts.inter(color: Colors.white70, fontSize: 11.5, height: 1.4))),
+  Widget _messageCard(String message) => Container(padding: EdgeInsets.all(14), decoration: BoxDecoration(color: StiloColors.surface, borderRadius: BorderRadius.circular(18), border: Border.all(color: _violet.withOpacity(.2))), child: Row(children: [
+    Icon(Icons.info_outline_rounded, color: _violet), SizedBox(width: 9), Expanded(child: Text(message, style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .70), fontSize: 11.5, height: 1.4))),
   ]));
 
   Future<void> _activationHelp() async {
     await showDialog<void>(context: context, builder: (dialog) => AlertDialog(
-      title: const Text('Grabación y voz personalizada'),
-      content: const SingleChildScrollView(child: Text('1. Puedes grabar y escuchar tus muestras aquí sin activar servicios ni compartirlas.\n\n2. Para crear la voz personalizada, la cuenta autorizada de Google debe publicar las funciones de voz del proyecto saunastiloapp-17e15. Las instrucciones están en CLOUD_SHELL.md del repositorio.\n\n3. Google exige acceso aprobado a Instant Custom Voice, además de tu consentimiento grabado. Grabar no otorga ese acceso.\n\nEl uso del servidor puede generar cargos. No compartas claves ni contraseñas en el chat. Abrir Google Cloud no activa ni cobra nada por sí solo.')),
-      actions: [TextButton(onPressed: () => Navigator.pop(dialog), child: const Text('Cerrar')), FilledButton(onPressed: () async {
+      title: Text('Grabación y voz personalizada'),
+      content: SingleChildScrollView(child: Text('1. Puedes grabar y escuchar tus muestras aquí sin activar servicios ni compartirlas.\n\n2. Para crear la voz personalizada, la cuenta autorizada de Google debe publicar las funciones de voz del proyecto saunastiloapp-17e15. Las instrucciones están en CLOUD_SHELL.md del repositorio.\n\n3. Google exige acceso aprobado a Instant Custom Voice, además de tu consentimiento grabado. Grabar no otorga ese acceso.\n\nEl uso del servidor puede generar cargos. No compartas claves ni contraseñas en el chat. Abrir Google Cloud no activa ni cobra nada por sí solo.')),
+      actions: [TextButton(onPressed: () => Navigator.pop(dialog), child: Text('Cerrar')), FilledButton(onPressed: () async {
         Navigator.pop(dialog);
         try {
           final opened = await launchUrl(Uri.parse('https://console.cloud.google.com/home/dashboard?project=saunastiloapp-17e15'), mode: LaunchMode.externalApplication);
           if (!opened && mounted) setState(() => _message = 'Abre Google Cloud con la cuenta propietaria y selecciona saunastiloapp-17e15.');
         } catch (_) { if (mounted) setState(() => _message = 'No se pudo abrir Google Cloud desde este navegador.'); }
-      }, child: const Text('Abrir Google Cloud'))],
+      }, child: Text('Abrir Google Cloud'))],
     ));
   }
   Future<void> _previewRecording(Uint8List bytes) async {
@@ -197,12 +199,12 @@ class _VozAdministracionScreenState extends State<VozAdministracionScreen> {
         await capture.beginCapture();
       } else {
         if (!await _recorder.hasPermission()) throw StateError('Permiso de micrófono denegado.');
-        final stream = await _recorder.startStream(const RecordConfig(encoder: AudioEncoder.pcm16bits, sampleRate: 24000, numChannels: 1, autoGain: true, echoCancel: true, noiseSuppress: true));
+        final stream = await _recorder.startStream(RecordConfig(encoder: AudioEncoder.pcm16bits, sampleRate: 24000, numChannels: 1, autoGain: true, echoCancel: true, noiseSuppress: true));
         _stream = stream.listen(_bytes.add);
       }
       if (!mounted) { await capture.disposeCapture(); await _recorder.stop(); return; }
       setState(() { _recording = slot; _busy = false; });
-      _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+      _timer = Timer.periodic(Duration(seconds: 1), (_) {
         if (!mounted) return;
         setState(() => _seconds++);
         if (_seconds >= 10) unawaited(_stopRecording());
@@ -249,7 +251,7 @@ class _VozAdministracionScreenState extends State<VozAdministracionScreen> {
     setState(() { _busy = true; _message = 'Generando una prueba con tu voz…'; });
     try {
       final audio = await _voice.synthesize('Hola equipo. Soy la voz oficial de Sauna Stilo. Estoy aquí para ayudarles a trabajar mejor y avanzar cada proyecto.');
-      if (audio == null) throw const CustomVoiceException('La voz está configurada, pero el servicio de síntesis todavía no está disponible.');
+      if (audio == null) throw CustomVoiceException('La voz está configurada, pero el servicio de síntesis todavía no está disponible.');
       if (!mounted) return;
       await _player.setPlaybackRate(1.0);
       if (!mounted) return;
@@ -268,7 +270,7 @@ class _VozAdministracionScreenState extends State<VozAdministracionScreen> {
     finally { if (mounted) setState(() => _busy = false); }
   }
   Uint8List _createWav(Uint8List pcm, {required int sampleRate, required int channels}) {
-    const bitsPerSample = 16;
+    final bitsPerSample = 16;
     final byteRate = sampleRate * channels * bitsPerSample ~/ 8;
     final blockAlign = channels * bitsPerSample ~/ 8;
     final header = ByteData(44);

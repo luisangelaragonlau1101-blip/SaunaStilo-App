@@ -1,3 +1,4 @@
+import '../presentation/appearance.dart';
 import '../services/external_transfer.dart';
 import '../widgets/warehouse_header.dart';
 import 'package:flutter/material.dart';
@@ -7,10 +8,10 @@ import '../services/inventario_service.dart';
 import '../models/insumo_model.dart';
 import 'admin_categorias_screen.dart';
 import 'recepcion_inventario_screen.dart';
-import 'insumo_form_screen.dart'; 
+import 'insumo_form_screen.dart';
 import 'insumo_detalle_screen.dart';
 // --- IMPORTS PARA PDF Y EXPORTACIÓN ---
-import 'dart:io'; 
+import 'dart:io';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:path_provider/path_provider.dart';
@@ -40,23 +41,23 @@ class InventarioAdminScreen extends StatefulWidget {
 
 class _InventarioAdminScreenState extends State<InventarioAdminScreen> {
   final InventarioService _inventarioService = InventarioService();
-  
+
   final TextEditingController _searchController = TextEditingController();
   String _searchText = "";
-  bool _estaBuscando = false; 
-  String _filtroStock = "Todos"; 
+  bool _estaBuscando = false;
+  String _filtroStock = "Todos";
 
-  static const Color colorFondo = Color(0xFF000000);
-  static const Color colorTarjeta = Color(0xFF111012);
-  static const Color colorTextoPrimario = Color(0xFFFDFDFD);
-  static const Color colorAcento = Color(0xFFB7FF2A);
-  static const Color colorRosa = Color(0xFFC798FF);
-  static const Color colorAzul = Color(0xFFC798FF);
-  static const Color colorMorado = Color(0xFFC13CFF);
-  static const Color colorRojoCoral = Color(0xFFFF5252);
-  static const Color colorRosaVibrante = Color(0xFFFF729C);
-  static const Color colorBlanco = Color(0xFFFFFFFF);
-  static const Color colorVerde1 = Color(0xFF7CE3BD);
+  Color get colorFondo => StiloColors.background;
+  Color get colorTarjeta => StiloColors.surface;
+  Color get colorTextoPrimario => StiloColors.text;
+  Color get colorAcento => StiloColors.accent;
+  Color get colorRosa => StiloColors.accent;
+  Color get colorAzul => StiloColors.accent;
+  Color get colorMorado => StiloColors.accent;
+  Color get colorRojoCoral => Color(0xFFFF5252);
+  Color get colorRosaVibrante => Color(0xFFFF729C);
+  Color get colorBlanco => StiloColors.text;
+  Color get colorVerde1 => Color(0xFF7CE3BD);
 
   @override
   void initState() {
@@ -82,17 +83,17 @@ class _InventarioAdminScreenState extends State<InventarioAdminScreen> {
       String? res = await Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => const SimpleBarcodeScannerPage(),
+          builder: (context) => SimpleBarcodeScannerPage(),
         ),
       );
 
       // Si el usuario escaneó algo (y no canceló)
       if (res != null && res != '-1') {
-        
+
         // --- 2. AQUÍ AGREGAMOS EL SONIDO Y LA VIBRACIÓN ---
         final player = AudioPlayer();
         await player.play(AssetSource('sounds/beep.ogg'));
-        HapticFeedback.heavyImpact(); 
+        HapticFeedback.heavyImpact();
         // --------------------------------------------------
 
         setState(() {
@@ -130,25 +131,25 @@ class _InventarioAdminScreenState extends State<InventarioAdminScreen> {
 
   Color _obtenerColorStock(int cantidad, int minimo) {
     if (cantidad == 0) {
-      return const Color(0xFF757575); 
+      return Color(0xFF757575);
     } else if (cantidad <= minimo) {
-      return colorAcento; 
+      return colorAcento;
     } else {
-      return const Color(0xFF66BB6A); 
+      return Color(0xFF66BB6A);
     }
   }
 
   // --- LÓGICA DE GENERACIÓN DE REPORTE PDF DE FALTANTES Y STOCK BAJO ---
   Future<void> _generarDescargarReporteFaltantes() async {
     showDialog(
-      context: context, 
-      barrierDismissible: false, 
-      builder: (_) => const Center(child: CircularProgressIndicator(color: colorRosaVibrante))
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => Center(child: CircularProgressIndicator(color: colorRosaVibrante))
     );
 
     try {
       final snap = await FirebaseFirestore.instance
-          .collection('insumos_inventario') 
+          .collection('insumos_inventario')
           .get();
 
       if (snap.docs.isEmpty) {
@@ -183,7 +184,7 @@ class _InventarioAdminScreenState extends State<InventarioAdminScreen> {
 
       String fechaStr = DateFormat('dd_MM_yyyy_HHmm').format(DateTime.now());
       String fechaDisplay = DateFormat('dd/MM/yyyy HH:mm').format(DateTime.now());
-      
+
       final output = await getTemporaryDirectory();
       String pdfPath = "${output.path}/SaunaStilo_Faltantes_$fechaStr.pdf";
 
@@ -192,14 +193,14 @@ class _InventarioAdminScreenState extends State<InventarioAdminScreen> {
       pdf.addPage(
         pw.MultiPage(
           pageFormat: PdfPageFormat.a4,
-          margin: const pw.EdgeInsets.all(32),
+          margin: pw.EdgeInsets.all(32),
           build: (pw.Context context) {
             return [
               pw.Row(
                 mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                 children: [
                   pw.Text('SAUNASTILO - INVENTARIO', style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold, color: PdfColor.fromHex("#090909"))),
-                  pw.Text(fechaDisplay, style: const pw.TextStyle(fontSize: 10)),
+                  pw.Text(fechaDisplay, style: pw.TextStyle(fontSize: 10)),
                 ],
               ),
               pw.Divider(color: PdfColor.fromHex("#E040FB")),
@@ -210,19 +211,19 @@ class _InventarioAdminScreenState extends State<InventarioAdminScreen> {
               pw.SizedBox(height: 15),
               pw.Table(
                 border: pw.TableBorder.all(color: PdfColors.grey300, width: 0.5),
-                columnWidths: const {
-                  0: pw.FlexColumnWidth(3),   
-                  1: pw.FlexColumnWidth(2),   
-                  2: pw.FlexColumnWidth(1.2), 
-                  3: pw.FlexColumnWidth(1.2), 
-                  4: pw.FlexColumnWidth(1.2), 
+                columnWidths: {
+                  0: pw.FlexColumnWidth(3),
+                  1: pw.FlexColumnWidth(2),
+                  2: pw.FlexColumnWidth(1.2),
+                  3: pw.FlexColumnWidth(1.2),
+                  4: pw.FlexColumnWidth(1.2),
                 },
                 children: [
                   pw.TableRow(
-                    decoration: const pw.BoxDecoration(color: PdfColors.grey200),
-                    children: ['ARTÍCULO', 'CATEGORÍA', 'ST. ACTUAL', 'MÍNIMO', 'COMPRAR'].map((h) => 
+                    decoration: pw.BoxDecoration(color: PdfColors.grey200),
+                    children: ['ARTÍCULO', 'CATEGORÍA', 'ST. ACTUAL', 'MÍNIMO', 'COMPRAR'].map((h) =>
                       pw.Padding(
-                        padding: const pw.EdgeInsets.all(5), 
+                        padding: pw.EdgeInsets.all(5),
                         child: pw.Text(h, style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8), textAlign: (h == 'ARTÍCULO' || h == 'CATEGORÍA') ? pw.TextAlign.left : pw.TextAlign.center)
                       )
                     ).toList(),
@@ -235,15 +236,15 @@ class _InventarioAdminScreenState extends State<InventarioAdminScreen> {
 
                     return pw.TableRow(
                       children: [
-                        pw.Padding(padding: const pw.EdgeInsets.all(5), child: pw.Text(insumo['nombre'].toString(), style: const pw.TextStyle(fontSize: 8))),
-                        pw.Padding(padding: const pw.EdgeInsets.all(5), child: pw.Text(insumo['categoria'].toString(), style: const pw.TextStyle(fontSize: 8))),
-                        pw.Padding(padding: const pw.EdgeInsets.all(5), child: pw.Text('$actual $unidad', style: const pw.TextStyle(fontSize: 8), textAlign: pw.TextAlign.center)),
-                        pw.Padding(padding: const pw.EdgeInsets.all(5), child: pw.Text('$minimo $unidad', style: const pw.TextStyle(fontSize: 8), textAlign: pw.TextAlign.center)),
+                        pw.Padding(padding: pw.EdgeInsets.all(5), child: pw.Text(insumo['nombre'].toString(), style: pw.TextStyle(fontSize: 8))),
+                        pw.Padding(padding: pw.EdgeInsets.all(5), child: pw.Text(insumo['categoria'].toString(), style: pw.TextStyle(fontSize: 8))),
+                        pw.Padding(padding: pw.EdgeInsets.all(5), child: pw.Text('$actual $unidad', style: pw.TextStyle(fontSize: 8), textAlign: pw.TextAlign.center)),
+                        pw.Padding(padding: pw.EdgeInsets.all(5), child: pw.Text('$minimo $unidad', style: pw.TextStyle(fontSize: 8), textAlign: pw.TextAlign.center)),
                         pw.Padding(
-                          padding: const pw.EdgeInsets.all(5), 
+                          padding: pw.EdgeInsets.all(5),
                           child: pw.Text(
-                            '${faltante <= 0 ? 1 : faltante} $unidad', 
-                            style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold, color: actual == 0 ? PdfColors.red900 : PdfColors.amber900), 
+                            '${faltante <= 0 ? 1 : faltante} $unidad',
+                            style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold, color: actual == 0 ? PdfColors.red900 : PdfColors.amber900),
                             textAlign: pw.TextAlign.center
                           )
                         ),
@@ -258,8 +259,8 @@ class _InventarioAdminScreenState extends State<InventarioAdminScreen> {
       );
 
       await File(pdfPath).writeAsBytes(await pdf.save());
-      
-      if (mounted) Navigator.pop(context); 
+
+      if (mounted) Navigator.pop(context);
       ExternalTransfer.block(context);
 
     } catch (e) {
@@ -292,11 +293,11 @@ class _InventarioAdminScreenState extends State<InventarioAdminScreen> {
       selectedColor: color,
       backgroundColor: colorTarjeta,
       checkmarkColor: colorFondo,
-      showCheckmark: false, 
+      showCheckmark: false,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
         side: BorderSide(
-          color: seleccionado ? color : Colors.white10,
+          color: seleccionado ? color : StiloColors.text.withValues(alpha: .10),
           width: 1,
         ),
       ),
@@ -316,10 +317,10 @@ class _InventarioAdminScreenState extends State<InventarioAdminScreen> {
       builder: (BuildContext context) {
         return Dialog(
           backgroundColor: Colors.transparent,
-          insetPadding: const EdgeInsets.all(10), 
+          insetPadding: EdgeInsets.all(10),
           child: GestureDetector(
-            onTap: () => Navigator.pop(context), 
-            child: InteractiveViewer( 
+            onTap: () => Navigator.pop(context),
+            child: InteractiveViewer(
               panEnabled: true,
               minScale: 0.5,
               maxScale: 4,
@@ -328,8 +329,8 @@ class _InventarioAdminScreenState extends State<InventarioAdminScreen> {
                 child: InventoryPhoto(
                   imageUrl: imageUrl,
                   fit: BoxFit.contain,
-                  placeholder: (context, url) => const Center(child: CircularProgressIndicator(color: colorRosaVibrante)),
-                  errorWidget: (context, url, error) => const Icon(Icons.broken_image, color: Colors.white54, size: 50),
+                  placeholder: (context, url) => Center(child: CircularProgressIndicator(color: colorRosaVibrante)),
+                  errorWidget: (context, url, error) => Icon(Icons.broken_image, color: StiloColors.text.withValues(alpha: .54), size: 50),
                 ),
               ),
             ),
@@ -341,13 +342,14 @@ class _InventarioAdminScreenState extends State<InventarioAdminScreen> {
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context);
     return Scaffold(
       backgroundColor: colorFondo,
       appBar: AppBar(
         backgroundColor: colorFondo,
-        elevation: 0, 
-        iconTheme: const IconThemeData(color: colorTextoPrimario),
-        title: !_estaBuscando 
+        elevation: 0,
+        iconTheme: IconThemeData(color: colorTextoPrimario),
+        title: !_estaBuscando
           ? Text(
               'INVENTARIO',
               style: GoogleFonts.inter(
@@ -360,21 +362,21 @@ class _InventarioAdminScreenState extends State<InventarioAdminScreen> {
         : TextField(contextMenuBuilder: privacyTextMenu,
               controller: _searchController,
               autofocus: true,
-              style: const TextStyle(color: Colors.white, fontSize: 16),
+              style: TextStyle(color: StiloColors.text, fontSize: 16),
               decoration: InputDecoration(
                 hintText: 'Buscar nombre, código...', // Texto actualizado
-                hintStyle: const TextStyle(color: Colors.white38, fontSize: 15),
+                hintStyle: TextStyle(color: StiloColors.text.withValues(alpha: .38), fontSize: 15),
                 border: InputBorder.none,
                 // --- 3a. NUEVO: BOTONES DENTRO DEL BUSCADOR ---
                 suffixIcon: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     IconButton(
-                      icon: const Icon(Icons.qr_code_scanner, color: colorAcento),
+                      icon: Icon(Icons.qr_code_scanner, color: colorAcento),
                       onPressed: _escanearCodigo,
                     ),
                     IconButton(
-                      icon: const Icon(Icons.close, color: Colors.white54),
+                      icon: Icon(Icons.close, color: StiloColors.text.withValues(alpha: .54)),
                       onPressed: () {
                         setState(() {
                           _estaBuscando = false;
@@ -390,12 +392,12 @@ class _InventarioAdminScreenState extends State<InventarioAdminScreen> {
           if (!_estaBuscando) ...[
             // --- 3b. NUEVO: BOTÓN DE ESCÁNER FUERA DEL BUSCADOR ---
             IconButton(
-              icon: const Icon(Icons.qr_code_scanner, color: colorAcento),
+              icon: Icon(Icons.qr_code_scanner, color: colorAcento),
               tooltip: 'Escanear Código',
               onPressed: _escanearCodigo,
             ),
             IconButton(
-              icon: const Icon(Icons.search, color: colorTextoPrimario),
+              icon: Icon(Icons.search, color: colorTextoPrimario),
               tooltip: 'Buscar Insumo',
               onPressed: () {
                 setState(() {
@@ -406,17 +408,17 @@ class _InventarioAdminScreenState extends State<InventarioAdminScreen> {
 
 
         IconButton(
-              icon: const Icon(Icons.move_to_inbox, color: colorVerde1), 
+              icon: Icon(Icons.move_to_inbox, color: colorVerde1),
               tooltip: 'Recepción de Inventario',
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const RecepcionInventarioScreen()),
+                  MaterialPageRoute(builder: (context) => RecepcionInventarioScreen()),
                 );
               },
             ),
             IconButton(
-              icon: const Icon(Icons.picture_as_pdf, color: colorRosaVibrante),
+              icon: Icon(Icons.picture_as_pdf, color: colorRosaVibrante),
               tooltip: 'Reporte Faltantes',
               onPressed: _generarDescargarReporteFaltantes, // Usualmente aquí pasas () => _generarDescargarReporteFaltantes()
             ),
@@ -433,33 +435,33 @@ class _InventarioAdminScreenState extends State<InventarioAdminScreen> {
                 }
                 return IconButton(
                   icon: Badge(
-                    isLabelVisible: reparacionesPendientes > 0, 
+                    isLabelVisible: reparacionesPendientes > 0,
                     label: Text(
                       reparacionesPendientes.toString(),
-                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                      style: TextStyle(color: StiloColors.text, fontWeight: FontWeight.bold),
                     ),
-                    backgroundColor: colorRojoCoral, 
-                    child: const Icon(Icons.handyman_outlined, color: Colors.orangeAccent),
+                    backgroundColor: colorRojoCoral,
+                    child: Icon(Icons.handyman_outlined, color: Colors.orangeAccent),
                   ),
                   tooltip: 'Mantenimiento y Reparaciones',
                   onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => const AdminReparacionesScreen()),
+                      MaterialPageRoute(builder: (context) => AdminReparacionesScreen()),
                     );
                   },
                 );
               },
             ),
 
-            
+
           IconButton(
-              icon: const Icon(Icons.bookmarks_outlined, color: colorAcento),
+              icon: Icon(Icons.bookmarks_outlined, color: colorAcento),
               tooltip: 'Gestionar Categorías',
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const AdminCategoriasScreen()),
+                  MaterialPageRoute(builder: (context) => AdminCategoriasScreen()),
                 );
               },
             ),
@@ -472,10 +474,10 @@ class _InventarioAdminScreenState extends State<InventarioAdminScreen> {
         stream: _inventarioService.getInsumosStream(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator(color: colorTextoPrimario));
+            return Center(child: CircularProgressIndicator(color: colorTextoPrimario));
           }
           if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return const Center(
+            return Center(
               child: Text(
                 'No hay insumos registrados.',
                 style: TextStyle(color: colorAcento),
@@ -490,10 +492,10 @@ class _InventarioAdminScreenState extends State<InventarioAdminScreen> {
             final matchNombre = insumo.nombre.toLowerCase().contains(_searchText);
             final matchCategoria = insumo.categoria.toLowerCase().contains(_searchText);
             final matchSubcategoria = insumo.subcategoria.toLowerCase().contains(_searchText);
-            
+
             // --- 4. NUEVO: AGREGAR EL CÓDIGO DE BARRAS AL FILTRO LOCAL ---
             final matchCodigo = (insumo.codigoBarras ?? '').toLowerCase().contains(_searchText);
-            
+
             return matchNombre || matchCategoria || matchSubcategoria || matchCodigo;
           }).toList();
 
@@ -504,50 +506,50 @@ class _InventarioAdminScreenState extends State<InventarioAdminScreen> {
           } else if (_filtroStock == "Al Día") {
             insumosFiltrados = insumosFiltrados.where((i) => i.cantidadDisponible > i.stockMinimo).toList();
           }
-          
+
           insumosFiltrados.sort((a, b) => a.nombre.toLowerCase().compareTo(b.nombre.toLowerCase()));
 
 
           return Column(
             children: [
-              if (MediaQuery.sizeOf(context).height > 650 && MediaQuery.textScalerOf(context).scale(1) < 1.5) const Padding(padding: EdgeInsets.fromLTRB(16, 8, 16, 8), child: WarehouseHeader(title: 'Todo en su lugar.', subtitle: 'Existencias · Herramientas · Insumos', compact: true)),
+              if (MediaQuery.sizeOf(context).height > 650 && MediaQuery.textScalerOf(context).scale(1) < 1.5) Padding(padding: EdgeInsets.fromLTRB(16, 8, 16, 8), child: WarehouseHeader(title: 'Todo en su lugar.', subtitle: 'Existencias · Herramientas · Insumos', compact: true)),
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                 child: Row(
                   children: [
                     _buildFilterChip("Todos", Colors.grey),
-                    const SizedBox(width: 8),
-                    _buildFilterChip("Agotados", const Color(0xFF757575)), 
-                    const SizedBox(width: 8),
-                    _buildFilterChip("Bajo", colorAcento), 
-                    const SizedBox(width: 8),
-                    _buildFilterChip("Al Día", const Color(0xFF66BB6A)), 
+                    SizedBox(width: 8),
+                    _buildFilterChip("Agotados", Color(0xFF757575)),
+                    SizedBox(width: 8),
+                    _buildFilterChip("Bajo", colorAcento),
+                    SizedBox(width: 8),
+                    _buildFilterChip("Al Día", Color(0xFF66BB6A)),
                   ],
                 ),
               ),
-              
+
               // --- LISTA DE INSUMOS ---
            Expanded(
-                child: insumosFiltrados.isEmpty 
-                  ? const Center(
+                child: insumosFiltrados.isEmpty
+                  ? Center(
                       child: Padding(
                         padding: EdgeInsets.all(20.0),
                         child: Text(
                           'No hay insumos que coincidan con esta búsqueda.',
-                          style: TextStyle(color: Colors.white54),
-                          textAlign: TextAlign.center, 
+                          style: TextStyle(color: StiloColors.text.withValues(alpha: .54)),
+                          textAlign: TextAlign.center,
                         ),
                       ),
                     )
 
 
                   : ListView.builder(
-                      padding: const EdgeInsets.only(left: 16, right: 16, top: 8, bottom: 80),
+                      padding: EdgeInsets.only(left: 16, right: 16, top: 8, bottom: 80),
                       itemCount: insumosFiltrados.length,
                       itemBuilder: (context, index) {
                         final insumo = insumosFiltrados[index];
-                        
+
                        return GestureDetector(
                           onTap: () {
                             // --- NUEVA NAVEGACIÓN A LA PANTALLA DE DETALLES ---
@@ -559,20 +561,20 @@ class _InventarioAdminScreenState extends State<InventarioAdminScreen> {
                             );
                           },
                           child: Container(
-                            margin: const EdgeInsets.only(bottom: 16),
+                            margin: EdgeInsets.only(bottom: 16),
                             decoration: BoxDecoration(
-                              color: colorTarjeta, 
-                              borderRadius: BorderRadius.circular(12), 
+                              color: colorTarjeta,
+                              borderRadius: BorderRadius.circular(12),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.2),
+                                  color: StiloColors.background.withOpacity(0.2),
                                   spreadRadius: 1,
                                   blurRadius: 4,
-                                  offset: const Offset(0, 2),
+                                  offset: Offset(0, 2),
                                 ),
                               ],
                             ),
-                            child: IntrinsicHeight( 
+                            child: IntrinsicHeight(
                               child: Row(
                                 children: [
                                   // Barra de color lateral
@@ -580,17 +582,17 @@ class _InventarioAdminScreenState extends State<InventarioAdminScreen> {
                                     width: 6,
                                     decoration: BoxDecoration(
                                       color: _obtenerColorBarra(insumo.categoria),
-                                      borderRadius: const BorderRadius.only(
+                                      borderRadius: BorderRadius.only(
                                         topLeft: Radius.circular(12),
                                         bottomLeft: Radius.circular(12),
                                       ),
                                     ),
                                   ),
-                                  
+
                                   // --- MINIATURA DE LA IMAGEN EN LA LISTA ---
                                   if (insumo.imagenUrl != null && insumo.imagenUrl!.isNotEmpty)
                                     Padding(
-                                      padding: const EdgeInsets.only(left: 12.0, top: 12.0, bottom: 12.0),
+                                      padding: EdgeInsets.only(left: 12.0, top: 12.0, bottom: 12.0),
                                       child: GestureDetector(
                                         onTap: () => _mostrarImagenExpandida(context, insumo.imagenUrl!, insumo.id),
                                         child: Hero(
@@ -603,14 +605,14 @@ class _InventarioAdminScreenState extends State<InventarioAdminScreen> {
                                               height: 65,
                                               fit: BoxFit.cover,
                                               placeholder: (context, url) => Container(
-                                                width: 65, height: 65, 
-                                                color: Colors.white10, 
-                                                child: const Center(child: CircularProgressIndicator(strokeWidth: 2, color: colorRosaVibrante))
+                                                width: 65, height: 65,
+                                                color: StiloColors.text.withValues(alpha: .10),
+                                                child: Center(child: CircularProgressIndicator(strokeWidth: 2, color: colorRosaVibrante))
                                               ),
                                               errorWidget: (context, url, error) => Container(
-                                                width: 65, height: 65, 
-                                                color: Colors.white10, 
-                                                child: const Icon(Icons.broken_image, color: Colors.white54)
+                                                width: 65, height: 65,
+                                                color: StiloColors.text.withValues(alpha: .10),
+                                                child: Icon(Icons.broken_image, color: StiloColors.text.withValues(alpha: .54))
                                               ),
                                             ),
                                           ),
@@ -619,23 +621,23 @@ class _InventarioAdminScreenState extends State<InventarioAdminScreen> {
                                     )
                                   else
                                     Padding(
-                                      padding: const EdgeInsets.only(left: 12.0, top: 12.0, bottom: 12.0),
+                                      padding: EdgeInsets.only(left: 12.0, top: 12.0, bottom: 12.0),
                                       child: Container(
                                         width: 65, height: 65,
                                         decoration: BoxDecoration(
-                                          color: Colors.white10, 
+                                          color: StiloColors.text.withValues(alpha: .10),
                                           borderRadius: BorderRadius.circular(8)
                                         ),
-                                        child: const Icon(Icons.inventory_2_outlined, color: Colors.white54, size: 28),
+                                        child: Icon(Icons.inventory_2_outlined, color: StiloColors.text.withValues(alpha: .54), size: 28),
                                       ),
                                     ),
 
                                   Expanded(
                                     child: Padding(
-                                      padding: const EdgeInsets.all(12.0), 
+                                      padding: EdgeInsets.all(12.0),
                                       child: Column(
                                         crossAxisAlignment: CrossAxisAlignment.start,
-                                        mainAxisAlignment: MainAxisAlignment.center, 
+                                        mainAxisAlignment: MainAxisAlignment.center,
                                         children: [
                                           Row(
                                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -643,7 +645,7 @@ class _InventarioAdminScreenState extends State<InventarioAdminScreen> {
                                               Expanded(
                                                 child: Text(
                                                   insumo.nombre,
-                                                  style: GoogleFonts.inter( 
+                                                  style: GoogleFonts.inter(
                                                     color: colorTextoPrimario,
                                                     fontWeight: FontWeight.w600,
                                                     fontSize: 15,
@@ -651,54 +653,54 @@ class _InventarioAdminScreenState extends State<InventarioAdminScreen> {
                                                 ),
                                               ),
                                               if (insumo.esProductoTienda)
-                                                const Icon(Icons.verified_outlined, color: Colors.amber, size: 22),
+                                                Icon(Icons.verified_outlined, color: Colors.amber, size: 22),
                                             ],
                                           ),
-                                          const SizedBox(height: 6), 
+                                          SizedBox(height: 6),
                                           Text(
                                             '${insumo.categoria.toUpperCase()} > ${insumo.subcategoria.toUpperCase()}',
                                             style: TextStyle(
-                                              color: colorTextoPrimario.withOpacity(0.6), 
+                                              color: colorTextoPrimario.withOpacity(0.6),
                                               fontSize: 12,
-                                              fontFamily: GoogleFonts.inter().fontFamily, 
+                                              fontFamily: GoogleFonts.inter().fontFamily,
                                             ),
                                           ),
-                                          const SizedBox(height: 12),
-                                          
+                                          SizedBox(height: 12),
+
                                           Row(
                                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                             children: [
                                               Flexible(
                                                 child: Container(
-                                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                                  padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                                                   decoration: BoxDecoration(
-                                                    color: _obtenerColorStock(insumo.cantidadDisponible, insumo.stockMinimo).withOpacity(0.15), 
-                                                    borderRadius: BorderRadius.circular(6), 
+                                                    color: _obtenerColorStock(insumo.cantidadDisponible, insumo.stockMinimo).withOpacity(0.15),
+                                                    borderRadius: BorderRadius.circular(6),
                                                   ),
                                                   child: Text(
                                                     'STOCK: ${insumo.cantidadDisponible} ${insumo.unidadMedida}',
                                                     style: GoogleFonts.inter(
-                                                      color: _obtenerColorStock(insumo.cantidadDisponible, insumo.stockMinimo), 
+                                                      color: _obtenerColorStock(insumo.cantidadDisponible, insumo.stockMinimo),
                                                       fontWeight: FontWeight.w700,
                                                       fontSize: 11,
                                                       letterSpacing: 0.5,
                                                     ),
-                                                    overflow: TextOverflow.ellipsis, 
+                                                    overflow: TextOverflow.ellipsis,
                                                     maxLines: 1,
                                                   ),
                                                 ),
                                               ),
-                                              
-                                              const SizedBox(width: 8),
-                                              
-                                              // 2. AGRUPAMOS BOTONES DE EDITAR Y ELIMINAR 
+
+                                              SizedBox(width: 8),
+
+                                              // 2. AGRUPAMOS BOTONES DE EDITAR Y ELIMINAR
                                               Row(
                                                 mainAxisSize: MainAxisSize.min,
                                                 children: [
                                                   IconButton(
-                                                    padding: EdgeInsets.zero, 
-                                                    constraints: const BoxConstraints(),
-                                                    icon: const Icon(Icons.edit_outlined, color: colorAzul, size: 22),
+                                                    padding: EdgeInsets.zero,
+                                                    constraints: BoxConstraints(),
+                                                    icon: Icon(Icons.edit_outlined, color: colorAzul, size: 22),
                                                     onPressed: () {
                                                       Navigator.push(
                                                         context,
@@ -711,11 +713,11 @@ class _InventarioAdminScreenState extends State<InventarioAdminScreen> {
                                                       );
                                                     },
                                                   ),
-                                                  const SizedBox(width: 12),
+                                                  SizedBox(width: 12),
                                                   IconButton(
                                                     padding: EdgeInsets.zero,
-                                                    constraints: const BoxConstraints(),
-                                                    icon: const Icon(Icons.delete_outline, color: Colors.redAccent, size: 22),
+                                                    constraints: BoxConstraints(),
+                                                    icon: Icon(Icons.delete_outline, color: Colors.redAccent, size: 22),
                                                     onPressed: () async {
                                                       final insumoRespaldado = insumo;
                                                       await _inventarioService.eliminarInsumo(insumo.id, imagenUrl: insumo.imagenUrl);
@@ -725,10 +727,10 @@ class _InventarioAdminScreenState extends State<InventarioAdminScreen> {
                                                         ScaffoldMessenger.of(context).showSnackBar(
                                                           SnackBar(
                                                             backgroundColor: colorTarjeta,
-                                                            duration: const Duration(seconds: 4),
+                                                            duration: Duration(seconds: 4),
                                                             content: Text(
                                                               'Se eliminó "${insumoRespaldado.nombre}"',
-                                                              style: GoogleFonts.inter(color: Colors.white),
+                                                              style: GoogleFonts.inter(color: StiloColors.text),
                                                             ),
                                                             action: SnackBarAction(
                                                               label: 'DESHACER',
@@ -763,7 +765,7 @@ class _InventarioAdminScreenState extends State<InventarioAdminScreen> {
         },
       ),
       floatingActionButton: FloatingActionButton(
-        backgroundColor: colorBlanco, 
+        backgroundColor: colorBlanco,
         foregroundColor: colorFondo,
         elevation: 6,
         onPressed: () {
@@ -775,8 +777,8 @@ class _InventarioAdminScreenState extends State<InventarioAdminScreen> {
               ),
             ),
           );
-        }, 
-        child: const Icon(Icons.add, size: 28),
+        },
+        child: Icon(Icons.add, size: 28),
       ),
     );
   }

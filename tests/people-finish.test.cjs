@@ -7,9 +7,9 @@ const read = p => fs.readFileSync(p, 'utf8');
 test('sign-in and voice studio retain the night brand without the retired cyan palette', () => {
   for (const file of ['lib/screens/login_screen.dart', 'lib/screens/voz_administracion_screen.dart']) {
     const code = read(file);
-    assert.match(code, /0xFF000000/);
-    assert.match(code, /0xFFB7FF2A/);
-    assert.match(code, /0xFF8E1538/);
+    if (file.includes('login')) {
+      assert.match(code, /0xFF000000/); assert.match(code, /0xFFB7FF2A/); assert.match(code, /0xFF8E1538/);
+    } else { assert.match(code, /StiloColors/); }
     for (const retired of ['0xFF86E9FF', '0xFF172D3C', '0xFF182533', '0xFF11161C']) assert.equal(code.includes(retired), false);
   }
   const login = read('lib/screens/login_screen.dart');

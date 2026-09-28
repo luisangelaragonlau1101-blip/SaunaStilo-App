@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'presentation/appearance.dart';
 import 'screens/local_party_screen.dart';
 
 import 'package:firebase_core/firebase_core.dart';
@@ -76,21 +78,29 @@ class _SaunaStiloBootstrapState extends State<SaunaStiloBootstrap> {
   }
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
-  @override
-  Widget build(BuildContext context) {
+  @override State<MyApp> createState() => _MyAppState();
+}
+class _MyAppState extends State<MyApp> {
+  StreamSubscription<User?>? _auth;
+  @override void initState() {
+    super.initState();
+    _auth = FirebaseAuth.instance.authStateChanges().listen((user) => AppearanceController.instance.bindUser(user?.uid));
+  }
+  @override void dispose() { _auth?.cancel(); super.dispose(); }
+  @override Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => SeguimientoCotizacionesProvider()),
         ChangeNotifierProvider(create: (_) => CajitaInventarioProvider()),
       ],
-      child: MaterialApp(
+      child: AnimatedBuilder(animation: AppearanceController.instance, builder: (context, _) => MaterialApp(
         title: 'Sauna Stilo', debugShowCheckedModeBanner: false,
         localizationsDelegates: const [GlobalMaterialLocalizations.delegate, GlobalWidgetsLocalizations.delegate, GlobalCupertinoLocalizations.delegate],
         supportedLocales: const [Locale('es', 'MX'), Locale('es', 'ES')],
-        theme: _futureTheme(), builder: (context, child) => ScreenSecurityGuard(child: child ?? const SizedBox.shrink()), home: Wrapper(),
-      ),
+        theme: stiloTheme(AppearanceController.instance.palette), builder: (context, child) => ScreenSecurityGuard(child: child ?? const SizedBox.shrink()), home: Wrapper(),
+      )),
     );
   }
 }

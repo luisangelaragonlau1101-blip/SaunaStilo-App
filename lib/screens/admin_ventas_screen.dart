@@ -1,3 +1,4 @@
+import '../presentation/appearance.dart';
 import '../services/external_transfer.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -16,10 +17,10 @@ class AdminVentasScreen extends StatefulWidget {
 
 class _AdminVentasScreenState extends State<AdminVentasScreen> {
   final VentasService _ventasService = VentasService();
-  
+
   final _cantidadController = TextEditingController(text: "1");
   final _precioUnitController = TextEditingController();
-  
+
   List<Map<String, dynamic>> _productosExtras = [];
   bool _guardando = false;
 
@@ -41,7 +42,7 @@ class _AdminVentasScreenState extends State<AdminVentasScreen> {
           .collection('insumos_inventario')
           .where('es_producto_tienda', isEqualTo: true)
           .get();
-      
+
       setState(() {
         _productosTienda = snap.docs;
         _cargandoProductos = false;
@@ -57,7 +58,7 @@ class _AdminVentasScreenState extends State<AdminVentasScreen> {
   // Calcula la cuenta final sumando los productos agregados
   double get _montoTotalCalculado {
     return _productosExtras.fold(
-      0.0, 
+      0.0,
       (sum, item) => sum + ((item['precio_unitario'] * item['cantidad']) as double)
     );
   }
@@ -65,7 +66,7 @@ class _AdminVentasScreenState extends State<AdminVentasScreen> {
 void _registrarVenta() async {
     if (_productosExtras.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Agrega al menos un producto para registrar la venta.')),
+        SnackBar(content: Text('Agrega al menos un producto para registrar la venta.')),
       );
       return;
     }
@@ -92,46 +93,47 @@ void _registrarVenta() async {
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context);
     return Scaffold(
-      backgroundColor: const Color(0xFF121212),
+      backgroundColor: StiloColors.surface,
       appBar: AppBar(
-        title: Text("NUEVA VENTA", style: GoogleFonts.inter(fontWeight: FontWeight.w800)), 
+        title: Text("NUEVA VENTA", style: GoogleFonts.inter(fontWeight: FontWeight.w800)),
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
-      body: _cargandoProductos 
-          ? const Center(child: CircularProgressIndicator(color: Color(0xFF10B981)))
+      body: _cargandoProductos
+          ? Center(child: CircularProgressIndicator(color: Color(0xFF10B981)))
           : ListView(
-              padding: const EdgeInsets.all(20),
+              padding: EdgeInsets.all(20),
               children: [
                 _buildSeccionProductos(),
-                
-                const Divider(color: Colors.white24, height: 40),
-                
+
+                Divider(color: StiloColors.text.withValues(alpha: .24), height: 40),
+
                 // Totalizador
                 Container(
-                  padding: const EdgeInsets.all(20),
+                  padding: EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF1E1E1E), 
+                    color: StiloColors.surface,
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text("TOTAL A COBRAR:", style: GoogleFonts.inter(color: Colors.white54, fontWeight: FontWeight.bold)),
+                      Text("TOTAL A COBRAR:", style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .54), fontWeight: FontWeight.bold)),
                       Text(
-                        "\$${_montoTotalCalculado.toStringAsFixed(2)}", 
-                        style: GoogleFonts.inter(color: const Color(0xFF10B981), fontSize: 24, fontWeight: FontWeight.bold),
+                        "\$${_montoTotalCalculado.toStringAsFixed(2)}",
+                        style: GoogleFonts.inter(color: Color(0xFF10B981), fontSize: 24, fontWeight: FontWeight.bold),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(height: 20),
-                
+                SizedBox(height: 20),
+
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF10B981), 
-                    padding: const EdgeInsets.symmetric(vertical: 20), 
+                    backgroundColor: Color(0xFF10B981),
+                    padding: EdgeInsets.symmetric(vertical: 20),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   ),
                   onPressed: _guardando ? null : _registrarVenta,
@@ -148,17 +150,17 @@ void _registrarVenta() async {
       children: [
         // Selector de Productos desde Firestore con Stock visible
         DropdownButtonFormField<DocumentSnapshot>(
-          dropdownColor: const Color(0xFF1E1E1E),
+          dropdownColor: StiloColors.surface,
           decoration: _inputDecoration("Seleccionar Producto", Icons.shopping_bag_outlined),
           value: _productoSeleccionado,
           items: _productosTienda.map((doc) {
             final data = doc.data() as Map<String, dynamic>;
             final nombre = data['nombre'] ?? 'Sin nombre';
             final stock = data['cantidad_disponible'] ?? 0;
-            
+
             return DropdownMenuItem<DocumentSnapshot>(
               value: doc,
-              child: Text("$nombre ($stock disp.)", style: const TextStyle(color: Colors.white)),
+              child: Text("$nombre ($stock disp.)", style: TextStyle(color: StiloColors.text)),
             );
           }).toList(),
           onChanged: (doc) {
@@ -174,38 +176,38 @@ void _registrarVenta() async {
             });
           },
         ),
-        const SizedBox(height: 16),
-        
+        SizedBox(height: 16),
+
         Row(
           children: [
             Expanded(
-              flex: 2, 
+              flex: 2,
               child: _buildTextField(_precioUnitController, "Precio Unitario", Icons.tag, type: TextInputType.number),
             ),
-            const SizedBox(width: 8),
+            SizedBox(width: 8),
             Expanded(
-              flex: 1, 
+              flex: 1,
               child: _buildTextField(_cantidadController, "Cant", Icons.numbers, type: TextInputType.number),
             ),
           ],
         ),
-        
-        const SizedBox(height: 8),
-        
+
+        SizedBox(height: 8),
+
         ElevatedButton(
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF1E293B),
-            minimumSize: const Size.fromHeight(50),
+            backgroundColor: StiloColors.surface,
+            minimumSize: Size.fromHeight(50),
           ),
           onPressed: () {
             if (_productoSeleccionado != null) {
               final data = _productoSeleccionado!.data() as Map<String, dynamic>;
               final nombre = data['nombre'] ?? 'Producto';
-              
+
               // 1. Obtener el stock total disponible desde Firestore
               final int stockDisponible = (data['cantidad_disponible'] ?? 0).toInt();
               final int cantIngresada = int.tryParse(_cantidadController.text) ?? 1;
-              
+
               // 2. Controlar si el mismo producto ya se sumó previamente a la lista local
               int cantYaAgregada = _productosExtras
                   .where((p) => p['id_producto'] == _productoSeleccionado!.id)
@@ -218,13 +220,13 @@ void _registrarVenta() async {
                     backgroundColor: Colors.redAccent,
                     content: Text(
                       'No hay disponibles suficientes. Stock: $stockDisponible (En lista: $cantYaAgregada)',
-                      style: const TextStyle(fontWeight: FontWeight.bold),
+                      style: TextStyle(fontWeight: FontWeight.bold),
                     ),
                   ),
                 );
                 return; // Detiene el flujo y evita que se añada
               }
-              
+
               setState(() {
                 _productosExtras.add({
                   'id_producto': _productoSeleccionado!.id,
@@ -232,7 +234,7 @@ void _registrarVenta() async {
                   'cantidad': cantIngresada,
                   'precio_unitario': double.tryParse(_precioUnitController.text) ?? 0.0,
                 });
-                
+
                 // Limpiar campos de selección
                 _productoSeleccionado = null;
                 _cantidadController.text = "1";
@@ -240,21 +242,21 @@ void _registrarVenta() async {
               });
             } else {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Por favor, selecciona un producto primero.')),
+                SnackBar(content: Text('Por favor, selecciona un producto primero.')),
               );
             }
           },
-          child: const Text("AÑADIR PRODUCTO"),
+          child: Text("AÑADIR PRODUCTO"),
         ),
-        const SizedBox(height: 15),
-        
+        SizedBox(height: 15),
+
         ..._productosExtras.map((p) => Card(
-          color: const Color(0xFF2D2D2D),
+          color: StiloColors.surface,
           child: ListTile(
-            title: Text(p['nombre_producto'], style: const TextStyle(color: Colors.white)),
-            subtitle: Text("Cant: ${p['cantidad']} | @\$${p['precio_unitario']}", style: const TextStyle(color: Colors.white54)),
+            title: Text(p['nombre_producto'], style: TextStyle(color: StiloColors.text)),
+            subtitle: Text("Cant: ${p['cantidad']} | @\$${p['precio_unitario']}", style: TextStyle(color: StiloColors.text.withValues(alpha: .54))),
             trailing: IconButton(
-              icon: const Icon(Icons.delete, color: Colors.redAccent), 
+              icon: Icon(Icons.delete, color: Colors.redAccent),
               onPressed: () => setState(() => _productosExtras.remove(p)),
             ),
           ),
@@ -264,16 +266,16 @@ void _registrarVenta() async {
   }
 
   InputDecoration _inputDecoration(String label, IconData icon) => InputDecoration(
-    labelText: label, 
-    labelStyle: const TextStyle(color: Colors.white54), 
-    prefixIcon: Icon(icon, color: const Color(0xFF8B5CF6)), 
-    filled: true, 
-    fillColor: const Color(0xFF1E1E1E), 
+    labelText: label,
+    labelStyle: TextStyle(color: StiloColors.text.withValues(alpha: .54)),
+    prefixIcon: Icon(icon, color: StiloColors.accent),
+    filled: true,
+    fillColor: StiloColors.surface,
     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
   );
-  
+
   Widget _buildTextField(TextEditingController controller, String label, IconData icon, {TextInputType type = TextInputType.text}) => Container(
-    margin: const EdgeInsets.only(bottom: 12), 
-    child: TextField(contextMenuBuilder: privacyTextMenu, controller: controller, keyboardType: type, style: const TextStyle(color: Colors.white), decoration: _inputDecoration(label, icon)),
+    margin: EdgeInsets.only(bottom: 12),
+    child: TextField(contextMenuBuilder: privacyTextMenu, controller: controller, keyboardType: type, style: TextStyle(color: StiloColors.text), decoration: _inputDecoration(label, icon)),
   );
 }

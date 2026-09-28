@@ -1,3 +1,4 @@
+import '../presentation/appearance.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -5,10 +6,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import '../models/cajita_herramientas_model.dart';
 import '../services/cajita_herramientas_service.dart';
-import 'trabajador_control_herramientas_screen.dart'; 
+import 'trabajador_control_herramientas_screen.dart';
 
 class TrabajadorCajitaHerramientasScreen extends StatefulWidget {
-  final String trabajadorId; 
+  final String trabajadorId;
 
   const TrabajadorCajitaHerramientasScreen({super.key, required this.trabajadorId});
 
@@ -17,22 +18,23 @@ class TrabajadorCajitaHerramientasScreen extends StatefulWidget {
 }
 
 class _TrabajadorCajitaHerramientasScreenState extends State<TrabajadorCajitaHerramientasScreen> {
-  
+
   // Paleta de colores cálidos (Estilo Industrial/Pro)
-  static const Color colorFondo = Color(0xFF000000);
-  static const Color colorTarjeta = Color(0xFF111012);
-  static const Color colorTextoPrimario = Color(0xFFFDFDFD);
-  static const Color colorTextoSecundario = Color(0xFFB5ABA5);
-  static const Color colorAcento = Color(0xFFB7FF2A);
-  static const Color colorNaranja = Color(0xFFFF9800);
-  static const Color colorRojo = Color(0xFFFF5252);
-  
+  Color get colorFondo => StiloColors.background;
+  Color get colorTarjeta => StiloColors.surface;
+  Color get colorTextoPrimario => StiloColors.text;
+  Color get colorTextoSecundario => Color(0xFFB5ABA5);
+  Color get colorAcento => StiloColors.accent;
+  Color get colorNaranja => Color(0xFFFF9800);
+  Color get colorRojo => Color(0xFFFF5252);
+
   // NUEVOS COLORES PARA EL GRADIENTE (Más sobrios y elegantes)
-  static const Color colorGradiente1 = Color(0xFF382A22); // Bronce oscuro sutil
-  static const Color colorGradiente2 = Color(0xFF111012); // Carbón/Marrón que se funde con la app
+  Color get colorGradiente1 => StiloColors.surface; // Bronce oscuro sutil
+  Color get colorGradiente2 => StiloColors.surface; // Carbón/Marrón que se funde con la app
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context);
     final cajitaProvider = Provider.of<CajitaInventarioProvider>(context);
 
     return Scaffold(
@@ -43,14 +45,14 @@ class _TrabajadorCajitaHerramientasScreenState extends State<TrabajadorCajitaHer
         title: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.home_repair_service, color: colorAcento, size: 24),
-            const SizedBox(width: 10),
+            Icon(Icons.home_repair_service, color: colorAcento, size: 24),
+            SizedBox(width: 10),
             Text(
               'MI CAJITA',
               style: GoogleFonts.outfit(
-                color: colorTextoPrimario, 
-                fontWeight: FontWeight.w800, 
-                fontSize: 18, 
+                color: colorTextoPrimario,
+                fontWeight: FontWeight.w800,
+                fontSize: 18,
                 letterSpacing: 1.5,
               ),
             ),
@@ -61,7 +63,7 @@ class _TrabajadorCajitaHerramientasScreenState extends State<TrabajadorCajitaHer
           IconButton(
             tooltip: 'Historial de préstamos',
             onPressed: _mostrarHistorialTraspasos,
-            icon: const Icon(Icons.history_rounded, color: colorTextoPrimario),
+            icon: Icon(Icons.history_rounded, color: colorTextoPrimario),
           ),
         ],
       ),
@@ -71,18 +73,18 @@ class _TrabajadorCajitaHerramientasScreenState extends State<TrabajadorCajitaHer
           StreamBuilder<QuerySnapshot>(
             stream: cajitaProvider.streamTraspasosPendientes(widget.trabajadorId),
             builder: (context, snapshot) {
-              if (!snapshot.hasData || snapshot.data!.docs.isEmpty) return const SizedBox.shrink();
+              if (!snapshot.hasData || snapshot.data!.docs.isEmpty) return SizedBox.shrink();
               final solicitudes = snapshot.data!.docs;
-              
+
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
+                    padding: EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
                     child: Row(
                       children: [
-                        const Icon(Icons.notification_important, color: colorAcento, size: 20),
-                        const SizedBox(width: 8),
+                        Icon(Icons.notification_important, color: colorAcento, size: 20),
+                        SizedBox(width: 8),
                         Text(
                           'Préstamos Entrantes (${solicitudes.length})',
                           style: GoogleFonts.outfit(color: colorAcento, fontSize: 16, fontWeight: FontWeight.bold),
@@ -92,21 +94,21 @@ class _TrabajadorCajitaHerramientasScreenState extends State<TrabajadorCajitaHer
                   ),
                   ListView.builder(
                     shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    physics: NeverScrollableScrollPhysics(),
+                    padding: EdgeInsets.symmetric(horizontal: 16),
                     itemCount: solicitudes.length,
                     itemBuilder: (context, index) {
                  final solicitud = solicitudes[index].data() as Map<String, dynamic>;
 final idSolicitud = solicitudes[index].id;
 
 final nombreHerramienta = solicitud['nombre_herramienta'] ?? 'Herramienta';
-final origenUsuarioNombre = solicitud['origen_usuario_nombre'] ?? 'Un compañero'; 
+final origenUsuarioNombre = solicitud['origen_usuario_nombre'] ?? 'Un compañero';
 final esDevolucion = solicitud['tipo'] == 'devolucion';
 
 
                       return Container(
-                        margin: const EdgeInsets.only(bottom: 10),
-                        padding: const EdgeInsets.all(12),
+                        margin: EdgeInsets.only(bottom: 10),
+                        padding: EdgeInsets.all(12),
                         decoration: BoxDecoration(
                           color: colorTarjeta,
                           borderRadius: BorderRadius.circular(12),
@@ -115,7 +117,7 @@ final esDevolucion = solicitud['tipo'] == 'devolucion';
                             BoxShadow(
                               color: colorAcento.withOpacity(0.05),
                               blurRadius: 10,
-                              offset: const Offset(0, 4),
+                              offset: Offset(0, 4),
                             )
                           ]
                         ),
@@ -124,8 +126,8 @@ final esDevolucion = solicitud['tipo'] == 'devolucion';
                           children: [
                             Row(
                               children: [
-                                const Icon(Icons.handshake, color: colorAcento, size: 18),
-                                const SizedBox(width: 8),
+                                Icon(Icons.handshake, color: colorAcento, size: 18),
+                                SizedBox(width: 8),
                                 Expanded(
   child: Text(
     esDevolucion
@@ -136,12 +138,12 @@ final esDevolucion = solicitud['tipo'] == 'devolucion';
 ),
                               ],
                             ),
-                            const SizedBox(height: 4),
+                            SizedBox(height: 4),
                             Text(
                               nombreHerramienta.toString().toUpperCase(),
                               style: GoogleFonts.inter(color: colorTextoPrimario, fontWeight: FontWeight.bold, fontSize: 15),
                             ),
-                            const SizedBox(height: 12),
+                            SizedBox(height: 12),
                             Row(
                               children: [
                                 Expanded(
@@ -150,24 +152,24 @@ final esDevolucion = solicitud['tipo'] == 'devolucion';
                                       backgroundColor: Colors.transparent,
                                       foregroundColor: colorRojo,
                                       elevation: 0,
-                                      side: const BorderSide(color: colorRojo),
+                                      side: BorderSide(color: colorRojo),
                                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                                     ),
                                     onPressed: () => cajitaProvider.rechazarTraspaso(idSolicitud),
-                                    child: const Text('RECHAZAR'),
+                                    child: Text('RECHAZAR'),
                                   ),
                                 ),
-                                const SizedBox(width: 12),
+                                SizedBox(width: 12),
                                 Expanded(
                                   child: ElevatedButton(
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: Colors.green,
-                                      foregroundColor: Colors.white,
+                                      foregroundColor: StiloColors.text,
                                       elevation: 0,
                                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                                     ),
                                     onPressed: () => cajitaProvider.aceptarTraspaso(idSolicitud, widget.trabajadorId),
-                                    child: const Text('ACEPTAR'),
+                                    child: Text('ACEPTAR'),
                                   ),
                                 ),
                               ],
@@ -177,7 +179,7 @@ final esDevolucion = solicitud['tipo'] == 'devolucion';
                       );
                     },
                   ),
-                  const SizedBox(height: 10),
+                  SizedBox(height: 10),
                 ],
               );
             },
@@ -185,7 +187,7 @@ final esDevolucion = solicitud['tipo'] == 'devolucion';
 
           // 2. BOTÓN CENTRO DE SOLICITUDES
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+            padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
             child: StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
                   .collection('solicitudes_herramientas') // Verifica si aquí quieres usar traspasos_inventario también en el futuro
@@ -195,62 +197,62 @@ final esDevolucion = solicitud['tipo'] == 'devolucion';
               builder: (context, badgeSnapshot) {
                 int solicitudesPendientes = badgeSnapshot.hasData ? badgeSnapshot.data!.docs.length : 0;
                 return InkWell(
-                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const ControlHerramientasScreen())),
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => ControlHerramientasScreen())),
                   borderRadius: BorderRadius.circular(16),
                   child: Container(
-                    padding: const EdgeInsets.all(20),
+                    padding: EdgeInsets.all(20),
                     decoration: BoxDecoration(
-                      gradient: const LinearGradient(
+                      gradient: LinearGradient(
                         colors: [colorGradiente1, colorGradiente2],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.white.withOpacity(0.05)),
+                      border: Border.all(color: StiloColors.text.withOpacity(0.05)),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.3), 
+                          color: StiloColors.background.withOpacity(0.3),
                           blurRadius: 10,
-                          offset: const Offset(0, 4),
+                          offset: Offset(0, 4),
                         )
                       ],
                     ),
                     child: Row(
                       children: [
                         Container(
-                          padding: const EdgeInsets.all(10),
+                          padding: EdgeInsets.all(10),
                           decoration: BoxDecoration(
-                            color: Colors.black.withOpacity(0.2), 
+                            color: StiloColors.background.withOpacity(0.2),
                             shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white.withOpacity(0.05)),
+                            border: Border.all(color: StiloColors.text.withOpacity(0.05)),
                           ),
                           child: Badge(
                             isLabelVisible: solicitudesPendientes > 0,
                             label: Text(
-                              '$solicitudesPendientes', 
-                              style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold)
+                              '$solicitudesPendientes',
+                              style: TextStyle(color: StiloColors.background, fontWeight: FontWeight.bold)
                             ),
-                            backgroundColor: colorAcento, 
-                            child: const Icon(Icons.handyman, color: colorAcento, size: 28),
+                            backgroundColor: colorAcento,
+                            child: Icon(Icons.handyman, color: colorAcento, size: 28),
                           ),
                         ),
-                        const SizedBox(width: 16),
+                        SizedBox(width: 16),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                "Centro de Solicitudes", 
+                                "Centro de Solicitudes",
                                 style: GoogleFonts.outfit(color: colorTextoPrimario, fontWeight: FontWeight.bold, fontSize: 18),
                               ),
                               Text(
-                                "Gestiona tus herramientas", 
+                                "Gestiona tus herramientas",
                                 style: GoogleFonts.inter(color: colorTextoSecundario, fontSize: 13),
                               ),
                             ],
                           ),
                         ),
-                        const Icon(Icons.arrow_forward_ios, color: colorTextoSecundario, size: 18),
+                        Icon(Icons.arrow_forward_ios, color: colorTextoSecundario, size: 18),
                       ],
                     ),
                   ),
@@ -259,11 +261,11 @@ final esDevolucion = solicitud['tipo'] == 'devolucion';
             ),
           ),
 
-          const SizedBox(height: 10),
+          SizedBox(height: 10),
 
           // TÍTULO DE LISTA
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
+            padding: EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
             child: Align(
               alignment: Alignment.centerLeft,
               child: Text(
@@ -283,56 +285,56 @@ final esDevolucion = solicitud['tipo'] == 'devolucion';
               stream: cajitaProvider.streamCajitaUsuario(widget.trabajadorId),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator(color: colorAcento));
+                  return Center(child: CircularProgressIndicator(color: colorAcento));
                 }
                 final herramientas = snapshot.data ?? [];
-                
+
                 if (herramientas.isEmpty) {
                   return Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(Icons.construction, size: 64, color: colorTextoSecundario.withOpacity(0.5)),
-                        const SizedBox(height: 16),
+                        SizedBox(height: 16),
                         Text('Tu cajita está vacía', style: GoogleFonts.outfit(color: colorTextoSecundario, fontSize: 18, fontWeight: FontWeight.w500)),
-                        const SizedBox(height: 8),
+                        SizedBox(height: 8),
                         Text('No tienes herramientas asignadas aún.', style: GoogleFonts.inter(color: colorTextoSecundario.withOpacity(0.7), fontSize: 14)),
                       ],
                     ),
                   );
                 }
-                
+
                 return ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   itemCount: herramientas.length,
                   itemBuilder: (context, index) {
                   final h = herramientas[index];
 final enTransito = h.estado == 'en_transito';
-                    
-final esPrestada = h.propietarioOriginalId != null && 
-                   h.propietarioOriginalId!.isNotEmpty && 
+
+final esPrestada = h.propietarioOriginalId != null &&
+                   h.propietarioOriginalId!.isNotEmpty &&
                    h.propietarioOriginalId != widget.trabajadorId;
 
 final nombrePropietario = h.propietarioOriginalNombre ?? 'Un compañero';
                     return Container(
-                      margin: const EdgeInsets.only(bottom: 12),
+                      margin: EdgeInsets.only(bottom: 12),
                       decoration: BoxDecoration(
                         color: colorTarjeta,
                         borderRadius: BorderRadius.circular(16),
                         // Destacamos con borde naranja si es prestada
-                        border: Border.all(color: esPrestada ? colorNaranja.withOpacity(0.3) : Colors.white.withOpacity(0.05)),
+                        border: Border.all(color: esPrestada ? colorNaranja.withOpacity(0.3) : StiloColors.text.withOpacity(0.05)),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.2),
+                            color: StiloColors.background.withOpacity(0.2),
                             blurRadius: 8,
-                            offset: const Offset(0, 4),
+                            offset: Offset(0, 4),
                           )
                         ]
                       ),
                       child: ListTile(
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                         leading: Container(
-                          padding: const EdgeInsets.all(10),
+                          padding: EdgeInsets.all(10),
                           decoration: BoxDecoration(
                             color: enTransito ? colorNaranja.withOpacity(0.2) : colorAcento.withOpacity(0.2),
                             borderRadius: BorderRadius.circular(12),
@@ -343,38 +345,38 @@ final nombrePropietario = h.propietarioOriginalNombre ?? 'Un compañero';
                           ),
                         ),
                         title: Text(
-                          h.nombre.toUpperCase(), 
+                          h.nombre.toUpperCase(),
                           style: GoogleFonts.inter(color: colorTextoPrimario, fontWeight: FontWeight.w600, fontSize: 14),
                         ),
                         subtitle: Text(
                           enTransito ? 'En espera de confirmación' : (esPrestada ? 'Herramienta prestada' : 'Disponible'),
                           style: GoogleFonts.inter(
-                            color: enTransito ? colorNaranja : (esPrestada ? colorNaranja : colorTextoSecundario), 
+                            color: enTransito ? colorNaranja : (esPrestada ? colorNaranja : colorTextoSecundario),
                             fontSize: 12,
                           ),
                         ),
                         trailing: ElevatedButton(
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: enTransito 
-                                ? colorTarjeta 
+                            backgroundColor: enTransito
+                                ? colorTarjeta
                                 : (esPrestada ? colorTarjeta : colorAcento), // Fondo transparente para Devolver
-                            foregroundColor: enTransito 
-                                ? colorTextoSecundario 
-                                : (esPrestada ? colorNaranja : Colors.black), // Texto naranja para Devolver
+                            foregroundColor: enTransito
+                                ? colorTextoSecundario
+                                : (esPrestada ? colorNaranja : StiloColors.background), // Texto naranja para Devolver
                             elevation: enTransito || esPrestada ? 0 : 4,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8),
-                              side: enTransito 
-                                  ? BorderSide(color: colorTextoSecundario.withOpacity(0.3)) 
-                                  : (esPrestada ? const BorderSide(color: colorNaranja) : BorderSide.none),
+                              side: enTransito
+                                  ? BorderSide(color: colorTextoSecundario.withOpacity(0.3))
+                                  : (esPrestada ? BorderSide(color: colorNaranja) : BorderSide.none),
                             ),
                           ),
-                          onPressed: enTransito 
-                              ? null 
+                          onPressed: enTransito
+                              ? null
                               : () {
                                   if (esPrestada) {
                                     cajitaProvider.devolverHerramienta(
-                                      herramientaId: h.id, 
+                                      herramientaId: h.id,
                                       propietarioId: h.propietarioOriginalId!
                                     );
                                   } else {
@@ -403,7 +405,7 @@ final nombrePropietario = h.propietarioOriginalNombre ?? 'Un compañero';
       context: context,
       backgroundColor: colorFondo,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (context) {
@@ -413,20 +415,20 @@ final nombrePropietario = h.propietarioOriginalNombre ?? 'Un compañero';
             child: Column(
               children: [
                 Container(
-                  margin: const EdgeInsets.symmetric(vertical: 12),
+                  margin: EdgeInsets.symmetric(vertical: 12),
                   width: 42,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: Colors.white24,
+                    color: StiloColors.text.withValues(alpha: .24),
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 4, 20, 16),
+                  padding: EdgeInsets.fromLTRB(20, 4, 20, 16),
                   child: Row(
                     children: [
-                      const Icon(Icons.fact_check_rounded, color: colorAcento),
-                      const SizedBox(width: 12),
+                      Icon(Icons.fact_check_rounded, color: colorAcento),
+                      SizedBox(width: 12),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -472,7 +474,7 @@ final nombrePropietario = h.propietarioOriginalNombre ?? 'Un compañero';
                         );
                       }
                       if (!snapshot.hasData) {
-                        return const Center(
+                        return Center(
                           child: CircularProgressIndicator(color: colorAcento),
                         );
                       }
@@ -502,9 +504,9 @@ final nombrePropietario = h.propietarioOriginalNombre ?? 'Un compañero';
                       }
 
                       return ListView.separated(
-                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                        padding: EdgeInsets.fromLTRB(16, 0, 16, 24),
                         itemCount: movimientos.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 10),
+                        separatorBuilder: (_, __) => SizedBox(height: 10),
                         itemBuilder: (context, index) {
                           final data = movimientos[index].data()
                               as Map<String, dynamic>;
@@ -532,11 +534,11 @@ final nombrePropietario = h.propietarioOriginalNombre ?? 'Un compañero';
                           };
 
                           return Container(
-                            padding: const EdgeInsets.all(14),
+                            padding: EdgeInsets.all(14),
                             decoration: BoxDecoration(
                               color: colorTarjeta,
                               borderRadius: BorderRadius.circular(14),
-                              border: Border.all(color: Colors.white10),
+                              border: Border.all(color: StiloColors.text.withValues(alpha: .10)),
                             ),
                             child: Row(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -547,7 +549,7 @@ final nombrePropietario = h.propietarioOriginalNombre ?? 'Un compañero';
                                       : Icons.handshake_rounded,
                                   color: colorEstado,
                                 ),
-                                const SizedBox(width: 12),
+                                SizedBox(width: 12),
                                 Expanded(
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -561,7 +563,7 @@ final nombrePropietario = h.propietarioOriginalNombre ?? 'Un compañero';
                                           fontWeight: FontWeight.w700,
                                         ),
                                       ),
-                                      const SizedBox(height: 3),
+                                      SizedBox(height: 3),
                                       Text(
                                         '$tipo ${soyOrigen ? 'a' : 'de'} ${contraparte ?? 'Compañero'}',
                                         style: GoogleFonts.inter(
@@ -569,7 +571,7 @@ final nombrePropietario = h.propietarioOriginalNombre ?? 'Un compañero';
                                           fontSize: 12,
                                         ),
                                       ),
-                                      const SizedBox(height: 7),
+                                      SizedBox(height: 7),
                                       Text(
                                         '$detalleEstado${fecha == null ? '' : ' · ${DateFormat('dd/MM/yyyy HH:mm').format(fecha.toDate())}'}',
                                         style: GoogleFonts.inter(
@@ -606,7 +608,7 @@ final nombrePropietario = h.propietarioOriginalNombre ?? 'Un compañero';
       isScrollControlled: true,
       builder: (context) {
         return Container(
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             color: colorFondo,
             borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
           ),
@@ -616,24 +618,24 @@ final nombrePropietario = h.propietarioOriginalNombre ?? 'Un compañero';
               mainAxisSize: MainAxisSize.min,
               children: [
                 Container(
-                  margin: const EdgeInsets.only(top: 12, bottom: 20),
+                  margin: EdgeInsets.only(top: 12, bottom: 20),
                   height: 4,
                   width: 40,
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
+                    color: StiloColors.text.withOpacity(0.2),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                  padding: EdgeInsets.symmetric(horizontal: 24.0),
                   child: Row(
                     children: [
                       Container(
-                        padding: const EdgeInsets.all(10),
+                        padding: EdgeInsets.all(10),
                         decoration: BoxDecoration(color: colorAcento.withOpacity(0.2), shape: BoxShape.circle),
-                        child: const Icon(Icons.people_alt, color: colorAcento),
+                        child: Icon(Icons.people_alt, color: colorAcento),
                       ),
-                      const SizedBox(width: 16),
+                      SizedBox(width: 16),
                       Expanded(
                         child: Text(
                           '¿A quién le prestas\nla herramienta?',
@@ -643,7 +645,7 @@ final nombrePropietario = h.propietarioOriginalNombre ?? 'Un compañero';
                     ],
                   ),
                 ),
-                const SizedBox(height: 20),
+                SizedBox(height: 20),
                 Flexible(
                   child: StreamBuilder<QuerySnapshot>(
                     stream: FirebaseFirestore.instance
@@ -653,12 +655,12 @@ final nombrePropietario = h.propietarioOriginalNombre ?? 'Un compañero';
                     builder: (context, snapshot) {
                       if (snapshot.hasError) {
                         return Padding(
-                          padding: const EdgeInsets.all(24.0),
+                          padding: EdgeInsets.all(24.0),
                           child: Text('Error al cargar compañeros', style: GoogleFonts.inter(color: colorRojo)),
                         );
                       }
                       if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const Padding(
+                        return Padding(
                           padding: EdgeInsets.all(40.0),
                           child: CircularProgressIndicator(color: colorAcento),
                         );
@@ -670,12 +672,12 @@ final nombrePropietario = h.propietarioOriginalNombre ?? 'Un compañero';
 
                       if (trabajadores.isEmpty) {
                         return Padding(
-                          padding: const EdgeInsets.all(40.0),
+                          padding: EdgeInsets.all(40.0),
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Icon(Icons.person_off, size: 48, color: colorTextoSecundario),
-                              const SizedBox(height: 16),
+                              Icon(Icons.person_off, size: 48, color: colorTextoSecundario),
+                              SizedBox(height: 16),
                               Text('No hay otros trabajadores disponibles.', style: GoogleFonts.inter(color: colorTextoSecundario)),
                             ],
                           ),
@@ -684,19 +686,19 @@ final nombrePropietario = h.propietarioOriginalNombre ?? 'Un compañero';
 
                       return ListView.separated(
                         shrinkWrap: true,
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                         itemCount: trabajadores.length,
-                        separatorBuilder: (context, index) => Divider(color: Colors.white.withOpacity(0.05), height: 1),
+                        separatorBuilder: (context, index) => Divider(color: StiloColors.text.withOpacity(0.05), height: 1),
                         itemBuilder: (context, index) {
                           final userDoc = trabajadores[index];
                           final userData = userDoc.data() as Map<String, dynamic>;
                           final nombre = userData['nombre'] ?? 'Compañero';
-                          
+
                           final avatarColors = [colorNaranja, colorAcento, colorRojo, Colors.amber, Colors.deepOrange];
                           final avatarColor = avatarColors[nombre.codeUnitAt(0) % avatarColors.length];
 
                           return ListTile(
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                            contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                             leading: CircleAvatar(
                               backgroundColor: avatarColor.withOpacity(0.2),
                               child: Text(
@@ -709,16 +711,16 @@ final nombrePropietario = h.propietarioOriginalNombre ?? 'Un compañero';
                               style: GoogleFonts.inter(color: colorTextoPrimario, fontSize: 15, fontWeight: FontWeight.w500),
                             ),
                             trailing: Container(
-                              padding: const EdgeInsets.all(6),
+                              padding: EdgeInsets.all(6),
                               decoration: BoxDecoration(
                                 color: colorTarjeta,
                                 borderRadius: BorderRadius.circular(8),
                               ),
-                              child: const Icon(Icons.chevron_right, color: colorAcento, size: 20),
+                              child: Icon(Icons.chevron_right, color: colorAcento, size: 20),
                             ),
                             onTap: () async {
-                              Navigator.pop(context); 
-                              
+                              Navigator.pop(context);
+
                               bool exito = await cajitaProvider.iniciarTraspaso(
                                 herramientaId: herramienta.id,
                                 origenId: widget.trabajadorId,
@@ -732,11 +734,11 @@ final nombrePropietario = h.propietarioOriginalNombre ?? 'Un compañero';
                                     behavior: SnackBarBehavior.floating,
                                     backgroundColor: colorNaranja,
                                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                    margin: const EdgeInsets.all(16),
+                                    margin: EdgeInsets.all(16),
                                     content: Row(
                                       children: [
-                                        const Icon(Icons.check_circle, color: Colors.white),
-                                        const SizedBox(width: 12),
+                                        Icon(Icons.check_circle, color: StiloColors.text),
+                                        SizedBox(width: 12),
                                         Expanded(child: Text('Traspaso enviado a $nombre', style: GoogleFonts.inter(fontWeight: FontWeight.bold))),
                                       ],
                                     ),
@@ -750,7 +752,7 @@ final nombrePropietario = h.propietarioOriginalNombre ?? 'Un compañero';
                     },
                   ),
                 ),
-                const SizedBox(height: 20),
+                SizedBox(height: 20),
               ],
             ),
           ),

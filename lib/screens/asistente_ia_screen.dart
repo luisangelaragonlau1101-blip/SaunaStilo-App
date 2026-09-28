@@ -1,3 +1,4 @@
+import '../presentation/appearance.dart';
 import '../services/external_transfer.dart';
 import 'dart:async';
 
@@ -27,11 +28,11 @@ class AsistenteIaLegadoScreen extends StatefulWidget {
 }
 
 class _AsistenteIaLegadoScreenState extends State<AsistenteIaLegadoScreen> {
-  static const _bg = Color(0xFF05070A);
-  static const _panel = Color(0xFF11161C);
-  static const _cyan = Color(0xFF86E9FF);
-  static const _mint = Color(0xFFA8F6D5);
-  static const _violet = Color(0xFFB8A7FF);
+  static Color get _bg => StiloColors.background;
+  static Color get _panel => StiloColors.surface;
+  static final _cyan = Color(0xFF86E9FF);
+  static final _mint = Color(0xFFA8F6D5);
+  static final _violet = Color(0xFFB8A7FF);
 
   final _controller = TextEditingController();
   final _scroll = ScrollController();
@@ -83,6 +84,7 @@ class _AsistenteIaLegadoScreenState extends State<AsistenteIaLegadoScreen> {
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context);
     return Scaffold(
       backgroundColor: _bg,
       appBar: AppBar(
@@ -96,11 +98,11 @@ class _AsistenteIaLegadoScreenState extends State<AsistenteIaLegadoScreen> {
               height: 40,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(14),
-                gradient: const LinearGradient(colors: [_cyan, _violet]),
+                gradient: LinearGradient(colors: [_cyan, _violet]),
               ),
-              child: const Icon(Icons.auto_awesome_rounded, color: Colors.black),
+              child: Icon(Icons.auto_awesome_rounded, color: StiloColors.background),
             ),
-            const SizedBox(width: 10),
+            SizedBox(width: 10),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -138,7 +140,7 @@ class _AsistenteIaLegadoScreenState extends State<AsistenteIaLegadoScreen> {
                 builder: (_) => GuiaInteligenteScreen(usuario: widget.usuario),
               ),
             ),
-            icon: const Icon(Icons.explore_rounded, color: _mint),
+            icon: Icon(Icons.explore_rounded, color: _mint),
           ),
           if (_admin)
             IconButton(
@@ -149,7 +151,7 @@ class _AsistenteIaLegadoScreenState extends State<AsistenteIaLegadoScreen> {
                       VozAdministracionScreen(usuario: widget.usuario),
                 ),
               ),
-              icon: const Icon(Icons.graphic_eq_rounded, color: _cyan),
+              icon: Icon(Icons.graphic_eq_rounded, color: _cyan),
             ),
           IconButton(
             tooltip: _speak
@@ -165,7 +167,7 @@ class _AsistenteIaLegadoScreenState extends State<AsistenteIaLegadoScreen> {
             },
             icon: Icon(
               _speak ? Icons.volume_up_rounded : Icons.volume_off_rounded,
-              color: _speak ? _cyan : Colors.white38,
+              color: _speak ? _cyan : StiloColors.text.withValues(alpha: .38),
             ),
           ),
         ],
@@ -174,7 +176,7 @@ class _AsistenteIaLegadoScreenState extends State<AsistenteIaLegadoScreen> {
         children: [
           _capabilityStrip(),
           _quickPrompts(),
-          const Divider(height: 1, color: Colors.white10),
+          Divider(height: 1, color: StiloColors.text.withValues(alpha: .10)),
           Expanded(child: _conversation()),
           _composer(),
         ],
@@ -189,34 +191,34 @@ class _AsistenteIaLegadoScreenState extends State<AsistenteIaLegadoScreen> {
             ? 'Inventario · Solicitudes · Tareas · Web'
             : 'Tus tareas · Herramientas · Evidencias · Web';
     return Container(
-      margin: const EdgeInsets.fromLTRB(14, 6, 14, 8),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+      margin: EdgeInsets.fromLTRB(14, 6, 14, 8),
+      padding: EdgeInsets.symmetric(horizontal: 14, vertical: 11),
       decoration: BoxDecoration(
-        color: const Color(0xFF0D171C),
+        color: StiloColors.surface,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: _cyan.withOpacity(.16)),
       ),
       child: Row(
         children: [
-          const Icon(Icons.language_rounded, color: _cyan, size: 17),
-          const SizedBox(width: 8),
+          Icon(Icons.language_rounded, color: _cyan, size: 17),
+          SizedBox(width: 8),
           Expanded(
             child: Text(
               label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: GoogleFonts.inter(
-                color: Colors.white60,
+                color: StiloColors.text.withValues(alpha: .60),
                 fontSize: 10.5,
                 fontWeight: FontWeight.w700,
               ),
             ),
           ),
-          const SizedBox(width: 7),
+          SizedBox(width: 7),
           Container(
             width: 7,
             height: 7,
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               color: _mint,
               shape: BoxShape.circle,
             ),
@@ -254,16 +256,16 @@ class _AsistenteIaLegadoScreenState extends State<AsistenteIaLegadoScreen> {
       height: 46,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+        padding: EdgeInsets.symmetric(horizontal: 14, vertical: 5),
         itemCount: prompts.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 7),
+        separatorBuilder: (_, __) => SizedBox(width: 7),
         itemBuilder: (_, index) => ActionChip(
           onPressed: _thinking ? null : () => _send(prompts[index]),
           label: Text(prompts[index]),
           backgroundColor: _panel,
-          side: const BorderSide(color: Colors.white10),
+          side: BorderSide(color: StiloColors.text.withValues(alpha: .10)),
           labelStyle: GoogleFonts.inter(
-            color: Colors.white70,
+            color: StiloColors.text.withValues(alpha: .70),
             fontSize: 10.5,
             fontWeight: FontWeight.w700,
           ),
@@ -275,12 +277,12 @@ class _AsistenteIaLegadoScreenState extends State<AsistenteIaLegadoScreen> {
   Widget _conversation() {
     return ListView.builder(
       controller: _scroll,
-      padding: const EdgeInsets.fromLTRB(14, 14, 14, 16),
+      padding: EdgeInsets.fromLTRB(14, 14, 14, 16),
       itemCount: _messages.length + (_thinking ? 1 : 0),
       itemBuilder: (_, index) {
         if (_thinking && index == _messages.length) {
           return _bubble(
-            const _AiMessage(
+            _AiMessage(
               text: 'Analizando y consultando…',
               user: false,
             ),
@@ -296,14 +298,14 @@ class _AsistenteIaLegadoScreenState extends State<AsistenteIaLegadoScreen> {
     return Align(
       alignment: message.user ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
-        constraints: const BoxConstraints(maxWidth: 680),
-        margin: const EdgeInsets.only(bottom: 10),
-        padding: const EdgeInsets.all(14),
+        constraints: BoxConstraints(maxWidth: 680),
+        margin: EdgeInsets.only(bottom: 10),
+        padding: EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: message.user ? const Color(0xFF16303A) : _panel,
+          color: message.user ? StiloColors.surface : _panel,
           borderRadius: BorderRadius.circular(21),
           border: Border.all(
-            color: message.user ? _cyan.withOpacity(.18) : Colors.white10,
+            color: message.user ? _cyan.withOpacity(.18) : StiloColors.text.withValues(alpha: .10),
           ),
         ),
         child: Column(
@@ -319,18 +321,18 @@ class _AsistenteIaLegadoScreenState extends State<AsistenteIaLegadoScreen> {
                   size: 15,
                   color: message.user ? _cyan : _mint,
                 ),
-                const SizedBox(width: 6),
+                SizedBox(width: 6),
                 Text(
                   message.user ? 'Tú' : 'Sauna IA',
                   style: GoogleFonts.inter(
-                    color: Colors.white54,
+                    color: StiloColors.text.withValues(alpha: .54),
                     fontSize: 9.5,
                     fontWeight: FontWeight.w900,
                   ),
                 ),
                 if (loading) ...[
-                  const SizedBox(width: 8),
-                  const SizedBox(
+                  SizedBox(width: 8),
+                  SizedBox(
                     width: 11,
                     height: 11,
                     child: CircularProgressIndicator(
@@ -342,13 +344,13 @@ class _AsistenteIaLegadoScreenState extends State<AsistenteIaLegadoScreen> {
               ],
             ),
             if (message.imageUrls.isNotEmpty) ...[
-              const SizedBox(height: 9),
+              SizedBox(height: 9),
               SizedBox(
                 height: 112,
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,
                   itemCount: message.imageUrls.length,
-                  separatorBuilder: (_, __) => const SizedBox(width: 7),
+                  separatorBuilder: (_, __) => SizedBox(width: 7),
                   itemBuilder: (_, imageIndex) => ClipRRect(
                     borderRadius: BorderRadius.circular(14),
                     child: Image.network(
@@ -361,7 +363,7 @@ class _AsistenteIaLegadoScreenState extends State<AsistenteIaLegadoScreen> {
                 ),
               ),
             ],
-            const SizedBox(height: 7),
+            SizedBox(height: 7),
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -369,7 +371,7 @@ class _AsistenteIaLegadoScreenState extends State<AsistenteIaLegadoScreen> {
                   child: Text(
                     message.text,
                     style: GoogleFonts.inter(
-                      color: Colors.white,
+                      color: StiloColors.text,
                       fontSize: 13.5,
                       height: 1.48,
                     ),
@@ -380,16 +382,16 @@ class _AsistenteIaLegadoScreenState extends State<AsistenteIaLegadoScreen> {
                     visualDensity: VisualDensity.compact,
                     tooltip: 'Escuchar respuesta',
                     onPressed: () => _speakText(message.text),
-                    icon: const Icon(
+                    icon: Icon(
                       Icons.volume_up_rounded,
-                      color: Colors.white38,
+                      color: StiloColors.text.withValues(alpha: .38),
                       size: 18,
                     ),
                   ),
               ],
             ),
             if (message.sources.isNotEmpty) ...[
-              const SizedBox(height: 10),
+              SizedBox(height: 10),
               Wrap(
                 spacing: 7,
                 runSpacing: 7,
@@ -397,17 +399,17 @@ class _AsistenteIaLegadoScreenState extends State<AsistenteIaLegadoScreen> {
                     .take(5)
                     .map(
                       (source) => ActionChip(
-                        avatar: const Icon(Icons.open_in_new_rounded, size: 13),
+                        avatar: Icon(Icons.open_in_new_rounded, size: 13),
                         label: Text(
                           source.title,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
                         onPressed: () => _openSource(source.url),
-                        backgroundColor: Colors.white.withOpacity(.04),
-                        side: const BorderSide(color: Colors.white12),
+                        backgroundColor: StiloColors.text.withOpacity(.04),
+                        side: BorderSide(color: StiloColors.text.withValues(alpha: .12)),
                         labelStyle: GoogleFonts.inter(
-                          color: Colors.white60,
+                          color: StiloColors.text.withValues(alpha: .60),
                           fontSize: 9.5,
                         ),
                       ),
@@ -425,10 +427,10 @@ class _AsistenteIaLegadoScreenState extends State<AsistenteIaLegadoScreen> {
     return SafeArea(
       top: false,
       child: Container(
-        padding: const EdgeInsets.fromLTRB(10, 8, 10, 11),
-        decoration: const BoxDecoration(
-          color: Color(0xFF0A0D11),
-          border: Border(top: BorderSide(color: Colors.white10)),
+        padding: EdgeInsets.fromLTRB(10, 8, 10, 11),
+        decoration: BoxDecoration(
+          color: StiloColors.surface,
+          border: Border(top: BorderSide(color: StiloColors.text.withValues(alpha: .10))),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -438,9 +440,9 @@ class _AsistenteIaLegadoScreenState extends State<AsistenteIaLegadoScreen> {
                 height: 70,
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.only(bottom: 7),
+                  padding: EdgeInsets.only(bottom: 7),
                   itemCount: _pendingImages.length,
-                  separatorBuilder: (_, __) => const SizedBox(width: 7),
+                  separatorBuilder: (_, __) => SizedBox(width: 7),
                   itemBuilder: (_, index) => Stack(
                     children: [
                       ClipRRect(
@@ -451,7 +453,7 @@ class _AsistenteIaLegadoScreenState extends State<AsistenteIaLegadoScreen> {
                             width: 62,
                             height: 62,
                             child: snapshot.data ??
-                                const ColoredBox(color: Colors.white10),
+                                ColoredBox(color: StiloColors.text.withValues(alpha: .10)),
                           ),
                         ),
                       ),
@@ -462,9 +464,9 @@ class _AsistenteIaLegadoScreenState extends State<AsistenteIaLegadoScreen> {
                           onTap: () => setState(
                             () => _pendingImages.removeAt(index),
                           ),
-                          child: const CircleAvatar(
+                          child: CircleAvatar(
                             radius: 10,
-                            backgroundColor: Colors.black87,
+                            backgroundColor: StiloColors.background.withValues(alpha: .87),
                             child: Icon(Icons.close_rounded, size: 12),
                           ),
                         ),
@@ -478,9 +480,9 @@ class _AsistenteIaLegadoScreenState extends State<AsistenteIaLegadoScreen> {
                 IconButton.filledTonal(
                   tooltip: 'Agregar fotografías',
                   onPressed: _thinking ? null : _pickImages,
-                  icon: const Icon(Icons.add_photo_alternate_rounded),
+                  icon: Icon(Icons.add_photo_alternate_rounded),
                 ),
-                const SizedBox(width: 5),
+                SizedBox(width: 5),
                 IconButton.filledTonal(
                   tooltip: _listening ? 'Detener dictado' : 'Hablar',
                   onPressed: _thinking ? null : _toggleDictation,
@@ -488,14 +490,14 @@ class _AsistenteIaLegadoScreenState extends State<AsistenteIaLegadoScreen> {
                     _listening ? Icons.mic_rounded : Icons.mic_none_rounded,
                   ),
                 ),
-                const SizedBox(width: 6),
+                SizedBox(width: 6),
                 Expanded(
                   child: TextField(contextMenuBuilder: privacyTextMenu,
                     controller: _controller,
                     enabled: !_thinking,
                     onSubmitted: _send,
                     textCapitalization: TextCapitalization.sentences,
-                    style: GoogleFonts.inter(color: Colors.white, fontSize: 14),
+                    style: GoogleFonts.inter(color: StiloColors.text, fontSize: 14),
                     decoration: InputDecoration(
                       hintText: _listening
                           ? 'Te escucho…'
@@ -509,11 +511,11 @@ class _AsistenteIaLegadoScreenState extends State<AsistenteIaLegadoScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(width: 6),
+                SizedBox(width: 6),
                 IconButton.filled(
                   tooltip: 'Enviar',
                   onPressed: _thinking ? null : () => _send(_controller.text),
-                  icon: const Icon(Icons.arrow_upward_rounded),
+                  icon: Icon(Icons.arrow_upward_rounded),
                 ),
               ],
             ),
@@ -560,7 +562,7 @@ class _AsistenteIaLegadoScreenState extends State<AsistenteIaLegadoScreen> {
   Future<void> _send(String value) async {
     final question = value.trim();
     if (question.length > 2500) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('La pregunta admite hasta 2500 caracteres.')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('La pregunta admite hasta 2500 caracteres.')));
       return;
     }
     if (_thinking || (question.isEmpty && _pendingImages.isEmpty)) return;
@@ -661,15 +663,15 @@ class _AsistenteIaLegadoScreenState extends State<AsistenteIaLegadoScreen> {
       },
     );
     if (!available) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No hay dictado disponible. Revisa el permiso de micrófono o escribe tu pregunta.')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('No hay dictado disponible. Revisa el permiso de micrófono o escribe tu pregunta.')));
       return;
     }
     if (!mounted) return;
     setState(() => _listening = true);
     await _speech.listen(
       localeId: 'es_MX',
-      listenFor: const Duration(seconds: 40),
-      pauseFor: const Duration(seconds: 4),
+      listenFor: Duration(seconds: 40),
+      pauseFor: Duration(seconds: 4),
       onResult: (result) {
         if (!mounted) return;
         setState(() => _controller.text = result.recognizedWords);
@@ -706,7 +708,7 @@ class _AsistenteIaLegadoScreenState extends State<AsistenteIaLegadoScreen> {
     }
     if (!mounted || request != _speechRequest) return;
     try { await _tts.speak(spoken); } catch (_) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('La voz no pudo reproducirse. La respuesta permanece en pantalla.')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('La voz no pudo reproducirse. La respuesta permanece en pantalla.')));
     }
   }
 
@@ -721,7 +723,7 @@ class _AsistenteIaLegadoScreenState extends State<AsistenteIaLegadoScreen> {
       if (!_scroll.hasClients) return;
       _scroll.animateTo(
         _scroll.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 320),
+        duration: Duration(milliseconds: 320),
         curve: Curves.easeOutCubic,
       );
     });
@@ -734,7 +736,7 @@ class _AiMessage {
   final List<AiAssistantSource> sources;
   final List<String> imageUrls;
 
-  const _AiMessage({
+  _AiMessage({
     required this.text,
     required this.user,
     this.sources = const <AiAssistantSource>[],

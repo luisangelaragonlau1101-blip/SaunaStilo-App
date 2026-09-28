@@ -1,3 +1,4 @@
+import '../presentation/appearance.dart';
 import '../services/external_transfer.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -20,28 +21,28 @@ class CrearProyectoAdminScreen extends StatefulWidget {
 class _CrearProyectoAdminScreenState extends State<CrearProyectoAdminScreen> {
   final _formKey = GlobalKey<FormState>();
   final _proyectoService = ProyectoService();
-  
+
   late TextEditingController _tituloController;
   late TextEditingController _medidasController;
   late TextEditingController _descController;
-  late TextEditingController _lugarEntregaController; 
-  
-  // CONTROLADORES FINANCIEROS
-  late TextEditingController _cotizacionController; 
-  late TextEditingController _pagoInicialController; 
+  late TextEditingController _lugarEntregaController;
 
-  String _estatusSeleccionado = 'pendiente'; 
+  // CONTROLADORES FINANCIEROS
+  late TextEditingController _cotizacionController;
+  late TextEditingController _pagoInicialController;
+
+  String _estatusSeleccionado = 'pendiente';
   late DateTime _fechaInicio;
   late DateTime _fechaEntrega;
   DateTime? _fechaSalidaInstalacion; // <-- NUEVO: Fecha opcional para logística
-  
+
   String? _idClienteSeleccionado;
   String? _idSaunaSeleccionado;
   List<String> _encargadosSeleccionados = [];
 
   bool _isLoadingCatalogos = true;
-  bool _isGuardando = false; 
-  
+  bool _isGuardando = false;
+
   List<ClienteModel> _clientesCatalogo = [];
   List<Sauna> _saunasCatalogo = [];
   List<UserModel> _trabajadoresCatalogo = [];
@@ -52,12 +53,12 @@ class _CrearProyectoAdminScreenState extends State<CrearProyectoAdminScreen> {
     _tituloController = TextEditingController();
     _medidasController = TextEditingController();
     _descController = TextEditingController();
-    _lugarEntregaController = TextEditingController(); 
+    _lugarEntregaController = TextEditingController();
     _cotizacionController = TextEditingController(text: '0.0');
     _pagoInicialController = TextEditingController(text: '0.0');
-    
+
     _fechaInicio = DateTime.now();
-    _fechaEntrega = DateTime.now().add(const Duration(days: 7));
+    _fechaEntrega = DateTime.now().add(Duration(days: 7));
     // _fechaSalidaInstalacion se inicializa como nulo automáticamente
 
     _cargarCatalogos();
@@ -84,9 +85,9 @@ class _CrearProyectoAdminScreenState extends State<CrearProyectoAdminScreen> {
   void _actualizarLugarEntrega(String idCliente) {
     try {
       final cliente = _clientesCatalogo.firstWhere((c) => c.id == idCliente);
-      _lugarEntregaController.text = cliente.direccion; 
+      _lugarEntregaController.text = cliente.direccion;
     } catch (e) {
-      _lugarEntregaController.text = ''; 
+      _lugarEntregaController.text = '';
     }
   }
 
@@ -113,29 +114,29 @@ class _CrearProyectoAdminScreenState extends State<CrearProyectoAdminScreen> {
     DateTime? pickedDate = await showDatePicker(
       context: context,
       initialDate: fechaInicial,
-      firstDate: DateTime.now().subtract(const Duration(days: 30)),
+      firstDate: DateTime.now().subtract(Duration(days: 30)),
       lastDate: DateTime(2035),
       builder: (context, child) => Theme(
-        data: ThemeData.dark().copyWith(
-          colorScheme: ColorScheme.dark(
-            primary: tipoFecha == 'salida' ? Colors.orangeAccent : const Color(0xFF10B981), 
-            surface: const Color(0xFF1E1E1E)
+        data: Theme.of(context).copyWith(
+          colorScheme: Theme.of(context).colorScheme.copyWith(
+            primary: tipoFecha == 'salida' ? Colors.orangeAccent : Color(0xFF10B981),
+            surface: StiloColors.surface
           )
         ),
         child: child!,
       ),
     );
-    
+
     if (pickedDate != null) {
       TimeOfDay? pickedTime = await showTimePicker(
-        context: context, 
+        context: context,
         initialTime: TimeOfDay.fromDateTime(fechaInicial),
         // 👇 NUEVO: Le aplicamos el mismo diseño visual al reloj para evitar parpadeos blancos
         builder: (context, child) => Theme(
-          data: ThemeData.dark().copyWith(
-            colorScheme: ColorScheme.dark(
-              primary: tipoFecha == 'salida' ? Colors.orangeAccent : const Color(0xFF10B981), 
-              surface: const Color(0xFF1E1E1E)
+          data: Theme.of(context).copyWith(
+            colorScheme: Theme.of(context).colorScheme.copyWith(
+              primary: tipoFecha == 'salida' ? Colors.orangeAccent : Color(0xFF10B981),
+              surface: StiloColors.surface
             )
           ),
           child: child!,
@@ -144,9 +145,9 @@ class _CrearProyectoAdminScreenState extends State<CrearProyectoAdminScreen> {
       if (pickedTime != null) {
         setState(() {
           DateTime finalDateTime = DateTime(pickedDate.year, pickedDate.month, pickedDate.day, pickedTime.hour, pickedTime.minute);
-          if (tipoFecha == 'inicio') _fechaInicio = finalDateTime; 
+          if (tipoFecha == 'inicio') _fechaInicio = finalDateTime;
           else if (tipoFecha == 'entrega') _fechaEntrega = finalDateTime;
-          else if (tipoFecha == 'salida') _fechaSalidaInstalacion = finalDateTime; 
+          else if (tipoFecha == 'salida') _fechaSalidaInstalacion = finalDateTime;
         });
       }
     }
@@ -162,29 +163,29 @@ class _CrearProyectoAdminScreenState extends State<CrearProyectoAdminScreen> {
         return StatefulBuilder(
           builder: (context, setStateDialog) {
             return AlertDialog(
-              backgroundColor: const Color(0xFF1E1E1E),
+              backgroundColor: StiloColors.surface,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              title: Text("Añadir Tipo de Madera", style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+              title: Text("Añadir Tipo de Madera", style: GoogleFonts.inter(color: StiloColors.text, fontWeight: FontWeight.bold, fontSize: 16)),
               content: TextField(contextMenuBuilder: privacyTextMenu,
                 controller: nuevoSaunaController,
-                style: const TextStyle(color: Colors.white),
+                style: TextStyle(color: StiloColors.text),
                 decoration: InputDecoration(
                   hintText: "Ej. Madera de Cedro...",
-                  hintStyle: const TextStyle(color: Colors.white54),
+                  hintStyle: TextStyle(color: StiloColors.text.withValues(alpha: .54)),
                   filled: true,
-                  fillColor: const Color(0xFF121212),
+                  fillColor: StiloColors.surface,
                   enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF8B5CF6))),
+                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: StiloColors.accent)),
                 ),
               ),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text("Cancelar", style: TextStyle(color: Colors.white54)),
+                  child: Text("Cancelar", style: TextStyle(color: StiloColors.text.withValues(alpha: .54))),
                 ),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF8B5CF6),
+                    backgroundColor: StiloColors.accent,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   ),
                   onPressed: guardandoNuevo ? null : () async {
@@ -201,12 +202,12 @@ class _CrearProyectoAdminScreenState extends State<CrearProyectoAdminScreen> {
                       });
 
                       Sauna nuevoSauna = Sauna(id: docRef.id, nombre: nombreNuevo, descripcion: '', imagenUrl: '');
-                      
+
                       if (mounted) {
-                        Navigator.pop(context); 
+                        Navigator.pop(context);
                         setState(() {
-                          _saunasCatalogo.add(nuevoSauna); 
-                          _idSaunaSeleccionado = docRef.id; 
+                          _saunasCatalogo.add(nuevoSauna);
+                          _idSaunaSeleccionado = docRef.id;
                         });
                       }
                     } catch (e) {
@@ -216,9 +217,9 @@ class _CrearProyectoAdminScreenState extends State<CrearProyectoAdminScreen> {
                       );
                     }
                   },
-                  child: guardandoNuevo 
-                    ? const SizedBox(height: 16, width: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) 
-                    : const Text("Guardar", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  child: guardandoNuevo
+                    ? SizedBox(height: 16, width: 16, child: CircularProgressIndicator(color: StiloColors.text, strokeWidth: 2))
+                    : Text("Guardar", style: TextStyle(color: StiloColors.text, fontWeight: FontWeight.bold)),
                 ),
               ],
             );
@@ -230,6 +231,7 @@ class _CrearProyectoAdminScreenState extends State<CrearProyectoAdminScreen> {
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context);
     double cotizacionActual = double.tryParse(_cotizacionController.text) ?? 0.0;
     double pagoInicialActual = double.tryParse(_pagoInicialController.text) ?? 0.0;
     double restante = cotizacionActual - pagoInicialActual;
@@ -237,21 +239,21 @@ class _CrearProyectoAdminScreenState extends State<CrearProyectoAdminScreen> {
     List<DropdownMenuItem<String>> itemsSaunas = _saunasCatalogo.map((sauna) {
       return DropdownMenuItem<String>(
         value: sauna.id,
-        child: Text(sauna.nombre, style: const TextStyle(color: Colors.white)),
+        child: Text(sauna.nombre, style: TextStyle(color: StiloColors.text)),
       );
     }).toList();
 
 itemsSaunas.add(
-      const DropdownMenuItem<String>(
+      DropdownMenuItem<String>(
         value: 'ADD_NEW',
         child: Row(
           children: [
-            Icon(Icons.add_circle_outline, color: Color(0xFF8B5CF6), size: 20),
+            Icon(Icons.add_circle_outline, color: StiloColors.accent, size: 20),
             SizedBox(width: 8),
             Expanded(
               child: Text(
-                "Añadir nuevo...", 
-                style: TextStyle(color: Color(0xFF8B5CF6), fontWeight: FontWeight.bold),
+                "Añadir nuevo...",
+                style: TextStyle(color: StiloColors.accent, fontWeight: FontWeight.bold),
                 overflow: TextOverflow.ellipsis,
               ),
             ),
@@ -261,75 +263,75 @@ itemsSaunas.add(
     );
 
     return Scaffold(
-      backgroundColor: const Color(0xFF121212),
-      appBar: AppBar(backgroundColor: const Color(0xFF121212), title: Text("NUEVO PROYECTO", style: GoogleFonts.inter(fontWeight: FontWeight.bold)), centerTitle: true),
-      body: _isLoadingCatalogos 
-        ? const Center(child: CircularProgressIndicator(color: Color(0xFF8B5CF6)))
+      backgroundColor: StiloColors.surface,
+      appBar: AppBar(backgroundColor: StiloColors.surface, title: Text("NUEVO PROYECTO", style: GoogleFonts.inter(fontWeight: FontWeight.bold)), centerTitle: true),
+      body: _isLoadingCatalogos
+        ? Center(child: CircularProgressIndicator(color: StiloColors.accent))
         : Form(
           key: _formKey,
           child: ListView(
-            padding: const EdgeInsets.all(20),
+            padding: EdgeInsets.all(20),
             children: [
-              _buildSectionTitle("DATOS GENERALES", const Color(0xFF8B5CF6)),
-              _buildTextField(_tituloController, "Título del Proyecto", Icons.title, const Color(0xFF8B5CF6), esObligatorio: true),
-              const SizedBox(height: 16),
-              _buildTextField(_descController, "Descripción", Icons.description, const Color(0xFF8B5CF6), maxLines: 3, esObligatorio: false),
-              const SizedBox(height: 16),
+              _buildSectionTitle("DATOS GENERALES", StiloColors.accent),
+              _buildTextField(_tituloController, "Título del Proyecto", Icons.title, StiloColors.accent, esObligatorio: true),
+              SizedBox(height: 16),
+              _buildTextField(_descController, "Descripción", Icons.description, StiloColors.accent, maxLines: 3, esObligatorio: false),
+              SizedBox(height: 16),
               DropdownButtonFormField<String>(
                 isExpanded: true,
                 value: _estatusSeleccionado,
-                dropdownColor: const Color(0xFF1E1E1E),
-                decoration: _inputDecoration("Estatus Inicial", Icons.rule, const Color(0xFF8B5CF6)),
-                items: ['pendiente', 'en_proceso', 'finalizado'].map((e) => 
-                  DropdownMenuItem(value: e, child: Text(e.replaceAll('_', ' ').toUpperCase(), style: const TextStyle(color: Colors.white)))).toList(),
+                dropdownColor: StiloColors.surface,
+                decoration: _inputDecoration("Estatus Inicial", Icons.rule, StiloColors.accent),
+                items: ['pendiente', 'en_proceso', 'finalizado'].map((e) =>
+                  DropdownMenuItem(value: e, child: Text(e.replaceAll('_', ' ').toUpperCase(), style: TextStyle(color: StiloColors.text)))).toList(),
                 onChanged: (val) => setState(() => _estatusSeleccionado = val!),
               ),
-              const SizedBox(height: 32),
+              SizedBox(height: 32),
 
-              _buildSectionTitle("INFORMACIÓN FINANCIERA", const Color(0xFFFFDE21)),
+              _buildSectionTitle("INFORMACIÓN FINANCIERA", Color(0xFFFFDE21)),
               _buildFinanzasField(_cotizacionController, "Monto de Cotización Total", Icons.request_quote),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               _buildFinanzasField(_pagoInicialController, "Pago Inicial (Anticipo)", Icons.payments),
-              const SizedBox(height: 12),
-              
+              SizedBox(height: 12),
+
               ListTile(
-                tileColor: const Color(0xFF1E1E1E),
+                tileColor: StiloColors.surface,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                leading: const Icon(Icons.calculate, color: Colors.orangeAccent),
-                title: const Text("Saldo Restante", style: TextStyle(color: Colors.white54, fontSize: 13)),
+                leading: Icon(Icons.calculate, color: Colors.orangeAccent),
+                title: Text("Saldo Restante", style: TextStyle(color: StiloColors.text.withValues(alpha: .54), fontSize: 13)),
                 trailing: Text(
                   "\$${restante.toStringAsFixed(2)}",
-                  style: const TextStyle(color: Colors.orangeAccent, fontWeight: FontWeight.bold, fontSize: 16),
+                  style: TextStyle(color: Colors.orangeAccent, fontWeight: FontWeight.bold, fontSize: 16),
                 ),
               ),
-              const SizedBox(height: 32),
+              SizedBox(height: 32),
 
-              _buildSectionTitle("ASIGNACIONES", const Color(0xFF06B6D4)),
+              _buildSectionTitle("ASIGNACIONES", Color(0xFF06B6D4)),
            DropdownButtonFormField<String>(
-                isExpanded: true, 
+                isExpanded: true,
                 value: _idClienteSeleccionado,
-                dropdownColor: const Color(0xFF1E1E1E),
-                decoration: _inputDecoration("Seleccionar Cliente", Icons.person, const Color(0xFF06B6D4)),
+                dropdownColor: StiloColors.surface,
+                decoration: _inputDecoration("Seleccionar Cliente", Icons.person, Color(0xFF06B6D4)),
                 items: _clientesCatalogo.map((c) => DropdownMenuItem(
-                  value: c.id, 
+                  value: c.id,
                   child: Text(
-                    c.nombre, 
-                    style: const TextStyle(color: Colors.white),
+                    c.nombre,
+                    style: TextStyle(color: StiloColors.text),
                     overflow: TextOverflow.ellipsis, // <-- NUEVO
                   )
                 )).toList(),
                 onChanged: (val) { setState(() { _idClienteSeleccionado = val; _actualizarLugarEntrega(val!); }); },
                 validator: (val) => val == null ? 'Por favor selecciona un cliente' : null,
               ),
-              const SizedBox(height: 16),
-              _buildTextField(_lugarEntregaController, "Lugar de Entrega (Auto-llenado)", Icons.location_on, const Color(0xFF06B6D4)),
-              const SizedBox(height: 16),
-              
+              SizedBox(height: 16),
+              _buildTextField(_lugarEntregaController, "Lugar de Entrega (Auto-llenado)", Icons.location_on, Color(0xFF06B6D4)),
+              SizedBox(height: 16),
+
           DropdownButtonFormField<String>(
                 isExpanded: true, // <-- NUEVO
                 value: _idSaunaSeleccionado,
-                dropdownColor: const Color(0xFF1E1E1E),
-                decoration: _inputDecoration("Tipo de madera", Icons.hot_tub, const Color(0xFF06B6D4)),
+                dropdownColor: StiloColors.surface,
+                decoration: _inputDecoration("Tipo de madera", Icons.hot_tub, Color(0xFF06B6D4)),
                 items: itemsSaunas,
                 onChanged: (val) {
                   if (val == 'ADD_NEW') {
@@ -340,10 +342,10 @@ itemsSaunas.add(
                 },
                 validator: (val) => val == null ? 'Por favor selecciona un sauna' : null,
               ),
-              const SizedBox(height: 24),
-              
-              Text("Encargados Asignados:", style: GoogleFonts.inter(color: Colors.white54, fontSize: 13)),
-              const SizedBox(height: 8),
+              SizedBox(height: 24),
+
+              Text("Encargados Asignados:", style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .54), fontSize: 13)),
+              SizedBox(height: 8),
               Wrap(
                 spacing: 8.0,
                 runSpacing: 4.0,
@@ -351,43 +353,43 @@ itemsSaunas.add(
                   final isSelected = _encargadosSeleccionados.contains(t.id);
                   return FilterChip(
                     label: Text(t.nombre),
-                    selectedColor: const Color(0xFF06B6D4).withOpacity(0.4),
-                    checkmarkColor: const Color(0xFF06B6D4),
+                    selectedColor: Color(0xFF06B6D4).withOpacity(0.4),
+                    checkmarkColor: Color(0xFF06B6D4),
                     selected: isSelected,
                     onSelected: (sel) { setState(() { if (sel) _encargadosSeleccionados.add(t.id); else _encargadosSeleccionados.remove(t.id); }); },
                   );
                 }).toList(),
               ),
-              const SizedBox(height: 32),
+              SizedBox(height: 32),
 
-              _buildSectionTitle("FECHAS Y HORARIOS", const Color(0xFF10B981)),
-              _buildDateTimeButton("Fecha de Inicio", _fechaInicio, 'inicio', const Color(0xFF10B981)),
-              const SizedBox(height: 12),
-              _buildDateTimeButton("Fecha de Entrega", _fechaEntrega, 'entrega', const Color(0xFF10B981)),
-              const SizedBox(height: 24),
-              
+              _buildSectionTitle("FECHAS Y HORARIOS", Color(0xFF10B981)),
+              _buildDateTimeButton("Fecha de Inicio", _fechaInicio, 'inicio', Color(0xFF10B981)),
+              SizedBox(height: 12),
+              _buildDateTimeButton("Fecha de Entrega", _fechaEntrega, 'entrega', Color(0xFF10B981)),
+              SizedBox(height: 24),
+
               // <-- NUEVO BOTÓN DE SALIDA INSTALACIÓN -->
               _buildSectionTitle("LOGÍSTICA", Colors.orangeAccent),
-              Text("Si sabes qué día se van a instalar los equipos, agéndalo aquí para que los trabajadores puedan solicitar sus herramientas a tiempo.", style: GoogleFonts.inter(color: Colors.white54, fontSize: 11)),
-              const SizedBox(height: 8),
+              Text("Si sabes qué día se van a instalar los equipos, agéndalo aquí para que los trabajadores puedan solicitar sus herramientas a tiempo.", style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .54), fontSize: 11)),
+              SizedBox(height: 8),
               _buildDateTimeButton("Salida de Instalación", _fechaSalidaInstalacion, 'salida', Colors.orangeAccent),
-              const SizedBox(height: 32),
+              SizedBox(height: 32),
 
-              _buildSectionTitle("DETALLES TÉCNICOS", const Color(0xFFF59E0B)),
-              _buildTextField(_medidasController, "Medidas (Ej. 1.10 x 1.10)", Icons.straighten, const Color(0xFFF59E0B)),
-              const SizedBox(height: 40),
+              _buildSectionTitle("DETALLES TÉCNICOS", Color(0xFFF59E0B)),
+              _buildTextField(_medidasController, "Medidas (Ej. 1.10 x 1.10)", Icons.straighten, Color(0xFFF59E0B)),
+              SizedBox(height: 40),
 
               Container(
                 width: double.infinity,
                 height: 60,
-                decoration: BoxDecoration(borderRadius: BorderRadius.circular(16), gradient: const LinearGradient(colors: [Color(0xFF8B5CF6), Color(0xFF6D28D9)])),
+                decoration: BoxDecoration(borderRadius: BorderRadius.circular(16), gradient: LinearGradient(colors: [StiloColors.accent, Color(0xFF6D28D9)])),
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(backgroundColor: Colors.transparent, shadowColor: Colors.transparent),
                   onPressed: _isGuardando ? null : _guardarProyecto,
-                  child: _isGuardando ? const CircularProgressIndicator(color: Colors.white) : const Text("CREAR PROYECTO", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white)),
+                  child: _isGuardando ? CircularProgressIndicator(color: StiloColors.text) : Text("CREAR PROYECTO", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: StiloColors.text)),
                 ),
               ),
-              const SizedBox(height: 20),
+              SizedBox(height: 20),
             ],
           ),
         ),
@@ -397,9 +399,9 @@ itemsSaunas.add(
   Widget _buildFinanzasField(TextEditingController controller, String label, IconData icon) {
     return TextFormField(contextMenuBuilder: privacyTextMenu,
       controller: controller,
-      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-      style: const TextStyle(color: Color(0xFFFFDE21), fontWeight: FontWeight.bold),
-      decoration: _inputDecoration(label, icon, const Color(0xFFFFDE21)),
+      keyboardType: TextInputType.numberWithOptions(decimal: true),
+      style: TextStyle(color: Color(0xFFFFDE21), fontWeight: FontWeight.bold),
+      decoration: _inputDecoration(label, icon, Color(0xFFFFDE21)),
       onTap: () {
         if (controller.text == '0.0' || controller.text == '0') {
           controller.selection = TextSelection(
@@ -422,11 +424,11 @@ Widget _buildDateTimeButton(String label, DateTime? date, String tipoFecha, Colo
     return InkWell(
       onTap: () => _pickDateTime(tipoFecha),
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: const Color(0xFF1E1E1E), 
-          borderRadius: BorderRadius.circular(12), 
-          border: Border.all(color: hasDate ? iconColor.withOpacity(0.4) : Colors.white10)
+          color: StiloColors.surface,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: hasDate ? iconColor.withOpacity(0.4) : StiloColors.text.withValues(alpha: .10))
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -434,26 +436,26 @@ Widget _buildDateTimeButton(String label, DateTime? date, String tipoFecha, Colo
             // 👇 NUEVO: Expanded para que el texto no desborde la pantalla
             Expanded(
               child: Text(
-                label, 
-                style: const TextStyle(color: Colors.white54),
+                label,
+                style: TextStyle(color: StiloColors.text.withValues(alpha: .54)),
                 overflow: TextOverflow.ellipsis,
               ),
             ),
-            const SizedBox(width: 8),
+            SizedBox(width: 8),
             // 👇 NUEVO: mainAxisSize en min para que los íconos ocupen solo lo necesario
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  dateString, 
+                  dateString,
                   style: TextStyle(
-                    color: hasDate ? Colors.white : Colors.white38, 
+                    color: hasDate ? StiloColors.text : StiloColors.text.withValues(alpha: .38),
                     fontWeight: hasDate ? FontWeight.bold : FontWeight.normal,
                     fontSize: 13, // Reduje un poco el tamaño de letra para pantallas chicas
                   )
-                ), 
-                const SizedBox(width: 10), 
-                
+                ),
+                SizedBox(width: 10),
+
                 if (tipoFecha == 'salida' && hasDate) ...[
                   GestureDetector(
                     onTap: () {
@@ -461,9 +463,9 @@ Widget _buildDateTimeButton(String label, DateTime? date, String tipoFecha, Colo
                         _fechaSalidaInstalacion = null;
                       });
                     },
-                    child: const Icon(Icons.close_rounded, color: Colors.redAccent, size: 20),
+                    child: Icon(Icons.close_rounded, color: Colors.redAccent, size: 20),
                   ),
-                  const SizedBox(width: 8),
+                  SizedBox(width: 8),
                 ],
 
                 Icon(Icons.calendar_today, color: iconColor, size: 20)
@@ -476,19 +478,19 @@ Widget _buildDateTimeButton(String label, DateTime? date, String tipoFecha, Colo
   }
 
   Widget _buildSectionTitle(String title, Color color) {
-    return Padding(padding: const EdgeInsets.only(bottom: 12, left: 4), child: Row(children: [Icon(Icons.label_important, color: color, size: 16), const SizedBox(width: 8), Text(title, style: GoogleFonts.inter(color: color, fontSize: 13, fontWeight: FontWeight.bold, letterSpacing: 1.5))]));
+    return Padding(padding: EdgeInsets.only(bottom: 12, left: 4), child: Row(children: [Icon(Icons.label_important, color: color, size: 16), SizedBox(width: 8), Text(title, style: GoogleFonts.inter(color: color, fontSize: 13, fontWeight: FontWeight.bold, letterSpacing: 1.5))]));
   }
 
   InputDecoration _inputDecoration(String label, IconData icon, Color iconColor) {
-    return InputDecoration(labelText: label, labelStyle: const TextStyle(color: Colors.white54), prefixIcon: Icon(icon, color: iconColor), filled: true, fillColor: const Color(0xFF1E1E1E), enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none), focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: iconColor, width: 2)));
+    return InputDecoration(labelText: label, labelStyle: TextStyle(color: StiloColors.text.withValues(alpha: .54)), prefixIcon: Icon(icon, color: iconColor), filled: true, fillColor: StiloColors.surface, enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none), focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: iconColor, width: 2)));
   }
 
   Widget _buildTextField(TextEditingController controller, String label, IconData icon, Color iconColor, {int maxLines = 1, bool esObligatorio = true}) {
     return TextFormField(contextMenuBuilder: privacyTextMenu,
-      controller: controller, 
-      maxLines: maxLines, 
-      style: const TextStyle(color: Colors.white), 
-      decoration: _inputDecoration(label, icon, iconColor), 
+      controller: controller,
+      maxLines: maxLines,
+      style: TextStyle(color: StiloColors.text),
+      decoration: _inputDecoration(label, icon, iconColor),
       validator: esObligatorio ? (v) => v == null || v.trim().isEmpty ? "Este campo es obligatorio" : null : null
     );
   }
@@ -496,13 +498,13 @@ Widget _buildDateTimeButton(String label, DateTime? date, String tipoFecha, Colo
   void _guardarProyecto() async {
     // 1. Forzar validación visual y detención si falla el validador automático del Form
     if (_formKey.currentState == null || !_formKey.currentState!.validate()) {
-      return; 
+      return;
     }
 
     // 2. Validación explícita y manual para el TÍTULO
     if (_tituloController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text('El título del proyecto es obligatorio.'),
           backgroundColor: Colors.redAccent,
         ),
@@ -513,7 +515,7 @@ Widget _buildDateTimeButton(String label, DateTime? date, String tipoFecha, Colo
     // 3. Validación manual para los campos que están fuera del estándar clásico del Form
     if (_idClienteSeleccionado == null || _idSaunaSeleccionado == null || _encargadosSeleccionados.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text('Por favor, rellene todos los campos obligatorios (Cliente, Madera y Encargados).'),
           backgroundColor: Colors.orangeAccent,
         ),
@@ -527,31 +529,31 @@ Widget _buildDateTimeButton(String label, DateTime? date, String tipoFecha, Colo
 
     if (_estatusSeleccionado == 'finalizado' && pagoInicial < cotizacion) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text('No se puede finalizar el proyecto hasta que el monto esté cubierto al 100%.'),
           backgroundColor: Colors.redAccent,
         ),
       );
-      return; 
+      return;
     }
 
     // Si pasó todos los filtros de validación, se procede a guardar
     setState(() => _isGuardando = true);
     try {
       Proyecto nuevoProyecto = Proyecto(
-        id: '', 
-        idSauna: _idSaunaSeleccionado!, 
-        idCliente: _idClienteSeleccionado!, 
-        titulo: _tituloController.text.trim(), 
-        estatus: _estatusSeleccionado, 
-        fechaInicio: _fechaInicio, 
+        id: '',
+        idSauna: _idSaunaSeleccionado!,
+        idCliente: _idClienteSeleccionado!,
+        titulo: _tituloController.text.trim(),
+        estatus: _estatusSeleccionado,
+        fechaInicio: _fechaInicio,
         fechaEntrega: _fechaEntrega,
         fechaSalidaInstalacion: _fechaSalidaInstalacion, // <-- INYECTAMOS LA NUEVA FECHA AQUÍ
-        medidas: _medidasController.text.trim(), 
-        descripcion: _descController.text.trim(), 
+        medidas: _medidasController.text.trim(),
+        descripcion: _descController.text.trim(),
         encargados: _encargadosSeleccionados,
       );
-      
+
       await _proyectoService.crearProyecto(nuevoProyecto, cotizacion, pagoInicial);
       if (mounted) Navigator.pop(context);
     } catch (e) {

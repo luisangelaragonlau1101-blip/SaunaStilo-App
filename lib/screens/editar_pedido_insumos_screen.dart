@@ -1,3 +1,4 @@
+import '../presentation/appearance.dart';
 import '../services/external_transfer.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -16,7 +17,7 @@ class EditarPedidoScreen extends StatefulWidget {
 
 class _EditarPedidoScreenState extends State<EditarPedidoScreen> {
   final _formKey = GlobalKey<FormState>();
-  
+
   // Controladores
   late TextEditingController _cantidadController;
   late TextEditingController _cotizacionController;
@@ -33,17 +34,17 @@ class _EditarPedidoScreenState extends State<EditarPedidoScreen> {
   @override
   void initState() {
     super.initState();
-    
+
     // Inicializar controladores con los datos actuales del pedido
     _cantidadController = TextEditingController(text: widget.pedido.cantidadSolicitada.toString());
     _cotizacionController = TextEditingController(text: widget.pedido.cotizacion.toString());
     _fleteController = TextEditingController(text: widget.pedido.costoFlete.toString());
     _folioFacturaController = TextEditingController(text: widget.pedido.folioFactura);
     _observacionesController = TextEditingController(text: widget.pedido.observaciones);
-    
+
     // Si el estatus en BD no coincide con las opciones, por defecto 'pendiente'
-    _statusSeleccionado = _opcionesStatus.contains(widget.pedido.statusPedido) 
-        ? widget.pedido.statusPedido 
+    _statusSeleccionado = _opcionesStatus.contains(widget.pedido.statusPedido)
+        ? widget.pedido.statusPedido
         : 'pendiente';
 
     _totalCalculado = widget.pedido.totalCompra;
@@ -73,7 +74,7 @@ class _EditarPedidoScreenState extends State<EditarPedidoScreen> {
 
   Future<void> _actualizarPedido() async {
     if (!_formKey.currentState!.validate()) return;
-    
+
     setState(() => _guardando = true);
 
     try {
@@ -96,10 +97,10 @@ class _EditarPedidoScreenState extends State<EditarPedidoScreen> {
           .collection('compras_insumos')
           .doc(widget.pedido.id)
           .update(dataAActualizar);
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Pedido actualizado correctamente'), backgroundColor: Color(0xFF81C784)),
+          SnackBar(content: Text('Pedido actualizado correctamente'), backgroundColor: Color(0xFF81C784)),
         );
         Navigator.pop(context);
       }
@@ -107,7 +108,7 @@ class _EditarPedidoScreenState extends State<EditarPedidoScreen> {
     } catch (e) {
       debugPrint("Error al actualizar el pedido: $e");
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Error al actualizar el pedido'), backgroundColor: Colors.redAccent),
+        SnackBar(content: Text('Error al actualizar el pedido'), backgroundColor: Colors.redAccent),
       );
     } finally {
       if (mounted) setState(() => _guardando = false);
@@ -116,62 +117,63 @@ class _EditarPedidoScreenState extends State<EditarPedidoScreen> {
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context);
     return Scaffold(
-      backgroundColor: const Color(0xFF121212),
+      backgroundColor: StiloColors.surface,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF121212),
+        backgroundColor: StiloColors.surface,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white),
+        iconTheme: IconThemeData(color: StiloColors.text),
         title: Text(
-          "EDITAR PEDIDO", 
-          style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, letterSpacing: 1.5, color: Colors.white)
+          "EDITAR PEDIDO",
+          style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, letterSpacing: 1.5, color: StiloColors.text)
         ),
         centerTitle: true,
       ),
       body: Form(
         key: _formKey,
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20.0),
+          padding: EdgeInsets.all(20.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // --- SECCIÓN DE ESTATUS Y FACTURA ---
               Container(
-                padding: const EdgeInsets.all(16),
+                padding: EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1E1E1E),
+                  color: StiloColors.surface,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.white12)
+                  border: Border.all(color: StiloColors.text.withValues(alpha: .12))
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text("Gestión del Pedido", style: GoogleFonts.inter(color: Colors.white70, fontSize: 14, fontWeight: FontWeight.w600)),
-                    const SizedBox(height: 16),
-                    
+                    Text("Gestión del Pedido", style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .70), fontSize: 14, fontWeight: FontWeight.w600)),
+                    SizedBox(height: 16),
+
                     // Dropdown de Estatus
                     DropdownButtonFormField<String>(
                       value: _statusSeleccionado,
-                      dropdownColor: const Color(0xFF1E1E1E),
-                      style: GoogleFonts.inter(color: Colors.white, fontSize: 15),
+                      dropdownColor: StiloColors.surface,
+                      style: GoogleFonts.inter(color: StiloColors.text, fontSize: 15),
                       decoration: InputDecoration(
                         labelText: 'Estatus del Pedido',
-                        labelStyle: GoogleFonts.inter(color: Colors.white54),
-                        prefixIcon: const Icon(Icons.sync_alt_outlined, color: Colors.white54),
+                        labelStyle: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .54)),
+                        prefixIcon: Icon(Icons.sync_alt_outlined, color: StiloColors.text.withValues(alpha: .54)),
                         filled: true,
-                        fillColor: const Color(0xFF121212),
+                        fillColor: StiloColors.surface,
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Colors.white12),
+                          borderSide: BorderSide(color: StiloColors.text.withValues(alpha: .12)),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Color(0xFF3B82F6)), 
+                          borderSide: BorderSide(color: Color(0xFF3B82F6)),
                         ),
                       ),
                       items: _opcionesStatus.map((status) {
                         return DropdownMenuItem<String>(
-                          value: status, 
+                          value: status,
                           child: Text(status.toUpperCase()),
                         );
                       }).toList(),
@@ -181,8 +183,8 @@ class _EditarPedidoScreenState extends State<EditarPedidoScreen> {
                         }
                       },
                     ),
-                    const SizedBox(height: 16),
-                    
+                    SizedBox(height: 16),
+
                     // Campo de Folio de Factura (Destacado)
                     _crearTextField(
                       controller: _folioFacturaController,
@@ -194,18 +196,18 @@ class _EditarPedidoScreenState extends State<EditarPedidoScreen> {
                 ),
               ),
 
-              const SizedBox(height: 24),
-              Text("Detalles Financieros y Cantidades", style: GoogleFonts.inter(color: Colors.white54, fontSize: 13, letterSpacing: 1.2)),
-              const SizedBox(height: 12),
+              SizedBox(height: 24),
+              Text("Detalles Financieros y Cantidades", style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .54), fontSize: 13, letterSpacing: 1.2)),
+              SizedBox(height: 12),
 
               _crearTextField(
                 controller: _cantidadController,
                 label: 'Cantidad Solicitada',
                 icon: Icons.numbers_outlined,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                keyboardType: TextInputType.numberWithOptions(decimal: true),
               ),
-              const SizedBox(height: 16),
-              
+              SizedBox(height: 16),
+
               Row(
                 children: [
                   Expanded(
@@ -213,40 +215,40 @@ class _EditarPedidoScreenState extends State<EditarPedidoScreen> {
                       controller: _cotizacionController,
                       label: 'Cotización (\$)',
                       icon: Icons.monetization_on_outlined,
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      keyboardType: TextInputType.numberWithOptions(decimal: true),
                     ),
                   ),
-                  const SizedBox(width: 16),
+                  SizedBox(width: 16),
                   Expanded(
                     child: _crearTextField(
                       controller: _fleteController,
                       label: 'Costo Flete (\$)',
                       icon: Icons.local_shipping_outlined,
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      keyboardType: TextInputType.numberWithOptions(decimal: true),
                     ),
                   ),
                 ],
               ),
-              
-              const SizedBox(height: 16),
+
+              SizedBox(height: 16),
               // Total Auto-calculado
               Container(
-                padding: const EdgeInsets.all(16),
+                padding: EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF3B82F6).withOpacity(0.1),
+                  color: Color(0xFF3B82F6).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFF3B82F6).withOpacity(0.3))
+                  border: Border.all(color: Color(0xFF3B82F6).withOpacity(0.3))
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text("Total Calculado:", style: GoogleFonts.inter(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500)),
-                    Text("\$${_totalCalculado.toStringAsFixed(2)}", style: GoogleFonts.inter(color: const Color(0xFF81C784), fontSize: 20, fontWeight: FontWeight.bold)),
+                    Text("Total Calculado:", style: GoogleFonts.inter(color: StiloColors.text, fontSize: 16, fontWeight: FontWeight.w500)),
+                    Text("\$${_totalCalculado.toStringAsFixed(2)}", style: GoogleFonts.inter(color: Color(0xFF81C784), fontSize: 20, fontWeight: FontWeight.bold)),
                   ],
                 ),
               ),
 
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
               _crearTextField(
                 controller: _observacionesController,
                 label: 'Observaciones',
@@ -255,23 +257,23 @@ class _EditarPedidoScreenState extends State<EditarPedidoScreen> {
                 isRequired: false,
               ),
 
-              const SizedBox(height: 32),
+              SizedBox(height: 32),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF3B82F6),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  backgroundColor: Color(0xFF3B82F6),
+                  foregroundColor: StiloColors.text,
+                  padding: EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
                 onPressed: _guardando ? null : _actualizarPedido,
                 child: _guardando
-                    ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                    ? SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: StiloColors.text, strokeWidth: 2))
                     : Text(
                         'ACTUALIZAR PEDIDO',
                         style: GoogleFonts.inter(fontWeight: FontWeight.w600, letterSpacing: 0.5),
                       ),
               ),
-              const SizedBox(height: 40),
+              SizedBox(height: 40),
             ],
           ),
         ),
@@ -292,27 +294,27 @@ class _EditarPedidoScreenState extends State<EditarPedidoScreen> {
       controller: controller,
       keyboardType: keyboardType,
       maxLines: maxLines,
-      style: GoogleFonts.inter(color: Colors.white),
+      style: GoogleFonts.inter(color: StiloColors.text),
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: GoogleFonts.inter(color: Colors.white54),
-        prefixIcon: Icon(icon, color: Colors.white54),
+        labelStyle: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .54)),
+        prefixIcon: Icon(icon, color: StiloColors.text.withValues(alpha: .54)),
         filled: true,
-        fillColor: const Color(0xFF1E1E1E),
+        fillColor: StiloColors.surface,
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.white12),
+          borderSide: BorderSide(color: StiloColors.text.withValues(alpha: .12)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF3B82F6)), 
+          borderSide: BorderSide(color: Color(0xFF3B82F6)),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.redAccent),
+          borderSide: BorderSide(color: Colors.redAccent),
         ),
       ),
-      validator: isRequired 
+      validator: isRequired
         ? (value) => value == null || value.isEmpty ? 'Requerido' : null
         : null,
     );

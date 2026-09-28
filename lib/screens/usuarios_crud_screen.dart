@@ -1,3 +1,5 @@
+import '../widgets/inline_photo.dart';
+import '../presentation/appearance.dart';
 import '../services/external_transfer.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -5,7 +7,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import '../models/user_model.dart';
-import 'admin_modal_horario.dart'; 
+import 'admin_modal_horario.dart';
 
 class UsuariosCrudScreen extends StatefulWidget {
   const UsuariosCrudScreen({Key? key}) : super(key: key);
@@ -15,9 +17,9 @@ class UsuariosCrudScreen extends StatefulWidget {
 }
 
 class _UsuariosCrudScreenState extends State<UsuariosCrudScreen> {
-  static const Color colorFondo = Color(0xFF000000);
-  static const Color colorTarjeta = Color(0xFF1E1E1E);
-  static const Color colorMorado = Color(0xFF8B5CF6);
+  Color get colorFondo => StiloColors.background;
+  Color get colorTarjeta => StiloColors.surface;
+  Color get colorMorado => StiloColors.accent;
 
   Future<bool> _esAdministradorActual() async {
     final uid = FirebaseAuth.instance.currentUser?.uid;
@@ -32,21 +34,21 @@ class _UsuariosCrudScreenState extends State<UsuariosCrudScreen> {
 
   void _mostrarDialogoUsuario({UserModel? usuarioActual}) {
     bool esEdicion = usuarioActual != null;
-    
+
     TextEditingController nombreCtrl = TextEditingController(text: esEdicion ? usuarioActual.nombre : '');
     TextEditingController correoCtrl = TextEditingController(text: esEdicion ? usuarioActual.correo : '');
     TextEditingController passwordTemporalCtrl = TextEditingController();
     bool ocultarPasswordTemporal = true;
     String? errorPasswordTemporal;
-    String rolSeleccionado = esEdicion ? usuarioActual.rol : 'trabajador'; 
+    String rolSeleccionado = esEdicion ? usuarioActual.rol : 'trabajador';
     DateTime? fechaCumpleanos = esEdicion ? usuarioActual.cumpleanos : null;
-    
+
     TextEditingController sueldoCtrl = TextEditingController(text: esEdicion ? (usuarioActual.sueldoBaseSemanal?.toString() ?? '') : '');
     bool trabajaSabados = esEdicion ? (usuarioActual.trabajaSabados ?? false) : false;
 
     TextEditingController fechaCtrl = TextEditingController(
-      text: fechaCumpleanos != null 
-          ? "${fechaCumpleanos!.day.toString().padLeft(2, '0')}/${fechaCumpleanos!.month.toString().padLeft(2, '0')}/${fechaCumpleanos!.year}" 
+      text: fechaCumpleanos != null
+          ? "${fechaCumpleanos!.day.toString().padLeft(2, '0')}/${fechaCumpleanos!.month.toString().padLeft(2, '0')}/${fechaCumpleanos!.year}"
           : ''
     );
 
@@ -58,27 +60,27 @@ class _UsuariosCrudScreenState extends State<UsuariosCrudScreen> {
             return AlertDialog(
               backgroundColor: colorTarjeta,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              title: Text(esEdicion ? 'Editar Usuario' : 'Nuevo Usuario', 
-                  style: GoogleFonts.montserrat(color: Colors.white, fontWeight: FontWeight.bold)),
+              title: Text(esEdicion ? 'Editar Usuario' : 'Nuevo Usuario',
+                  style: GoogleFonts.montserrat(color: StiloColors.text, fontWeight: FontWeight.bold)),
               content: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     TextField(contextMenuBuilder: privacyTextMenu,
-                      controller: nombreCtrl, 
-                      style: const TextStyle(color: Colors.white), 
-                      cursorColor: colorMorado, 
-                      decoration: const InputDecoration(labelText: "Nombre", labelStyle: TextStyle(color: Colors.white54), focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: colorMorado)), enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white24)))
+                      controller: nombreCtrl,
+                      style: TextStyle(color: StiloColors.text),
+                      cursorColor: colorMorado,
+                      decoration: InputDecoration(labelText: "Nombre", labelStyle: TextStyle(color: StiloColors.text.withValues(alpha: .54)), focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: colorMorado)), enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: StiloColors.text.withValues(alpha: .24))))
                     ),
-                    const SizedBox(height: 10),
+                    SizedBox(height: 10),
                     TextField(contextMenuBuilder: privacyTextMenu,
-                      controller: correoCtrl, 
-                      style: const TextStyle(color: Colors.white), 
-                      cursorColor: colorMorado, 
-                      enabled: !esEdicion, 
-                      decoration: const InputDecoration(labelText: "Correo Electrónico", labelStyle: TextStyle(color: Colors.white54), focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: colorMorado)), enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white24)))
+                      controller: correoCtrl,
+                      style: TextStyle(color: StiloColors.text),
+                      cursorColor: colorMorado,
+                      enabled: !esEdicion,
+                      decoration: InputDecoration(labelText: "Correo Electrónico", labelStyle: TextStyle(color: StiloColors.text.withValues(alpha: .54)), focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: colorMorado)), enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: StiloColors.text.withValues(alpha: .24))))
                     ),
-                    const SizedBox(height: 10),
+                    SizedBox(height: 10),
 
                     if (!esEdicion) ...[
                       TextField(contextMenuBuilder: privacyTextMenu,
@@ -86,19 +88,19 @@ class _UsuariosCrudScreenState extends State<UsuariosCrudScreen> {
                         obscureText: ocultarPasswordTemporal,
                         autocorrect: false,
                         enableSuggestions: false,
-                        style: const TextStyle(color: Colors.white),
+                        style: TextStyle(color: StiloColors.text),
                         cursorColor: colorMorado,
                         decoration: InputDecoration(
                           labelText: "Contraseña temporal",
                           helperText: "Mínimo 8 caracteres. Compártela de forma privada.",
-                          helperStyle: const TextStyle(color: Colors.white38),
+                          helperStyle: TextStyle(color: StiloColors.text.withValues(alpha: .38)),
                           errorText: errorPasswordTemporal,
-                          labelStyle: const TextStyle(color: Colors.white54),
-                          focusedBorder: const UnderlineInputBorder(
+                          labelStyle: TextStyle(color: StiloColors.text.withValues(alpha: .54)),
+                          focusedBorder: UnderlineInputBorder(
                             borderSide: BorderSide(color: colorMorado),
                           ),
-                          enabledBorder: const UnderlineInputBorder(
-                            borderSide: BorderSide(color: Colors.white24),
+                          enabledBorder: UnderlineInputBorder(
+                            borderSide: BorderSide(color: StiloColors.text.withValues(alpha: .24)),
                           ),
                           suffixIcon: IconButton(
                             tooltip: ocultarPasswordTemporal
@@ -108,7 +110,7 @@ class _UsuariosCrudScreenState extends State<UsuariosCrudScreen> {
                               ocultarPasswordTemporal
                                   ? Icons.visibility_off
                                   : Icons.visibility,
-                              color: Colors.white54,
+                              color: StiloColors.text.withValues(alpha: .54),
                             ),
                             onPressed: () => setStateDialog(() {
                               ocultarPasswordTemporal = !ocultarPasswordTemporal;
@@ -121,34 +123,34 @@ class _UsuariosCrudScreenState extends State<UsuariosCrudScreen> {
                           }
                         },
                       ),
-                      const SizedBox(height: 10),
+                      SizedBox(height: 10),
                     ],
-                    
+
                     TextField(contextMenuBuilder: privacyTextMenu,
                       controller: fechaCtrl,
-                      readOnly: true, 
-                      style: const TextStyle(color: Colors.white),
-                      decoration: const InputDecoration(
+                      readOnly: true,
+                      style: TextStyle(color: StiloColors.text),
+                      decoration: InputDecoration(
                         labelText: "Fecha de Cumpleaños",
-                        labelStyle: TextStyle(color: Colors.white54),
+                        labelStyle: TextStyle(color: StiloColors.text.withValues(alpha: .54)),
                         focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: colorMorado)),
-                        enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white24)),
+                        enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: StiloColors.text.withValues(alpha: .24))),
                         suffixIcon: Icon(Icons.calendar_today, color: colorMorado, size: 20),
                       ),
                       onTap: () async {
                         DateTime? pickedDate = await showDatePicker(
                           context: context,
-                          initialDate: fechaCumpleanos ?? DateTime(2000), 
+                          initialDate: fechaCumpleanos ?? DateTime(2000),
                           firstDate: DateTime(1900),
                           lastDate: DateTime.now(),
                           builder: (context, child) {
                             return Theme(
-                              data: ThemeData.dark().copyWith(
-                                colorScheme: const ColorScheme.dark(
+                              data: Theme.of(context).copyWith(
+                                colorScheme: Theme.of(context).colorScheme.copyWith(
                                   primary: colorMorado,
-                                  onPrimary: Colors.white,
+                                  onPrimary: StiloColors.text,
                                   surface: colorTarjeta,
-                                  onSurface: Colors.white,
+                                  onSurface: StiloColors.text,
                                 ),
                               ),
                               child: child!,
@@ -164,27 +166,27 @@ class _UsuariosCrudScreenState extends State<UsuariosCrudScreen> {
                         }
                       },
                     ),
-                    const SizedBox(height: 10),
-                    
+                    SizedBox(height: 10),
+
                     // --- NUEVOS CAMPOS EN EL DIÁLOGO ---
                     TextField(contextMenuBuilder: privacyTextMenu,
-                      controller: sueldoCtrl, 
-                      style: const TextStyle(color: Colors.white), 
-                      cursorColor: colorMorado, 
+                      controller: sueldoCtrl,
+                      style: TextStyle(color: StiloColors.text),
+                      cursorColor: colorMorado,
                       keyboardType: TextInputType.numberWithOptions(decimal: true),
-                      decoration: const InputDecoration(
-                        labelText: "Sueldo Base Semanal (\$)", 
-                        labelStyle: TextStyle(color: Colors.white54), 
-                        focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: colorMorado)), 
-                        enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white24)),
-                        prefixIcon: Icon(Icons.attach_money_rounded, color: Colors.white54, size: 18)
+                      decoration: InputDecoration(
+                        labelText: "Sueldo Base Semanal (\$)",
+                        labelStyle: TextStyle(color: StiloColors.text.withValues(alpha: .54)),
+                        focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: colorMorado)),
+                        enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: StiloColors.text.withValues(alpha: .24))),
+                        prefixIcon: Icon(Icons.attach_money_rounded, color: StiloColors.text.withValues(alpha: .54), size: 18)
                       )
                     ),
-                    const SizedBox(height: 10),
-                    
+                    SizedBox(height: 10),
+
                     SwitchListTile(
-                      title: Text("Horario base:", style: TextStyle(color: Colors.white, fontSize: 14)),
-                      subtitle: Text(trabajaSabados ? "Lunes - Sábado" : "Lunes - Viernes", style: TextStyle(color: Colors.white54, fontSize: 12)),
+                      title: Text("Horario base:", style: TextStyle(color: StiloColors.text, fontSize: 14)),
+                      subtitle: Text(trabajaSabados ? "Lunes - Sábado" : "Lunes - Viernes", style: TextStyle(color: StiloColors.text.withValues(alpha: .54), fontSize: 12)),
                       value: trabajaSabados,
                       activeColor: colorMorado,
                       contentPadding: EdgeInsets.zero,
@@ -194,16 +196,16 @@ class _UsuariosCrudScreenState extends State<UsuariosCrudScreen> {
                         });
                       },
                     ),
-                    const SizedBox(height: 10),
-                    
+                    SizedBox(height: 10),
+
                     DropdownButtonFormField<String>(
                       value: ['admin', 'trabajador', 'maestro', 'almacenista'].contains(rolSeleccionado) ? rolSeleccionado : 'trabajador',
-                      dropdownColor: colorTarjeta, 
-                      style: const TextStyle(color: Colors.white),
-                      decoration: const InputDecoration(
-                        labelText: "Rol", 
-                        labelStyle: TextStyle(color: Colors.white54), 
-                        enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white24))
+                      dropdownColor: colorTarjeta,
+                      style: TextStyle(color: StiloColors.text),
+                      decoration: InputDecoration(
+                        labelText: "Rol",
+                        labelStyle: TextStyle(color: StiloColors.text.withValues(alpha: .54)),
+                        enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: StiloColors.text.withValues(alpha: .24)))
                       ),
                       items: ['admin', 'trabajador', 'maestro', 'almacenista']
                           .map((String rol) => DropdownMenuItem<String>(value: rol, child: Text(rol.toUpperCase())))
@@ -214,7 +216,7 @@ class _UsuariosCrudScreenState extends State<UsuariosCrudScreen> {
                 ),
               ),
               actions: [
-                TextButton(onPressed: () => Navigator.pop(context), child: Text('Cancelar', style: GoogleFonts.inter(color: Colors.white54))),
+                TextButton(onPressed: () => Navigator.pop(context), child: Text('Cancelar', style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .54)))),
                 TextButton(
                   onPressed: () async {
                     if (nombreCtrl.text.isEmpty || correoCtrl.text.isEmpty) return;
@@ -229,7 +231,7 @@ class _UsuariosCrudScreenState extends State<UsuariosCrudScreen> {
                     if (!await _esAdministradorActual()) {
                       if (mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
+                          SnackBar(
                             content: Text(
                               'Solo la cuenta administradora puede crear usuarios o asignar roles.',
                             ),
@@ -245,15 +247,15 @@ class _UsuariosCrudScreenState extends State<UsuariosCrudScreen> {
                       nombre: nombreCtrl.text.trim(),
                       correo: correoCtrl.text.trim(),
                       rol: rolSeleccionado,
-                      cumpleanos: fechaCumpleanos, 
+                      cumpleanos: fechaCumpleanos,
                       fechaRegistro: esEdicion ? usuarioActual.fechaRegistro : DateTime.now(),
                       fotoUrl: esEdicion ? usuarioActual.fotoUrl : null,
-                      
+
                       // Mantener horarios existentes al editar
                       horaEntrada: esEdicion ? usuarioActual.horaEntrada : null,
                       horaSalida: esEdicion ? usuarioActual.horaSalida : null,
                       toleranciaMinutos: esEdicion ? usuarioActual.toleranciaMinutos : 11,
-                      
+
                       // NUEVOS DATOS
                       sueldoBaseSemanal: double.tryParse(sueldoCtrl.text),
                       trabajaSabados: trabajaSabados,
@@ -288,7 +290,7 @@ class _UsuariosCrudScreenState extends State<UsuariosCrudScreen> {
                             .set(usuarioData.toFirestore());
                         perfilCreado = true;
                       }
-                      
+
                       if (mounted) Navigator.pop(context);
                     } catch (e) {
                       if (!perfilCreado && usuarioAuthCreado != null) {
@@ -319,42 +321,42 @@ class _UsuariosCrudScreenState extends State<UsuariosCrudScreen> {
     TextEditingController passwordCtrl = TextEditingController();
     bool verificando = false;
     String? errorMensaje;
-    bool ocultarPassword = true; 
+    bool ocultarPassword = true;
 
     bool confirmar = await showDialog(
       context: context,
-      barrierDismissible: false, 
+      barrierDismissible: false,
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setStateDialog) {
             return AlertDialog(
               backgroundColor: colorTarjeta,
-              title: Text('Confirmar Eliminación', style: GoogleFonts.montserrat(color: Colors.white)),
-              content: SingleChildScrollView( 
+              title: Text('Confirmar Eliminación', style: GoogleFonts.montserrat(color: StiloColors.text)),
+              content: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'Para eliminar este usuario, ingresa tu contraseña de administrador:',
-                      style: TextStyle(color: Colors.white70),
+                      style: TextStyle(color: StiloColors.text.withValues(alpha: .70)),
                     ),
-                    const SizedBox(height: 16),
+                    SizedBox(height: 16),
                     TextField(contextMenuBuilder: privacyTextMenu,
                       controller: passwordCtrl,
                       obscureText: ocultarPassword,
-                      style: const TextStyle(color: Colors.white),
+                      style: TextStyle(color: StiloColors.text),
                       cursorColor: colorMorado,
                       decoration: InputDecoration(
                         labelText: "Tu Contraseña",
-                        labelStyle: const TextStyle(color: Colors.white54),
-                        focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: colorMorado)),
-                        enabledBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Colors.white24)),
-                        errorText: errorMensaje, 
+                        labelStyle: TextStyle(color: StiloColors.text.withValues(alpha: .54)),
+                        focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: colorMorado)),
+                        enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: StiloColors.text.withValues(alpha: .24))),
+                        errorText: errorMensaje,
                         suffixIcon: IconButton(
                           icon: Icon(
                             ocultarPassword ? Icons.visibility_off : Icons.visibility,
-                            color: Colors.white54,
+                            color: StiloColors.text.withValues(alpha: .54),
                           ),
                           onPressed: () {
                             setStateDialog(() {
@@ -365,16 +367,16 @@ class _UsuariosCrudScreenState extends State<UsuariosCrudScreen> {
                       ),
                     ),
                     if (verificando) ...[
-                      const SizedBox(height: 16),
-                      const Center(child: CircularProgressIndicator(color: colorMorado)),
+                      SizedBox(height: 16),
+                      Center(child: CircularProgressIndicator(color: colorMorado)),
                     ]
                   ],
                 ),
               ),
               actions: [
                 TextButton(
-                  onPressed: verificando ? null : () => Navigator.pop(context, false), 
-                  child: const Text('Cancelar', style: TextStyle(color: Colors.white54))
+                  onPressed: verificando ? null : () => Navigator.pop(context, false),
+                  child: Text('Cancelar', style: TextStyle(color: StiloColors.text.withValues(alpha: .54)))
                 ),
                 TextButton(
                   onPressed: verificando ? null : () async {
@@ -390,15 +392,15 @@ class _UsuariosCrudScreenState extends State<UsuariosCrudScreen> {
 
                     try {
                       User? currentUser = FirebaseAuth.instance.currentUser;
-                      
+
                       if (currentUser != null && currentUser.email != null) {
                         AuthCredential credential = EmailAuthProvider.credential(
                           email: currentUser.email!,
                           password: passwordCtrl.text.trim(),
                         );
-                        
+
                         await currentUser.reauthenticateWithCredential(credential);
-                        Navigator.pop(context, true); 
+                        Navigator.pop(context, true);
                       }
                     } on FirebaseAuthException catch (e) {
                       setStateDialog(() {
@@ -415,8 +417,8 @@ class _UsuariosCrudScreenState extends State<UsuariosCrudScreen> {
                         errorMensaje = "Ocurrió un error inesperado";
                       });
                     }
-                  }, 
-                  child: const Text('Eliminar', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold))
+                  },
+                  child: Text('Eliminar', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold))
                 ),
               ],
             );
@@ -430,7 +432,7 @@ class _UsuariosCrudScreenState extends State<UsuariosCrudScreen> {
         await FirebaseFirestore.instance.collection('usuarios').doc(id).delete();
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Usuario eliminado de la base de datos'), backgroundColor: Colors.green),
+            SnackBar(content: Text('Usuario eliminado de la base de datos'), backgroundColor: Colors.green),
           );
         }
       } catch (e) {
@@ -449,12 +451,12 @@ class _UsuariosCrudScreenState extends State<UsuariosCrudScreen> {
       builder: (BuildContext context) {
         return Dialog(
           backgroundColor: Colors.transparent,
-          insetPadding: const EdgeInsets.all(10), 
+          insetPadding: EdgeInsets.all(10),
           child: InteractiveViewer(
             panEnabled: true,
             minScale: 0.8,
-            maxScale: 4.0, 
-            clipBehavior: Clip.none, 
+            maxScale: 4.0,
+            clipBehavior: Clip.none,
             child: ClipRRect(
               borderRadius: BorderRadius.circular(16),
               child: Image.network(
@@ -462,15 +464,15 @@ class _UsuariosCrudScreenState extends State<UsuariosCrudScreen> {
                 fit: BoxFit.contain,
                 loadingBuilder: (context, child, loadingProgress) {
                   if (loadingProgress == null) return child;
-                  return const Center(
+                  return Center(
                     child: CircularProgressIndicator(color: colorMorado),
                   );
                 },
                 errorBuilder: (context, error, stackTrace) {
                   return Container(
                     color: colorTarjeta,
-                    padding: const EdgeInsets.all(20),
-                    child: const Icon(Icons.broken_image, color: Colors.white54, size: 50),
+                    padding: EdgeInsets.all(20),
+                    child: Icon(Icons.broken_image, color: StiloColors.text.withValues(alpha: .54), size: 50),
                   );
                 },
               ),
@@ -483,28 +485,29 @@ class _UsuariosCrudScreenState extends State<UsuariosCrudScreen> {
 
 @override
   Widget build(BuildContext context) {
+    Theme.of(context);
     return Scaffold(
       backgroundColor: colorFondo,
       appBar: AppBar(
-        backgroundColor: colorFondo, 
-        title: Text("Gestión de Usuarios", style: GoogleFonts.montserrat(color: Colors.white))
+        backgroundColor: colorFondo,
+        title: Text("Gestión de Usuarios", style: GoogleFonts.montserrat(color: StiloColors.text))
       ),
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance.collection('usuarios').orderBy('fecha_registro', descending: true).snapshots(),
         builder: (context, snapshot) {
-          if (!snapshot.hasData) return const Center(child: CircularProgressIndicator(color: colorMorado));
-          
+          if (!snapshot.hasData) return Center(child: CircularProgressIndicator(color: colorMorado));
+
           return ListView.builder(
             itemCount: snapshot.data!.docs.length,
             itemBuilder: (context, index) {
               var rawData = snapshot.data!.docs[index].data() as Map<String, dynamic>;
               UserModel usuario = UserModel.fromFirestore(snapshot.data!.docs[index]);
-              
+
               String horaEntrada = rawData['horaEntrada'] ?? 'Sin horario';
-              
+
               return Container(
-                margin: const EdgeInsets.only(bottom: 12, left: 16, right: 16),
-                padding: const EdgeInsets.all(16), // Agregamos padding interno a la tarjeta
+                margin: EdgeInsets.only(bottom: 12, left: 16, right: 16),
+                padding: EdgeInsets.all(16), // Agregamos padding interno a la tarjeta
                 decoration: BoxDecoration(color: colorTarjeta, borderRadius: BorderRadius.circular(16)),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -522,33 +525,33 @@ class _UsuariosCrudScreenState extends State<UsuariosCrudScreen> {
                           child: CircleAvatar(
                             radius: 24, // Hacemos el avatar un poco más grande
                             backgroundColor: colorMorado.withOpacity(0.2),
-                            backgroundImage: usuario.fotoUrl != null ? NetworkImage(usuario.fotoUrl!) : null,
-                            child: usuario.fotoUrl == null  
+                            backgroundImage: usuario.fotoUrl != null ? stiloImageProvider(usuario.fotoUrl!) : null,
+                            child: usuario.fotoUrl == null
                               ? Text(
-                                  usuario.nombre.isNotEmpty ? usuario.nombre[0].toUpperCase() : 'U', 
-                                  style: const TextStyle(color: colorMorado, fontWeight: FontWeight.bold, fontSize: 18)
+                                  usuario.nombre.isNotEmpty ? usuario.nombre[0].toUpperCase() : 'U',
+                                  style: TextStyle(color: colorMorado, fontWeight: FontWeight.bold, fontSize: 18)
                                 )
                               : null,
                           ),
                         ),
-                        const SizedBox(width: 12),
+                        SizedBox(width: 12),
                         // El Expanded evita que textos largos rompan la fila
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(usuario.nombre, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
-                              const SizedBox(height: 2),
+                              Text(usuario.nombre, style: TextStyle(color: StiloColors.text, fontWeight: FontWeight.bold, fontSize: 16)),
+                              SizedBox(height: 2),
                               // El overflow evita que el correo haga saltos de línea feos
                               Text(
-                                usuario.correo, 
-                                style: const TextStyle(color: Colors.white54, fontSize: 13), 
-                                overflow: TextOverflow.ellipsis 
+                                usuario.correo,
+                                style: TextStyle(color: StiloColors.text.withValues(alpha: .54), fontSize: 13),
+                                overflow: TextOverflow.ellipsis
                               ),
-                              const SizedBox(height: 8),
+                              SizedBox(height: 8),
                               // Etiqueta visual para el ROL
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                 decoration: BoxDecoration(
                                   color: colorMorado.withOpacity(0.15),
                                   borderRadius: BorderRadius.circular(6),
@@ -556,7 +559,7 @@ class _UsuariosCrudScreenState extends State<UsuariosCrudScreen> {
                                 ),
                                 child: Text(
                                   usuario.rol.toUpperCase(),
-                                  style: const TextStyle(color: colorMorado, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 0.5),
+                                  style: TextStyle(color: colorMorado, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 0.5),
                                 ),
                               ),
                             ],
@@ -564,12 +567,12 @@ class _UsuariosCrudScreenState extends State<UsuariosCrudScreen> {
                         ),
                       ],
                     ),
-                    
-                    const Padding(
+
+                    Padding(
                       padding: EdgeInsets.symmetric(vertical: 12),
-                      child: Divider(color: Colors.white12, height: 1), // Línea separadora sutil
+                      child: Divider(color: StiloColors.text.withValues(alpha: .12), height: 1), // Línea separadora sutil
                     ),
-                    
+
                     // --- SECCIÓN INFERIOR: Detalles y Botones ---
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -579,9 +582,9 @@ class _UsuariosCrudScreenState extends State<UsuariosCrudScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text("Sueldo Base: \$${usuario.sueldoBaseSemanal?.toStringAsFixed(2) ?? '0.00'}", style: const TextStyle(color: Colors.white70, fontSize: 13)),
-                              const SizedBox(height: 4),
-                              Text("Horario: $horaEntrada", style: const TextStyle(color: Colors.white70, fontSize: 13)),
+                              Text("Sueldo Base: \$${usuario.sueldoBaseSemanal?.toStringAsFixed(2) ?? '0.00'}", style: TextStyle(color: StiloColors.text.withValues(alpha: .70), fontSize: 13)),
+                              SizedBox(height: 4),
+                              Text("Horario: $horaEntrada", style: TextStyle(color: StiloColors.text.withValues(alpha: .70), fontSize: 13)),
                             ],
                           ),
                         ),
@@ -590,21 +593,21 @@ class _UsuariosCrudScreenState extends State<UsuariosCrudScreen> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             IconButton(
-                              constraints: const BoxConstraints(),
-                              padding: const EdgeInsets.symmetric(horizontal: 8),
-                              icon: const Icon(Icons.access_time_filled_rounded, color: Color(0xFF00B0FF), size: 22), 
+                              constraints: BoxConstraints(),
+                              padding: EdgeInsets.symmetric(horizontal: 8),
+                              icon: Icon(Icons.access_time_filled_rounded, color: Color(0xFF00B0FF), size: 22),
                               onPressed: () => mostrarModalHorario(context, usuario.id, usuario.nombre)
                             ),
                             IconButton(
-                              constraints: const BoxConstraints(),
-                              padding: const EdgeInsets.symmetric(horizontal: 8),
-                              icon: const Icon(Icons.edit, color: colorMorado, size: 22), 
+                              constraints: BoxConstraints(),
+                              padding: EdgeInsets.symmetric(horizontal: 8),
+                              icon: Icon(Icons.edit, color: colorMorado, size: 22),
                               onPressed: () => _mostrarDialogoUsuario(usuarioActual: usuario)
                             ),
                             IconButton(
-                              constraints: const BoxConstraints(),
-                              padding: const EdgeInsets.only(left: 8),
-                              icon: const Icon(Icons.delete, color: Colors.redAccent, size: 22), 
+                              constraints: BoxConstraints(),
+                              padding: EdgeInsets.only(left: 8),
+                              icon: Icon(Icons.delete, color: Colors.redAccent, size: 22),
                               onPressed: () => _eliminarUsuario(usuario.id)
                             ),
                           ],
@@ -619,9 +622,9 @@ class _UsuariosCrudScreenState extends State<UsuariosCrudScreen> {
         },
       ),
       floatingActionButton: FloatingActionButton(
-        backgroundColor: colorMorado, 
-        onPressed: () => _mostrarDialogoUsuario(), 
-        child: const Icon(Icons.add, color: Colors.white)
+        backgroundColor: colorMorado,
+        onPressed: () => _mostrarDialogoUsuario(),
+        child: Icon(Icons.add, color: StiloColors.text)
       ),
     );
   }
