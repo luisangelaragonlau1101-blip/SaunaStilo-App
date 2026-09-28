@@ -10,6 +10,12 @@ El nuevo registro usa hora del servidor y conserva auditoría por usuario, dupli
 
 El historial administrativo se abre con los registros existentes y sincroniza en segundo plano; muestra un aviso persistente mientras haya movimientos sin confirmar. Los reportes finales siguen exigiendo una sincronización completa. Los importes y las reglas de cálculo de nómina no cambian. La vista personal muestra datos registrados, no un recibo emitido. Rachas e insignias se muestran como información sin efecto en el pago.
 
+## Bloqueo externo observado y validación
+
+El 28 de septiembre, a las 21:58 UTC, el navegador mostró el aviso del proveedor “This app is paused / This app has reached its credit limit”. La guía externa no acepta interacción mientras está pausada; esto explica el botón deshabilitado del chequeo de navegador. No se eludió la pausa ni se cambiaron cuotas, permisos o planes. El mismo servicio aloja jornadas y tareas, por lo que su disponibilidad debe comprobarse después del reinicio; no se promete reactivación automática.
+
+La revisión pasó 121 pruebas Node, las pruebas aisladas de reglas, el análisis Flutter, 80 pruebas Flutter y la compilación web. El chequeo completo de navegador permanece fallido por la pausa externa; los chequeos posteriores de ese paso no se ejecutaron. La publicación web permite entregar fotos y vistas basadas en Firestore, pero no resuelve ni declara operativo ese servicio. Las pruebas conservan sus condiciones de éxito y el fallo externo no se marca como aprobado.
+
 ## Arquitectura publicada anteriormente
 
 La web usa el backend autenticado ya desplegado de Online Smart. No necesita publicar `updateAttendance`, cambiar reglas de Firebase ni introducir credenciales administrativas.
