@@ -1,3 +1,4 @@
+import 'package:saunastilo/services/attendance_history_service.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
@@ -31,6 +32,17 @@ class ManualApi extends CompanyLearningService {
 }
 
 void main() {
+  test('recent receipts never replace administrative amounts or restore a corrected time', () {
+    final ledger = <String,dynamic>{'horaEntrada': null, 'listaBonos': [{'monto': 250}], 'observacionesAdmin': 'Revisado', 'movimientosServidor': {'horaEntrada': 'original'}};
+    final recent = <String,dynamic>{'horaEntrada': 'old', 'horaSalida': 'new', 'listaBonos': [{'monto': 100}], 'observacionesAdmin': 'Anterior', 'movimientosServidor': {'horaEntrada': 'original', 'horaSalida': 'pending'}};
+    final merged = AttendanceHistoryService.mergeReceipt(ledger, recent);
+    expect(merged['horaEntrada'], isNull);
+    expect(merged['horaSalida'], 'new');
+    expect(merged['listaBonos'], [{'monto': 250}]);
+    expect(merged['observacionesAdmin'], 'Revisado');
+    expect(ledger.containsKey('horaSalida'), false);
+  });
+
   testWidgets('product photo persists in the product JSON and renders after reopening without Storage', (t) async {
     late String saved;
     await t.runAsync(() async {

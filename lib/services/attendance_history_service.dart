@@ -13,29 +13,46 @@ class AttendanceHistory {
 /// A single history for streaks and payroll details. Includes recent receipts
 /// while retaining the complete ledger, bonuses and administrative corrections.
 class AttendanceHistoryService {
+  static Map<String,dynamic> mergeReceipt(Map<String,dynamic>? ledger, Map<String,dynamic> receipt) {
+    if (ledger == null) return receipt;
+    final merged = {...ledger};
+    final integrated = ledger['movimientosServidor'] as Map? ?? {};
+    final incoming = receipt['movimientosServidor'] as Map? ?? {};
+    for (final field in ['horaEntrada','salidaComidaSolicitada','salidaComidaReal','regresoComidaReal','horaSalida']) {
+      if (integrated[field] != null || incoming[field] == null || ledger[field] != null || receipt[field] == null) continue;
+      merged[field] = receipt[field];
+      if (field == 'horaEntrada') merged['estatus'] = ledger['estatusJustificacion'] == 'aprobada' ? 'justificado' : receipt['estatus'];
+      if (field == 'salidaComidaReal' || field == 'regresoComidaReal') merged['estatusComida'] = receipt['estatusComida'];
+    }
+    return merged;
+  }
+
   static Stream<AttendanceHistory> watch(String uid, {bool team = false}) {
     late StreamController<AttendanceHistory> controller;
     StreamSubscription? ledgerSub, receiptSub;
-    List<AsistenciaModel>? ledger;
-    List<AsistenciaModel> recent = [];
+    Map<String, Map<String,dynamic>>? ledger;
+    List<Map<String,dynamic>> recent = [];
     bool cached = false;
     String? notice;
     void emit() {
       if (ledger == null || controller.isClosed) return;
-      final merged = {for (final row in ledger!) row.id: row};
-      for (final row in recent) { merged[row.id] = row; }
+      final merged = {for (final row in ledger!.entries) row.key: AsistenciaModel.fromData(row.key, row.value)};
+      for (final receipt in recent) {
+        final id = receipt['asistenciaId'] as String;
+        final data = Map<String,dynamic>.from(receipt['data'] as Map);
+        if (data.isNotEmpty) merged[id] = AsistenciaModel.fromData(id, mergeReceipt(ledger![id], data));
+      }
       controller.add(AttendanceHistory(merged.values.toList()..sort((a,b) => b.fecha.compareTo(a.fecha)), cached: cached, notice: notice));
     }
     controller = StreamController<AttendanceHistory>(onListen: () {
       final collection = FirebaseFirestore.instance.collection('asistencias');
       final query = team ? collection : collection.where('trabajadorId', isEqualTo: uid);
       ledgerSub = query.snapshots(includeMetadataChanges: true).listen((snapshot) {
-        try { ledger = snapshot.docs.map(AsistenciaModel.fromFirestore).toList(); cached = snapshot.metadata.isFromCache; emit(); }
+        try { ledger = {for(final doc in snapshot.docs) doc.id: doc.data()}; cached = snapshot.metadata.isFromCache; emit(); }
         catch (e, st) { controller.addError(e, st); }
       }, onError: (Object e, StackTrace st) => controller.addError(e, st));
       if (!team) {
-        final today = AttendanceGatewayService.today;
-        receiptSub = AttendanceGatewayService().watchHistory(uid, today.subtract(const Duration(days: 6)), today).listen((rows) {
+        receiptSub = AttendanceGatewayService().watchRecentReceipts(uid).listen((rows) {
           recent = rows; notice = null; emit();
         }, onError: (Object error) {
           notice = 'Se muestran los registros integrados. No se pudieron actualizar los movimientos recientes.';

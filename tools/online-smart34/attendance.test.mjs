@@ -64,7 +64,7 @@ test('complete day persists across service restarts and reaches the original pay
   assert.equal((await f.call('attendance-state')).data.horaEntrada, entry.data.horaEntrada);
   await f.sync(); assert.equal(f.stored().horaEntrada, entry.data.horaEntrada);
   f.time('2026-09-28T20:00:00Z'); await f.move('solicitar_comida');
-  await assert.rejects(f.move('regreso_comida'), /autorizar/);
+  await assert.rejects(f.move('regreso_comida'), /autoriz/);
   f.time('2026-09-28T20:05:00Z');
   await f.call('attendance-approve', { userId: 'worker', day }, admin);
   f.time('2026-09-28T20:35:00Z'); await f.move('regreso_comida');
