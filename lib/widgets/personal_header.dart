@@ -25,7 +25,8 @@ class _PersonalHeaderState extends State<PersonalHeader> with WidgetsBindingObse
   Timer? _midnight;
   UserModel get user => widget.user;
   VoidCallback? get onProfile => widget.onProfile;
-  @override void initState() { super.initState(); WidgetsBinding.instance.addObserver(this); _schedule(); }
+  @override void initState() { super.initState(); WidgetsBinding.instance.addObserver(this); AppearanceController.instance.addListener(_appearanceChanged); _schedule(); }
+  void _appearanceChanged() { if (mounted) setState(() {}); }
   void _schedule() {
     _midnight?.cancel();
     final now = DateTime.now().toUtc().subtract(const Duration(hours: 6));
@@ -33,7 +34,7 @@ class _PersonalHeaderState extends State<PersonalHeader> with WidgetsBindingObse
     _midnight = Timer(next.difference(now) + const Duration(seconds: 1), () { if (mounted) { setState(() {}); _schedule(); } });
   }
   @override void didChangeAppLifecycleState(AppLifecycleState state) { if (state == AppLifecycleState.resumed) { setState(() {}); _schedule(); } }
-  @override void dispose() { _midnight?.cancel(); WidgetsBinding.instance.removeObserver(this); super.dispose(); }
+  @override void dispose() { _midnight?.cancel(); WidgetsBinding.instance.removeObserver(this); AppearanceController.instance.removeListener(_appearanceChanged); super.dispose(); }
   @override Widget build(BuildContext context) {
     Theme.of(context);
     final colors = Theme.of(context).colorScheme;

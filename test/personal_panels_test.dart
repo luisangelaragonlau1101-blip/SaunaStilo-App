@@ -9,7 +9,7 @@ import 'package:saunastilo/widgets/personal_header.dart';
 import 'package:saunastilo/screens/human_resources_screen.dart';
 import 'package:saunastilo/screens/business_workspace_screen.dart';
 
-UserModel member(String role, {bool engineering = false}) => UserModel(id: 'test', nombre: 'Persona QA', correo: 'qa@example.invalid', rol: role, fechaRegistro: DateTime(2026), panelIngenieria: engineering);
+UserModel member(String role, {bool engineering = false, DateTime? birthday}) => UserModel(id: 'test', nombre: 'Persona QA', correo: 'qa@example.invalid', rol: role, fechaRegistro: DateTime(2026), panelIngenieria: engineering, cumpleanos: birthday);
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   test('appearance survives reload and never crosses accounts', () async {
@@ -61,5 +61,20 @@ void main() {
       await tester.pumpWidget(MaterialApp(theme: theme, home: Scaffold(body: MediaQuery(data: const MediaQueryData(textScaler: TextScaler.linear(1.3)), child: PersonalHeader(user: member('trabajador'))))));
       expect(find.text('Hola, Persona'), findsOneWidget); expect(find.byTooltip('Personalizar mi panel'), findsOneWidget); expect(tester.takeException(), isNull);
     }
+  });
+  testWidgets('celebration toggle refreshes the existing header without a color change', (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    final settings = AppearanceController.instance;
+    await settings.bindUser('birthday-test');
+    final today = DateTime.now().toUtc().subtract(const Duration(hours: 6));
+    final person = member('trabajador', birthday: DateTime(2000, today.month, today.day));
+    await tester.pumpWidget(MaterialApp(theme: stiloTheme(settings.palette), home: Scaffold(body: PersonalHeader(user: person))));
+    expect(find.textContaining('Feliz cumpleaños'), findsOneWidget);
+    await settings.save(festive: false); await tester.pump();
+    expect(find.textContaining('Feliz cumpleaños'), findsNothing);
+    await settings.save(festive: true); await tester.pump();
+    expect(find.textContaining('Feliz cumpleaños'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox.shrink());
+    await settings.bindUser(null);
   });
 }

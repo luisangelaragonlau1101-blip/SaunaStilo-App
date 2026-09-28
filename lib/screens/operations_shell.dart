@@ -65,7 +65,6 @@ class _OperationsShellState extends State<OperationsShell> {
   @override
   Widget build(BuildContext context) {
     Theme.of(context);
-    Theme.of(context);
     _page(_index);
     return PersonalMessageOverlay(usuario: widget.usuario, child: Scaffold(
       backgroundColor: StiloColors.background,
@@ -85,6 +84,9 @@ class _OperationsHome extends StatefulWidget {
 class _OperationsHomeState extends State<_OperationsHome> {
   String _search = '';
   bool _all = false;
+  @override void initState() { super.initState(); AppearanceController.instance.addListener(_appearanceChanged); }
+  void _appearanceChanged() { if (mounted) setState(() {}); }
+  @override void dispose() { AppearanceController.instance.removeListener(_appearanceChanged); super.dispose(); }
   void _open(AppAction action) {
     if (action.id == 'proyectos') { widget.onTab(3); return; }
     if (action.id == 'comunidad') { widget.onTab(1); return; }
