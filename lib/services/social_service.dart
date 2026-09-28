@@ -70,7 +70,7 @@ class SocialService {
       await historiaRef.set({
         'autorId': autor.id,
         'autorNombre': autor.nombre,
-        'autorFotoUrl': autor.fotoUrl ?? '',
+        'autorFotoUrl': autor.fotoUrlParaHistoria,
         'autorRol': autor.rol,
         'texto': textoLimpio,
         'imagenUrl': subida?.url ?? '',
