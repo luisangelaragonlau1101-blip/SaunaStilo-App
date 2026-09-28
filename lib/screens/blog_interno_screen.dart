@@ -1,3 +1,4 @@
+import '../widgets/inline_photo.dart';
 import '../presentation/appearance.dart';
 import '../services/external_transfer.dart';
 import 'dart:async';
@@ -1513,7 +1514,7 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
     return CircleAvatar(
       radius: radio,
       backgroundColor: StiloColors.surface,
-      backgroundImage: foto.isNotEmpty ? NetworkImage(foto) : null,
+      backgroundImage: foto.isNotEmpty ? stiloImageProvider(foto) : null,
       child: foto.isEmpty
           ? Text(
               nombre.trim().isEmpty
@@ -1940,7 +1941,7 @@ class _VisorHistoriasScreenState extends State<_VisorHistoriasScreen> {
       radius: 19,
       backgroundColor: StiloColors.surface,
       backgroundImage: historia.autorFotoUrl.isNotEmpty
-          ? NetworkImage(historia.autorFotoUrl)
+          ? stiloImageProvider(historia.autorFotoUrl)
           : null,
       child: historia.autorFotoUrl.isEmpty
           ? Text(

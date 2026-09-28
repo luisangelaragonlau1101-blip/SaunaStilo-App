@@ -33,7 +33,11 @@ class AdminWorkspaceService {
       final actor = await tx.get(db.collection('usuarios').doc(uid));
       final existing = await tx.get(ref);
       if (actor.data()?['rol'] != 'admin' || actor.data()?['activo'] == false) throw StateError('Solo Administración puede registrar movimientos.');
-      if (existing.exists) return;
+      if (existing.exists) {
+        final old = existing.data()!;
+        if (old['tipo'] != kind || old['concepto'] != concept.trim() || old['centavos'] != cents || old['categoria'] != category || old['referencia'] != reference.trim() || old['fecha'] != Timestamp.fromDate(date)) throw StateError('Este movimiento ya se guardó con otros datos. Cierra el formulario y revisa el registro.');
+        return;
+      }
       tx.set(ref, {'tipo': kind, 'concepto': concept.trim(), 'centavos': cents, 'moneda': 'MXN', 'categoria': category, 'fecha': Timestamp.fromDate(date), 'referencia': reference.trim(), 'creadoPor': uid, 'creadoEn': FieldValue.serverTimestamp()});
     });
   }

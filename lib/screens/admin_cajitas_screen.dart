@@ -1,3 +1,4 @@
+import '../widgets/inline_photo.dart';
 import '../presentation/appearance.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -116,7 +117,7 @@ class AdminCajitasScreen extends StatelessWidget {
                                 color: colorNaranja.withOpacity(0.2),
                                 border: Border.all(color: colorNaranja.withOpacity(0.5), width: 2),
                                 image: fotoUrl != null && fotoUrl.toString().isNotEmpty
-                                    ? DecorationImage(image: NetworkImage(fotoUrl), fit: BoxFit.cover)
+                                    ? DecorationImage(image: stiloImageProvider(fotoUrl), fit: BoxFit.cover)
                                     : null,
                               ),
                               alignment: Alignment.center,

@@ -95,7 +95,7 @@ String _normalize(String text) {
 class AppActionCatalog {
   static List<AppAction> mainMenu(UserModel user) {
     const grouped = {'proyectos', 'asistencia', 'almacen_movimientos', 'solicitudes_almacen', 'prestamos', 'cajitas', 'cajita', 'proveedores', 'equipo', 'asistencias', 'rachas', 'racha', 'plan_personal', 'bandeja_admin', 'clientes', 'ventas', 'cotizaciones', 'conocimiento_ia', 'alerta_general', 'voz', 'guia', 'trabajo_extra'};
-    return forUser(user).where((a) => !grouped.contains(a.id)).toList();
+    return forUser(user).where((a) => !grouped.contains(a.id) || (a.id == 'equipo' && user.rol != AppRoles.admin)).toList();
   }
   static const _cyan = Color(0xFFB7FF2A);
   static const _mint = Color(0xFFC6FF68);

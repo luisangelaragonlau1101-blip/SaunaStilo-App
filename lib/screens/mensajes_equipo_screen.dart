@@ -1,3 +1,4 @@
+import '../widgets/inline_photo.dart';
 import '../presentation/appearance.dart';
 import '../services/external_transfer.dart';
 import '../widgets/shared_media_card.dart';
@@ -239,7 +240,7 @@ class _Avatar extends StatelessWidget {
   final double radius;
   _Avatar(this.person, {this.radius = 23});
   @override
-  Widget build(BuildContext context) => CircleAvatar(radius: radius, backgroundColor: StiloColors.surface, backgroundImage: person.fotoUrl?.isNotEmpty == true ? NetworkImage(person.fotoUrl!) : null, child: person.fotoUrl?.isNotEmpty == true ? null : Text(person.nombre.isEmpty ? 'S' : person.nombre[0].toUpperCase(), style: TextStyle(color: StiloColors.text, fontWeight: FontWeight.w800)));
+  Widget build(BuildContext context) => CircleAvatar(radius: radius, backgroundColor: StiloColors.surface, backgroundImage: person.fotoUrl?.isNotEmpty == true ? stiloImageProvider(person.fotoUrl!) : null, child: person.fotoUrl?.isNotEmpty == true ? null : Text(person.nombre.isEmpty ? 'S' : person.nombre[0].toUpperCase(), style: TextStyle(color: StiloColors.text, fontWeight: FontWeight.w800)));
 }
 class _ChatStatus extends StatelessWidget {
   final String text;

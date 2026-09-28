@@ -264,7 +264,7 @@ class _ModalDetalleActividadState extends State<ModalDetalleActividad> {
       setState(() {
         _archivosPendientes.clear();
         _comentarioController.clear();
-        if (esCierre) _estatusActual = 'completado';
+        _estatusActual = esCierre ? 'completado' : 'en_progreso';
       });
       _mostrarMensaje(
         esCierre

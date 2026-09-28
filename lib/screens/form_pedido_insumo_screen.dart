@@ -72,8 +72,8 @@ class _FormPedidoInsumoScreenState extends State<FormPedidoInsumoScreen> {
       lastDate: DateTime(2030),
       builder: (context, child) {
         return Theme(
-          data: ThemeData.dark().copyWith(
-            colorScheme: ColorScheme.dark(
+          data: Theme.of(context).copyWith(
+            colorScheme: Theme.of(context).colorScheme.copyWith(
               primary: Color(0xFF3B82F6),
               onPrimary: StiloColors.text,
               surface: StiloColors.surface,

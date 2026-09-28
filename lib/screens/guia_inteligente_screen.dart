@@ -594,6 +594,6 @@ class _GuideMessage {
   _GuideMessage({
     required this.text,
     required this.user,
-    this.sources = <AiAssistantSource>[],
+    this.sources = const <AiAssistantSource>[],
   });
 }

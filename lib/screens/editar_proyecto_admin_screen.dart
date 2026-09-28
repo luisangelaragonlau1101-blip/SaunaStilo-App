@@ -160,8 +160,8 @@ class _EditarProyectoAdminScreenState extends State<EditarProyectoAdminScreen> {
       lastDate: DateTime(2035),
       builder: (context, child) {
         return Theme(
-          data: ThemeData.dark().copyWith(
-            colorScheme: ColorScheme.dark(
+          data: Theme.of(context).copyWith(
+            colorScheme: Theme.of(context).colorScheme.copyWith(
               primary: tipoFecha == 'salida' ? Colors.orangeAccent : Color(0xFF10B981),
               surface: StiloColors.surface,
             ),
@@ -175,8 +175,8 @@ class _EditarProyectoAdminScreenState extends State<EditarProyectoAdminScreen> {
         context: context,
         initialTime: TimeOfDay.fromDateTime(fechaInicial),
         builder: (context, child) => Theme(
-          data: ThemeData.dark().copyWith(
-            colorScheme: ColorScheme.dark(
+          data: Theme.of(context).copyWith(
+            colorScheme: Theme.of(context).colorScheme.copyWith(
               primary: tipoFecha == 'salida' ? Colors.orangeAccent : Color(0xFF10B981),
               surface: StiloColors.surface
             )

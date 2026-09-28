@@ -1,3 +1,4 @@
+import '../widgets/inline_photo.dart';
 import '../presentation/appearance.dart';
 import '../services/external_transfer.dart';
 import 'configuracion_screen.dart';
@@ -232,7 +233,7 @@ class PerfilSocialScreen extends StatelessWidget {
           CircleAvatar(
             radius: 48,
             backgroundColor: StiloColors.text.withValues(alpha: .12),
-            backgroundImage: foto.isNotEmpty ? NetworkImage(foto) : null,
+            backgroundImage: foto.isNotEmpty ? stiloImageProvider(foto) : null,
             child: foto.isEmpty
                 ? Text(
                     nombre.isEmpty ? 'U' : nombre[0].toUpperCase(),

@@ -11,7 +11,7 @@ import 'proyecto_detalle_almacenista_screen.dart';
 class ProyectosAlmacenistaScreen extends StatefulWidget {
   final String? filtroInicial;
 
-  ProyectosAlmacenistaScreen({
+  const ProyectosAlmacenistaScreen({
     Key? key,
     this.filtroInicial,
   }) : super(key: key);

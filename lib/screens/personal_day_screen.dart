@@ -169,7 +169,7 @@ class PersonalCompletionBanner extends StatelessWidget {
 class _PersonalAssistantService extends CompanyLearningService {
  final CompanyLearningService parent;final String uid,date;
  _PersonalAssistantService(this.parent,this.uid,this.date);
- @override Future<Map<String,dynamic>> call(String action,[Map<String,dynamic> data={}])=>parent.call('personal-ask',{...data,'userId':uid,'date':date,'includePlan':true});
+ @override Future<Map<String,dynamic>> call(String action,[Map<String,dynamic> data=const {}])=>parent.call('personal-ask',{...data,'userId':uid,'date':date,'includePlan':true});
 }
 
 class PersonalItemForm extends StatefulWidget {

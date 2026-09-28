@@ -1,3 +1,6 @@
+import 'package:file_picker/file_picker.dart';
+import '../services/inventory_photo_codec.dart';
+import '../widgets/inline_photo.dart';
 import '../presentation/appearance.dart';
 import '../widgets/team_profile_details.dart';
 import '../widgets/profile_networks.dart';
@@ -34,39 +37,21 @@ class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
   Color get colorMorado => StiloColors.accent;
 
   bool _subiendoFoto = false;
-  final _media = MediaUploadService();
 
   // 📸 LÓGICA PARA SUBIR FOTO DE PERFIL
   Future<void> _actualizarFotoPerfil() async {
-    final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(source: ImageSource.gallery, imageQuality: 70);
-
-    if (pickedFile != null) {
-      setState(() => _subiendoFoto = true);
-      try {
-        final archivo = await _media.upload(
-          bytes: await pickedFile.readAsBytes(),
-          fileName: pickedFile.name.isEmpty ? 'perfil.jpg' : pickedFile.name,
-          contentType: _mimeImagen(pickedFile.name),
-          folder: 'perfiles/${widget.usuario.id}',
-        );
-
-        await FirebaseFirestore.instance.collection('usuarios').doc(widget.usuario.id).update({
-          'fotoUrl': archivo.url,
-          'fotoRuta': archivo.path,
-        });
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Foto actualizada correctamente', style: TextStyle(color: StiloColors.text)), backgroundColor: Colors.green),
-        );
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error al subir foto: $e', style: TextStyle(color: StiloColors.text)), backgroundColor: Colors.redAccent),
-        );
-      } finally {
-        setState(() => _subiendoFoto = false);
-      }
-    }
+    if (_subiendoFoto) return;
+    setState(() => _subiendoFoto = true);
+    try {
+      final files = await FilePicker.pickFiles(type: FileType.image, allowMultiple: false);
+      if (files.isEmpty) return;
+      if (await files.single.length() > 8 * 1024 * 1024) throw StateError('Elige una foto menor de 8 MB.');
+      final photo = await InventoryPhotoCodec.encode(await files.single.readAsBytes());
+      await FirebaseFirestore.instance.collection('usuarios').doc(widget.usuario.id).update({'fotoUrl': photo, 'fotoRuta': ''});
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Foto de perfil guardada.')));
+    } catch (_) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No se guardó la foto. Elige JPG, PNG o WebP de menos de 8 MB e intenta de nuevo.')));
+    } finally { if (mounted) setState(() => _subiendoFoto = false); }
   }
 
   String _mimeImagen(String nombre) {
@@ -134,8 +119,8 @@ class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
       lastDate: DateTime.now(),
       builder: (context, child) {
         return Theme(
-          data: ThemeData.dark().copyWith(
-            colorScheme: ColorScheme.dark(
+          data: Theme.of(context).copyWith(
+            colorScheme: Theme.of(context).colorScheme.copyWith(
               primary: colorMorado,
               onPrimary: StiloColors.text,
               surface: colorTarjeta,
@@ -329,7 +314,7 @@ class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
                                       ],
                                       image: usuarioActualizado.fotoUrl != null
                                           ? DecorationImage(
-                                              image: NetworkImage(usuarioActualizado.fotoUrl!),
+                                              image: stiloImageProvider(usuarioActualizado.fotoUrl!),
                                               fit: BoxFit.cover,
                                             )
                                           : null,

@@ -201,7 +201,7 @@ class _SeguimientoCotizacionesScreenState extends State<SeguimientoCotizacionesS
                   ),
                   child: pw.Text(
                     'ESTATUS: ${estatus.toUpperCase()}',
-                    style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold, color: PdfStiloColors.text)
+                    style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold, color: PdfColors.white)
                   ),
                 ),
               ],

@@ -109,7 +109,7 @@ class _DailyTaskDetailState extends State<DailyTaskDetail> {
     } catch (error) { if (mounted) setState(() { _error = CompanyLearningService.message(error); _ready = false; }); }
     finally { if (mounted) setState(() => _busy = false); }
   }
-  Future<bool> _send(String action, [Map<String, dynamic> data = {}]) async {
+  Future<bool> _send(String action, [Map<String, dynamic> data = const {}]) async {
     if (_busy || !_ready) return false;
     final operationKey = '$action:${jsonEncode(data)}';
     final operationId = _operations.putIfAbsent(operationKey, _operation);

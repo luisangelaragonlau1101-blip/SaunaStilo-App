@@ -1,3 +1,4 @@
+import '../widgets/inline_photo.dart';
 import '../presentation/appearance.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -25,7 +26,7 @@ class _AdminRachasScreenState extends State<AdminRachasScreen> {
   Color get colorHielo => Color(0xFF00E5FF);
 
   // Definición de nuestras insignias / logros
-  final List<Map<String, dynamic>> _insignias = [
+  late final List<Map<String, dynamic>> _insignias = [
     {
       'dias': 7,
       'nombre': 'Bronce',
@@ -243,7 +244,7 @@ class _AdminRachasScreenState extends State<AdminRachasScreen> {
                           backgroundColor: badgeColor.withOpacity(0.15),
                           radius: 22,
                           backgroundImage: (user.fotoUrl != null && user.fotoUrl!.isNotEmpty)
-                              ? NetworkImage(user.fotoUrl!)
+                              ? stiloImageProvider(user.fotoUrl!)
                               : null,
                           child: (user.fotoUrl == null || user.fotoUrl!.isEmpty)
                               ? Icon(badgeIcon, color: badgeColor, size: 24)

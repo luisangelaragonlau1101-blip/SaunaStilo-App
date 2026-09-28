@@ -117,8 +117,8 @@ class _CrearProyectoAdminScreenState extends State<CrearProyectoAdminScreen> {
       firstDate: DateTime.now().subtract(Duration(days: 30)),
       lastDate: DateTime(2035),
       builder: (context, child) => Theme(
-        data: ThemeData.dark().copyWith(
-          colorScheme: ColorScheme.dark(
+        data: Theme.of(context).copyWith(
+          colorScheme: Theme.of(context).colorScheme.copyWith(
             primary: tipoFecha == 'salida' ? Colors.orangeAccent : Color(0xFF10B981),
             surface: StiloColors.surface
           )
@@ -133,8 +133,8 @@ class _CrearProyectoAdminScreenState extends State<CrearProyectoAdminScreen> {
         initialTime: TimeOfDay.fromDateTime(fechaInicial),
         // 👇 NUEVO: Le aplicamos el mismo diseño visual al reloj para evitar parpadeos blancos
         builder: (context, child) => Theme(
-          data: ThemeData.dark().copyWith(
-            colorScheme: ColorScheme.dark(
+          data: Theme.of(context).copyWith(
+            colorScheme: Theme.of(context).colorScheme.copyWith(
               primary: tipoFecha == 'salida' ? Colors.orangeAccent : Color(0xFF10B981),
               surface: StiloColors.surface
             )

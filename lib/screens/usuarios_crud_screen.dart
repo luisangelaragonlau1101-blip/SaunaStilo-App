@@ -1,3 +1,4 @@
+import '../widgets/inline_photo.dart';
 import '../presentation/appearance.dart';
 import '../services/external_transfer.dart';
 import 'package:flutter/material.dart';
@@ -144,8 +145,8 @@ class _UsuariosCrudScreenState extends State<UsuariosCrudScreen> {
                           lastDate: DateTime.now(),
                           builder: (context, child) {
                             return Theme(
-                              data: ThemeData.dark().copyWith(
-                                colorScheme: ColorScheme.dark(
+                              data: Theme.of(context).copyWith(
+                                colorScheme: Theme.of(context).colorScheme.copyWith(
                                   primary: colorMorado,
                                   onPrimary: StiloColors.text,
                                   surface: colorTarjeta,
@@ -523,7 +524,7 @@ class _UsuariosCrudScreenState extends State<UsuariosCrudScreen> {
                           child: CircleAvatar(
                             radius: 24, // Hacemos el avatar un poco más grande
                             backgroundColor: colorMorado.withOpacity(0.2),
-                            backgroundImage: usuario.fotoUrl != null ? NetworkImage(usuario.fotoUrl!) : null,
+                            backgroundImage: usuario.fotoUrl != null ? stiloImageProvider(usuario.fotoUrl!) : null,
                             child: usuario.fotoUrl == null
                               ? Text(
                                   usuario.nombre.isNotEmpty ? usuario.nombre[0].toUpperCase() : 'U',

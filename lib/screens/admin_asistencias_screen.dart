@@ -1,3 +1,4 @@
+import '../widgets/inline_photo.dart';
 import '../presentation/appearance.dart';
 import '../widgets/payroll_recognitions.dart';
 import '../services/recorded_streak.dart';
@@ -62,8 +63,8 @@ class _AdminAsistenciasScreenState extends State<AdminAsistenciasScreen> {
       helpText: "EDITAR $titulo".toUpperCase(),
       builder: (context, child) {
         return Theme(
-          data: ThemeData.dark().copyWith(
-            colorScheme: ColorScheme.dark(
+          data: Theme.of(context).copyWith(
+            colorScheme: Theme.of(context).colorScheme.copyWith(
               primary: primaryPurple,
               onPrimary: StiloColors.text,
               surface: cardDark,
@@ -450,7 +451,7 @@ class _AdminAsistenciasScreenState extends State<AdminAsistenciasScreen> {
                           firstDate: DateTime(2024),
                           lastDate: DateTime(2030),
                           builder: (context, child) => Theme(
-                            data: ThemeData.dark().copyWith(colorScheme: ColorScheme.dark(primary: primaryPurple, onPrimary: StiloColors.text, surface: cardDark)),
+                            data: Theme.of(context).copyWith(colorScheme: Theme.of(context).colorScheme.copyWith(primary: primaryPurple, onPrimary: StiloColors.text, surface: cardDark)),
                             child: child!,
                           ),
                         );
@@ -660,8 +661,8 @@ class _AdminAsistenciasScreenState extends State<AdminAsistenciasScreen> {
                   lastDate: DateTime(2030),
                   builder: (context, child) {
                     return Theme(
-                      data: ThemeData.dark().copyWith(
-                        colorScheme: ColorScheme.dark(
+                      data: Theme.of(context).copyWith(
+                        colorScheme: Theme.of(context).colorScheme.copyWith(
                           primary: primaryPurple,
                           onPrimary: StiloColors.text,
                           surface: cardDark,
@@ -793,7 +794,7 @@ class _AdminAsistenciasScreenState extends State<AdminAsistenciasScreen> {
                                       radius: 22,
                                       backgroundColor: primaryPurple.withOpacity(0.2),
                                       backgroundImage: (fotoUrl != null && fotoUrl.isNotEmpty)
-                                          ? NetworkImage(fotoUrl)
+                                          ? stiloImageProvider(fotoUrl)
                                           : null,
                                       child: (fotoUrl == null || fotoUrl.isEmpty)
                                           ? Text(iniciales, style: GoogleFonts.montserrat(color: primaryPurple, fontWeight: FontWeight.bold))

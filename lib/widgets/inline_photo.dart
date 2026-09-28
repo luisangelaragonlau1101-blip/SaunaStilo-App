@@ -16,3 +16,10 @@ class InlinePhoto extends StatelessWidget {
     } catch (error, stack) { return errorBuilder?.call(context, error, stack) ?? const Icon(Icons.broken_image_outlined); }
   }
 }
+
+ImageProvider<Object> stiloImageProvider(String url) {
+  try {
+    final bytes = InventoryPhotoCodec.decode(url);
+    return bytes == null ? NetworkImage(url) : MemoryImage(bytes);
+  } catch (_) { return const AssetImage('assets/logo_saunastilo_icon.png'); }
+}

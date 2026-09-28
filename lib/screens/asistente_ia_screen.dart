@@ -738,8 +738,8 @@ class _AiMessage {
   _AiMessage({
     required this.text,
     required this.user,
-    this.sources = <AiAssistantSource>[],
-    this.imageUrls = <String>[],
+    this.sources = const <AiAssistantSource>[],
+    this.imageUrls = const <String>[],
   });
 }
 

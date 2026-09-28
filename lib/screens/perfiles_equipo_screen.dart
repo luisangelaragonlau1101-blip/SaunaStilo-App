@@ -1,3 +1,4 @@
+import '../widgets/inline_photo.dart';
 import '../presentation/appearance.dart';
 import '../services/external_transfer.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -82,7 +83,7 @@ class _PerfilesEquipoScreenState extends State<PerfilesEquipoScreen> {
                       leading: CircleAvatar(
                         radius: 25,
                         backgroundColor: StiloColors.accent,
-                        backgroundImage: foto.isNotEmpty ? NetworkImage(foto) : null,
+                        backgroundImage: foto.isNotEmpty ? stiloImageProvider(foto) : null,
                         child: foto.isEmpty
                             ? Text(nombre.isEmpty ? 'U' : nombre[0].toUpperCase())
                             : null,
