@@ -5,6 +5,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import '../models/asistencia_model.dart';
 import '../services/asistencia_service.dart';
+import '../services/attendance_gateway_service.dart';
+import '../widgets/attendance_admin_sync.dart';
 import '../models/user_model.dart';
 
 // PARA EL PDF
@@ -26,7 +28,7 @@ class AdminAsistenciasScreen extends StatefulWidget {
 
 class _AdminAsistenciasScreenState extends State<AdminAsistenciasScreen> {
   final AsistenciaService _asistenciaService = AsistenciaService();
-  DateTime _fechaSeleccionada = DateTime.now();
+  DateTime _fechaSeleccionada = AttendanceGatewayService.today;
 
   final Color bgDark = const Color(0xFF000000);
   final Color cardDark = const Color(0xFF111012);
@@ -103,15 +105,8 @@ class _AdminAsistenciasScreenState extends State<AdminAsistenciasScreen> {
 
   Future<void> _aprobarSolicitudComida(BuildContext context, AsistenciaModel asistencia) async {
     try {
-      DateTime ahora = DateTime.now();
-      String horaFormateada = DateFormat('HH:mm').format(ahora);
-      String firmaAdmin = 'Solicitud de comida aprobada por ${widget.nombreAdmin} el ${DateFormat('dd/MM HH:mm').format(ahora)}';
-
-      await FirebaseFirestore.instance.collection('asistencias').doc(asistencia.id).update({
-        'estatusComida': 'comiendo',
-        'salidaComidaReal': Timestamp.fromDate(ahora),
-        'historialModificaciones': FieldValue.arrayUnion([firmaAdmin]),
-      });
+      await _asistenciaService.gateway.approveMeal(asistencia.trabajadorId, asistencia.id.split('_').last);
+      final horaFormateada = DateFormat('HH:mm').format(AttendanceGatewayService.today);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -618,8 +613,8 @@ class _AdminAsistenciasScreenState extends State<AdminAsistenciasScreen> {
 
   @override
   Widget build(BuildContext context) {
-    DateTime inicioDia = DateTime(_fechaSeleccionada.year, _fechaSeleccionada.month, _fechaSeleccionada.day).subtract(const Duration(hours: 2));
-    DateTime finDia = DateTime(_fechaSeleccionada.year, _fechaSeleccionada.month, _fechaSeleccionada.day, 23, 59, 59);
+    DateTime inicioDia = DateTime.utc(_fechaSeleccionada.year, _fechaSeleccionada.month, _fechaSeleccionada.day, 6);
+    DateTime finDia = inicioDia.add(const Duration(days: 1)).subtract(const Duration(milliseconds: 1));
 
     return Scaffold(
       backgroundColor: bgDark,
@@ -650,6 +645,7 @@ class _AdminAsistenciasScreenState extends State<AdminAsistenciasScreen> {
       ),
       body: Column(
         children: [
+          AttendanceAdminSync(day: _fechaSeleccionada, service: _asistenciaService.gateway),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
             child: InkWell(
@@ -1248,7 +1244,7 @@ class _AdminAsistenciasScreenState extends State<AdminAsistenciasScreen> {
   }
 
   // --- HISTORIAL DEL TRABAJADOR CON FILTRO SEMANAL Y TOTAL DE PAGO ---
-  void _mostrarHistorialTrabajador(BuildContext context, UserModel trabajador) {
+  Future<void> _mostrarHistorialTrabajador(BuildContext context, UserModel trabajador) async {
     String trabajadorId = trabajador.id;
     String nombreTrabajador = trabajador.nombre;
 
@@ -1271,7 +1267,18 @@ class _AdminAsistenciasScreenState extends State<AdminAsistenciasScreen> {
     double horasBaseSemana = diasBase * horasPorDia;
     double precioPorHora = horasBaseSemana > 0 ? sueldoBase / horasBaseSemana : 0.0;
 
-    DateTime semanaSeleccionada = DateTime.now();
+    DateTime semanaSeleccionada = AttendanceGatewayService.today;
+    Future<bool> syncWeek(DateTime week) async {
+      final start = week.subtract(Duration(days: week.weekday - 1));
+      try {
+        await _asistenciaService.gateway.syncPeriod(DateTime(start.year, start.month, start.day), DateTime(start.year, start.month, start.day + 6));
+        return mounted;
+      } catch (error) {
+        if (mounted) ScaffoldMessenger.of(this.context).showSnackBar(SnackBar(content: Text(error.toString().replaceFirst('Bad state: ', ''))));
+        return false;
+      }
+    }
+    if (!await syncWeek(semanaSeleccionada) || !context.mounted) return;
 
     showModalBottomSheet(
       context: context,
@@ -1286,10 +1293,10 @@ class _AdminAsistenciasScreenState extends State<AdminAsistenciasScreen> {
             inicioSemana = DateTime(inicioSemana.year, inicioSemana.month, inicioSemana.day);
             DateTime finSemana = inicioSemana.add(const Duration(days: 6, hours: 23, minutes: 59, seconds: 59));
 
-            void _cambiarSemana(int offset) {
-              setStateModal(() {
-                semanaSeleccionada = semanaSeleccionada.add(Duration(days: 7 * offset));
-              });
+            Future<void> _cambiarSemana(int offset) async {
+              final next = semanaSeleccionada.add(Duration(days: 7 * offset));
+              if (!await syncWeek(next) || !context.mounted) return;
+              setStateModal(() => semanaSeleccionada = next);
             }
 
             return DraggableScrollableSheet(
@@ -2050,9 +2057,10 @@ class _AdminAsistenciasScreenState extends State<AdminAsistenciasScreen> {
         fin = DateTime(fechaRef.year, fechaRef.month + 1, 0, 23, 59, 59);
       }
 
+      await _asistenciaService.gateway.syncPeriod(inicio, fin);
       Query query = FirebaseFirestore.instance.collection('asistencias')
-          .where('fecha', isGreaterThanOrEqualTo: Timestamp.fromDate(inicio))
-          .where('fecha', isLessThanOrEqualTo: Timestamp.fromDate(fin));
+          .where('fecha', isGreaterThanOrEqualTo: Timestamp.fromDate(DateTime.utc(inicio.year, inicio.month, inicio.day, 6)))
+          .where('fecha', isLessThanOrEqualTo: Timestamp.fromDate(DateTime.utc(fin.year, fin.month, fin.day + 1, 6).subtract(const Duration(milliseconds: 1))));
       
       if (trabajadorId != 'todos') {
         query = query.where('trabajadorId', isEqualTo: trabajadorId);

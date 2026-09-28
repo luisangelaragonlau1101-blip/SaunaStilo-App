@@ -57,7 +57,10 @@ class AsistenciaModel {
   });
 
   factory AsistenciaModel.fromFirestore(DocumentSnapshot doc) {
-    Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+    return AsistenciaModel.fromData(doc.id, doc.data() as Map<String, dynamic>);
+  }
+
+  factory AsistenciaModel.fromData(String id, Map<String, dynamic> data) {
 
     // Lógica para transformar el antiguo registro único de bono a lista (por si tienes datos viejos)
     List<Map<String, dynamic>> parsedBonos = [];
@@ -76,7 +79,7 @@ class AsistenciaModel {
     }
 
     return AsistenciaModel(
-      id: doc.id,
+      id: id,
       trabajadorId: data['trabajadorId'] ?? '',
       fecha: data['fecha'] is Timestamp
           ? (data['fecha'] as Timestamp).toDate()

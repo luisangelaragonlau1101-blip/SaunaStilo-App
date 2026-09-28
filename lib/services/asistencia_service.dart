@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:cloud_functions/cloud_functions.dart';
+import 'attendance_gateway_service.dart';
+import 'attendance_zones.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:intl/intl.dart'; 
 import 'package:firebase_auth/firebase_auth.dart';
@@ -8,10 +9,16 @@ import 'team_profile_helpers.dart';
 import 'package:firebase_storage/firebase_storage.dart'; 
 
 class AsistenciaService {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final FirebaseFunctions _functions = FirebaseFunctions.instanceFor(
-    region: 'us-central1',
-  );
+  FirebaseFirestore get _firestore => FirebaseFirestore.instance;
+  final AttendanceGatewayService gateway;
+  AsistenciaService({AttendanceGatewayService? gateway}) : gateway = gateway ?? AttendanceGatewayService();
+
+  Future<Map<String, dynamic>> registrarMovimiento(String accion) async {
+    if (accion == 'solicitar_comida') return _actualizarAsistenciaBackend(accion: accion);
+    final location = await validarUbicacionesMultiples(zonasAsistenciaSauna);
+    if (location['valido'] != true) throw StateError(location['error']?.toString() ?? 'Debes estar en una zona autorizada.');
+    return _actualizarAsistenciaBackend(accion: accion, latitud: (location['lat'] as num).toDouble(), longitud: (location['lon'] as num).toDouble());
+  }
 
   // 1. Verificar permisos y obtener la ubicación actual del dispositivo
   Future<Position?> obtenerUbicacionActual() async {
@@ -223,26 +230,7 @@ Future<Map<String, dynamic>> registrarSalida({
     double? latitud,
     double? longitud,
   }) async {
-    try {
-      final callable = _functions.httpsCallable(
-        'updateAttendance',
-        options: HttpsCallableOptions(timeout: const Duration(seconds: 30)),
-      );
-      final result = await callable.call(<String, dynamic>{
-        'accion': accion,
-        if (latitud != null) 'latitud': latitud,
-        if (longitud != null) 'longitud': longitud,
-      });
-      if (result.data is! Map) throw StateError('El servidor no confirmó el registro.');
-      final data = Map<String, dynamic>.from(result.data as Map);
-      if (data['exito'] != true) throw StateError(data['mensaje']?.toString() ?? 'El servidor no confirmó el registro.');
-      return data;
-    } on FirebaseFunctionsException catch (error) {
-      if (['not-found', 'unavailable', 'internal'].contains(error.code)) {
-        throw StateError('El servicio de asistencia no está disponible. Administración debe activar updateAttendance en Firebase. Tu horario NO se registró.');
-      }
-      throw StateError(error.message ?? 'No se pudo registrar la asistencia. Tu horario NO se registró.');
-    }
+    return gateway.record(accion, latitude: latitud, longitude: longitud);
   }
 
 // 9. (Admin) Justificación de una falta o retardo

@@ -4,13 +4,16 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 import '../services/actividades_service.dart';
+import '../services/attendance_gateway_service.dart';
+import '../services/company_learning_service.dart';
 import '../services/offline_workspace.dart';
 import '../models/actividad_model.dart';
 
 class ModalAsignarActividad extends StatefulWidget {
   final String proyectoId, rolUsuario;
   final ActividadModel? actividadAEditar;
-  const ModalAsignarActividad({super.key, required this.proyectoId, required this.rolUsuario, this.actividadAEditar});
+  final DateTime? initialDay;
+  const ModalAsignarActividad({super.key, required this.proyectoId, required this.rolUsuario, this.actividadAEditar, this.initialDay});
   @override
   State<ModalAsignarActividad> createState() => _ModalAsignarActividadState();
 }
@@ -27,6 +30,7 @@ class _ModalAsignarActividadState extends State<ModalAsignarActividad> {
   @override
   void initState() {
     super.initState();
+    if (widget.initialDay != null) { _day = widget.initialDay!; _deadline = DateTime(_day.year, _day.month, _day.day, 19); }
     final old = widget.actividadAEditar;
     _uid = FirebaseAuth.instance.currentUser?.uid ?? '';
     _id = old?.id ?? FirebaseFirestore.instance.collection('actividades').doc().id;
@@ -48,12 +52,12 @@ class _ModalAsignarActividadState extends State<ModalAsignarActividad> {
         if (!project.exists || (!admin && (widget.rolUsuario != 'maestro' || !members.contains(_uid)))) {
           throw StateError('Administración debe asignarte como integrante de este proyecto.');
         }
-      } else if (!admin) {
-        throw StateError('Las tareas generales las asigna Administración. Como maestro, elige uno de tus proyectos.');
+      } else if (!admin && widget.rolUsuario != 'maestro') {
+        throw StateError('Solo administradores y maestros asignan tareas del día.');
       }
       final people = await db.collection('usuarios').get().timeout(const Duration(seconds: 15));
       final entries = people.docs.where((d) => d.data()['activo'] != false &&
-        (admin || members.contains(d.id))).map((d) => {'id': d.id, 'nombre': '${d.data()['nombre'] ?? d.data()['Nombre'] ?? 'Integrante'} · ${d.data()['rol'] ?? ''}'}).toList();
+        (admin || widget.proyectoId.isEmpty && widget.rolUsuario == 'maestro' || members.contains(d.id))).map((d) => {'id': d.id, 'nombre': '${d.data()['nombre'] ?? d.data()['Nombre'] ?? 'Integrante'} · ${d.data()['rol'] ?? ''}'}).toList();
       entries.sort((a,b) => a['nombre']!.compareTo(b['nombre']!));
       if (!mounted) return;
       setState(() {_people = entries; if (!_people.any((p) => p['id'] == _target)) _target = null;});
@@ -89,11 +93,19 @@ class _ModalAsignarActividadState extends State<ModalAsignarActividad> {
       final old = widget.actividadAEditar;
       final task = ActividadModel(id: _id, proyectoId: widget.proyectoId, titulo: _title.text.trim(), descripcion: _body.text.trim(),
         asignadoATrabajadorId: _target!, fechaInicio: old?.fechaInicio ?? _day, fechaAsignada: _day, fechaTermino: _deadline);
-      if (old == null) {await ActividadesService().crearActividad(task);} else {await ActividadesService().actualizarActividad(task);}
+      final daily = old == null && widget.proyectoId.isEmpty;
+      if (daily) {
+        final response = await CompanyLearningService().call('daily-create', {
+          'day': AttendanceGatewayService.dayKey(_day), 'operationId': _id, 'title': task.titulo,
+          'details': task.descripcion, 'userId': _target,
+          'dueAt': DateTime.utc(_deadline.year, _deadline.month, _deadline.day, _deadline.hour + 6, _deadline.minute).toIso8601String(),
+        });
+        if (response['saved'] != true) throw StateError('No se confirmó la asignación.');
+      } else if (old == null) {await ActividadesService().crearActividad(task);} else {await ActividadesService().actualizarActividad(task);}
       try {await OfflineWorkspace.remove(_uid, _draftKey);} catch (_) {}
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Tarea guardada en el servidor. El aviso del teléfono se entrega por separado.')));
-      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(daily ? 'Tarea asignada. Ya aparece en Tareas del día de la persona.' : 'Tarea guardada en el servidor. El aviso del teléfono se entrega por separado.')));
+      Navigator.pop(context, daily ? AttendanceGatewayService.dayKey(_day) : null);
     } catch (e) {if (mounted) setState(() => _error = _explain(e));}
     finally {if (mounted) setState(() => _busy = false);}
   }
@@ -113,7 +125,7 @@ class _ModalAsignarActividadState extends State<ModalAsignarActividad> {
         Text(widget.actividadAEditar == null ? 'Crear y asignar tarea' : 'Editar tarea', style: const TextStyle(fontSize: 23,fontWeight: FontWeight.w800)),
         const SizedBox(height: 8), const Text('La tarea se confirma en el servidor. Sin conexión puedes conservar un borrador.', style: TextStyle(color: Colors.white60)),
         const SizedBox(height: 12),
-        Text(widget.proyectoId.isEmpty ? 'TAREA GENERAL · SIN PROYECTO' : 'TAREA VINCULADA AL PROYECTO', style: const TextStyle(color: Color(0xFFB7FF2A), fontWeight: FontWeight.w700, fontSize: 11)),
+        Text(widget.proyectoId.isEmpty ? 'TAREA DEL DÍA · CUALQUIER PERFIL ACTIVO' : 'TAREA VINCULADA AL PROYECTO', style: const TextStyle(color: Color(0xFFB7FF2A), fontWeight: FontWeight.w700, fontSize: 11)),
         const SizedBox(height: 15),
         TextFormField(contextMenuBuilder: privacyTextMenu, controller: _title, enabled: !_busy, maxLength: 150, decoration: const InputDecoration(labelText: 'Nombre de la tarea'), validator: (v) => (v?.trim().length ?? 0)<3 ? 'Escribe al menos 3 caracteres.' : null),
         TextFormField(contextMenuBuilder: privacyTextMenu, controller: _body, enabled: !_busy, maxLength: 2000, minLines: 2, maxLines: 5, decoration: const InputDecoration(labelText: 'Indicaciones y evidencia requerida')),

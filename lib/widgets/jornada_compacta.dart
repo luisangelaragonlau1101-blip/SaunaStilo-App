@@ -1,110 +1,137 @@
-import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:intl/intl.dart';
 import '../models/user_model.dart';
 import '../screens/jornada_screen.dart';
+import '../services/asistencia_service.dart';
+import '../services/attendance_gateway_service.dart';
+import '../services/company_learning_service.dart';
 
 String mexicoDayKey(DateTime now) => DateFormat('yyyyMMdd').format(now.toUtc().subtract(const Duration(hours: 6)));
 
 class JornadaCompacta extends StatefulWidget {
   final UserModel usuario;
   final VoidCallback? onExitConfirmed;
-  const JornadaCompacta({super.key, required this.usuario, this.onExitConfirmed});
+  final AsistenciaService? service;
+  final bool showDetails;
+  const JornadaCompacta({super.key, required this.usuario, this.onExitConfirmed, this.service, this.showDetails = true});
   @override
   State<JornadaCompacta> createState() => _JornadaCompactaState();
 }
-class _JornadaCompactaState extends State<JornadaCompacta> {
+
+class _JornadaCompactaState extends State<JornadaCompacta> with WidgetsBindingObserver {
+  late AsistenciaService _service;
+  Stream<Map<String, dynamic>>? _journal;
+  Map<String, dynamic>? _confirmed;
   bool _busy = false;
   String? _error;
-  late String _day;
-  Timer? _clock;
+
   @override
   void initState() {
     super.initState();
-    _day = mexicoDayKey(DateTime.now());
-    if (widget.usuario.rol == AppRoles.admin) return;
-    _clock = Timer.periodic(const Duration(minutes: 1), (_) {
-      final day = mexicoDayKey(DateTime.now());
-      if (mounted && day != _day) setState(() => _day = day);
-    });
+    WidgetsBinding.instance.addObserver(this);
+    _connect();
+  }
+  void _connect() {
+    _service = widget.service ?? AsistenciaService();
+    _confirmed = null;
+    _journal = widget.usuario.rol == AppRoles.admin ? null : _service.gateway.watchDay(widget.usuario.id);
   }
   @override
-  void dispose() { _clock?.cancel(); super.dispose(); }
-  String _hour(dynamic value) => value is Timestamp ? DateFormat('HH:mm').format(value.toDate().toUtc().subtract(const Duration(hours: 6))) : '—';
+  void didUpdateWidget(covariant JornadaCompacta oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.usuario.id != widget.usuario.id || oldWidget.usuario.rol != widget.usuario.rol || oldWidget.service != widget.service) _connect();
+  }
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) AttendanceGatewayService.refresh();
+  }
+  @override
+  void dispose() { WidgetsBinding.instance.removeObserver(this); super.dispose(); }
+
+  String _hour(dynamic value) => value is Timestamp
+      ? DateFormat('HH:mm').format(value.toDate().toUtc().subtract(const Duration(hours: 6))) : '—';
+
   Future<void> _register(String action) async {
     if (_busy || widget.usuario.rol == AppRoles.admin) return;
     if (action == 'salida') {
       final confirmed = await showDialog<bool>(context: context, builder: (c) => AlertDialog(
-        title: const Text('¿Registrar tu salida?'), content: const Text('Se guardará la hora actual en tu jornada de hoy.'),
-        actions: [TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Cancelar')), FilledButton(onPressed: () => Navigator.pop(c, true), child: const Text('Registrar salida'))],
+        title: const Text('¿Registrar tu salida?'),
+        content: const Text('Se guardará la hora actual y finalizará tu jornada.'),
+        actions: [TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Cancelar')),
+          FilledButton(onPressed: () => Navigator.pop(c, true), child: const Text('Confirmar salida'))],
       ));
       if (confirmed != true || !mounted) return;
     }
     setState(() { _busy = true; _error = null; });
     try {
-      Position? position;
-      if (action != 'solicitar_comida') {
-      if (!await Geolocator.isLocationServiceEnabled()) throw StateError('Activa la ubicación del teléfono para registrar tu jornada.');
-      var permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied || permission == LocationPermission.deniedForever) throw StateError('Autoriza la ubicación de Sauna Stilo en los ajustes del teléfono o navegador.');
-      position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high).timeout(const Duration(seconds: 25));
-      if (position.accuracy > 60) throw StateError('La ubicación tiene poca precisión. Acércate a una zona despejada e intenta de nuevo.');
-      }
-      final result = await FirebaseFunctions.instanceFor(region: 'us-central1').httpsCallable('updateAttendance', options: HttpsCallableOptions(timeout: const Duration(seconds: 35))).call({
-        'accion': action, if (position != null) ...{'latitud': position.latitude, 'longitud': position.longitude},
-      });
-      if (result.data is! Map || result.data['exito'] != true) throw StateError('El servidor no confirmó el registro. Revisa tu jornada antes de reintentar.');
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(result.data['mensaje']?.toString() ?? 'Registro confirmado por el servidor.')));
-      if (mounted && action == 'salida') widget.onExitConfirmed?.call();
-    } on FirebaseFunctionsException catch (e) {
-      if (mounted) setState(() => _error = switch (e.code) {
-        'not-found' => 'El servicio de asistencia todavía no está publicado en Firebase. Administración debe activar updateAttendance; no se registró una hora local ficticia.',
-        'unauthenticated' => 'Tu sesión expiró. Inicia sesión nuevamente.',
-        'permission-denied' => 'No tienes autorización para registrar esta jornada. Consulta a Administración.',
-        'failed-precondition' => e.message ?? 'Debes encontrarte en una zona autorizada para registrar tu jornada.',
-        'deadline-exceeded' => 'No llegó la confirmación. Revisa si la hora aparece en tu jornada antes de reintentar.',
-        _ => 'No se pudo comunicar con el servidor de asistencia. Revisa Internet y solicita a Administración verificar el servicio.',
-      });
-    } on TimeoutException {
-      if (mounted) setState(() => _error = 'La ubicación tardó demasiado. Revisa su permiso y vuelve a intentar.');
-    } on StateError catch (e) {
-      if (mounted) setState(() => _error = e.message.toString());
-    } catch (_) {
-      if (mounted) setState(() => _error = 'No se pudo confirmar el registro. Revisa ubicación, conexión y tu jornada.');
+      final result = await _service.registrarMovimiento(action);
+      if (result['exito'] != true) throw StateError('No se confirmó el movimiento. Actualiza tu jornada.');
+      if (!mounted) return;
+      setState(() => _confirmed = result);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(result['mensaje']?.toString() ?? 'Registro guardado.')));
+      if (action == 'salida') widget.onExitConfirmed?.call();
+    } catch (error) {
+      if (mounted) setState(() => _error = CompanyLearningService.message(error));
     } finally { if (mounted) setState(() => _busy = false); }
   }
+
   @override
-  Widget build(BuildContext context) => widget.usuario.rol == AppRoles.admin ? const SizedBox.shrink() : StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-    // Query by ownership first. A direct read of a nonexistent attendance document
-    // fails the current resource-based rules and used to block a first entry.
-    stream: FirebaseFirestore.instance.collection('asistencias').where('trabajadorId', isEqualTo: widget.usuario.id).snapshots(),
-    builder: (context, snapshot) {
-      final records = (snapshot.data?.docs ?? []).where((d) => d.id == '${widget.usuario.id}_$_day');
-      final data = records.isEmpty ? <String, dynamic>{} : records.first.data();
-      final entered = data['horaEntrada'] is Timestamp;
-      final left = data['horaSalida'] is Timestamp;
-      final ready = snapshot.hasData && !snapshot.hasError;
-      final mealStarted = data['salidaComidaReal'] is Timestamp;
-      final mealReturned = data['regresoComidaReal'] is Timestamp;
-      final mealPending = data['salidaComidaSolicitada'] is Timestamp && !mealStarted;
-      return Container(padding: const EdgeInsets.all(18), decoration: BoxDecoration(color: const Color(0xFF111012), borderRadius: BorderRadius.circular(24), border: Border.all(color: const Color(0xFF452332))), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(children: [const Icon(Icons.fingerprint_rounded, color: Color(0xFFB7FF2A)), const SizedBox(width: 9), const Expanded(child: Text('Mi jornada', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800))), Text(left ? 'FINALIZADA' : entered ? 'EN CURSO' : 'HOY', style: const TextStyle(color: Color(0xFFB7FF2A), fontSize: 10, fontWeight: FontWeight.w800))]),
-        const SizedBox(height: 14),
-        Text('Entrada ${_hour(data['horaEntrada'])}     ·     Salida ${_hour(data['horaSalida'])}', style: const TextStyle(color: Colors.white, fontSize: 17)),
-        const SizedBox(height: 5),
-        Text('Horario: ${widget.usuario.horaEntrada ?? '09:00'}–${widget.usuario.horaSalida ?? '19:00'} · hora de Ciudad de México', style: const TextStyle(color: Colors.white54, fontSize: 11)),
-        if (snapshot.hasError) const Padding(padding: EdgeInsets.only(top: 10), child: Text('No pudimos leer la jornada. Los registros no se muestran como vacíos cuando hay un error de permisos o conexión.', style: TextStyle(color: Colors.orangeAccent, fontSize: 12))),
-        if (_error != null) Padding(padding: const EdgeInsets.only(top: 12), child: Semantics(liveRegion: true, child: Text(_error!, style: const TextStyle(color: Colors.orangeAccent, fontSize: 12, height: 1.4)))),
-        const SizedBox(height: 14),
-        Row(children: [Expanded(child: FilledButton.icon(onPressed: !ready || _busy || entered ? null : () => _register('entrada'), icon: const Icon(Icons.login_rounded), label: const Text('Entrada'))), const SizedBox(width: 10), Expanded(child: OutlinedButton.icon(onPressed: !ready || _busy || !entered || left ? null : () => _register('salida'), icon: const Icon(Icons.logout_rounded), label: const Text('Salida')))]),
-        if (entered) ...[const SizedBox(height: 16), Container(padding: const EdgeInsets.all(14), decoration: BoxDecoration(color: const Color(0xFF2A1720), borderRadius: BorderRadius.circular(22)), child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [Row(children: [const Icon(Icons.restaurant_rounded, color: Color(0xFFFFB876)), const SizedBox(width: 9), const Expanded(child: Text('Hora de comida', style: TextStyle(fontWeight: FontWeight.w800))), Text(mealReturned ? 'REGISTRADA' : mealStarted ? 'EN COMIDA' : mealPending ? 'POR APROBAR' : 'PENDIENTE', style: const TextStyle(fontSize: 10, color: Color(0xFFFFB876)))]), const SizedBox(height: 9), Text('Salida ${_hour(data['salidaComidaReal'])} · Regreso ${_hour(data['regresoComidaReal'])}', style: const TextStyle(color: Colors.white70)), const SizedBox(height: 8), if (!left && !mealStarted && !mealPending) OutlinedButton.icon(onPressed: !ready || _busy ? null : () => _register('solicitar_comida'), icon: const Icon(Icons.lunch_dining_rounded), label: const Text('Solicitar hora de comida')), if (mealPending) const Text('Tu solicitud está en la bandeja de Administración. No necesitas reenviarla.', style: TextStyle(color: Colors.white60, fontSize: 12)), if (!left && mealStarted && !mealReturned) FilledButton.icon(onPressed: !ready || _busy ? null : () => _register('regreso_comida'), icon: const Icon(Icons.keyboard_return_rounded), label: const Text('Ya regresé de comer'))]))],
-        if (_busy) const Padding(padding: EdgeInsets.only(top: 10), child: LinearProgressIndicator()),
-        TextButton(onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => JornadaScreen(usuario: widget.usuario))), child: const Text('Comida, historial y detalles de jornada')),
-      ]));
-    },
-  );
+  Widget build(BuildContext context) {
+    if (widget.usuario.rol == AppRoles.admin) return const SizedBox.shrink();
+    return StreamBuilder<Map<String, dynamic>>(
+      stream: _journal,
+      builder: (context, snapshot) {
+        final live = snapshot.data;
+        // Prefer the write's confirmed readback until the stream catches up.
+        if (_confirmed != null && live != null) {
+          final saved = _confirmed!['data'] as Map;
+          final current = live['data'] as Map;
+          if (_confirmed!['day'] != live['day'] || ['horaEntrada', 'salidaComidaSolicitada', 'regresoComidaReal', 'horaSalida'].every((k) => saved[k] == null || current[k] != null)) _confirmed = null;
+        }
+        final record = _confirmed ?? live;
+        final data = Map<String, dynamic>.from(record?['data'] as Map? ?? {});
+        final entered = data['horaEntrada'] is Timestamp;
+        final left = data['horaSalida'] is Timestamp;
+        final mealStarted = data['salidaComidaReal'] is Timestamp;
+        final mealReturned = data['regresoComidaReal'] is Timestamp;
+        final mealPending = data['salidaComidaSolicitada'] is Timestamp && !mealStarted;
+        final ready = record != null && !snapshot.hasError && !_busy;
+        return Container(
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(color: const Color(0xFF111012), borderRadius: BorderRadius.circular(24), border: Border.all(color: const Color(0xFF452332))),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            Row(children: [const Icon(Icons.fingerprint_rounded, color: Color(0xFFB7FF2A)), const SizedBox(width: 9),
+              const Expanded(child: Text('Mi jornada', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800))),
+              IconButton(tooltip: 'Actualizar jornada', onPressed: _busy ? null : AttendanceGatewayService.refresh, icon: const Icon(Icons.refresh_rounded))]),
+            Text(left ? 'FINALIZADA' : entered ? 'EN CURSO' : 'HOY', style: const TextStyle(color: Color(0xFFB7FF2A), fontSize: 11)),
+            const SizedBox(height: 12),
+            Wrap(spacing: 20, runSpacing: 8, children: [Text('Entrada ${_hour(data['horaEntrada'])}', style: const TextStyle(fontSize: 19)), Text('Salida ${_hour(data['horaSalida'])}', style: const TextStyle(fontSize: 19))]),
+            const SizedBox(height: 6),
+            Text('Horario: ${widget.usuario.horaEntrada ?? '09:00'}–${widget.usuario.horaSalida ?? '19:00'} · Ciudad de México', style: const TextStyle(color: Colors.white54, fontSize: 11)),
+            const SizedBox(height: 14),
+            FilledButton.icon(key: const ValueKey('attendance-entry'), onPressed: ready && !entered ? () => _register('entrada') : null, icon: const Icon(Icons.login_rounded), label: Text(entered ? 'Entrada registrada' : 'Registrar entrada')),
+            if (entered) ...[
+              const SizedBox(height: 16),
+              const Text('Hora de comida', style: TextStyle(fontWeight: FontWeight.w800)),
+              const SizedBox(height: 8),
+              Text('Salida ${_hour(data['salidaComidaReal'])} · Regreso ${_hour(data['regresoComidaReal'])}', style: const TextStyle(color: Colors.white70)),
+              if (!left && !mealStarted && !mealPending)
+                OutlinedButton.icon(key: const ValueKey('attendance-meal'), onPressed: ready ? () => _register('solicitar_comida') : null, icon: const Icon(Icons.restaurant_rounded), label: const Text('Solicitar hora de comida')),
+              if (mealPending) const Padding(padding: EdgeInsets.symmetric(vertical: 8), child: Text('Solicitud guardada. Espera la autorización de Administración.', style: TextStyle(color: Color(0xFFFFB876)))),
+              if (!left && mealStarted && !mealReturned)
+                FilledButton.icon(key: const ValueKey('attendance-return'), onPressed: ready ? () => _register('regreso_comida') : null, icon: const Icon(Icons.keyboard_return_rounded), label: const Text('Ya regresé de comer')),
+              if (mealReturned) const Text('Regreso de comida registrado', style: TextStyle(color: Color(0xFFB7FF2A))),
+              const SizedBox(height: 12),
+              OutlinedButton.icon(key: const ValueKey('attendance-exit'), onPressed: ready && !left ? () => _register('salida') : null, icon: const Icon(Icons.logout_rounded), label: Text(left ? 'Salida registrada' : 'Registrar salida')),
+            ],
+            if (_busy || snapshot.connectionState == ConnectionState.waiting) const Padding(padding: EdgeInsets.symmetric(vertical: 10), child: LinearProgressIndicator()),
+            if (record?['pendingSync'] == true) const Padding(padding: EdgeInsets.only(top: 10), child: Text('Horario guardado. Se actualizará en nómina cuando Administración abra Asistencias.', style: TextStyle(color: Colors.white60, fontSize: 12))),
+            if (snapshot.hasError || _error != null) Padding(padding: const EdgeInsets.only(top: 12), child: Semantics(liveRegion: true, child: Text(_error ?? CompanyLearningService.message(snapshot.error!), style: const TextStyle(color: Colors.orangeAccent)))),
+            if (widget.showDetails) TextButton(onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => JornadaScreen(usuario: widget.usuario))), child: const Text('Comida, historial y detalles')),
+          ]),
+        );
+      },
+    );
+  }
 }
