@@ -9,7 +9,7 @@ class StiloPalette {
   const StiloPalette(this.id, this.label, this.accent, this.background, {this.light = false});
 }
 const stiloPalettes = [
-  StiloPalette('stilo', 'Stilo', Color(0xFFB7FF2A), Color(0xFF08090B)),
+  StiloPalette('stilo', 'Stilo original', Color(0xFFB7FF2A), Color(0xFF050506)),
   StiloPalette('rosa', 'Rosa', Color(0xFFFF81B5), Color(0xFF21101B)),
   StiloPalette('rojo', 'Rojo', Color(0xFFFF8291), Color(0xFF250E14)),
   StiloPalette('oscuro', 'Oscuro', Color(0xFFB8C5D9), Color(0xFF0C1016)),
@@ -65,6 +65,7 @@ class AppearanceController extends ChangeNotifier {
 final _themeCache = <String, ThemeData>{};
 ThemeData stiloTheme(StiloPalette palette) => _themeCache.putIfAbsent(palette.id, () => _makeStiloTheme(palette));
 ThemeData _makeStiloTheme(StiloPalette palette) {
+  if (palette.id == 'stilo') return _originalStiloTheme();
   final scheme = ColorScheme.fromSeed(seedColor: palette.accent, brightness: palette.light ? Brightness.light : Brightness.dark).copyWith(primary: palette.accent);
   final onPrimary = ThemeData.estimateBrightnessForColor(palette.accent) == Brightness.dark ? Colors.white : const Color(0xFF151019);
   final colors = scheme.copyWith(onPrimary: onPrimary);
@@ -76,6 +77,47 @@ ThemeData _makeStiloTheme(StiloPalette palette) {
     filledButtonTheme: FilledButtonThemeData(style: FilledButton.styleFrom(minimumSize: const Size(48, 48), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)))),
     outlinedButtonTheme: OutlinedButtonThemeData(style: OutlinedButton.styleFrom(minimumSize: const Size(48, 48), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)))),
     navigationBarTheme: NavigationBarThemeData(backgroundColor: colors.surfaceContainerLow, indicatorColor: colors.primaryContainer),
+  );
+}
+
+// The original black, wine and neon theme stays the default.
+ThemeData _originalStiloTheme() {
+  const primary = Color(0xFFB7FF2A); // verde neón: acciones
+  const secondary = Color(0xFF8E1538); // vino: identidad/premium
+  const tertiary = Color(0xFFC13CFF); // violeta eléctrico: IA
+  const background = Color(0xFF050506);
+  const surface = Color(0xFF111012);
+  const border = Color(0xFF30272D);
+  final scheme = const ColorScheme.dark(
+    primary: primary, onPrimary: Color(0xFF071000),
+    secondary: secondary, onSecondary: Colors.white,
+    tertiary: tertiary, onTertiary: Colors.white,
+    surface: surface, onSurface: Colors.white,
+    surfaceContainerLow: surface, surfaceContainerHighest: Color(0xFF151216),
+    onSurfaceVariant: Colors.white60, outline: border, outlineVariant: border,
+    error: Color(0xFFFF536A),
+  );
+  return ThemeData(
+    brightness: Brightness.dark, useMaterial3: true, colorScheme: scheme,
+    scaffoldBackgroundColor: background, canvasColor: background, dividerColor: Colors.white12,
+    appBarTheme: const AppBarTheme(backgroundColor: background, foregroundColor: Colors.white, surfaceTintColor: Colors.transparent, elevation: 0),
+    navigationBarTheme: const NavigationBarThemeData(backgroundColor: Color(0xFF0D0C0E), indicatorColor: Color(0x338E1538), elevation: 0),
+    cardTheme: CardThemeData(color: surface, surfaceTintColor: Colors.transparent, elevation: 0,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24), side: const BorderSide(color: border))),
+    inputDecorationTheme: InputDecorationTheme(
+      filled: true, fillColor: const Color(0xFF151216), hintStyle: const TextStyle(color: Colors.white38), labelStyle: const TextStyle(color: Colors.white60),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(18), borderSide: BorderSide.none),
+      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(18), borderSide: const BorderSide(color: Colors.white10)),
+      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(18), borderSide: const BorderSide(color: primary, width: 1.2)),
+    ),
+    filledButtonTheme: FilledButtonThemeData(style: FilledButton.styleFrom(
+      backgroundColor: primary, foregroundColor: const Color(0xFF071000), minimumSize: const Size(44, 48),
+      textStyle: const TextStyle(fontWeight: FontWeight.w900), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)))),
+    outlinedButtonTheme: OutlinedButtonThemeData(style: OutlinedButton.styleFrom(
+      foregroundColor: primary, minimumSize: const Size(44, 48), side: const BorderSide(color: Color(0x88B7FF2A)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)))),
+    snackBarTheme: const SnackBarThemeData(backgroundColor: Color(0xFF1C171B), contentTextStyle: TextStyle(color: Colors.white), behavior: SnackBarBehavior.floating),
   );
 }
 
@@ -96,7 +138,7 @@ class _AppearanceState extends State<AppearanceScreen> {
     final settings = AppearanceController.instance;
     return Scaffold(appBar: AppBar(title: const Text('Mi estilo')), body: ListView(padding: const EdgeInsets.all(20), children: [
       const Text('Hazlo tuyo', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800)),
-      const SizedBox(height: 8), const Text('Elige el color de tus paneles. Se guarda para tu cuenta en este dispositivo.'),
+      const SizedBox(height: 8), const Text('Stilo original es el tema predeterminado de Sauna Stilo. Cambiarlo es opcional y se guarda para tu cuenta en este dispositivo.'),
       const SizedBox(height: 24),
       Wrap(spacing: 12, runSpacing: 12, children: [for (final p in stiloPalettes) ChoiceChip(key: ValueKey('palette-${p.id}'), selected: settings.palette.id == p.id,
         avatar: CircleAvatar(backgroundColor: p.accent, child: settings.palette.id == p.id ? Icon(Icons.check, size: 15, color: ThemeData.estimateBrightnessForColor(p.accent) == Brightness.dark ? Colors.white : Colors.black) : null),
