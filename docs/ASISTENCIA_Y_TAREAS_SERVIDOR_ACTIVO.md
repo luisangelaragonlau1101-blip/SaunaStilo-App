@@ -8,7 +8,7 @@ La web detecta `supportsManual: true` devuelto por el servidor antes de habilita
 
 El nuevo registro usa hora del servidor y conserva auditoría por usuario, duplicados idempotentes, correcciones administrativas y sincronización de nómina. Identifica la ubicación como no verificada y nunca inventa coordenadas. Los botones no guardan localmente horarios como si fueran confirmados. No requiere aprobar la comida cuando se utiliza explícitamente el nuevo registro manual; las solicitudes antiguas mantienen su autorización.
 
-Los importes y las reglas de cálculo de nómina no cambian. La vista personal muestra datos registrados, no un recibo emitido. Rachas e insignias se muestran como información sin efecto en el pago.
+El historial administrativo se abre con los registros existentes y sincroniza en segundo plano; muestra un aviso persistente mientras haya movimientos sin confirmar. Los reportes finales siguen exigiendo una sincronización completa. Los importes y las reglas de cálculo de nómina no cambian. La vista personal muestra datos registrados, no un recibo emitido. Rachas e insignias se muestran como información sin efecto en el pago.
 
 ## Arquitectura publicada anteriormente
 

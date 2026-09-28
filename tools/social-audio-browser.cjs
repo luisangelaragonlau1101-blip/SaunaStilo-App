@@ -39,7 +39,11 @@ const {chromium}=require('playwright');const fs=require('node:fs');
   // Same-origin harness validates child-to-parent handoff without Firebase or staff data.
   await page.route('**/social-voice-harness.html',route=>route.fulfill({contentType:'text/html',body:`<body style="margin:0"><iframe title="guide" style="width:100%;height:800px;border:0" src="https://ollin-smart-vxs23c.v2.appdeploy.ai/?workspace=sauna-stilo&voiceParent=http%3A%2F%2F127.0.0.1%3A8177"></iframe><script>window.received=[];window.addEventListener('message',e=>{if(e.origin==='https://ollin-smart-vxs23c.v2.appdeploy.ai')window.received.push(e.data)});</script></body>`}));
   await page.goto('http://127.0.0.1:8177/social-voice-harness.html');const frame=page.frameLocator('iframe');
-  await frame.getByRole('textbox',{name:'Pregunta a Online Smart'}).fill('Saluda al equipo de Sauna Stilo en una oración.');await frame.getByRole('button',{name:'Enviar pregunta',exact:true}).click();
+  // Type through the controlled textarea after its frame is interactive.
+  // Keyboard input reaches React even if hydration replaces the first DOM node.
+  const question=frame.getByRole('textbox',{name:'Pregunta a Online Smart'});
+  await question.click();await question.pressSequentially('Saluda al equipo de Sauna Stilo en una oración.',{delay:25});
+  await frame.getByRole('button',{name:'Enviar pregunta',exact:true}).click();
   await frame.getByRole('button',{name:'Solicitar voz de Ángel'}).waitFor({timeout:60000});
   await frame.getByRole('button',{name:'Solicitar voz de Ángel'}).click();await page.waitForFunction(()=>window.received.length>0);
   const data=JSON.parse(await page.evaluate(()=>window.received[0]));

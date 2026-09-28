@@ -1270,17 +1270,21 @@ class _AdminAsistenciasScreenState extends State<AdminAsistenciasScreen> {
     double precioPorHora = horasBaseSemana > 0 ? sueldoBase / horasBaseSemana : 0.0;
 
     DateTime semanaSeleccionada = AttendanceGatewayService.today;
+    String? syncNotice = 'Actualizando movimientos recientes. Por ahora se muestran los registros guardados; el total puede estar incompleto.';
+    var syncStarted = false;
+    var syncGeneration = 0;
     Future<bool> syncWeek(DateTime week) async {
+      final generation = ++syncGeneration;
       final start = week.subtract(Duration(days: week.weekday - 1));
       try {
         await _asistenciaService.gateway.syncPeriod(DateTime(start.year, start.month, start.day), DateTime(start.year, start.month, start.day + 6));
-        return mounted;
-      } catch (error) {
-        if (mounted) ScaffoldMessenger.of(this.context).showSnackBar(SnackBar(content: Text(error.toString().replaceFirst('Bad state: ', ''))));
-        return false;
+        if (generation == syncGeneration) syncNotice = null;
+      } catch (_) {
+        if (generation == syncGeneration) syncNotice = 'No se pudieron actualizar los movimientos recientes. Consulta los registros guardados, pero no uses este total como cierre de nómina.';
       }
+      return mounted && generation == syncGeneration;
     }
-    if (!await syncWeek(semanaSeleccionada) || !context.mounted) return;
+    if (!context.mounted) return;
 
     showModalBottomSheet(
       context: context,
@@ -1290,6 +1294,14 @@ class _AdminAsistenciasScreenState extends State<AdminAsistenciasScreen> {
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setStateModal) {
+            if (!syncStarted) {
+              syncStarted = true;
+              Future<void>(() async {
+                await syncWeek(semanaSeleccionada);
+                if (context.mounted) setStateModal(() {});
+              });
+            }
+
             
             DateTime inicioSemana = semanaSeleccionada.subtract(Duration(days: semanaSeleccionada.weekday - 1));
             inicioSemana = DateTime(inicioSemana.year, inicioSemana.month, inicioSemana.day);
@@ -1297,8 +1309,12 @@ class _AdminAsistenciasScreenState extends State<AdminAsistenciasScreen> {
 
             Future<void> _cambiarSemana(int offset) async {
               final next = semanaSeleccionada.add(Duration(days: 7 * offset));
-              if (!await syncWeek(next) || !context.mounted) return;
-              setStateModal(() => semanaSeleccionada = next);
+              setStateModal(() {
+                semanaSeleccionada = next;
+                syncNotice = 'Actualizando movimientos recientes. El total visible puede estar incompleto.';
+              });
+              await syncWeek(next);
+              if (context.mounted) setStateModal(() {});
             }
 
             return DraggableScrollableSheet(
@@ -1363,6 +1379,8 @@ class _AdminAsistenciasScreenState extends State<AdminAsistenciasScreen> {
                       ),
                     ),
                     const SizedBox(height: 16),
+
+                    if (syncNotice != null) Padding(padding: const EdgeInsets.fromLTRB(20, 0, 20, 12), child: Text(syncNotice!, style: const TextStyle(color: Colors.orangeAccent, fontSize: 12))),
 
                     // --- LISTA Y CÁLCULOS ---
                     Expanded(
