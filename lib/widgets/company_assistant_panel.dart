@@ -3,6 +3,7 @@ import 'package:flutter_tts/flutter_tts.dart';
 import '../services/company_learning_service.dart';
 import '../services/external_transfer.dart';
 import '../workflow/staff_policy.dart';
+import 'official_voice_reply.dart';
 
 class CompanyAssistantPanel extends StatefulWidget {
   final CompanyLearningService? service;
@@ -52,6 +53,15 @@ class _CompanyAssistantState extends State<CompanyAssistantPanel> with WidgetsBi
     } catch (_) { if (mounted) setState(() => _error = 'La voz del dispositivo no está disponible. La respuesta completa permanece en pantalla.'); }
     finally { if (mounted && ticket == _speech) setState(() => _speaking = false); }
   }
+  Future<void> _officialVoice(String text) async {
+    _stop();
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (_) => OfficialVoiceReply(text: text),
+    );
+  }
   @override Widget build(BuildContext context) => Column(children: [
     Expanded(child: ListView(padding: const EdgeInsets.all(18), children: [
       const Text('Online Smart · Sauna Stilo', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800)),
@@ -65,6 +75,7 @@ class _CompanyAssistantState extends State<CompanyAssistantPanel> with WidgetsBi
           Text(m['text'], style: const TextStyle(height: 1.55)), const SizedBox(height: 10),
           Text(m['hasManuals'] == true ? 'Respuesta con manuales autorizados' : 'Sin un manual coincidente · orientación general', style: const TextStyle(fontSize: 11, color: Color(0xFFC798FF))),
           TextButton.icon(onPressed: () => _speak(m['text']), icon: const Icon(Icons.volume_up_rounded), label: const Text('Escuchar · voz del dispositivo')),
+          TextButton.icon(onPressed: () => _officialVoice(m['text']), icon: const Icon(Icons.graphic_eq_rounded), label: const Text('Escuchar · voz de Ángel')),
           for (final source in (m['sources'] as List? ?? [])) ExpansionTile(title: Text('${source['title']} · v${source['version']}'), subtitle: Text('Fragmento ${source['section']}'), children: [Padding(padding: const EdgeInsets.all(12), child: Text(source['text'], style: const TextStyle(color: Colors.white70, height: 1.5)))]),
         ]))),
       ]),

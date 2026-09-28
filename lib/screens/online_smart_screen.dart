@@ -35,6 +35,7 @@ class _OnlineSmartScreenState extends State<OnlineSmartScreen> {
   @override
   Widget build(BuildContext context) => DefaultTabController(
     length: 3,
+    initialIndex: widget.modoGuia ? 1 : 0,
     child: Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
