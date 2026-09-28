@@ -297,8 +297,9 @@ export function createAttendanceService({
       401,
     );
     const name = `${ROOT}/asistencias/${uid}_${day}`;
-    // An ownership query permits a missing first day even when the deployed
-    // rules disallow direct reads of nonexistent documents. No composite date index.
+    // Ownership is the only filter. A cursor bounds the read to one record at
+    // or before this day. Exact document-name equality makes Firestore evaluate
+    // a missing resource and denies the first clock-in under existing rules.
     const response = await fetcher(`${API}:runQuery`, {
       method: 'POST',
       headers: {
@@ -309,26 +310,16 @@ export function createAttendanceService({
         structuredQuery: {
           from: [{ collectionId: 'asistencias' }],
           where: {
-            compositeFilter: {
-              op: 'AND',
-              filters: [
-                {
-                  fieldFilter: {
-                    field: { fieldPath: 'trabajadorId' },
-                    op: 'EQUAL',
-                    value: { stringValue: uid },
-                  },
-                },
-                {
-                  fieldFilter: {
-                    field: { fieldPath: '__name__' },
-                    op: 'EQUAL',
-                    value: { referenceValue: name },
-                  },
-                },
-              ],
+            fieldFilter: {
+              field: { fieldPath: 'trabajadorId' },
+              op: 'EQUAL',
+              value: { stringValue: uid },
             },
           },
+          orderBy: [
+            { field: { fieldPath: '__name__' }, direction: 'DESCENDING' },
+          ],
+          startAt: { values: [{ referenceValue: name }], before: true },
           limit: 1,
         },
       }),
@@ -345,7 +336,8 @@ export function createAttendanceService({
       'No se confirmó la lectura de tu jornada.',
       503,
     );
-    const doc = rows.find((r) => r.document)?.document;
+    const found = rows.find((r) => r.document)?.document;
+    const doc = found?.name === name ? found : null;
     const data = doc ? decodeFields(doc.fields || {}) : {};
     check(
       !doc || (doc.name === name && data.trabajadorId === uid),

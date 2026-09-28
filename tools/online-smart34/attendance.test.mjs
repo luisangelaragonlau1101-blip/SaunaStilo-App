@@ -24,9 +24,10 @@ function fixture() {
   const fetcher = async (url, options) => {
     const body = JSON.parse(options.body), token = options.headers.Authorization;
     if (url.endsWith(':runQuery')) {
-      const filters = body.structuredQuery.where.compositeFilter.filters;
-      const uid = filters[0].fieldFilter.value.stringValue;
-      const name = filters[1].fieldFilter.value.referenceValue;
+      const uid = body.structuredQuery.where.fieldFilter.value.stringValue;
+      const name = body.structuredQuery.startAt.values[0].referenceValue;
+      assert.equal(body.structuredQuery.orderBy[0].direction, 'DESCENDING');
+      assert.equal(body.structuredQuery.startAt.before, true);
       assert.match(name, new RegExp(`/asistencias/${uid}_[0-9]{8}$`));
       assert.equal(body.structuredQuery.limit, 1);
       if (token !== 'Bearer admin-token' && token !== `Bearer ${uid}-token`) return response({}, 403);

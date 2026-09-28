@@ -23,4 +23,4 @@ La integración requiere que una sesión administrativa abra Asistencias o prepa
 
 ## Verificación
 
-Pruebas Node de jornadas y tareas con almacenamiento aislado, duplicados concurrentes, errores, límites de rol, dos actores y conservación del expediente. El emulador comprueba consultas de propiedad y permisos de escritura sin cambiar reglas. Pruebas Flutter cubren los cuatro controles, confirmación de salida, errores, perfiles y entrega con evidencia. No se crean cuentas ni registros laborales de prueba en producción.
+Pruebas Node de jornadas y tareas con almacenamiento aislado, duplicados concurrentes, errores, límites de rol, dos actores y conservación del expediente. El emulador comprueba consultas de propiedad con cursor y permisos de escritura sin cambiar reglas. Pruebas Flutter cubren los cuatro controles, confirmación de salida, errores, perfiles y entrega con evidencia. No se crean cuentas ni registros laborales de prueba en producción.
