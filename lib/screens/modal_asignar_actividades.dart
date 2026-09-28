@@ -1,3 +1,4 @@
+import '../presentation/appearance.dart';
 import '../services/external_transfer.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -26,7 +27,7 @@ class _ModalAsignarActividadState extends State<ModalAsignarActividad> {
   String? _target, _error;
   bool _busy = false, _loading = true;
   List<Map<String, String>> _people = [];
-  DateTime _day = DateTime.now(), _deadline = DateTime.now().add(const Duration(days: 1));
+  DateTime _day = DateTime.now(), _deadline = DateTime.now().add(Duration(days: 1));
   @override
   void initState() {
     super.initState();
@@ -47,15 +48,15 @@ class _ModalAsignarActividadState extends State<ModalAsignarActividad> {
       final admin = widget.rolUsuario == 'admin';
       var members = <String>[];
       if (widget.proyectoId.isNotEmpty) {
-        final project = await db.collection('proyectos').doc(widget.proyectoId).get().timeout(const Duration(seconds: 15));
-        members = (project.data()?['encargados'] as List? ?? const []).whereType<String>().toList();
+        final project = await db.collection('proyectos').doc(widget.proyectoId).get().timeout(Duration(seconds: 15));
+        members = (project.data()?['encargados'] as List? ?? []).whereType<String>().toList();
         if (!project.exists || (!admin && (widget.rolUsuario != 'maestro' || !members.contains(_uid)))) {
           throw StateError('Administración debe asignarte como integrante de este proyecto.');
         }
       } else if (!admin && widget.rolUsuario != 'maestro') {
         throw StateError('Solo administradores y maestros asignan tareas del día.');
       }
-      final people = await db.collection('usuarios').get().timeout(const Duration(seconds: 15));
+      final people = await db.collection('usuarios').get().timeout(Duration(seconds: 15));
       final entries = people.docs.where((d) => d.data()['activo'] != false &&
         (admin || widget.proyectoId.isEmpty && widget.rolUsuario == 'maestro' || members.contains(d.id))).map((d) => {'id': d.id, 'nombre': '${d.data()['nombre'] ?? d.data()['Nombre'] ?? 'Integrante'} · ${d.data()['rol'] ?? ''}'}).toList();
       entries.sort((a,b) => a['nombre']!.compareTo(b['nombre']!));
@@ -118,25 +119,25 @@ class _ModalAsignarActividadState extends State<ModalAsignarActividad> {
     if (t != null && mounted) setState(() => _deadline = DateTime(d.year,d.month,d.day,t.hour,t.minute));
   }
   @override
-  Widget build(BuildContext context) => PopScope(canPop: !_busy, child: Material(color: const Color(0xFF111012),
-    borderRadius: const BorderRadius.vertical(top: Radius.circular(30)), child: SafeArea(child: SingleChildScrollView(
+  Widget build(BuildContext context) => PopScope(canPop: !_busy, child: Material(color: StiloColors.surface,
+    borderRadius: BorderRadius.vertical(top: Radius.circular(30)), child: SafeArea(child: SingleChildScrollView(
       padding: EdgeInsets.fromLTRB(22,22,22,MediaQuery.viewInsetsOf(context).bottom+22), child: Form(key: _form, child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch, mainAxisSize: MainAxisSize.min, children: [
-        Text(widget.actividadAEditar == null ? 'Crear y asignar tarea' : 'Editar tarea', style: const TextStyle(fontSize: 23,fontWeight: FontWeight.w800)),
-        const SizedBox(height: 8), const Text('La tarea se confirma en el servidor. Sin conexión puedes conservar un borrador.', style: TextStyle(color: Colors.white60)),
-        const SizedBox(height: 12),
-        Text(widget.proyectoId.isEmpty ? 'TAREA DEL DÍA · CUALQUIER PERFIL ACTIVO' : 'TAREA VINCULADA AL PROYECTO', style: const TextStyle(color: Color(0xFFB7FF2A), fontWeight: FontWeight.w700, fontSize: 11)),
-        const SizedBox(height: 15),
-        TextFormField(contextMenuBuilder: privacyTextMenu, controller: _title, enabled: !_busy, maxLength: 150, decoration: const InputDecoration(labelText: 'Nombre de la tarea'), validator: (v) => (v?.trim().length ?? 0)<3 ? 'Escribe al menos 3 caracteres.' : null),
-        TextFormField(contextMenuBuilder: privacyTextMenu, controller: _body, enabled: !_busy, maxLength: 2000, minLines: 2, maxLines: 5, decoration: const InputDecoration(labelText: 'Indicaciones y evidencia requerida')),
-        if (_loading) const LinearProgressIndicator() else DropdownButtonFormField<String>(initialValue: _target, key: ValueKey('$_target:${_people.length}'), isExpanded: true,
-          decoration: const InputDecoration(labelText: 'Asignar a'), items: _people.map((p) => DropdownMenuItem(value: p['id'], child: Text(p['nombre']!, overflow: TextOverflow.ellipsis))).toList(),
+        Text(widget.actividadAEditar == null ? 'Crear y asignar tarea' : 'Editar tarea', style: TextStyle(fontSize: 23,fontWeight: FontWeight.w800)),
+        SizedBox(height: 8), Text('La tarea se confirma en el servidor. Sin conexión puedes conservar un borrador.', style: TextStyle(color: StiloColors.text.withValues(alpha: .60))),
+        SizedBox(height: 12),
+        Text(widget.proyectoId.isEmpty ? 'TAREA DEL DÍA · CUALQUIER PERFIL ACTIVO' : 'TAREA VINCULADA AL PROYECTO', style: TextStyle(color: StiloColors.accent, fontWeight: FontWeight.w700, fontSize: 11)),
+        SizedBox(height: 15),
+        TextFormField(contextMenuBuilder: privacyTextMenu, controller: _title, enabled: !_busy, maxLength: 150, decoration: InputDecoration(labelText: 'Nombre de la tarea'), validator: (v) => (v?.trim().length ?? 0)<3 ? 'Escribe al menos 3 caracteres.' : null),
+        TextFormField(contextMenuBuilder: privacyTextMenu, controller: _body, enabled: !_busy, maxLength: 2000, minLines: 2, maxLines: 5, decoration: InputDecoration(labelText: 'Indicaciones y evidencia requerida')),
+        if (_loading) LinearProgressIndicator() else DropdownButtonFormField<String>(initialValue: _target, key: ValueKey('$_target:${_people.length}'), isExpanded: true,
+          decoration: InputDecoration(labelText: 'Asignar a'), items: _people.map((p) => DropdownMenuItem(value: p['id'], child: Text(p['nombre']!, overflow: TextOverflow.ellipsis))).toList(),
           onChanged: _busy ? null : (v) => setState(() => _target = v), validator: (v) => v == null ? 'Selecciona a una persona.' : null),
-        Wrap(spacing: 8, children: [TextButton.icon(onPressed: _busy ? null : () => _date(false), icon: const Icon(Icons.today_outlined), label: Text('Día ${DateFormat('dd/MM').format(_day)}')),
-          TextButton.icon(onPressed: _busy ? null : () => _date(true), icon: const Icon(Icons.event_available_outlined), label: Text('Entrega ${DateFormat('dd/MM HH:mm').format(_deadline)}'))]),
-        if (_error != null) Padding(padding: const EdgeInsets.symmetric(vertical: 12), child: Text(_error!, style: const TextStyle(color: Colors.orangeAccent))),
-        if (!_loading && _people.isEmpty) TextButton(onPressed: _busy ? null : _load, child: const Text('Volver a cargar integrantes')),
-        FilledButton.icon(onPressed: _busy || _loading ? null : _save, icon: const Icon(Icons.add_task_rounded), label: Text(_busy ? 'Confirmando…' : 'Guardar y asignar')),
-        Wrap(spacing: 8, children: [TextButton(onPressed: _busy ? null : () => _draft(), child: const Text('Guardar borrador local')), TextButton(onPressed: _busy ? null : () => _draft(restore:true), child: const Text('Recuperar borrador'))]),
+        Wrap(spacing: 8, children: [TextButton.icon(onPressed: _busy ? null : () => _date(false), icon: Icon(Icons.today_outlined), label: Text('Día ${DateFormat('dd/MM').format(_day)}')),
+          TextButton.icon(onPressed: _busy ? null : () => _date(true), icon: Icon(Icons.event_available_outlined), label: Text('Entrega ${DateFormat('dd/MM HH:mm').format(_deadline)}'))]),
+        if (_error != null) Padding(padding: EdgeInsets.symmetric(vertical: 12), child: Text(_error!, style: TextStyle(color: Colors.orangeAccent))),
+        if (!_loading && _people.isEmpty) TextButton(onPressed: _busy ? null : _load, child: Text('Volver a cargar integrantes')),
+        FilledButton.icon(onPressed: _busy || _loading ? null : _save, icon: Icon(Icons.add_task_rounded), label: Text(_busy ? 'Confirmando…' : 'Guardar y asignar')),
+        Wrap(spacing: 8, children: [TextButton(onPressed: _busy ? null : () => _draft(), child: Text('Guardar borrador local')), TextButton(onPressed: _busy ? null : () => _draft(restore:true), child: Text('Recuperar borrador'))]),
       ]))))));
 }

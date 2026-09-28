@@ -1,7 +1,8 @@
+import '../presentation/appearance.dart';
 import '../services/external_transfer.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:intl/intl.dart'; 
+import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/cliente_model.dart';
 import '../models/compra_model.dart';
@@ -48,7 +49,7 @@ class _ClienteDetalleScreenState extends State<ClienteDetalleScreen> {
     for (var doc in proySnap.docs) {
       var finanzas = await doc.reference.collection('finanzas').doc('datos_pago').get();
       double montoPagado = finanzas.exists ? (finanzas.data()?['monto_pagado'] ?? 0.0).toDouble() : 0.0;
-      
+
       historial.add({
         'tipo': 'proyecto',
         'fecha': (doc.data()['fecha_entrega'] as Timestamp).toDate(),
@@ -94,21 +95,21 @@ class _ClienteDetalleScreenState extends State<ClienteDetalleScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF1E1E1E),
-        title: Text("EDITAR TOTAL VENTA", style: GoogleFonts.inter(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+        backgroundColor: StiloColors.surface,
+        title: Text("EDITAR TOTAL VENTA", style: GoogleFonts.inter(color: StiloColors.text, fontSize: 16, fontWeight: FontWeight.bold)),
         content: TextField(contextMenuBuilder: privacyTextMenu,
           controller: controllerMonto,
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          style: const TextStyle(color: Colors.white),
+          keyboardType: TextInputType.numberWithOptions(decimal: true),
+          style: TextStyle(color: StiloColors.text),
           decoration: InputDecoration(
             labelText: "Monto Total (\$)",
-            labelStyle: const TextStyle(color: Colors.white54),
-            enabledBorder: OutlineInputBorder(borderSide: const BorderSide(color: Colors.white24), borderRadius: BorderRadius.circular(10)),
-            focusedBorder: OutlineInputBorder(borderSide: const BorderSide(color: Color(0xFFFFDE21)), borderRadius: BorderRadius.circular(10)),
+            labelStyle: TextStyle(color: StiloColors.text.withValues(alpha: .54)),
+            enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: StiloColors.text.withValues(alpha: .24)), borderRadius: BorderRadius.circular(10)),
+            focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: Color(0xFFFFDE21)), borderRadius: BorderRadius.circular(10)),
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text("CANCELAR", style: TextStyle(color: Colors.white54))),
+          TextButton(onPressed: () => Navigator.pop(context), child: Text("CANCELAR", style: TextStyle(color: StiloColors.text.withValues(alpha: .54)))),
           TextButton(
             onPressed: () async {
               double nuevoMonto = double.tryParse(controllerMonto.text) ?? compra.montoTotal;
@@ -118,7 +119,7 @@ class _ClienteDetalleScreenState extends State<ClienteDetalleScreen> {
               Navigator.pop(context);
               setState(() {}); // Forzar recarga del FutureBuilder
             },
-            child: const Text("ACTUALIZAR", style: TextStyle(color: Color(0xFFFFDE21), fontWeight: FontWeight.bold)),
+            child: Text("ACTUALIZAR", style: TextStyle(color: Color(0xFFFFDE21), fontWeight: FontWeight.bold)),
           )
         ],
       ),
@@ -128,37 +129,37 @@ class _ClienteDetalleScreenState extends State<ClienteDetalleScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF121212),
+      backgroundColor: StiloColors.surface,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF121212),
+        backgroundColor: StiloColors.surface,
         elevation: 0,
-        title: Text("DETALLE CLIENTE", style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, letterSpacing: 1.5, color: Colors.white)),
+        title: Text("DETALLE CLIENTE", style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, letterSpacing: 1.5, color: StiloColors.text)),
       ),
       floatingActionButton: FloatingActionButton(
-        backgroundColor: const Color(0xFFFFDE21),
+        backgroundColor: Color(0xFFFFDE21),
         onPressed: () => Navigator.push(
-          context, 
+          context,
           MaterialPageRoute(builder: (context) => AdminVentasScreen(cliente: widget.cliente))
         ).then((_) => setState(() {})),
-        child: const Icon(Icons.add_shopping_cart, color: Colors.black),
+        child: Icon(Icons.add_shopping_cart, color: StiloColors.background),
       ),
       body: Column(
         children: [
           _buildInfoCard(),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-            child: Align(alignment: Alignment.centerLeft, child: Text("HISTORIAL GENERAL", style: GoogleFonts.inter(color: Colors.white38, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1.2))),
+            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            child: Align(alignment: Alignment.centerLeft, child: Text("HISTORIAL GENERAL", style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .38), fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1.2))),
           ),
           Expanded(
             child: FutureBuilder<List<Map<String, dynamic>>>(
               future: _obtenerHistorialCompleto(),
               builder: (context, snapshot) {
-                if (!snapshot.hasData) return const Center(child: CircularProgressIndicator(color: Color(0xFF8B5CF6)));
-                if (snapshot.data!.isEmpty) return Center(child: Text("Sin registros", style: GoogleFonts.inter(color: Colors.white24)));
-                
+                if (!snapshot.hasData) return Center(child: CircularProgressIndicator(color: StiloColors.accent));
+                if (snapshot.data!.isEmpty) return Center(child: Text("Sin registros", style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .24))));
+
                 final historial = snapshot.data!;
                 return ListView.builder(
-                  padding: const EdgeInsets.only(left: 16, right: 16, bottom: 80),
+                  padding: EdgeInsets.only(left: 16, right: 16, bottom: 80),
                   itemCount: historial.length,
                   itemBuilder: (context, index) => _buildItemCard(historial[index]),
                 );
@@ -190,9 +191,9 @@ class _ClienteDetalleScreenState extends State<ClienteDetalleScreen> {
         );
       },
       child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(color: const Color(0xFF1E1E1E), borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.greenAccent.withOpacity(0.3))),
+        margin: EdgeInsets.only(bottom: 12),
+        padding: EdgeInsets.all(16),
+        decoration: BoxDecoration(color: StiloColors.surface, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.greenAccent.withOpacity(0.3))),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -200,19 +201,19 @@ class _ClienteDetalleScreenState extends State<ClienteDetalleScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Expanded(
-                  child: Text("Proyecto: ${proyecto.titulo}", style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold), overflow: TextOverflow.ellipsis),
+                  child: Text("Proyecto: ${proyecto.titulo}", style: GoogleFonts.inter(color: StiloColors.text, fontWeight: FontWeight.bold), overflow: TextOverflow.ellipsis),
                 ),
                 Row(
                   children: [
                     Text("\$${monto.toStringAsFixed(2)}", style: GoogleFonts.inter(color: Colors.greenAccent, fontWeight: FontWeight.bold)),
-                    const SizedBox(width: 6),
-                    const Icon(Icons.arrow_forward_ios, color: Colors.white30, size: 14),
+                    SizedBox(width: 6),
+                    Icon(Icons.arrow_forward_ios, color: StiloColors.text.withValues(alpha: .30), size: 14),
                   ],
                 ),
               ],
             ),
-            const SizedBox(height: 4),
-            Text(DateFormat('dd/MM/yyyy').format(proyecto.fechaEntrega), style: GoogleFonts.inter(color: Colors.white38, fontSize: 11)),
+            SizedBox(height: 4),
+            Text(DateFormat('dd/MM/yyyy').format(proyecto.fechaEntrega), style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .38), fontSize: 11)),
           ],
         ),
       ),
@@ -221,9 +222,9 @@ class _ClienteDetalleScreenState extends State<ClienteDetalleScreen> {
 
   Widget _buildCompraCard(CompraModel compra) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: const Color(0xFF1E1E1E), borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.white12)),
+      margin: EdgeInsets.only(bottom: 12),
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(color: StiloColors.surface, borderRadius: BorderRadius.circular(12), border: Border.all(color: StiloColors.text.withValues(alpha: .12))),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -231,17 +232,17 @@ class _ClienteDetalleScreenState extends State<ClienteDetalleScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text("Compra Extra", style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold)),
-                Text(DateFormat('dd/MM/yyyy').format(compra.fechaCompra), style: GoogleFonts.inter(color: Colors.white38, fontSize: 11)),
+                Text("Compra Extra", style: GoogleFonts.inter(color: StiloColors.text, fontWeight: FontWeight.bold)),
+                Text(DateFormat('dd/MM/yyyy').format(compra.fechaCompra), style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .38), fontSize: 11)),
               ]),
               Row(
                 children: [
-                  Text("\$${compra.montoTotal.toStringAsFixed(2)}", style: GoogleFonts.inter(color: const Color(0xFFFFDE21), fontWeight: FontWeight.bold, fontSize: 16)),
-                  
+                  Text("\$${compra.montoTotal.toStringAsFixed(2)}", style: GoogleFonts.inter(color: Color(0xFFFFDE21), fontWeight: FontWeight.bold, fontSize: 16)),
+
                   // MENÚ DESPLEGABLE CON OPERACIONES CRUD CORREGIDO A POPUPMENUITEM
                   PopupMenuButton<String>(
-                    icon: const Icon(Icons.more_vert, color: Colors.white54, size: 20),
-                    color: const Color(0xFF262626),
+                    icon: Icon(Icons.more_vert, color: StiloColors.text.withValues(alpha: .54), size: 20),
+                    color: StiloColors.surface,
                     onSelected: (action) {
                       if (action == 'edit') {
                         _mostrarEditarCompraModal(compra);
@@ -250,13 +251,13 @@ class _ClienteDetalleScreenState extends State<ClienteDetalleScreen> {
                       }
                     },
                     itemBuilder: (ctx) => [
-                      const PopupMenuItem(
-                        value: 'edit', 
-                        child: Row(children: [Icon(Icons.edit_outlined, color: Colors.cyan, size: 18), SizedBox(width: 8), Text("Editar total", style: TextStyle(color: Colors.white))])
+                      PopupMenuItem(
+                        value: 'edit',
+                        child: Row(children: [Icon(Icons.edit_outlined, color: Colors.cyan, size: 18), SizedBox(width: 8), Text("Editar total", style: TextStyle(color: StiloColors.text))])
                       ),
-                      const PopupMenuItem(
-                        value: 'delete', 
-                        child: Row(children: [Icon(Icons.delete_sweep_outlined, color: Colors.redAccent, size: 18), SizedBox(width: 8), Text("Eliminar venta", style: TextStyle(color: Colors.white))])
+                      PopupMenuItem(
+                        value: 'delete',
+                        child: Row(children: [Icon(Icons.delete_sweep_outlined, color: Colors.redAccent, size: 18), SizedBox(width: 8), Text("Eliminar venta", style: TextStyle(color: StiloColors.text))])
                       ),
                     ],
                   )
@@ -265,8 +266,8 @@ class _ClienteDetalleScreenState extends State<ClienteDetalleScreen> {
             ],
           ),
           if (compra.productosExtra.isNotEmpty) ...[
-            const Divider(color: Colors.white10),
-            ...compra.productosExtra.map((prod) => Text("${prod['nombre_producto']} (x${prod['cantidad']})", style: const TextStyle(color: Colors.white54, fontSize: 12))),
+            Divider(color: StiloColors.text.withValues(alpha: .10)),
+            ...compra.productosExtra.map((prod) => Text("${prod['nombre_producto']} (x${prod['cantidad']})", style: TextStyle(color: StiloColors.text.withValues(alpha: .54), fontSize: 12))),
           ],
         ],
       ),
@@ -277,17 +278,17 @@ class _ClienteDetalleScreenState extends State<ClienteDetalleScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF1E1E1E),
-        title: const Text("¿ELIMINAR ESTA COMPRA?", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
-        content: const Text("Esta acción es permanente e incrementará automáticamente las cantidades de vuelta al stock de insumos.", style: TextStyle(color: Colors.white70, fontSize: 14)),
+        backgroundColor: StiloColors.surface,
+        title: Text("¿ELIMINAR ESTA COMPRA?", style: TextStyle(color: StiloColors.text, fontWeight: FontWeight.bold, fontSize: 16)),
+        content: Text("Esta acción es permanente e incrementará automáticamente las cantidades de vuelta al stock de insumos.", style: TextStyle(color: StiloColors.text.withValues(alpha: .70), fontSize: 14)),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("CANCELAR", style: TextStyle(color: Colors.white54))),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text("CANCELAR", style: TextStyle(color: StiloColors.text.withValues(alpha: .54)))),
           TextButton(
             onPressed: () {
               Navigator.pop(ctx);
               _eliminarCompra(compra);
             },
-            child: const Text("ELIMINAR", style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
+            child: Text("ELIMINAR", style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
           )
         ],
       ),
@@ -296,20 +297,20 @@ class _ClienteDetalleScreenState extends State<ClienteDetalleScreen> {
 
   Widget _buildInfoCard() {
     return Container(
-      margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(color: const Color(0xFF1E1E1E), borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.white12)),
+      margin: EdgeInsets.all(16),
+      padding: EdgeInsets.all(24),
+      decoration: BoxDecoration(color: StiloColors.surface, borderRadius: BorderRadius.circular(20), border: Border.all(color: StiloColors.text.withValues(alpha: .12))),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(children: [
-            const CircleAvatar(backgroundColor: Color(0xFF8B5CF6), child: Icon(Icons.person, color: Colors.white)),
-            const SizedBox(width: 15),
-            Expanded(child: Text(widget.cliente.nombre, style: GoogleFonts.inter(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600))),
+            CircleAvatar(backgroundColor: StiloColors.accent, child: Icon(Icons.person, color: StiloColors.text)),
+            SizedBox(width: 15),
+            Expanded(child: Text(widget.cliente.nombre, style: GoogleFonts.inter(color: StiloColors.text, fontSize: 18, fontWeight: FontWeight.w600))),
           ]),
-          const SizedBox(height: 20),
+          SizedBox(height: 20),
           _infoRow(Icons.phone_outlined, widget.cliente.telefono, onTap: () => _hacerLlamada(widget.cliente.telefono)),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
           _infoRow(Icons.location_on_outlined, widget.cliente.direccion),
         ],
       ),
@@ -325,11 +326,11 @@ class _ClienteDetalleScreenState extends State<ClienteDetalleScreen> {
     return InkWell(
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4),
+        padding: EdgeInsets.symmetric(vertical: 4),
         child: Row(children: [
-          Icon(icon, size: 16, color: onTap != null ? const Color(0xFF64B5F6) : Colors.white38),
-          const SizedBox(width: 8),
-          Expanded(child: Text(text, style: GoogleFonts.inter(color: onTap != null ? const Color(0xFF64B5F6) : Colors.white70, fontSize: 14))),
+          Icon(icon, size: 16, color: onTap != null ? Color(0xFF64B5F6) : StiloColors.text.withValues(alpha: .38)),
+          SizedBox(width: 8),
+          Expanded(child: Text(text, style: GoogleFonts.inter(color: onTap != null ? Color(0xFF64B5F6) : StiloColors.text.withValues(alpha: .70), fontSize: 14))),
         ]),
       ),
     );

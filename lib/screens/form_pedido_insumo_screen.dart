@@ -1,16 +1,17 @@
+import '../presentation/appearance.dart';
 import '../services/external_transfer.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/proveedor_model.dart';
-import '../models/compra_insumo_model.dart'; 
+import '../models/compra_insumo_model.dart';
 import '../models/insumo_model.dart';
 import '../services/inventario_service.dart';
 
 class FormPedidoInsumoScreen extends StatefulWidget {
   final Proveedor proveedor;
-  
+
   const FormPedidoInsumoScreen({Key? key, required this.proveedor}) : super(key: key);
 
   @override
@@ -19,20 +20,20 @@ class FormPedidoInsumoScreen extends StatefulWidget {
 
 class _FormPedidoInsumoScreenState extends State<FormPedidoInsumoScreen> {
   final _formKey = GlobalKey<FormState>();
-  final InventarioService _inventarioService = InventarioService(); 
-  
+  final InventarioService _inventarioService = InventarioService();
+
   // Controladores de texto
   final TextEditingController _cantidadController = TextEditingController();
   final TextEditingController _cotizacionController = TextEditingController();
   final TextEditingController _fleteController = TextEditingController();
   final TextEditingController _observacionesController = TextEditingController();
 
-  DateTime _fechaPrevista = DateTime.now().add(const Duration(days: 7)); 
+  DateTime _fechaPrevista = DateTime.now().add(Duration(days: 7));
   double _totalCalculado = 0.0;
   bool _guardando = false;
 
-  String? _insumoSeleccionadoId; 
-  
+  String? _insumoSeleccionadoId;
+
   // 1. AÑADIDO: Declaramos la variable para almacenar el Stream
   late Stream<List<InsumoModel>> _insumosStream;
 
@@ -41,7 +42,7 @@ class _FormPedidoInsumoScreenState extends State<FormPedidoInsumoScreen> {
     super.initState();
     // 2. AÑADIDO: Inicializamos el Stream una sola vez aquí
     _insumosStream = _inventarioService.getInsumosStream();
-    
+
     _cotizacionController.addListener(_calcularTotal);
     _fleteController.addListener(_calcularTotal);
   }
@@ -72,11 +73,11 @@ class _FormPedidoInsumoScreenState extends State<FormPedidoInsumoScreen> {
       builder: (context, child) {
         return Theme(
           data: ThemeData.dark().copyWith(
-            colorScheme: const ColorScheme.dark(
+            colorScheme: ColorScheme.dark(
               primary: Color(0xFF3B82F6),
-              onPrimary: Colors.white,
-              surface: Color(0xFF1E1E1E),
-              onSurface: Colors.white,
+              onPrimary: StiloColors.text,
+              surface: StiloColors.surface,
+              onSurface: StiloColors.text,
             ),
           ),
           child: child!,
@@ -92,10 +93,10 @@ class _FormPedidoInsumoScreenState extends State<FormPedidoInsumoScreen> {
 
   void _guardarPedido() async {
     if (!_formKey.currentState!.validate()) return;
-    
+
     if (_insumoSeleccionadoId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Por favor selecciona un insumo de la lista', style: TextStyle(color: Colors.white)), backgroundColor: Colors.redAccent),
+        SnackBar(content: Text('Por favor selecciona un insumo de la lista', style: TextStyle(color: StiloColors.text)), backgroundColor: Colors.redAccent),
       );
       return;
     }
@@ -104,28 +105,28 @@ class _FormPedidoInsumoScreenState extends State<FormPedidoInsumoScreen> {
 
     try {
       final nuevoPedido = CompraInsumoModel(
-        id: '', 
+        id: '',
         proveedorId: widget.proveedor.id,
         insumoId: _insumoSeleccionadoId!,
         cantidadSolicitada: double.tryParse(_cantidadController.text.trim()) ?? 0.0,
         cotizacion: double.tryParse(_cotizacionController.text) ?? 0.0,
         costoFlete: double.tryParse(_fleteController.text) ?? 0.0,
         totalCompra: _totalCalculado,
-        statusPedido: 'pendiente', 
-        folioFactura: '', 
+        statusPedido: 'pendiente',
+        folioFactura: '',
         observaciones: _observacionesController.text.trim(),
         fechaSolicitud: DateTime.now(),
         fechaEntregaPrevista: _fechaPrevista,
       );
 
       await FirebaseFirestore.instance.collection('compras_insumos').add(nuevoPedido.toMap());
-      
+
       if (mounted) Navigator.pop(context);
 
     } catch (e) {
       debugPrint("Error al guardar el pedido: $e");
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Error al procesar el pedido'), backgroundColor: Colors.red),
+        SnackBar(content: Text('Error al procesar el pedido'), backgroundColor: Colors.red),
       );
     } finally {
       if (mounted) setState(() => _guardando = false);
@@ -135,53 +136,53 @@ class _FormPedidoInsumoScreenState extends State<FormPedidoInsumoScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF121212),
+      backgroundColor: StiloColors.surface,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF121212),
+        backgroundColor: StiloColors.surface,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white),
+        iconTheme: IconThemeData(color: StiloColors.text),
         title: Text(
-          "NUEVO PEDIDO", 
-          style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, letterSpacing: 1.5, color: Colors.white)
+          "NUEVO PEDIDO",
+          style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, letterSpacing: 1.5, color: StiloColors.text)
         ),
         centerTitle: true,
       ),
       body: Form(
         key: _formKey,
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20.0),
+          padding: EdgeInsets.all(20.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // Info del Proveedor
               Container(
-                padding: const EdgeInsets.all(16),
+                padding: EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF3B82F6).withOpacity(0.1),
+                  color: Color(0xFF3B82F6).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFF3B82F6).withOpacity(0.3))
+                  border: Border.all(color: Color(0xFF3B82F6).withOpacity(0.3))
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.business, color: Color(0xFF3B82F6)),
-                    const SizedBox(width: 12),
+                    Icon(Icons.business, color: Color(0xFF3B82F6)),
+                    SizedBox(width: 12),
                     Expanded(
                       child: Text(
                         "Proveedor: ${widget.proveedor.nombreEmpresa}",
-                        style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w600),
+                        style: GoogleFonts.inter(color: StiloColors.text, fontWeight: FontWeight.w600),
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
 
               StreamBuilder<List<InsumoModel>>(
                 // 3. MODIFICADO: Usamos la variable guardada en vez de llamar a la función
                 stream: _insumosStream,
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator(color: Color(0xFF3B82F6)));
+                    return Center(child: CircularProgressIndicator(color: Color(0xFF3B82F6)));
                   }
                   if (!snapshot.hasData || snapshot.data!.isEmpty) {
                     return Text('No hay insumos en el inventario.', style: GoogleFonts.inter(color: Colors.redAccent));
@@ -191,30 +192,30 @@ class _FormPedidoInsumoScreenState extends State<FormPedidoInsumoScreen> {
 
                   return DropdownButtonFormField<String>(
                     value: _insumoSeleccionadoId,
-                    dropdownColor: const Color(0xFF1E1E1E),
-                    style: GoogleFonts.inter(color: Colors.white, fontSize: 15),
+                    dropdownColor: StiloColors.surface,
+                    style: GoogleFonts.inter(color: StiloColors.text, fontSize: 15),
                     decoration: InputDecoration(
                       labelText: 'Selecciona el Insumo',
-                      labelStyle: GoogleFonts.inter(color: Colors.white54),
-                      prefixIcon: const Icon(Icons.inventory_2_outlined, color: Colors.white54),
+                      labelStyle: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .54)),
+                      prefixIcon: Icon(Icons.inventory_2_outlined, color: StiloColors.text.withValues(alpha: .54)),
                       filled: true,
-                      fillColor: const Color(0xFF1E1E1E),
+                      fillColor: StiloColors.surface,
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: Colors.white12),
+                        borderSide: BorderSide(color: StiloColors.text.withValues(alpha: .12)),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: Color(0xFF3B82F6)), 
+                        borderSide: BorderSide(color: Color(0xFF3B82F6)),
                       ),
                       errorBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: Colors.redAccent),
+                        borderSide: BorderSide(color: Colors.redAccent),
                       ),
                     ),
                     items: insumos.map((insumo) {
                       return DropdownMenuItem<String>(
-                        value: insumo.id, 
+                        value: insumo.id,
                         child: Text(insumo.nombre),
                       );
                     }).toList(),
@@ -227,16 +228,16 @@ class _FormPedidoInsumoScreenState extends State<FormPedidoInsumoScreen> {
                   );
                 },
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
 
               _crearTextField(
                 controller: _cantidadController,
                 label: 'Cantidad Solicitada',
                 icon: Icons.numbers_outlined,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                keyboardType: TextInputType.numberWithOptions(decimal: true),
               ),
-              const SizedBox(height: 16),
-              
+              SizedBox(height: 16),
+
               Row(
                 children: [
                   Expanded(
@@ -244,57 +245,57 @@ class _FormPedidoInsumoScreenState extends State<FormPedidoInsumoScreen> {
                       controller: _cotizacionController,
                       label: 'Cotización (\$)',
                       icon: Icons.monetization_on_outlined,
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      keyboardType: TextInputType.numberWithOptions(decimal: true),
                     ),
                   ),
-                  const SizedBox(width: 16),
+                  SizedBox(width: 16),
                   Expanded(
                     child: _crearTextField(
                       controller: _fleteController,
                       label: 'Costo Flete (\$)',
                       icon: Icons.local_shipping_outlined,
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      keyboardType: TextInputType.numberWithOptions(decimal: true),
                     ),
                   ),
                 ],
               ),
-              
-              const SizedBox(height: 16),
+
+              SizedBox(height: 16),
               Container(
-                padding: const EdgeInsets.all(16),
+                padding: EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1E1E1E),
+                  color: StiloColors.surface,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.white12)
+                  border: Border.all(color: StiloColors.text.withValues(alpha: .12))
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text("Total Estimado:", style: GoogleFonts.inter(color: Colors.white70, fontSize: 16)),
-                    Text("\$${_totalCalculado.toStringAsFixed(2)}", style: GoogleFonts.inter(color: const Color(0xFF81C784), fontSize: 20, fontWeight: FontWeight.bold)),
+                    Text("Total Estimado:", style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .70), fontSize: 16)),
+                    Text("\$${_totalCalculado.toStringAsFixed(2)}", style: GoogleFonts.inter(color: Color(0xFF81C784), fontSize: 20, fontWeight: FontWeight.bold)),
                   ],
                 ),
               ),
 
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               InkWell(
                 onTap: () => _seleccionarFecha(context),
                 borderRadius: BorderRadius.circular(12),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 18),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF1E1E1E),
+                    color: StiloColors.surface,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.white12)
+                    border: Border.all(color: StiloColors.text.withValues(alpha: .12))
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.calendar_month_outlined, color: Colors.white54),
-                      const SizedBox(width: 12),
+                      Icon(Icons.calendar_month_outlined, color: StiloColors.text.withValues(alpha: .54)),
+                      SizedBox(width: 12),
                       Expanded(
                         child: Text(
                           "Fecha Entrega Prevista: ${DateFormat('dd/MM/yyyy').format(_fechaPrevista)}",
-                          style: GoogleFonts.inter(color: Colors.white),
+                          style: GoogleFonts.inter(color: StiloColors.text),
                         ),
                       ),
                     ],
@@ -302,7 +303,7 @@ class _FormPedidoInsumoScreenState extends State<FormPedidoInsumoScreen> {
                 ),
               ),
 
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               _crearTextField(
                 controller: _observacionesController,
                 label: 'Observaciones (Opcional)',
@@ -311,23 +312,23 @@ class _FormPedidoInsumoScreenState extends State<FormPedidoInsumoScreen> {
                 isRequired: false,
               ),
 
-              const SizedBox(height: 32),
+              SizedBox(height: 32),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF3B82F6),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  backgroundColor: Color(0xFF3B82F6),
+                  foregroundColor: StiloColors.text,
+                  padding: EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
                 onPressed: _guardando ? null : _guardarPedido,
                 child: _guardando
-                    ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                    ? SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: StiloColors.text, strokeWidth: 2))
                     : Text(
                         'REGISTRAR PEDIDO',
                         style: GoogleFonts.inter(fontWeight: FontWeight.w600, letterSpacing: 0.5),
                       ),
               ),
-              const SizedBox(height: 40),
+              SizedBox(height: 40),
             ],
           ),
         ),
@@ -347,27 +348,27 @@ class _FormPedidoInsumoScreenState extends State<FormPedidoInsumoScreen> {
       controller: controller,
       keyboardType: keyboardType,
       maxLines: maxLines,
-      style: GoogleFonts.inter(color: Colors.white),
+      style: GoogleFonts.inter(color: StiloColors.text),
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: GoogleFonts.inter(color: Colors.white54),
-        prefixIcon: Icon(icon, color: Colors.white54),
+        labelStyle: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .54)),
+        prefixIcon: Icon(icon, color: StiloColors.text.withValues(alpha: .54)),
         filled: true,
-        fillColor: const Color(0xFF1E1E1E),
+        fillColor: StiloColors.surface,
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.white12),
+          borderSide: BorderSide(color: StiloColors.text.withValues(alpha: .12)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF3B82F6)), 
+          borderSide: BorderSide(color: Color(0xFF3B82F6)),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.redAccent),
+          borderSide: BorderSide(color: Colors.redAccent),
         ),
       ),
-      validator: isRequired 
+      validator: isRequired
         ? (value) => value!.isEmpty ? 'Requerido' : null
         : null,
     );

@@ -1,3 +1,4 @@
+import '../presentation/appearance.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -6,10 +7,10 @@ import 'admin_detalle_cajita_screen.dart'; // Crearemos esta después
 class AdminCajitasScreen extends StatelessWidget {
   const AdminCajitasScreen({super.key});
 
-  static const Color colorFondo = Color(0xFF121212);
-  static const Color colorTarjeta = Color(0xFF1E1E1E);
-  static const Color colorTextoPrimario = Color(0xFFFDFDFD);
-  static const Color colorNaranja = Color(0xFFFF9800);
+  Color get colorFondo => StiloColors.surface;
+  Color get colorTarjeta => StiloColors.surface;
+  Color get colorTextoPrimario => StiloColors.text;
+  Color get colorNaranja => Color(0xFFFF9800);
 
   @override
   Widget build(BuildContext context) {
@@ -18,7 +19,7 @@ class AdminCajitasScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: colorFondo,
         elevation: 0,
-        iconTheme: const IconThemeData(color: colorTextoPrimario),
+        iconTheme: IconThemeData(color: colorTextoPrimario),
         title: Text(
           'CAJITAS DE HERRAMIENTAS',
           style: GoogleFonts.inter(
@@ -34,11 +35,11 @@ class AdminCajitasScreen extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.all(20.0),
+            padding: EdgeInsets.all(20.0),
             child: Text(
               // Texto actualizado para ser más inclusivo
               "Selecciona un maestro o trabajador para gestionar su inventario.",
-              style: GoogleFonts.inter(color: Colors.white54, fontSize: 14),
+              style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .54), fontSize: 14),
             ),
           ),
           Expanded(
@@ -50,7 +51,7 @@ class AdminCajitasScreen extends StatelessWidget {
                   .snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator(color: colorNaranja));
+                  return Center(child: CircularProgressIndicator(color: colorNaranja));
                 }
 
                 final personal = snapshot.data?.docs ?? [];
@@ -60,18 +61,18 @@ class AdminCajitasScreen extends StatelessWidget {
                     child: Text(
                       // Texto actualizado
                       'No hay personal registrado.',
-                      style: GoogleFonts.inter(color: Colors.white54),
+                      style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .54)),
                     ),
                   );
                 }
 
                 return GridView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  padding: EdgeInsets.symmetric(horizontal: 20),
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2,
                     crossAxisSpacing: 16,
                     mainAxisSpacing: 16,
-                    childAspectRatio: 0.9, 
+                    childAspectRatio: 0.9,
                   ),
                   itemCount: personal.length,
                   itemBuilder: (context, index) {
@@ -79,7 +80,7 @@ class AdminCajitasScreen extends StatelessWidget {
                     final usuarioId = personal[index].id;
                     final nombre = data['nombre'] ?? 'Sin nombre';
                     final fotoUrl = data['fotoUrl'];
-       
+
 
                     return InkWell(
                       onTap: () {
@@ -88,7 +89,7 @@ class AdminCajitasScreen extends StatelessWidget {
                           MaterialPageRoute(
                             builder: (context) => AdminDetalleCajitaScreen(
                               // Pasamos el ID del usuario seleccionado (sea maestro o trabajador)
-                              usuarioId: usuarioId, 
+                              usuarioId: usuarioId,
                               nombreUsuario: nombre,
                             ),
                           ),
@@ -99,9 +100,9 @@ class AdminCajitasScreen extends StatelessWidget {
                         decoration: BoxDecoration(
                           color: colorTarjeta,
                           borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: Colors.white.withOpacity(0.05)),
+                          border: Border.all(color: StiloColors.text.withOpacity(0.05)),
                           boxShadow: [
-                            BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 8, offset: const Offset(0, 4)),
+                            BoxShadow(color: StiloColors.background.withOpacity(0.2), blurRadius: 8, offset: Offset(0, 4)),
                           ],
                         ),
                         child: Column(
@@ -126,7 +127,7 @@ class AdminCajitasScreen extends StatelessWidget {
                                     )
                                   : null,
                             ),
-                            const SizedBox(height: 16),
+                            SizedBox(height: 16),
                             Text(
                               nombre,
                               style: GoogleFonts.inter(color: colorTextoPrimario, fontWeight: FontWeight.bold, fontSize: 15),
@@ -134,16 +135,16 @@ class AdminCajitasScreen extends StatelessWidget {
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
-                            const SizedBox(height: 8),
+                            SizedBox(height: 8),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                               decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.1),
+                                color: StiloColors.text.withOpacity(0.1),
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               child: Text(
                                 "Ver Cajita",
-                                style: GoogleFonts.inter(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.w600),
+                                style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .70), fontSize: 11, fontWeight: FontWeight.w600),
                               ),
                             )
                           ],

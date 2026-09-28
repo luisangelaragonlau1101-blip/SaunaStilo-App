@@ -101,3 +101,23 @@ test('complete legal games include the last cell, a win, a draw and reject play 
   assert.equal((await assertSucceeds(getDoc(doc(db('worker'),'insumos_inventario','photo-product')))).data().imagen_url,photo);
   await assertFails(updateDoc(doc(db('worker'),'insumos_inventario','photo-product'),{imagen_url:'forged'}));
  });
+
+test('private HR files and internal finance records remain admin-only under existing rules',async()=>{
+ const admin=db('admin');
+ for(const [path,data] of [['rh_expedientes/worker',{puesto:'Prueba QA',notas:'Expediente aislado'}],['gestion_movimientos/test',{tipo:'ingreso',centavos:100,moneda:'MXN'}]]) {
+  await assertSucceeds(setDoc(doc(admin,path),data)); await assertSucceeds(getDoc(doc(admin,path)));
+  for(const role of ['worker','master','warehouse','other']) {
+   await assertFails(getDoc(doc(db(role),path))); await assertFails(setDoc(doc(db(role),path),data));
+  }
+ }
+});
+test('assigned worker persists a bounded photo with description and closes a task without Storage',async()=>{
+ const database=db('worker');
+ await env.withSecurityRulesDisabled(c=>setDoc(doc(c.firestore(),'actividades','inline-evidence'),task('admin')));
+ const batch=writeBatch(database);
+ batch.set(doc(database,'actividades','inline-evidence','evidencias','photo'),{url:'data:image/png;base64,iVBORw0KGgo=',usuarioId:'worker',nombre:'foto.png',tipoMime:'image/png',creadoEn:serverTimestamp()});
+ batch.update(doc(database,'actividades','inline-evidence'),{estatus:'completado',comentariosTrabajador:'Actividad terminada con evidencia',evidenciasCount:1,cantidadEvidencias:1,completadoEn:serverTimestamp()});
+ await assertSucceeds(batch.commit());
+ const proof=await assertSucceeds(getDoc(doc(db('admin'),'actividades','inline-evidence','evidencias','photo')));assert.match(proof.data().url,/^data:image\/png/);
+ await assertFails(getDoc(doc(db('other'),'actividades','inline-evidence','evidencias','photo')));
+});

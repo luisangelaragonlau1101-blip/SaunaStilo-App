@@ -1,3 +1,5 @@
+import '../presentation/appearance.dart';
+import '../widgets/inline_photo.dart';
 import '../services/external_transfer.dart';
 import '../widgets/protected_media_viewer.dart';
 import 'package:file_picker/file_picker.dart';
@@ -56,7 +58,7 @@ class _ModalDetalleActividadState extends State<ModalDetalleActividad> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(mensaje),
-        backgroundColor: esError ? Colors.redAccent : const Color(0xFF0F766E),
+        backgroundColor: esError ? Colors.redAccent : StiloColors.border,
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -183,7 +185,7 @@ class _ModalDetalleActividadState extends State<ModalDetalleActividad> {
       return tipoDetectado;
     }
     final extension = nombre.split('.').last.toLowerCase();
-    const tipos = <String, String>{
+    final tipos = <String, String>{
       'jpg': 'image/jpeg',
       'jpeg': 'image/jpeg',
       'png': 'image/png',
@@ -210,7 +212,7 @@ class _ModalDetalleActividadState extends State<ModalDetalleActividad> {
   }
 
   Future<void> _registrarAvance() async {
-    await _guardarReporte(esCierre: false, evidenciasExistentes: const []);
+    await _guardarReporte(esCierre: false, evidenciasExistentes: []);
   }
 
   Future<void> _guardarReporte({
@@ -295,14 +297,14 @@ class _ModalDetalleActividadState extends State<ModalDetalleActividad> {
     return StreamBuilder<List<AvanceActividad>>(
       stream: _actividadesService.obtenerAvancesActividad(widget.actividad.id),
       builder: (context, avancesSnapshot) {
-        final avances = avancesSnapshot.data ?? const <AvanceActividad>[];
+        final avances = avancesSnapshot.data ?? <AvanceActividad>[];
         return StreamBuilder<List<EvidenciaActividad>>(
           stream: _actividadesService.obtenerEvidenciasActividad(
             widget.actividad.id,
           ),
           builder: (context, evidenciasSnapshot) {
             final evidencias =
-                evidenciasSnapshot.data ?? const <EvidenciaActividad>[];
+                evidenciasSnapshot.data ?? <EvidenciaActividad>[];
             return _construirModal(
               context,
               avances: avances,
@@ -333,13 +335,13 @@ class _ModalDetalleActividadState extends State<ModalDetalleActividad> {
           (url) => !evidencias.any((evidencia) => evidencia.url == url),
         )
         .toList(growable: false);
-    final puedeReportar = _estatusActual == 'en_progreso' && !_estaBloqueada;
+    final puedeReportar = ['pendiente', 'en_progreso'].contains(_estatusActual) && !_estaBloqueada;
     final colorEstatus = switch (_estatusActual) {
       'completado' => Colors.tealAccent,
       'en_progreso' when estaAtrasada => Colors.redAccent,
       'en_progreso' => Colors.cyanAccent,
       _ when estaAtrasada => Colors.redAccent,
-      _ => const Color(0xFFFFDE21),
+      _ => Color(0xFFFFDE21),
     };
     final textoEstatus = switch (_estatusActual) {
       'completado' => 'COMPLETADA',
@@ -358,8 +360,8 @@ class _ModalDetalleActividadState extends State<ModalDetalleActividad> {
             MediaQuery.of(context).padding.bottom +
             12,
       ),
-      decoration: const BoxDecoration(
-        color: Color(0xFF121212),
+      decoration: BoxDecoration(
+        color: StiloColors.surface,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: Column(
@@ -370,12 +372,12 @@ class _ModalDetalleActividadState extends State<ModalDetalleActividad> {
               width: 50,
               height: 5,
               decoration: BoxDecoration(
-                color: Colors.white24,
+                color: StiloColors.text.withValues(alpha: .24),
                 borderRadius: BorderRadius.circular(10),
               ),
             ),
           ),
-          const SizedBox(height: 18),
+          SizedBox(height: 18),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -383,18 +385,18 @@ class _ModalDetalleActividadState extends State<ModalDetalleActividad> {
                 child: Text(
                   widget.actividad.titulo.toUpperCase(),
                   style: GoogleFonts.inter(
-                    color: Colors.white,
+                    color: StiloColors.text,
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
-              const SizedBox(width: 10),
+              SizedBox(width: 10),
               Container(
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: Colors.black38,
+                  color: StiloColors.background.withValues(alpha: .38),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: colorEstatus.withValues(alpha: 0.6)),
                 ),
@@ -409,7 +411,7 @@ class _ModalDetalleActividadState extends State<ModalDetalleActividad> {
               ),
             ],
           ),
-          const SizedBox(height: 10),
+          SizedBox(height: 10),
           Row(
             children: [
               Icon(
@@ -417,7 +419,7 @@ class _ModalDetalleActividadState extends State<ModalDetalleActividad> {
                 color: colorEstatus,
                 size: 16,
               ),
-              const SizedBox(width: 8),
+              SizedBox(width: 8),
               Expanded(
                 child: Text(
                   '${estaAtrasada ? 'Venció' : 'Límite'}: '
@@ -433,13 +435,13 @@ class _ModalDetalleActividadState extends State<ModalDetalleActividad> {
             ],
           ),
           if (estaAtrasada && _estatusActual != 'completado') ...[
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
             Text(
               'La fecha límite pasó, pero todavía puedes entregar tu evidencia.',
-              style: GoogleFonts.inter(color: Colors.white60, fontSize: 12),
+              style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .60), fontSize: 12),
             ),
           ],
-          const Divider(color: Colors.white10, height: 26),
+          Divider(color: StiloColors.text.withValues(alpha: .10), height: 26),
           Expanded(
             child: SingleChildScrollView(
               keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
@@ -447,24 +449,24 @@ class _ModalDetalleActividadState extends State<ModalDetalleActividad> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _etiqueta('INSTRUCCIONES'),
-                  const SizedBox(height: 8),
+                  SizedBox(height: 8),
                   Text(
                     widget.actividad.descripcion,
                     style: GoogleFonts.inter(
-                      color: Colors.white.withValues(alpha: 0.9),
+                      color: StiloColors.text.withValues(alpha: 0.9),
                       fontSize: 14,
                       height: 1.4,
                     ),
                   ),
                   if (widget.actividad.observacionesAdmin.isNotEmpty) ...[
-                    const SizedBox(height: 16),
+                    SizedBox(height: 16),
                     Container(
                       width: double.infinity,
-                      padding: const EdgeInsets.all(14),
+                      padding: EdgeInsets.all(14),
                       decoration: BoxDecoration(
                         color: Colors.blueGrey.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(12),
-                        border: const Border(
+                        border: Border(
                           left: BorderSide(color: Colors.cyanAccent, width: 4),
                         ),
                       ),
@@ -479,11 +481,11 @@ class _ModalDetalleActividadState extends State<ModalDetalleActividad> {
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                          const SizedBox(height: 6),
+                          SizedBox(height: 6),
                           Text(
                             widget.actividad.observacionesAdmin,
                             style: GoogleFonts.inter(
-                              color: Colors.white,
+                              color: StiloColors.text,
                               fontSize: 13,
                               fontStyle: FontStyle.italic,
                             ),
@@ -492,9 +494,9 @@ class _ModalDetalleActividadState extends State<ModalDetalleActividad> {
                       ),
                     ),
                   ],
-                  const SizedBox(height: 24),
+                  SizedBox(height: 24),
                   _construirFormularioReporte(puedeReportar),
-                  const SizedBox(height: 26),
+                  SizedBox(height: 26),
                   _construirHistorial(
                     avances: avances,
                     evidencias: evidencias,
@@ -502,17 +504,17 @@ class _ModalDetalleActividadState extends State<ModalDetalleActividad> {
                     tieneError: errorHistorial,
                   ),
                   if (evidenciaAnterior.isNotEmpty) ...[
-                    const SizedBox(height: 22),
+                    SizedBox(height: 22),
                     _etiqueta(
                       'EVIDENCIA ANTERIOR (${evidenciaAnterior.length})',
                     ),
-                    const SizedBox(height: 10),
+                    SizedBox(height: 10),
                     SizedBox(
                       height: 96,
                       child: ListView.separated(
                         scrollDirection: Axis.horizontal,
                         itemCount: evidenciaAnterior.length,
-                        separatorBuilder: (_, _) => const SizedBox(width: 10),
+                        separatorBuilder: (_, _) => SizedBox(width: 10),
                         itemBuilder: (context, index) {
                           final url = evidenciaAnterior[index];
                           return InkWell(
@@ -520,7 +522,7 @@ class _ModalDetalleActividadState extends State<ModalDetalleActividad> {
                             borderRadius: BorderRadius.circular(12),
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(12),
-                              child: Image.network(
+                              child: InlinePhoto(
                                 url,
                                 width: 96,
                                 height: 96,
@@ -536,12 +538,12 @@ class _ModalDetalleActividadState extends State<ModalDetalleActividad> {
                       ),
                     ),
                   ],
-                  const SizedBox(height: 20),
+                  SizedBox(height: 20),
                 ],
               ),
             ),
           ),
-          const SizedBox(height: 10),
+          SizedBox(height: 10),
           _construirAccionPrincipal(evidencias),
         ],
       ),
@@ -554,7 +556,7 @@ class _ModalDetalleActividadState extends State<ModalDetalleActividad> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _etiqueta('REPORTAR AVANCE Y EVIDENCIA'),
-        const SizedBox(height: 7),
+        SizedBox(height: 7),
         Text(
           _estatusActual == 'pendiente'
               ? 'Inicia la tarea para registrar avances.'
@@ -562,30 +564,30 @@ class _ModalDetalleActividadState extends State<ModalDetalleActividad> {
                   ? 'Esta tarea ya fue finalizada.'
                   : 'Describe lo realizado. Puedes adjuntar todas las fotos y archivos que necesites.',
           style: GoogleFonts.inter(
-            color: Colors.white60,
+            color: StiloColors.text.withValues(alpha: .60),
             fontSize: 12,
             height: 1.35,
           ),
         ),
-        const SizedBox(height: 10),
+        SizedBox(height: 10),
         TextField(contextMenuBuilder: privacyTextMenu,
           controller: _comentarioController,
           enabled: habilitado,
           maxLines: 4,
           onChanged: (_) => setState(() {}),
-          style: GoogleFonts.inter(color: Colors.white, fontSize: 14),
+          style: GoogleFonts.inter(color: StiloColors.text, fontSize: 14),
           decoration: InputDecoration(
             hintText: 'Ejemplo: Instalé la estructura y validé las medidas…',
-            hintStyle: GoogleFonts.inter(color: Colors.white30, fontSize: 13),
+            hintStyle: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .30), fontSize: 13),
             filled: true,
-            fillColor: const Color(0xFF1E1E1E),
+            fillColor: StiloColors.surface,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide.none,
             ),
           ),
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
         Wrap(
           spacing: 8,
           runSpacing: 8,
@@ -608,21 +610,21 @@ class _ModalDetalleActividadState extends State<ModalDetalleActividad> {
           ],
         ),
         if (_estaSeleccionando) ...[
-          const SizedBox(height: 12),
-          const LinearProgressIndicator(
+          SizedBox(height: 12),
+          LinearProgressIndicator(
             color: Color(0xFFFFDE21),
-            backgroundColor: Colors.white10,
+            backgroundColor: StiloColors.text.withValues(alpha: .10),
           ),
         ],
         if (_archivosPendientes.isNotEmpty) ...[
-          const SizedBox(height: 14),
+          SizedBox(height: 14),
           Row(
             children: [
               Expanded(
                 child: Text(
                   'LISTOS PARA SUBIR (${_archivosPendientes.length})',
                   style: GoogleFonts.inter(
-                    color: Colors.white54,
+                    color: StiloColors.text.withValues(alpha: .54),
                     fontSize: 11,
                     fontWeight: FontWeight.bold,
                   ),
@@ -632,24 +634,24 @@ class _ModalDetalleActividadState extends State<ModalDetalleActividad> {
                 onPressed: habilitado
                     ? () => setState(() => _archivosPendientes.clear())
                     : null,
-                child: const Text('Quitar todos'),
+                child: Text('Quitar todos'),
               ),
             ],
           ),
           ListView.separated(
             shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
+            physics: NeverScrollableScrollPhysics(),
             itemCount: _archivosPendientes.length,
-            separatorBuilder: (_, _) => const SizedBox(height: 8),
+            separatorBuilder: (_, _) => SizedBox(height: 8),
             itemBuilder: (context, index) {
               final archivo = _archivosPendientes[index];
               final esImagen = archivo.tipoMime.startsWith('image/');
               return Container(
-                padding: const EdgeInsets.all(8),
+                padding: EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1E1E1E),
+                  color: StiloColors.surface,
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: Colors.white10),
+                  border: Border.all(color: StiloColors.text.withValues(alpha: .10)),
                 ),
                 child: Row(
                   children: [
@@ -659,7 +661,7 @@ class _ModalDetalleActividadState extends State<ModalDetalleActividad> {
                           ? _iconoArchivo(icono: Icons.image_outlined)
                           : _iconoArchivo(),
                     ),
-                    const SizedBox(width: 10),
+                    SizedBox(width: 10),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -669,16 +671,16 @@ class _ModalDetalleActividadState extends State<ModalDetalleActividad> {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: GoogleFonts.inter(
-                              color: Colors.white,
+                              color: StiloColors.text,
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
-                          const SizedBox(height: 3),
+                          SizedBox(height: 3),
                           Text(
                             _formatearTamanio(archivo.tamanioBytes),
                             style: GoogleFonts.inter(
-                              color: Colors.white54,
+                              color: StiloColors.text.withValues(alpha: .54),
                               fontSize: 11,
                             ),
                           ),
@@ -692,7 +694,7 @@ class _ModalDetalleActividadState extends State<ModalDetalleActividad> {
                                 () => _archivosPendientes.removeAt(index),
                               )
                           : null,
-                      icon: const Icon(
+                      icon: Icon(
                         Icons.close,
                         color: Colors.redAccent,
                         size: 20,
@@ -704,7 +706,7 @@ class _ModalDetalleActividadState extends State<ModalDetalleActividad> {
             },
           ),
         ],
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
         SizedBox(
           width: double.infinity,
           child: OutlinedButton.icon(
@@ -712,15 +714,15 @@ class _ModalDetalleActividadState extends State<ModalDetalleActividad> {
                 habilitado && _comentarioController.text.trim().isNotEmpty
                     ? _registrarAvance
                     : null,
-            icon: const Icon(Icons.cloud_upload_outlined),
+            icon: Icon(Icons.cloud_upload_outlined),
             label: Text(
               _estaProcesando ? 'GUARDANDO…' : 'REGISTRAR AVANCE',
               style: GoogleFonts.inter(fontWeight: FontWeight.bold),
             ),
             style: OutlinedButton.styleFrom(
-              foregroundColor: const Color(0xFFFFDE21),
-              side: const BorderSide(color: Color(0xFFFFDE21)),
-              padding: const EdgeInsets.symmetric(vertical: 14),
+              foregroundColor: Color(0xFFFFDE21),
+              side: BorderSide(color: Color(0xFFFFDE21)),
+              padding: EdgeInsets.symmetric(vertical: 14),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -738,7 +740,7 @@ class _ModalDetalleActividadState extends State<ModalDetalleActividad> {
     required bool tieneError,
   }) {
     if (cargando) {
-      return const Center(
+      return Center(
         child: Padding(
           padding: EdgeInsets.all(18),
           child: CircularProgressIndicator(color: Color(0xFFFFDE21)),
@@ -748,7 +750,7 @@ class _ModalDetalleActividadState extends State<ModalDetalleActividad> {
     if (tieneError) {
       return Container(
         width: double.infinity,
-        padding: const EdgeInsets.all(12),
+        padding: EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: Colors.redAccent.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(10),
@@ -772,19 +774,19 @@ class _ModalDetalleActividadState extends State<ModalDetalleActividad> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _etiqueta('HISTORIAL DE AVANCES (${avances.length})'),
-        const SizedBox(height: 10),
+        SizedBox(height: 10),
         if (avances.isEmpty && evidencias.isEmpty)
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: const Color(0xFF1E1E1E),
+              color: StiloColors.surface,
               borderRadius: BorderRadius.circular(12),
             ),
             child: Text(
               'Aún no se han registrado avances.',
               textAlign: TextAlign.center,
-              style: GoogleFonts.inter(color: Colors.white54, fontSize: 12),
+              style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .54), fontSize: 12),
             ),
           )
         else ...[
@@ -793,7 +795,7 @@ class _ModalDetalleActividadState extends State<ModalDetalleActividad> {
                 .where((evidencia) => evidencia.avanceId == avance.id)
                 .toList();
             return Padding(
-              padding: const EdgeInsets.only(bottom: 10),
+              padding: EdgeInsets.only(bottom: 10),
               child: _tarjetaAvance(avance, adjuntos),
             );
           }),
@@ -810,14 +812,14 @@ class _ModalDetalleActividadState extends State<ModalDetalleActividad> {
   ) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(13),
+      padding: EdgeInsets.all(13),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E1E1E),
+        color: StiloColors.surface,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: avance.esCierre
               ? Colors.tealAccent.withValues(alpha: 0.35)
-              : Colors.white10,
+              : StiloColors.text.withValues(alpha: .10),
         ),
       ),
       child: Column(
@@ -829,15 +831,15 @@ class _ModalDetalleActividadState extends State<ModalDetalleActividad> {
                 avance.esCierre ? Icons.verified_outlined : Icons.update,
                 color: avance.esCierre
                     ? Colors.tealAccent
-                    : const Color(0xFFFFDE21),
+                    : Color(0xFFFFDE21),
                 size: 18,
               ),
-              const SizedBox(width: 7),
+              SizedBox(width: 7),
               Expanded(
                 child: Text(
                   avance.esCierre ? 'ENTREGA FINAL' : 'AVANCE',
                   style: GoogleFonts.inter(
-                    color: Colors.white,
+                    color: StiloColors.text,
                     fontSize: 11,
                     fontWeight: FontWeight.bold,
                   ),
@@ -845,21 +847,21 @@ class _ModalDetalleActividadState extends State<ModalDetalleActividad> {
               ),
               Text(
                 DateFormat('dd MMM, HH:mm').format(avance.fecha),
-                style: GoogleFonts.inter(color: Colors.white38, fontSize: 10),
+                style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .38), fontSize: 10),
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
           Text(
             avance.comentario,
             style: GoogleFonts.inter(
-              color: Colors.white.withValues(alpha: 0.9),
+              color: StiloColors.text.withValues(alpha: 0.9),
               fontSize: 13,
               height: 1.35,
             ),
           ),
           if (adjuntos.isNotEmpty) ...[
-            const SizedBox(height: 10),
+            SizedBox(height: 10),
             _rejillaEvidencias(adjuntos),
           ],
         ],
@@ -870,11 +872,11 @@ class _ModalDetalleActividadState extends State<ModalDetalleActividad> {
   Widget _tarjetaEvidenciasSueltas(List<EvidenciaActividad> evidencias) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(13),
+      padding: EdgeInsets.all(13),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E1E1E),
+        color: StiloColors.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white10),
+        border: Border.all(color: StiloColors.text.withValues(alpha: .10)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -882,12 +884,12 @@ class _ModalDetalleActividadState extends State<ModalDetalleActividad> {
           Text(
             'OTRAS EVIDENCIAS',
             style: GoogleFonts.inter(
-              color: Colors.white54,
+              color: StiloColors.text.withValues(alpha: .54),
               fontSize: 11,
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 10),
+          SizedBox(height: 10),
           _rejillaEvidencias(evidencias),
         ],
       ),
@@ -907,7 +909,7 @@ class _ModalDetalleActividadState extends State<ModalDetalleActividad> {
             child: evidencia.esImagen
                 ? ClipRRect(
                     borderRadius: BorderRadius.circular(9),
-                    child: Image.network(
+                    child: InlinePhoto(
                       evidencia.url,
                       width: 72,
                       height: 72,
@@ -932,22 +934,22 @@ class _ModalDetalleActividadState extends State<ModalDetalleActividad> {
     return Container(
       width: 72,
       height: 72,
-      padding: const EdgeInsets.all(6),
+      padding: EdgeInsets.all(6),
       decoration: BoxDecoration(
-        color: Colors.black26,
+        color: StiloColors.background.withValues(alpha: .26),
         borderRadius: BorderRadius.circular(9),
-        border: Border.all(color: Colors.white10),
+        border: Border.all(color: StiloColors.text.withValues(alpha: .10)),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icono, color: Colors.white60, size: 25),
-          const SizedBox(height: 4),
+          Icon(icono, color: StiloColors.text.withValues(alpha: .60), size: 25),
+          SizedBox(height: 4),
           Text(
             nombre,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.inter(color: Colors.white54, fontSize: 8),
+            style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .54), fontSize: 8),
           ),
         ],
       ),
@@ -958,11 +960,11 @@ class _ModalDetalleActividadState extends State<ModalDetalleActividad> {
     return Container(
       width: 48,
       height: 48,
-      color: Colors.black26,
+      color: StiloColors.background.withValues(alpha: .26),
       alignment: Alignment.center,
       child: Icon(
         icono,
-        color: Colors.white60,
+        color: StiloColors.text.withValues(alpha: .60),
       ),
     );
   }
@@ -977,9 +979,9 @@ class _ModalDetalleActividadState extends State<ModalDetalleActividad> {
       icon: Icon(icono, size: 18),
       label: Text(texto),
       style: OutlinedButton.styleFrom(
-        foregroundColor: Colors.white70,
-        side: const BorderSide(color: Colors.white24),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        foregroundColor: StiloColors.text.withValues(alpha: .70),
+        side: BorderSide(color: StiloColors.text.withValues(alpha: .24)),
+        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),
     );
@@ -987,7 +989,7 @@ class _ModalDetalleActividadState extends State<ModalDetalleActividad> {
 
   Widget _construirAccionPrincipal(List<EvidenciaActividad> evidencias) {
     if (_estaProcesando || _estaSeleccionando) {
-      return const Center(
+      return Center(
         child: Padding(
           padding: EdgeInsets.symmetric(vertical: 10),
           child: CircularProgressIndicator(color: Color(0xFFFFDE21)),
@@ -1000,7 +1002,7 @@ class _ModalDetalleActividadState extends State<ModalDetalleActividad> {
       height: 54,
       child: ElevatedButton.icon(
         onPressed: switch (_estatusActual) {
-          'pendiente' => _iniciarActividad,
+          'pendiente' => () => _guardarReporte(esCierre: true, evidenciasExistentes: evidencias),
           'en_progreso' => () => _guardarReporte(
                 esCierre: true,
                 evidenciasExistentes: evidencias,
@@ -1016,8 +1018,8 @@ class _ModalDetalleActividadState extends State<ModalDetalleActividad> {
         ),
         label: Text(
           switch (_estatusActual) {
-            'pendiente' => 'INICIAR TAREA',
-            'en_progreso' => 'FINALIZAR CON EVIDENCIA',
+            'pendiente' => 'MARCAR COMO TERMINADA',
+            'en_progreso' => 'MARCAR COMO TERMINADA',
             _ => 'TAREA FINALIZADA',
           },
           style: GoogleFonts.inter(
@@ -1027,12 +1029,12 @@ class _ModalDetalleActividadState extends State<ModalDetalleActividad> {
           ),
         ),
         style: ElevatedButton.styleFrom(
-          foregroundColor: Colors.white,
+          foregroundColor: StiloColors.text,
           backgroundColor: _estatusActual == 'pendiente'
-              ? const Color(0xFF1E3A8A)
-              : const Color(0xFF0F766E),
-          disabledBackgroundColor: Colors.white12,
-          disabledForegroundColor: Colors.white30,
+              ? Color(0xFF1E3A8A)
+              : StiloColors.border,
+          disabledBackgroundColor: StiloColors.text.withValues(alpha: .12),
+          disabledForegroundColor: StiloColors.text.withValues(alpha: .30),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(14),
           ),
@@ -1045,7 +1047,7 @@ class _ModalDetalleActividadState extends State<ModalDetalleActividad> {
     return Text(
       texto,
       style: GoogleFonts.inter(
-        color: Colors.white54,
+        color: StiloColors.text.withValues(alpha: .54),
         fontSize: 12,
         fontWeight: FontWeight.bold,
       ),

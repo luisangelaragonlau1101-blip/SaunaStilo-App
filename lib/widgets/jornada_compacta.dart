@@ -1,3 +1,4 @@
+import '../presentation/appearance.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -7,7 +8,7 @@ import '../services/asistencia_service.dart';
 import '../services/attendance_gateway_service.dart';
 import '../services/company_learning_service.dart';
 
-String mexicoDayKey(DateTime now) => DateFormat('yyyyMMdd').format(now.toUtc().subtract(const Duration(hours: 6)));
+String mexicoDayKey(DateTime now) => DateFormat('yyyyMMdd').format(now.toUtc().subtract(Duration(hours: 6)));
 
 class JornadaCompacta extends StatefulWidget {
   final UserModel usuario;
@@ -51,16 +52,16 @@ class _JornadaCompactaState extends State<JornadaCompacta> with WidgetsBindingOb
   void dispose() { WidgetsBinding.instance.removeObserver(this); super.dispose(); }
 
   String _hour(dynamic value) => value is Timestamp
-      ? DateFormat('HH:mm').format(value.toDate().toUtc().subtract(const Duration(hours: 6))) : '—';
+      ? DateFormat('HH:mm').format(value.toDate().toUtc().subtract(Duration(hours: 6))) : '—';
 
   Future<void> _register(String action) async {
     if (_busy || (widget.usuario.rol == AppRoles.admin && !_manual)) return;
     if (action == 'salida') {
       final confirmed = await showDialog<bool>(context: context, builder: (c) => AlertDialog(
-        title: const Text('¿Registrar tu salida?'),
-        content: const Text('Se guardará la hora actual y finalizará tu jornada.'),
-        actions: [TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Cancelar')),
-          FilledButton(onPressed: () => Navigator.pop(c, true), child: const Text('Confirmar salida'))],
+        title: Text('¿Registrar tu salida?'),
+        content: Text('Se guardará la hora actual y finalizará tu jornada.'),
+        actions: [TextButton(onPressed: () => Navigator.pop(c, false), child: Text('Cancelar')),
+          FilledButton(onPressed: () => Navigator.pop(c, true), child: Text('Confirmar salida'))],
       ));
       if (confirmed != true || !mounted) return;
     }
@@ -99,39 +100,39 @@ class _JornadaCompactaState extends State<JornadaCompacta> with WidgetsBindingOb
         _manual = record?['supportsManual'] == true;
         final ready = record != null && !snapshot.hasError && !_busy && (widget.usuario.rol != AppRoles.admin || _manual);
         return Container(
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(color: const Color(0xFF111012), borderRadius: BorderRadius.circular(24), border: Border.all(color: const Color(0xFF452332))),
+          padding: EdgeInsets.all(18),
+          decoration: BoxDecoration(color: StiloColors.surface, borderRadius: BorderRadius.circular(24), border: Border.all(color: StiloColors.surface)),
           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            Row(children: [const Icon(Icons.fingerprint_rounded, color: Color(0xFFB7FF2A)), const SizedBox(width: 9),
-              const Expanded(child: Text('Mi jornada', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800))),
-              IconButton(tooltip: 'Actualizar jornada', onPressed: _busy ? null : AttendanceGatewayService.refresh, icon: const Icon(Icons.refresh_rounded))]),
-            Text(left ? 'FINALIZADA' : entered ? 'EN CURSO' : 'HOY', style: const TextStyle(color: Color(0xFFB7FF2A), fontSize: 11)),
-            const SizedBox(height: 12),
-            Wrap(spacing: 20, runSpacing: 8, children: [Text('Entrada ${_hour(data['horaEntrada'])}', style: const TextStyle(fontSize: 19)), Text('Salida ${_hour(data['horaSalida'])}', style: const TextStyle(fontSize: 19))]),
-            const SizedBox(height: 6),
-            Text('Horario: ${widget.usuario.horaEntrada ?? '09:00'}–${widget.usuario.horaSalida ?? '19:00'} · Ciudad de México', style: const TextStyle(color: Colors.white54, fontSize: 11)),
-            const SizedBox(height: 14),
-            if (_manual) const Text('Registro manual con hora del servidor. No solicita ubicación.', style: TextStyle(color: Colors.white60, fontSize: 12)),
-            if (!_manual && widget.usuario.rol == AppRoles.admin) const Text('Tu registro personal sencillo está pendiente de la actualización del servicio.', style: TextStyle(color: Colors.orangeAccent)),
-            FilledButton.icon(key: const ValueKey('attendance-entry'), onPressed: ready && !entered ? () => _register('entrada') : null, icon: const Icon(Icons.login_rounded), label: Text(entered ? 'Entrada registrada' : 'Registrar entrada')),
+            Row(children: [Icon(Icons.fingerprint_rounded, color: StiloColors.accent), SizedBox(width: 9),
+              Expanded(child: Text('Mi jornada', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800))),
+              IconButton(tooltip: 'Actualizar jornada', onPressed: _busy ? null : AttendanceGatewayService.refresh, icon: Icon(Icons.refresh_rounded))]),
+            Text(left ? 'FINALIZADA' : entered ? 'EN CURSO' : 'HOY', style: TextStyle(color: StiloColors.accent, fontSize: 11)),
+            SizedBox(height: 12),
+            Wrap(spacing: 20, runSpacing: 8, children: [Text('Entrada ${_hour(data['horaEntrada'])}', style: TextStyle(fontSize: 19)), Text('Salida ${_hour(data['horaSalida'])}', style: TextStyle(fontSize: 19))]),
+            SizedBox(height: 6),
+            Text('Horario: ${widget.usuario.horaEntrada ?? '09:00'}–${widget.usuario.horaSalida ?? '19:00'} · Ciudad de México', style: TextStyle(color: StiloColors.text.withValues(alpha: .54), fontSize: 11)),
+            SizedBox(height: 14),
+            if (_manual) Text('Registro manual con hora del servidor. No solicita ubicación.', style: TextStyle(color: StiloColors.text.withValues(alpha: .60), fontSize: 12)),
+            if (!_manual && widget.usuario.rol == AppRoles.admin) Text('Tu registro personal sencillo está pendiente de la actualización del servicio.', style: TextStyle(color: Colors.orangeAccent)),
+            FilledButton.icon(key: ValueKey('attendance-entry'), onPressed: ready && !entered ? () => _register('entrada') : null, icon: Icon(Icons.login_rounded), label: Text(entered ? 'Entrada registrada' : 'Registrar entrada')),
             if (entered) ...[
-              const SizedBox(height: 16),
-              const Text('Hora de comida', style: TextStyle(fontWeight: FontWeight.w800)),
-              const SizedBox(height: 8),
-              Text('Salida ${_hour(data['salidaComidaReal'])} · Regreso ${_hour(data['regresoComidaReal'])}', style: const TextStyle(color: Colors.white70)),
+              SizedBox(height: 16),
+              Text('Hora de comida', style: TextStyle(fontWeight: FontWeight.w800)),
+              SizedBox(height: 8),
+              Text('Salida ${_hour(data['salidaComidaReal'])} · Regreso ${_hour(data['regresoComidaReal'])}', style: TextStyle(color: StiloColors.text.withValues(alpha: .70))),
               if (!left && !mealStarted && (!mealPending || _manual))
-                OutlinedButton.icon(key: const ValueKey('attendance-meal'), onPressed: ready ? () => _register(_manual ? 'salida_comida' : 'solicitar_comida') : null, icon: const Icon(Icons.restaurant_rounded), label: Text(_manual ? 'Salir a comer' : 'Solicitar hora de comida')),
-              if (mealPending && !_manual) const Padding(padding: EdgeInsets.symmetric(vertical: 8), child: Text('Solicitud guardada. Espera la autorización de Administración.', style: TextStyle(color: Color(0xFFFFB876)))),
+                OutlinedButton.icon(key: ValueKey('attendance-meal'), onPressed: ready ? () => _register(_manual ? 'salida_comida' : 'solicitar_comida') : null, icon: Icon(Icons.restaurant_rounded), label: Text(_manual ? 'Salir a comer' : 'Solicitar hora de comida')),
+              if (mealPending && !_manual) Padding(padding: EdgeInsets.symmetric(vertical: 8), child: Text('Solicitud guardada. Espera la autorización de Administración.', style: TextStyle(color: Color(0xFFFFB876)))),
               if (!left && mealStarted && !mealReturned)
-                FilledButton.icon(key: const ValueKey('attendance-return'), onPressed: ready ? () => _register('regreso_comida') : null, icon: const Icon(Icons.keyboard_return_rounded), label: const Text('Ya regresé de comer')),
-              if (mealReturned) const Text('Regreso de comida registrado', style: TextStyle(color: Color(0xFFB7FF2A))),
-              const SizedBox(height: 12),
-              OutlinedButton.icon(key: const ValueKey('attendance-exit'), onPressed: ready && !left ? () => _register('salida') : null, icon: const Icon(Icons.logout_rounded), label: Text(left ? 'Salida registrada' : 'Registrar salida')),
+                FilledButton.icon(key: ValueKey('attendance-return'), onPressed: ready ? () => _register('regreso_comida') : null, icon: Icon(Icons.keyboard_return_rounded), label: Text('Ya regresé de comer')),
+              if (mealReturned) Text('Regreso de comida registrado', style: TextStyle(color: StiloColors.accent)),
+              SizedBox(height: 12),
+              OutlinedButton.icon(key: ValueKey('attendance-exit'), onPressed: ready && !left ? () => _register('salida') : null, icon: Icon(Icons.logout_rounded), label: Text(left ? 'Salida registrada' : 'Registrar salida')),
             ],
-            if (_busy || snapshot.connectionState == ConnectionState.waiting) const Padding(padding: EdgeInsets.symmetric(vertical: 10), child: LinearProgressIndicator()),
-            if (record?['pendingSync'] == true) const Padding(padding: EdgeInsets.only(top: 10), child: Text('Horario guardado. Se actualizará en nómina cuando Administración abra Asistencias.', style: TextStyle(color: Colors.white60, fontSize: 12))),
-            if (snapshot.hasError || _error != null) Padding(padding: const EdgeInsets.only(top: 12), child: Semantics(liveRegion: true, child: Text(_error ?? CompanyLearningService.message(snapshot.error!), style: const TextStyle(color: Colors.orangeAccent)))),
-            if (widget.showDetails) TextButton(onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => PayrollRecordsScreen(user: widget.usuario))), child: const Text('Ver mis registros y nómina')),
+            if (_busy || snapshot.connectionState == ConnectionState.waiting) Padding(padding: EdgeInsets.symmetric(vertical: 10), child: LinearProgressIndicator()),
+            if (record?['pendingSync'] == true) Padding(padding: EdgeInsets.only(top: 10), child: Text('Horario guardado. Se actualizará en nómina cuando Administración abra Asistencias.', style: TextStyle(color: StiloColors.text.withValues(alpha: .60), fontSize: 12))),
+            if (snapshot.hasError || _error != null) Padding(padding: EdgeInsets.only(top: 12), child: Semantics(liveRegion: true, child: Text(_error ?? CompanyLearningService.message(snapshot.error!), style: TextStyle(color: Colors.orangeAccent)))),
+            if (widget.showDetails) TextButton(onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => PayrollRecordsScreen(user: widget.usuario))), child: Text('Ver mis registros y nómina')),
           ]),
         );
       },

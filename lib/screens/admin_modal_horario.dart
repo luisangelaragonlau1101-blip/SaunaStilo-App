@@ -1,3 +1,4 @@
+import '../presentation/appearance.dart';
 import '../services/external_transfer.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -19,9 +20,9 @@ void mostrarModalHorario(BuildContext context, String trabajadorId, String nombr
 
   showModalBottomSheet(
     context: context,
-    backgroundColor: const Color(0xFF1E1E1E),
+    backgroundColor: StiloColors.surface,
     isScrollControlled: true, // Para que el teclado no lo tape
-    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
     builder: (context) {
       return Padding(
         padding: EdgeInsets.only(
@@ -34,89 +35,89 @@ void mostrarModalHorario(BuildContext context, String trabajadorId, String nombr
           children: [
             Text(
               "Horario de $nombreActual",
-              style: GoogleFonts.montserrat(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+              style: GoogleFonts.montserrat(fontSize: 18, fontWeight: FontWeight.bold, color: StiloColors.text),
             ),
-            const SizedBox(height: 20),
-            
+            SizedBox(height: 20),
+
             // --- HORA DE ENTRADA ---
-            Text("Hora de entrada (HH:MM formato 24h)", style: GoogleFonts.inter(color: Colors.white70, fontSize: 13)),
-            const SizedBox(height: 8),
+            Text("Hora de entrada (HH:MM formato 24h)", style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .70), fontSize: 13)),
+            SizedBox(height: 8),
             TextField(contextMenuBuilder: privacyTextMenu,
               controller: horaEntradaController,
-              style: GoogleFonts.inter(color: Colors.white),
+              style: GoogleFonts.inter(color: StiloColors.text),
               keyboardType: TextInputType.datetime,
               decoration: InputDecoration(
                 filled: true,
-                fillColor: Colors.black,
+                fillColor: StiloColors.background,
                 hintText: "Ej. 08:00",
-                hintStyle: GoogleFonts.inter(color: Colors.white24),
+                hintStyle: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .24)),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                prefixIcon: const Icon(Icons.login_rounded, color: Color(0xFF00B0FF)),
+                prefixIcon: Icon(Icons.login_rounded, color: Color(0xFF00B0FF)),
               ),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
 
             // --- HORA DE SALIDA (NUEVO) ---
-            Text("Hora de salida (HH:MM formato 24h)", style: GoogleFonts.inter(color: Colors.white70, fontSize: 13)),
-            const SizedBox(height: 8),
+            Text("Hora de salida (HH:MM formato 24h)", style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .70), fontSize: 13)),
+            SizedBox(height: 8),
             TextField(contextMenuBuilder: privacyTextMenu,
               controller: horaSalidaController,
-              style: GoogleFonts.inter(color: Colors.white),
+              style: GoogleFonts.inter(color: StiloColors.text),
               keyboardType: TextInputType.datetime,
               decoration: InputDecoration(
                 filled: true,
-                fillColor: Colors.black,
+                fillColor: StiloColors.background,
                 hintText: "Ej. 18:00",
-                hintStyle: GoogleFonts.inter(color: Colors.white24),
+                hintStyle: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .24)),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                prefixIcon: const Icon(Icons.logout_rounded, color: Colors.redAccent),
+                prefixIcon: Icon(Icons.logout_rounded, color: Colors.redAccent),
               ),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
 
             // --- TOLERANCIA ---
-            Text("Tolerancia (en minutos)", style: GoogleFonts.inter(color: Colors.white70, fontSize: 13)),
-            const SizedBox(height: 8),
+            Text("Tolerancia (en minutos)", style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .70), fontSize: 13)),
+            SizedBox(height: 8),
             TextField(contextMenuBuilder: privacyTextMenu,
               controller: toleranciaController,
-              style: GoogleFonts.inter(color: Colors.white),
+              style: GoogleFonts.inter(color: StiloColors.text),
               keyboardType: TextInputType.number,
               decoration: InputDecoration(
                 filled: true,
-                fillColor: Colors.black,
+                fillColor: StiloColors.background,
                 hintText: "Ej. 15",
-                hintStyle: GoogleFonts.inter(color: Colors.white24),
+                hintStyle: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .24)),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                prefixIcon: const Icon(Icons.timer_rounded, color: Color(0xFFFF9800)),
+                prefixIcon: Icon(Icons.timer_rounded, color: Color(0xFFFF9800)),
               ),
             ),
-            const SizedBox(height: 24),
+            SizedBox(height: 24),
 
             // --- BOTÓN GUARDAR ---
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF00B0FF),
-                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  backgroundColor: Color(0xFF00B0FF),
+                  padding: EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
                 onPressed: () async {
                   int tolerancia = int.tryParse(toleranciaController.text) ?? 15;
-                  
+
                   // NUEVO: Guardamos también la hora de salida en el documento del usuario
                   await FirebaseFirestore.instance.collection('usuarios').doc(trabajadorId).update({
                     'horaEntrada': horaEntradaController.text.trim(),
                     'horaSalida': horaSalidaController.text.trim(), // <- Guardado en base de datos
                     'toleranciaMinutos': tolerancia,
                   });
-                  
+
                   Navigator.pop(context);
                 },
-                child: Text("Guardar Horario", style: GoogleFonts.inter(color: Colors.black, fontWeight: FontWeight.bold)),
+                child: Text("Guardar Horario", style: GoogleFonts.inter(color: StiloColors.background, fontWeight: FontWeight.bold)),
               ),
             ),
-            const SizedBox(height: 24),
+            SizedBox(height: 24),
           ],
         ),
       );

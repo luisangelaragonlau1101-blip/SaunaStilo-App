@@ -1,3 +1,4 @@
+import '../presentation/appearance.dart';
 import '../services/external_transfer.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -5,7 +6,7 @@ import '../services/inventario_service.dart';
 import '../models/insumo_model.dart';
 
 // --- IMPORTS PARA PDF Y EXPORTACIÓN ---
-import 'dart:io'; 
+import 'dart:io';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:path_provider/path_provider.dart';
@@ -22,7 +23,7 @@ class ItemRecepcion {
   final InsumoModel insumo;
   final TextEditingController cantidadController;
 
-  ItemRecepcion({required this.insumo}) 
+  ItemRecepcion({required this.insumo})
       : cantidadController = TextEditingController(text: '1'); // Por defecto llega 1
 }
 
@@ -35,14 +36,14 @@ class RecepcionInventarioScreen extends StatefulWidget {
 
 class _RecepcionInventarioScreenState extends State<RecepcionInventarioScreen> {
   final InventarioService _inventarioService = InventarioService();
-  
+
   // Colores de tu UI
-  static const Color colorFondo = Color(0xFF000000);
-  static const Color colorTarjeta = Color(0xFF111012);
-  static const Color colorTextoPrimario = Color(0xFFFDFDFD);
-  static const Color colorAzul = Color(0xFFC798FF);
-  static const Color colorRosaVibrante = Color(0xFFFF729C);
-  static const Color colorAcento = Color(0xFFB7FF2A); // Agregado para el ícono del escáner
+  Color get colorFondo => StiloColors.background;
+  Color get colorTarjeta => StiloColors.surface;
+  Color get colorTextoPrimario => StiloColors.text;
+  Color get colorAzul => StiloColors.accent;
+  Color get colorRosaVibrante => Color(0xFFFF729C);
+  Color get colorAcento => StiloColors.accent; // Agregado para el ícono del escáner
 
   List<InsumoModel> _catalogoInsumos = [];
   final List<ItemRecepcion> _listaCarga = [];
@@ -82,7 +83,7 @@ class _RecepcionInventarioScreenState extends State<RecepcionInventarioScreen> {
         SnackBar(
           content: Text('${insumoSeleccionado.nombre} ya está en la lista. Si deseas agregar más, edita su cantidad.'),
           backgroundColor: Colors.orange,
-          duration: const Duration(seconds: 2),
+          duration: Duration(seconds: 2),
         )
       );
       return;
@@ -99,7 +100,7 @@ class _RecepcionInventarioScreenState extends State<RecepcionInventarioScreen> {
       String? res = await Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => const SimpleBarcodeScannerPage(),
+          builder: (context) => SimpleBarcodeScannerPage(),
         ),
       );
 
@@ -114,7 +115,7 @@ class _RecepcionInventarioScreenState extends State<RecepcionInventarioScreen> {
           final insumoEncontrado = _catalogoInsumos.firstWhere(
             (insumo) => insumo.codigoBarras == res,
           );
-          
+
           // Si lo encuentra, lo agrega a la mesa de trabajo
           _agregarAListaCarga(insumoEncontrado);
 
@@ -122,7 +123,7 @@ class _RecepcionInventarioScreenState extends State<RecepcionInventarioScreen> {
           // Si firstWhere da error, es porque no existe ningún producto con ese código
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
+              SnackBar(
                 content: Text('Código no reconocido. El artículo no existe en el inventario.'),
                 backgroundColor: Colors.redAccent,
               )
@@ -159,7 +160,7 @@ class _RecepcionInventarioScreenState extends State<RecepcionInventarioScreen> {
             backgroundColor: Colors.redAccent,
           )
         );
-        return; 
+        return;
       }
       insumosAActualizar[item.insumo.id] = cant;
     }
@@ -187,19 +188,19 @@ class _RecepcionInventarioScreenState extends State<RecepcionInventarioScreen> {
           builder: (context) => AlertDialog(
             backgroundColor: colorTarjeta,
             title: Text('¡Entrada Exitosa!', style: GoogleFonts.inter(color: Colors.green, fontWeight: FontWeight.bold)),
-            content: const Text('El material se ha sumado al inventario correctamente.', style: TextStyle(color: Colors.white70)),
+            content: Text('El material se ha sumado al inventario correctamente.', style: TextStyle(color: StiloColors.text.withValues(alpha: .70))),
             actions: [
               TextButton(
                 onPressed: () {
                   Navigator.pop(context); // Cierra el diálogo
                   Navigator.pop(context); // Regresa a la pantalla principal
                 },
-                child: const Text('SALIR', style: TextStyle(color: Colors.white54)),
+                child: Text('SALIR', style: TextStyle(color: StiloColors.text.withValues(alpha: .54))),
               ),
               ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(backgroundColor: colorAzul),
-                icon: const Icon(Icons.picture_as_pdf, color: Colors.white, size: 18),
-                label: const Text('GENERAR COMPROBANTE', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                icon: Icon(Icons.picture_as_pdf, color: StiloColors.text, size: 18),
+                label: Text('GENERAR COMPROBANTE', style: TextStyle(color: StiloColors.text, fontWeight: FontWeight.bold)),
                 onPressed: () {
                   Navigator.pop(context); // Cierra el diálogo para mostrar el cargando del PDF
                   _generarDescargarComprobante(listaRespaldada, fechaActual);
@@ -222,15 +223,15 @@ class _RecepcionInventarioScreenState extends State<RecepcionInventarioScreen> {
   // --- LÓGICA DE GENERACIÓN DE COMPROBANTE DE ENTRADA ---
   Future<void> _generarDescargarComprobante(List<ItemRecepcion> itemsRegistrados, DateTime fecha) async {
     showDialog(
-      context: context, 
-      barrierDismissible: false, 
-      builder: (_) => const Center(child: CircularProgressIndicator(color: colorAzul))
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => Center(child: CircularProgressIndicator(color: colorAzul))
     );
 
     try {
       String fechaStr = DateFormat('dd_MM_yyyy_HHmm').format(fecha);
       String fechaDisplay = DateFormat('dd/MM/yyyy HH:mm').format(fecha);
-      
+
       final output = await getTemporaryDirectory();
       String pdfPath = "${output.path}/SaunaStilo_Entrada_$fechaStr.pdf";
 
@@ -239,14 +240,14 @@ class _RecepcionInventarioScreenState extends State<RecepcionInventarioScreen> {
       pdf.addPage(
         pw.MultiPage(
           pageFormat: PdfPageFormat.a4,
-          margin: const pw.EdgeInsets.all(32),
+          margin: pw.EdgeInsets.all(32),
           build: (pw.Context context) {
             return [
               pw.Row(
                 mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                 children: [
                   pw.Text('SAUNASTILO - INVENTARIO', style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold, color: PdfColor.fromHex("#090909"))),
-                  pw.Text(fechaDisplay, style: const pw.TextStyle(fontSize: 10)),
+                  pw.Text(fechaDisplay, style: pw.TextStyle(fontSize: 10)),
                 ],
               ),
               pw.Divider(color: PdfColor.fromHex("#00B0FF")), // Usamos tu color azul
@@ -257,17 +258,17 @@ class _RecepcionInventarioScreenState extends State<RecepcionInventarioScreen> {
               pw.SizedBox(height: 15),
               pw.Table(
                 border: pw.TableBorder.all(color: PdfColors.grey300, width: 0.5),
-                columnWidths: const {
-                  0: pw.FlexColumnWidth(3),   
-                  1: pw.FlexColumnWidth(2),   
-                  2: pw.FlexColumnWidth(1.5), 
+                columnWidths: {
+                  0: pw.FlexColumnWidth(3),
+                  1: pw.FlexColumnWidth(2),
+                  2: pw.FlexColumnWidth(1.5),
                 },
                 children: [
                   pw.TableRow(
-                    decoration: const pw.BoxDecoration(color: PdfColors.grey200),
-                    children: ['ARTÍCULO', 'CATEGORÍA', 'CANT. INGRESADA'].map((h) => 
+                    decoration: pw.BoxDecoration(color: PdfColors.grey200),
+                    children: ['ARTÍCULO', 'CATEGORÍA', 'CANT. INGRESADA'].map((h) =>
                       pw.Padding(
-                        padding: const pw.EdgeInsets.all(5), 
+                        padding: pw.EdgeInsets.all(5),
                         child: pw.Text(h, style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8), textAlign: h == 'CANT. INGRESADA' ? pw.TextAlign.center : pw.TextAlign.left)
                       )
                     ).toList(),
@@ -278,12 +279,12 @@ class _RecepcionInventarioScreenState extends State<RecepcionInventarioScreen> {
 
                     return pw.TableRow(
                       children: [
-                        pw.Padding(padding: const pw.EdgeInsets.all(5), child: pw.Text(item.insumo.nombre, style: const pw.TextStyle(fontSize: 8))),
-                        pw.Padding(padding: const pw.EdgeInsets.all(5), child: pw.Text(item.insumo.categoria.toUpperCase(), style: const pw.TextStyle(fontSize: 8))),
+                        pw.Padding(padding: pw.EdgeInsets.all(5), child: pw.Text(item.insumo.nombre, style: pw.TextStyle(fontSize: 8))),
+                        pw.Padding(padding: pw.EdgeInsets.all(5), child: pw.Text(item.insumo.categoria.toUpperCase(), style: pw.TextStyle(fontSize: 8))),
                         pw.Padding(
-                          padding: const pw.EdgeInsets.all(5), 
+                          padding: pw.EdgeInsets.all(5),
                           child: pw.Text(
-                            '+$cant $unidad', 
+                            '+$cant $unidad',
                             style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold, color: PdfColor.fromHex("#33CC33")), // Verde
                             textAlign: pw.TextAlign.center
                           )
@@ -299,12 +300,12 @@ class _RecepcionInventarioScreenState extends State<RecepcionInventarioScreen> {
       );
 
       await File(pdfPath).writeAsBytes(await pdf.save());
-      
+
       if (mounted) Navigator.pop(context); // Quita el loader
-      
+
       // Compartir o abrir el archivo
       await ExternalTransfer.block(context);
-      
+
       // Regresamos a la pantalla principal de inventario después de compartir
       if (mounted) Navigator.pop(context);
 
@@ -324,7 +325,7 @@ class _RecepcionInventarioScreenState extends State<RecepcionInventarioScreen> {
       appBar: AppBar(
         backgroundColor: colorFondo,
         elevation: 0,
-        iconTheme: const IconThemeData(color: colorTextoPrimario),
+        iconTheme: IconThemeData(color: colorTextoPrimario),
         title: Text(
           'RECEPCIÓN DE INVENTARIO',
           style: GoogleFonts.inter(
@@ -335,22 +336,22 @@ class _RecepcionInventarioScreenState extends State<RecepcionInventarioScreen> {
           ),
         ),
       ),
-      body: _cargando 
-        ? const Center(child: CircularProgressIndicator(color: colorRosaVibrante))
+      body: _cargando
+        ? Center(child: CircularProgressIndicator(color: colorRosaVibrante))
         : Column(
             children: [
               // --- BUSCADOR INTELIGENTE ---
               Container(
-                padding: const EdgeInsets.all(16),
+                padding: EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: colorTarjeta,
-                  border: const Border(bottom: BorderSide(color: Colors.white10)),
+                  border: Border(bottom: BorderSide(color: StiloColors.text.withValues(alpha: .10))),
                 ),
                 child: Autocomplete<InsumoModel>(
                   displayStringForOption: (InsumoModel option) => option.nombre,
                   optionsBuilder: (TextEditingValue textEditingValue) {
                     if (textEditingValue.text.isEmpty) {
-                      return const Iterable<InsumoModel>.empty();
+                      return Iterable<InsumoModel>.empty();
                     }
                     return _catalogoInsumos.where((insumo) {
                       return insumo.nombre.toLowerCase().contains(textEditingValue.text.toLowerCase()) ||
@@ -364,23 +365,23 @@ class _RecepcionInventarioScreenState extends State<RecepcionInventarioScreen> {
                     return TextField(contextMenuBuilder: privacyTextMenu,
                       controller: controller,
                       focusNode: focusNode,
-                      style: const TextStyle(color: Colors.white),
+                      style: TextStyle(color: StiloColors.text),
                       decoration: InputDecoration(
                         hintText: 'Buscar (Ej. Filtro, Martillo...)',
-                        hintStyle: const TextStyle(color: Colors.white38),
-                        prefixIcon: const Icon(Icons.search, color: colorAzul),
-                        
+                        hintStyle: TextStyle(color: StiloColors.text.withValues(alpha: .38)),
+                        prefixIcon: Icon(Icons.search, color: colorAzul),
+
                         // --- 3. NUEVO: BOTÓN DE ESCÁNER EN EL BUSCADOR ---
                         suffixIcon: IconButton(
-                          icon: const Icon(Icons.qr_code_scanner, color: colorAcento),
+                          icon: Icon(Icons.qr_code_scanner, color: colorAcento),
                           tooltip: 'Escanear herramienta',
                           onPressed: _escanearYAgregarCodigo,
                         ),
                         // -------------------------------------------------
-                        
+
                         filled: true,
                         fillColor: colorFondo,
-                        contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
+                        contentPadding: EdgeInsets.symmetric(vertical: 0, horizontal: 16),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10),
                           borderSide: BorderSide.none,
@@ -395,7 +396,7 @@ class _RecepcionInventarioScreenState extends State<RecepcionInventarioScreen> {
                         color: Colors.transparent,
                         child: Container(
                           width: MediaQuery.of(context).size.width - 32,
-                          margin: const EdgeInsets.only(top: 8),
+                          margin: EdgeInsets.only(top: 8),
                           decoration: BoxDecoration(
                             color: colorTarjeta,
                             borderRadius: BorderRadius.circular(10),
@@ -408,8 +409,8 @@ class _RecepcionInventarioScreenState extends State<RecepcionInventarioScreen> {
                             itemBuilder: (BuildContext context, int index) {
                               final InsumoModel option = options.elementAt(index);
                               return ListTile(
-                                title: Text(option.nombre, style: const TextStyle(color: Colors.white)),
-                                subtitle: Text('Stock actual: ${option.cantidadDisponible}', style: const TextStyle(color: Colors.white54, fontSize: 12)),
+                                title: Text(option.nombre, style: TextStyle(color: StiloColors.text)),
+                                subtitle: Text('Stock actual: ${option.cantidadDisponible}', style: TextStyle(color: StiloColors.text.withValues(alpha: .54), fontSize: 12)),
                                 onTap: () {
                                   onSelected(option);
                                 },
@@ -426,25 +427,25 @@ class _RecepcionInventarioScreenState extends State<RecepcionInventarioScreen> {
               // --- MESA DE TRABAJO (LISTA TEMPORAL) ---
               Expanded(
                 child: _listaCarga.isEmpty
-                    ? const Center(
+                    ? Center(
                         child: Text(
                           'Busca o escanea los\nartículos que acaban de llegar.',
                           textAlign: TextAlign.center,
-                          style: TextStyle(color: Colors.white38, fontSize: 16),
+                          style: TextStyle(color: StiloColors.text.withValues(alpha: .38), fontSize: 16),
                         ),
                       )
                     : ListView.builder(
-                        padding: const EdgeInsets.all(16),
+                        padding: EdgeInsets.all(16),
                         itemCount: _listaCarga.length,
                         itemBuilder: (context, index) {
                           final item = _listaCarga[index];
                           return Container(
-                            margin: const EdgeInsets.only(bottom: 12),
-                            padding: const EdgeInsets.all(12),
+                            margin: EdgeInsets.only(bottom: 12),
+                            padding: EdgeInsets.all(12),
                             decoration: BoxDecoration(
                               color: colorTarjeta,
                               borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: Colors.white10),
+                              border: Border.all(color: StiloColors.text.withValues(alpha: .10)),
                             ),
                             child: Row(
                               children: [
@@ -455,19 +456,19 @@ class _RecepcionInventarioScreenState extends State<RecepcionInventarioScreen> {
                                     children: [
                                       Text(
                                         item.insumo.nombre,
-                                        style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w600),
+                                        style: GoogleFonts.inter(color: StiloColors.text, fontWeight: FontWeight.w600),
                                         maxLines: 2,
                                         overflow: TextOverflow.ellipsis,
                                       ),
-                                      const SizedBox(height: 4),
+                                      SizedBox(height: 4),
                                       Text(
                                         'Stock actual: ${item.insumo.cantidadDisponible}',
-                                        style: const TextStyle(color: Colors.white54, fontSize: 12),
+                                        style: TextStyle(color: StiloColors.text.withValues(alpha: .54), fontSize: 12),
                                       ),
                                     ],
                                   ),
                                 ),
-                                const SizedBox(width: 10),
+                                SizedBox(width: 10),
                                 // Input de cantidad a sumar
                                 Expanded(
                                   flex: 1,
@@ -475,10 +476,10 @@ class _RecepcionInventarioScreenState extends State<RecepcionInventarioScreen> {
                                     controller: item.cantidadController,
                                     keyboardType: TextInputType.number,
                                     textAlign: TextAlign.center,
-                                    style: const TextStyle(color: colorRosaVibrante, fontWeight: FontWeight.bold, fontSize: 18),
+                                    style: TextStyle(color: colorRosaVibrante, fontWeight: FontWeight.bold, fontSize: 18),
                                     decoration: InputDecoration(
                                       isDense: true,
-                                      contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                                      contentPadding: EdgeInsets.symmetric(vertical: 8),
                                       filled: true,
                                       fillColor: colorFondo,
                                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
@@ -489,9 +490,9 @@ class _RecepcionInventarioScreenState extends State<RecepcionInventarioScreen> {
                                     },
                                   ),
                                 ),
-                                const SizedBox(width: 8),
+                                SizedBox(width: 8),
                                 IconButton(
-                                  icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
+                                  icon: Icon(Icons.delete_outline, color: Colors.redAccent),
                                   onPressed: () => _removerDeLista(index),
                                 )
                               ],
@@ -504,23 +505,23 @@ class _RecepcionInventarioScreenState extends State<RecepcionInventarioScreen> {
               // --- BOTÓN MAESTRO DE GUARDADO ---
               if (_listaCarga.isNotEmpty)
                 Container(
-                  padding: const EdgeInsets.all(20),
+                  padding: EdgeInsets.all(20),
                   decoration: BoxDecoration(
                     color: colorTarjeta,
-                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.5), blurRadius: 10, offset: const Offset(0, -5))],
+                    boxShadow: [BoxShadow(color: StiloColors.background.withOpacity(0.5), blurRadius: 10, offset: Offset(0, -5))],
                   ),
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: colorAzul,
-                      minimumSize: const Size(double.infinity, 55),
+                      minimumSize: Size(double.infinity, 55),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
                     onPressed: _guardando ? null : _confirmarEntradaMasiva,
-                    child: _guardando 
-                        ? const CircularProgressIndicator(color: Colors.white)
+                    child: _guardando
+                        ? CircularProgressIndicator(color: StiloColors.text)
                         : Text(
                             'CONFIRMAR ENTRADA (${_listaCarga.length} items)',
-                            style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 15),
+                            style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: StiloColors.text, fontSize: 15),
                           ),
                   ),
                 )

@@ -1,3 +1,4 @@
+import 'inventory_photo_codec.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -183,6 +184,11 @@ class ActividadesService {
         final tipoMime = archivo.tipoMime.trim().isEmpty
             ? 'application/octet-stream'
             : archivo.tipoMime.trim();
+        if (tipoMime.startsWith('image/')) {
+          final url = await InventoryPhotoCodec.encode(bytes);
+          evidenciasSubidas.add(_EvidenciaSubida(documentRef: evidenciaRef, url: url, storagePath: '', nombre: archivo.nombre, tipoMime: 'image/png', tamanioBytes: InventoryPhotoCodec.decode(url)!.length));
+          continue;
+        }
         final archivoSubido = await _media.upload(
           bytes: bytes,
           fileName: nombreSeguro,
@@ -204,7 +210,7 @@ class ActividadesService {
       // Firestore permite como máximo 500 operaciones por lote. Escribimos
       // las evidencias en grupos para no imponer un límite de archivos desde
       // la aplicación, aunque el trabajador adjunte cientos en un avance.
-      const tamanioLote = 400;
+      const tamanioLote = 8;
       for (var inicio = 0;
           inicio < evidenciasSubidas.length;
           inicio += tamanioLote) {
@@ -248,9 +254,9 @@ class ActividadesService {
         if (estatusActual == 'completado') {
           throw StateError('La actividad ya fue completada.');
         }
-        if (esCierre && estatusActual != 'en_progreso') {
+        if (esCierre && !['pendiente', 'en_progreso'].contains(estatusActual)) {
           throw StateError(
-            'La actividad debe estar en progreso antes de completarla.',
+            'La actividad no admite una entrega en su estado actual.',
           );
         }
         if (!esCierre &&
@@ -568,6 +574,7 @@ class ActividadesService {
     List<_EvidenciaSubida> evidencias,
   ) async {
     for (final evidencia in evidencias.reversed) {
+      if (evidencia.storagePath.isEmpty) continue;
       try {
         await _media.delete(
           url: evidencia.url,

@@ -1,7 +1,8 @@
+import '../presentation/appearance.dart';
 import '../services/external_transfer.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:intl/intl.dart'; 
+import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/compra_model.dart';
 import '../models/proyecto_model.dart';
@@ -68,7 +69,7 @@ class _VentasScreenState extends State<VentasScreen> {
     for (var doc in comprasSnap.docs) {
       String idCliente = doc.data()['id_cliente'] ?? '';
       String nombreCliente = 'Cliente Desconocido';
-      
+
       if (idCliente.isNotEmpty) {
         final clienteDoc = await db.collection('clientes').doc(idCliente).get();
         if (clienteDoc.exists) nombreCliente = clienteDoc.data()?['nombre'] ?? 'Cliente Desconocido';
@@ -92,10 +93,10 @@ class _VentasScreenState extends State<VentasScreen> {
     for (var doc in proySnap.docs) {
       var finanzas = await doc.reference.collection('finanzas').doc('datos_pago').get();
       double montoPagado = finanzas.exists ? (finanzas.data()?['monto_pagado'] ?? 0.0).toDouble() : 0.0;
-      
+
       String idCliente = doc.data()['id_cliente'] ?? '';
       String nombreCliente = 'Cliente Desconocido';
-      
+
       if (idCliente.isNotEmpty) {
         final clienteDoc = await db.collection('clientes').doc(idCliente).get();
         if (clienteDoc.exists) nombreCliente = clienteDoc.data()?['nombre'] ?? 'Cliente Desconocido';
@@ -133,7 +134,7 @@ class _VentasScreenState extends State<VentasScreen> {
 
     batch.delete(db.collection('compras').doc(compra.id));
     await batch.commit();
-    _refreshScreen(); 
+    _refreshScreen();
   }
 
   void _mostrarEditarCompraModal(CompraModel compra) {
@@ -142,21 +143,21 @@ class _VentasScreenState extends State<VentasScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF1E1E1E),
-        title: Text("EDITAR TOTAL VENTA", style: GoogleFonts.inter(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+        backgroundColor: StiloColors.surface,
+        title: Text("EDITAR TOTAL VENTA", style: GoogleFonts.inter(color: StiloColors.text, fontSize: 16, fontWeight: FontWeight.bold)),
         content: TextField(contextMenuBuilder: privacyTextMenu,
           controller: controllerMonto,
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          style: const TextStyle(color: Colors.white),
+          keyboardType: TextInputType.numberWithOptions(decimal: true),
+          style: TextStyle(color: StiloColors.text),
           decoration: InputDecoration(
             labelText: "Monto Total (\$)",
-            labelStyle: const TextStyle(color: Colors.white54),
-            enabledBorder: OutlineInputBorder(borderSide: const BorderSide(color: Colors.white24), borderRadius: BorderRadius.circular(10)),
-            focusedBorder: OutlineInputBorder(borderSide: const BorderSide(color: Color(0xFFFFDE21)), borderRadius: BorderRadius.circular(10)),
+            labelStyle: TextStyle(color: StiloColors.text.withValues(alpha: .54)),
+            enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: StiloColors.text.withValues(alpha: .24)), borderRadius: BorderRadius.circular(10)),
+            focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: Color(0xFFFFDE21)), borderRadius: BorderRadius.circular(10)),
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text("CANCELAR", style: TextStyle(color: Colors.white54))),
+          TextButton(onPressed: () => Navigator.pop(context), child: Text("CANCELAR", style: TextStyle(color: StiloColors.text.withValues(alpha: .54)))),
           TextButton(
             onPressed: () async {
               double nuevoMonto = double.tryParse(controllerMonto.text) ?? compra.montoTotal;
@@ -164,9 +165,9 @@ class _VentasScreenState extends State<VentasScreen> {
                 'monto_total': nuevoMonto,
               });
               Navigator.pop(context);
-              _refreshScreen(); 
+              _refreshScreen();
             },
-            child: const Text("ACTUALIZAR", style: TextStyle(color: Color(0xFFFFDE21), fontWeight: FontWeight.bold)),
+            child: Text("ACTUALIZAR", style: TextStyle(color: Color(0xFFFFDE21), fontWeight: FontWeight.bold)),
           )
         ],
       ),
@@ -176,14 +177,14 @@ class _VentasScreenState extends State<VentasScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF121212),
+      backgroundColor: StiloColors.surface,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF121212),
+        backgroundColor: StiloColors.surface,
         elevation: 0,
-        title: Text("REGISTRO DE VENTAS", style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, letterSpacing: 1.5, color: Colors.white)),
+        title: Text("REGISTRO DE VENTAS", style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, letterSpacing: 1.5, color: StiloColors.text)),
         actions: [
           IconButton(
-            icon: const Icon(Icons.picture_as_pdf, color: Color(0xFFFB7A33)),
+            icon: Icon(Icons.picture_as_pdf, color: Color(0xFFFB7A33)),
             onPressed: _mostrarModalReporte,
           )
         ],
@@ -192,34 +193,34 @@ class _VentasScreenState extends State<VentasScreen> {
         children: [
           // --- BARRA DE BÚSQUEDA ---
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+            padding: EdgeInsets.fromLTRB(16, 8, 16, 16),
             child: TextField(contextMenuBuilder: privacyTextMenu,
               controller: _searchController,
               focusNode: _searchFocusNode,
               onTapOutside: (event) {
                 _searchFocusNode.unfocus();
               },
-              style: const TextStyle(color: Colors.white),
+              style: TextStyle(color: StiloColors.text),
               decoration: InputDecoration(
                 hintText: 'Buscar por título, cliente o tipo...',
-                hintStyle: const TextStyle(color: Colors.white54),
-                prefixIcon: const Icon(Icons.search, color: Color(0xFFFF3399)),
+                hintStyle: TextStyle(color: StiloColors.text.withValues(alpha: .54)),
+                prefixIcon: Icon(Icons.search, color: Color(0xFFFF3399)),
                 // <-- AQUÍ ESTÁ LA MAGIA: usamos hasFocus y SizedBox.shrink()
-                suffixIcon: (_searchQuery.isNotEmpty || _searchFocusNode.hasFocus) 
+                suffixIcon: (_searchQuery.isNotEmpty || _searchFocusNode.hasFocus)
                   ? IconButton(
-                      icon: const Icon(Icons.clear, color: Colors.white54),
+                      icon: Icon(Icons.clear, color: StiloColors.text.withValues(alpha: .54)),
                       onPressed: () {
                         _searchController.clear();
                         setState(() => _searchQuery = '');
                         _searchFocusNode.unfocus(); // Cierra el teclado
                       },
                     )
-                  : const SizedBox.shrink(), // Widget invisible en lugar de null
+                  : SizedBox.shrink(), // Widget invisible en lugar de null
                 filled: true,
-                fillColor: const Color(0xFF1E1E1E),
-                contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                fillColor: StiloColors.surface,
+                contentPadding: EdgeInsets.symmetric(vertical: 0),
                 enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide.none),
-                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: const BorderSide(color: Color(0xFFFFDE21), width: 1.5)),
+                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide(color: Color(0xFFFFDE21), width: 1.5)),
               ),
               onChanged: (value) {
                 setState(() {
@@ -230,10 +231,10 @@ class _VentasScreenState extends State<VentasScreen> {
           ),
 
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
+            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 5),
             child: Align(
-              alignment: Alignment.center, 
-              child: Text("PROYECTOS FINALIZADOS Y COMPRAS", style: GoogleFonts.inter(color: Colors.white38, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1.2))
+              alignment: Alignment.center,
+              child: Text("PROYECTOS FINALIZADOS Y COMPRAS", style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .38), fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1.2))
             ),
           ),
 
@@ -242,12 +243,12 @@ class _VentasScreenState extends State<VentasScreen> {
               future: _ventasFuture,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator(color: Color(0xFFFFDE21)));
+                  return Center(child: CircularProgressIndicator(color: Color(0xFFFFDE21)));
                 }
                 if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return Center(child: Text("No hay ventas registradas", style: GoogleFonts.inter(color: Colors.white24)));
+                  return Center(child: Text("No hay ventas registradas", style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .24))));
                 }
-                
+
                 final historial = snapshot.data!;
 
                 // --- APLICAR FILTRO DE BÚSQUEDA ---
@@ -257,17 +258,17 @@ class _VentasScreenState extends State<VentasScreen> {
                   String tipo = esCompra ? 'compra extra' : 'proyecto';
                   String tituloProyecto = esCompra ? '' : (item['data'] as Proyecto).titulo.toLowerCase();
 
-                  return nombreCliente.contains(_searchQuery) || 
-                         tipo.contains(_searchQuery) || 
+                  return nombreCliente.contains(_searchQuery) ||
+                         tipo.contains(_searchQuery) ||
                          tituloProyecto.contains(_searchQuery);
                 }).toList();
 
                 if (filtradas.isEmpty) {
-                  return Center(child: Text('No se encontraron resultados.', style: GoogleFonts.inter(color: Colors.white54)));
+                  return Center(child: Text('No se encontraron resultados.', style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .54))));
                 }
 
                 return ListView.builder(
-                  padding: const EdgeInsets.only(left: 16, right: 16, bottom: 80),
+                  padding: EdgeInsets.only(left: 16, right: 16, bottom: 80),
                   itemCount: filtradas.length,
                   itemBuilder: (context, index) => _buildItemCard(filtradas[index]),
                 );
@@ -301,9 +302,9 @@ class _VentasScreenState extends State<VentasScreen> {
         );
       },
       child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(color: const Color(0xFF1E1E1E), borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.greenAccent.withOpacity(0.3))),
+        margin: EdgeInsets.only(bottom: 12),
+        padding: EdgeInsets.all(16),
+        decoration: BoxDecoration(color: StiloColors.surface, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.greenAccent.withOpacity(0.3))),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -311,21 +312,21 @@ class _VentasScreenState extends State<VentasScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Expanded(
-                  child: Text("Proyecto: ${proyecto.titulo}", style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold), overflow: TextOverflow.ellipsis),
+                  child: Text("Proyecto: ${proyecto.titulo}", style: GoogleFonts.inter(color: StiloColors.text, fontWeight: FontWeight.bold), overflow: TextOverflow.ellipsis),
                 ),
                 Row(
                   children: [
                     Text("\$${monto.toStringAsFixed(2)}", style: GoogleFonts.inter(color: Colors.greenAccent, fontWeight: FontWeight.bold)),
-                    const SizedBox(width: 6),
-                    const Icon(Icons.arrow_forward_ios, color: Colors.white30, size: 14),
+                    SizedBox(width: 6),
+                    Icon(Icons.arrow_forward_ios, color: StiloColors.text.withValues(alpha: .30), size: 14),
                   ],
                 ),
               ],
             ),
-            const SizedBox(height: 4),
-            Text("Cliente: $nombreCliente", style: GoogleFonts.inter(color: const Color(0xFF6699FF), fontSize: 12, fontWeight: FontWeight.w500)),
-            const SizedBox(height: 2),
-            Text("Entregado: ${DateFormat('dd/MM/yyyy').format(proyecto.fechaEntrega)}", style: GoogleFonts.inter(color: Colors.white38, fontSize: 11)),
+            SizedBox(height: 4),
+            Text("Cliente: $nombreCliente", style: GoogleFonts.inter(color: Color(0xFF6699FF), fontSize: 12, fontWeight: FontWeight.w500)),
+            SizedBox(height: 2),
+            Text("Entregado: ${DateFormat('dd/MM/yyyy').format(proyecto.fechaEntrega)}", style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .38), fontSize: 11)),
           ],
         ),
       ),
@@ -334,9 +335,9 @@ class _VentasScreenState extends State<VentasScreen> {
 
   Widget _buildCompraCard(CompraModel compra, String nombreCliente) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: const Color(0xFF1E1E1E), borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.white12)),
+      margin: EdgeInsets.only(bottom: 12),
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(color: StiloColors.surface, borderRadius: BorderRadius.circular(12), border: Border.all(color: StiloColors.text.withValues(alpha: .12))),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -344,19 +345,19 @@ class _VentasScreenState extends State<VentasScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text("Compra Extra", style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 2),
-                Text("Cliente: $nombreCliente", style: GoogleFonts.inter(color: const Color(0xFFFB975F), fontSize: 12, fontWeight: FontWeight.w500)),
-                const SizedBox(height: 2),
-                Text(DateFormat('dd/MM/yyyy').format(compra.fechaCompra), style: GoogleFonts.inter(color: Colors.white38, fontSize: 11)),
+                Text("Compra Extra", style: GoogleFonts.inter(color: StiloColors.text, fontWeight: FontWeight.bold)),
+                SizedBox(height: 2),
+                Text("Cliente: $nombreCliente", style: GoogleFonts.inter(color: Color(0xFFFB975F), fontSize: 12, fontWeight: FontWeight.w500)),
+                SizedBox(height: 2),
+                Text(DateFormat('dd/MM/yyyy').format(compra.fechaCompra), style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .38), fontSize: 11)),
               ]),
               Row(
                 children: [
-                  Text("\$${compra.montoTotal.toStringAsFixed(2)}", style: GoogleFonts.inter(color: const Color(0xFFFFDE21), fontWeight: FontWeight.bold, fontSize: 16)),
-                  
+                  Text("\$${compra.montoTotal.toStringAsFixed(2)}", style: GoogleFonts.inter(color: Color(0xFFFFDE21), fontWeight: FontWeight.bold, fontSize: 16)),
+
                   PopupMenuButton<String>(
-                    icon: const Icon(Icons.more_vert, color: Colors.white54, size: 20),
-                    color: const Color(0xFF262626),
+                    icon: Icon(Icons.more_vert, color: StiloColors.text.withValues(alpha: .54), size: 20),
+                    color: StiloColors.surface,
                     onSelected: (action) {
                       _searchFocusNode.unfocus();
                       if (action == 'edit') {
@@ -366,13 +367,13 @@ class _VentasScreenState extends State<VentasScreen> {
                       }
                     },
                     itemBuilder: (ctx) => [
-                      const PopupMenuItem(
-                        value: 'edit', 
-                        child: Row(children: [Icon(Icons.edit_outlined, color: Colors.cyan, size: 18), SizedBox(width: 8), Text("Editar total", style: TextStyle(color: Colors.white))])
+                      PopupMenuItem(
+                        value: 'edit',
+                        child: Row(children: [Icon(Icons.edit_outlined, color: Colors.cyan, size: 18), SizedBox(width: 8), Text("Editar total", style: TextStyle(color: StiloColors.text))])
                       ),
-                      const PopupMenuItem(
-                        value: 'delete', 
-                        child: Row(children: [Icon(Icons.delete_sweep_outlined, color: Colors.redAccent, size: 18), SizedBox(width: 8), Text("Eliminar venta", style: TextStyle(color: Colors.white))])
+                      PopupMenuItem(
+                        value: 'delete',
+                        child: Row(children: [Icon(Icons.delete_sweep_outlined, color: Colors.redAccent, size: 18), SizedBox(width: 8), Text("Eliminar venta", style: TextStyle(color: StiloColors.text))])
                       ),
                     ],
                   )
@@ -381,8 +382,8 @@ class _VentasScreenState extends State<VentasScreen> {
             ],
           ),
           if (compra.productosExtra.isNotEmpty) ...[
-            const Divider(color: Colors.white10),
-            ...compra.productosExtra.map((prod) => Text("• ${prod['nombre_producto']} (x${prod['cantidad']})", style: const TextStyle(color: Colors.white54, fontSize: 12))),
+            Divider(color: StiloColors.text.withValues(alpha: .10)),
+            ...compra.productosExtra.map((prod) => Text("• ${prod['nombre_producto']} (x${prod['cantidad']})", style: TextStyle(color: StiloColors.text.withValues(alpha: .54), fontSize: 12))),
           ],
         ],
       ),
@@ -393,17 +394,17 @@ class _VentasScreenState extends State<VentasScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF1E1E1E),
-        title: const Text("¿ELIMINAR ESTA COMPRA?", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
-        content: const Text("Esta acción es permanente e incrementará automáticamente las cantidades de vuelta al stock de insumos.", style: TextStyle(color: Colors.white70, fontSize: 14)),
+        backgroundColor: StiloColors.surface,
+        title: Text("¿ELIMINAR ESTA COMPRA?", style: TextStyle(color: StiloColors.text, fontWeight: FontWeight.bold, fontSize: 16)),
+        content: Text("Esta acción es permanente e incrementará automáticamente las cantidades de vuelta al stock de insumos.", style: TextStyle(color: StiloColors.text.withValues(alpha: .70), fontSize: 14)),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("CANCELAR", style: TextStyle(color: Colors.white54))),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text("CANCELAR", style: TextStyle(color: StiloColors.text.withValues(alpha: .54)))),
           TextButton(
             onPressed: () {
               Navigator.pop(ctx);
               _eliminarCompra(compra);
             },
-            child: const Text("ELIMINAR", style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
+            child: Text("ELIMINAR", style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
           )
         ],
       ),
@@ -421,41 +422,41 @@ class _VentasScreenState extends State<VentasScreen> {
       builder: (context) => StatefulBuilder(
         builder: (context, setStateModal) => Dialog(
           backgroundColor: Colors.transparent,
-          insetPadding: const EdgeInsets.all(20),
+          insetPadding: EdgeInsets.all(20),
           child: Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(color: const Color(0xFF1E1E1E), borderRadius: BorderRadius.circular(28)),
+            padding: EdgeInsets.all(24),
+            decoration: BoxDecoration(color: StiloColors.surface, borderRadius: BorderRadius.circular(28)),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.point_of_sale, color: Color(0xFFFFDE21), size: 48),
-                const SizedBox(height: 16),
-                Text('Reporte de Ventas', style: GoogleFonts.inter(fontSize: 20, color: Colors.white, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 24),
+                Icon(Icons.point_of_sale, color: Color(0xFFFFDE21), size: 48),
+                SizedBox(height: 16),
+                Text('Reporte de Ventas', style: GoogleFonts.inter(fontSize: 20, color: StiloColors.text, fontWeight: FontWeight.bold)),
+                SizedBox(height: 24),
                 // Mes
                 _buildDropdownContainer(child: DropdownButtonFormField<int>(
                   value: mesSeleccionado,
-                  dropdownColor: const Color(0xFF2D2D2D),
-                  decoration: const InputDecoration(border: InputBorder.none, labelText: 'Mes', labelStyle: TextStyle(color: Colors.white54)),
-                  style: const TextStyle(color: Colors.white, fontSize: 16),
+                  dropdownColor: StiloColors.surface,
+                  decoration: InputDecoration(border: InputBorder.none, labelText: 'Mes', labelStyle: TextStyle(color: StiloColors.text.withValues(alpha: .54))),
+                  style: TextStyle(color: StiloColors.text, fontSize: 16),
                   items: List.generate(12, (i) => DropdownMenuItem(value: i + 1, child: Text(DateFormat('MMMM', 'es').format(DateTime(0, i + 1)).toUpperCase()))),
                   onChanged: (val) => setStateModal(() => mesSeleccionado = val!),
                 )),
-                const SizedBox(height: 12),
+                SizedBox(height: 12),
                 // Año
                 _buildDropdownContainer(child: DropdownButtonFormField<int>(
                   value: anioSeleccionado,
-                  dropdownColor: const Color(0xFF2D2D2D),
-                  decoration: const InputDecoration(border: InputBorder.none, labelText: 'Año', labelStyle: TextStyle(color: Colors.white54)),
-                  style: const TextStyle(color: Colors.white, fontSize: 16),
+                  dropdownColor: StiloColors.surface,
+                  decoration: InputDecoration(border: InputBorder.none, labelText: 'Año', labelStyle: TextStyle(color: StiloColors.text.withValues(alpha: .54))),
+                  style: TextStyle(color: StiloColors.text, fontSize: 16),
                   items: List.generate(5, (i) => DropdownMenuItem(value: DateTime.now().year - i, child: Text((DateTime.now().year - i).toString()))),
                   onChanged: (val) => setStateModal(() => anioSeleccionado = val!),
                 )),
-                const SizedBox(height: 32),
+                SizedBox(height: 32),
                 SizedBox(width: double.infinity, child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFB975F), padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                  style: ElevatedButton.styleFrom(backgroundColor: Color(0xFFFB975F), padding: EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
                   onPressed: () { Navigator.pop(context); _generarDescargarReporte(mesSeleccionado, anioSeleccionado); },
-                  child: const Text('EXPORTAR DOCUMENTOS', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+                  child: Text('EXPORTAR DOCUMENTOS', style: TextStyle(color: StiloColors.background, fontWeight: FontWeight.bold)),
                 ))
               ],
             ),
@@ -466,17 +467,17 @@ class _VentasScreenState extends State<VentasScreen> {
   }
 
   Widget _buildDropdownContainer({required Widget child}) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 16),
-    decoration: BoxDecoration(color: const Color(0xFF2D2D2D), borderRadius: BorderRadius.circular(12)),
+    padding: EdgeInsets.symmetric(horizontal: 16),
+    decoration: BoxDecoration(color: StiloColors.surface, borderRadius: BorderRadius.circular(12)),
     child: child,
   );
 
   Future<void> _generarDescargarReporte(int mes, int anio) async {
-    showDialog(context: context, barrierDismissible: false, builder: (_) => const Center(child: CircularProgressIndicator(color: Color(0xFFFFDE21))));
+    showDialog(context: context, barrierDismissible: false, builder: (_) => Center(child: CircularProgressIndicator(color: Color(0xFFFFDE21))));
 
     try {
       List<Map<String, dynamic>> todoElHistorial = await _obtenerVentasGenerales();
-      
+
       List<Map<String, dynamic>> datosReporte = todoElHistorial.where((item) {
         DateTime fecha = item['fecha'] as DateTime;
         return fecha.month == mes && fecha.year == anio;
@@ -484,7 +485,7 @@ class _VentasScreenState extends State<VentasScreen> {
 
       if (datosReporte.isEmpty) {
         if (mounted) Navigator.pop(context);
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Sin ventas en ese periodo.')));
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Sin ventas en ese periodo.')));
         return;
       }
 
@@ -495,7 +496,7 @@ class _VentasScreenState extends State<VentasScreen> {
       String csvPath = "${output.path}/$prefix.csv";
 
       final pdf = pw.Document();
-      
+
       double totalRecaudado = datosReporte.fold(0.0, (sum, item) => sum + (item['monto'] as double));
       int totalVentas = datosReporte.length;
 
@@ -507,7 +508,7 @@ class _VentasScreenState extends State<VentasScreen> {
               mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
               children: [
                 pw.Text('SAUNASTILO - VENTAS MENSUALES', style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold, color: PdfColor.fromHex("#040404"))),
-                pw.Text('$nombreMes $anio', style: const pw.TextStyle(fontSize: 14)),
+                pw.Text('$nombreMes $anio', style: pw.TextStyle(fontSize: 14)),
               ],
             ),
             pw.Divider(color: PdfColor.fromHex("#ff2197")),
@@ -525,13 +526,13 @@ class _VentasScreenState extends State<VentasScreen> {
              pw.Center(
              child: pw.Text(
                 'DESGLOSE GENERAL DE VENTAS CONCLUIDAS', textAlign: pw.TextAlign.center, style: pw.TextStyle(fontSize: 15, fontWeight: pw.FontWeight.bold, color: PdfColor.fromHex("#040404"))),
-                
+
              ),
-      
+
  pw.SizedBox(height: 13),
             pw.Table(
               border: pw.TableBorder.all(color: PdfColors.grey300),
-              columnWidths: const {
+              columnWidths: {
                 0: pw.FlexColumnWidth(1.5), // TIPO
                 1: pw.FlexColumnWidth(3),   // Título/Concepto
                 2: pw.FlexColumnWidth(2),   // Cliente
@@ -541,20 +542,20 @@ class _VentasScreenState extends State<VentasScreen> {
               children: [
                 pw.TableRow(
                   decoration: pw.BoxDecoration(color: PdfColors.grey200),
-                  children: ['TIPO', 'CONCEPTO', 'CLIENTE', 'FECHA', 'MONTO'].map((h) => 
-                    pw.Padding(padding: const pw.EdgeInsets.all(8), child: pw.Text(h, style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9)))
+                  children: ['TIPO', 'CONCEPTO', 'CLIENTE', 'FECHA', 'MONTO'].map((h) =>
+                    pw.Padding(padding: pw.EdgeInsets.all(8), child: pw.Text(h, style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9)))
                   ).toList(),
                 ),
                 ...datosReporte.map((r) {
                   bool esCompra = r['tipo'] == 'compra';
                   String concepto = esCompra ? 'Compra de accesorios' : (r['data'] as Proyecto).titulo;
-                  
+
                   return pw.TableRow(children: [
-                    pw.Padding(padding: const pw.EdgeInsets.all(8), child: pw.Text(esCompra ? 'COMPRA' : 'PROYECTO', style: const pw.TextStyle(fontSize: 9))),
-                    pw.Padding(padding: const pw.EdgeInsets.all(8), child: pw.Text(concepto, style: const pw.TextStyle(fontSize: 9))),
-                    pw.Padding(padding: const pw.EdgeInsets.all(8), child: pw.Text(r['nombre_cliente'], style: const pw.TextStyle(fontSize: 9))),
-                    pw.Padding(padding: const pw.EdgeInsets.all(8), child: pw.Text(DateFormat('dd/MM/yyyy').format(r['fecha']), style: const pw.TextStyle(fontSize: 9))),
-                    pw.Padding(padding: const pw.EdgeInsets.all(8), child: pw.Text('\$${(r['monto'] as double).toStringAsFixed(2)}', style: const pw.TextStyle(fontSize: 9))),
+                    pw.Padding(padding: pw.EdgeInsets.all(8), child: pw.Text(esCompra ? 'COMPRA' : 'PROYECTO', style: pw.TextStyle(fontSize: 9))),
+                    pw.Padding(padding: pw.EdgeInsets.all(8), child: pw.Text(concepto, style: pw.TextStyle(fontSize: 9))),
+                    pw.Padding(padding: pw.EdgeInsets.all(8), child: pw.Text(r['nombre_cliente'], style: pw.TextStyle(fontSize: 9))),
+                    pw.Padding(padding: pw.EdgeInsets.all(8), child: pw.Text(DateFormat('dd/MM/yyyy').format(r['fecha']), style: pw.TextStyle(fontSize: 9))),
+                    pw.Padding(padding: pw.EdgeInsets.all(8), child: pw.Text('\$${(r['monto'] as double).toStringAsFixed(2)}', style: pw.TextStyle(fontSize: 9))),
                   ]);
                 }).toList(),
               ],
@@ -570,14 +571,14 @@ class _VentasScreenState extends State<VentasScreen> {
         bool esCompra = r['tipo'] == 'compra';
         String concepto = esCompra ? 'Compra de accesorios' : (r['data'] as Proyecto).titulo;
         csvData.add([
-          esCompra ? 'COMPRA' : 'PROYECTO', 
-          concepto, 
-          r['nombre_cliente'], 
-          DateFormat('dd/MM/yyyy').format(r['fecha']), 
+          esCompra ? 'COMPRA' : 'PROYECTO',
+          concepto,
+          r['nombre_cliente'],
+          DateFormat('dd/MM/yyyy').format(r['fecha']),
           (r['monto'] as double).toStringAsFixed(2)
         ]);
       }
-      await File(csvPath).writeAsString(const ListToCsvConverter().convert(csvData));
+      await File(csvPath).writeAsString(ListToCsvConverter().convert(csvData));
 
       if (mounted) Navigator.pop(context);
 
@@ -585,23 +586,23 @@ class _VentasScreenState extends State<VentasScreen> {
         showDialog(
           context: context,
           builder: (context) => AlertDialog(
-            backgroundColor: const Color(0xFF1E1E1E),
-            title: const Text('Reporte generado', style: TextStyle(color: Colors.white)),
-            content: const Text('¿Qué archivo deseas compartir?', style: TextStyle(color: Colors.white70)),
+            backgroundColor: StiloColors.surface,
+            title: Text('Reporte generado', style: TextStyle(color: StiloColors.text)),
+            content: Text('¿Qué archivo deseas compartir?', style: TextStyle(color: StiloColors.text.withValues(alpha: .70))),
             actions: [
               TextButton(
                 onPressed: () {
                   Navigator.pop(context);
                   ExternalTransfer.block(context);
                 },
-                child: const Text('Compartir PDF', style: TextStyle(color: Colors.purpleAccent)),
+                child: Text('Compartir PDF', style: TextStyle(color: Colors.purpleAccent)),
               ),
               TextButton(
                 onPressed: () {
                   Navigator.pop(context);
                   ExternalTransfer.block(context);
                 },
-                child: const Text('Compartir CSV', style: TextStyle(color: Colors.blueAccent)),
+                child: Text('Compartir CSV', style: TextStyle(color: Colors.blueAccent)),
               ),
             ],
           ),
@@ -616,8 +617,8 @@ class _VentasScreenState extends State<VentasScreen> {
   pw.Widget _buildDashboardCard(pw.Document pdf, String title, String value, PdfColor color) {
     return pw.Expanded(
       child: pw.Container(
-        padding: const pw.EdgeInsets.all(15),
-        decoration: pw.BoxDecoration(border: pw.Border.all(color: color, width: 2), borderRadius: const pw.BorderRadius.all(pw.Radius.circular(5))),
+        padding: pw.EdgeInsets.all(15),
+        decoration: pw.BoxDecoration(border: pw.Border.all(color: color, width: 2), borderRadius: pw.BorderRadius.all(pw.Radius.circular(5))),
         child: pw.Column(
           crossAxisAlignment: pw.CrossAxisAlignment.start,
           children: [

@@ -1,3 +1,4 @@
+import '../presentation/appearance.dart';
 import '../services/external_transfer.dart';
 import '../widgets/warehouse_header.dart';
 import 'package:flutter/material.dart';
@@ -5,7 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../widgets/inventory_photo.dart';
 import '../services/inventario_service.dart';
 import '../models/insumo_model.dart';
-import 'trabajador_categorias_screen.dart'; 
+import 'trabajador_categorias_screen.dart';
 
 class InventarioTrabajadorScreen extends StatefulWidget {
   const InventarioTrabajadorScreen({super.key});
@@ -16,23 +17,23 @@ class InventarioTrabajadorScreen extends StatefulWidget {
 
 class _InventarioTrabajadorScreenState extends State<InventarioTrabajadorScreen> {
   final InventarioService _inventarioService = InventarioService();
-  
+
   final TextEditingController _searchController = TextEditingController();
   String _searchText = "";
-  bool _estaBuscando = false; 
-  String _filtroStock = "Todos"; 
+  bool _estaBuscando = false;
+  String _filtroStock = "Todos";
 
-  static const Color colorFondo = Color(0xFF000000);
-  static const Color colorTarjeta = Color(0xFF111012);
-  static const Color colorTextoPrimario = Color(0xFFFDFDFD);
-  static const Color colorAcento = Color(0xFFB7FF2A);
-  static const Color colorRosa = Color(0xFFC798FF);
-  static const Color colorAzul = Color(0xFFC798FF);
-  static const Color colorMorado = Color(0xFFC13CFF);
-  static const Color colorRojoCoral = Color(0xFFFF5252);
-  static const Color colorRosaVibrante = Color(0xFFFF729C);
-  static const Color colorBlanco = Color(0xFFFFFFFF);
-  static const Color colorVerde1 = Color(0xFF7CE3BD);
+  Color get colorFondo => StiloColors.background;
+  Color get colorTarjeta => StiloColors.surface;
+  Color get colorTextoPrimario => StiloColors.text;
+  Color get colorAcento => StiloColors.accent;
+  Color get colorRosa => StiloColors.accent;
+  Color get colorAzul => StiloColors.accent;
+  Color get colorMorado => StiloColors.accent;
+  Color get colorRojoCoral => Color(0xFFFF5252);
+  Color get colorRosaVibrante => Color(0xFFFF729C);
+  Color get colorBlanco => StiloColors.text;
+  Color get colorVerde1 => Color(0xFF7CE3BD);
 
   @override
   void initState() {
@@ -77,11 +78,11 @@ class _InventarioTrabajadorScreenState extends State<InventarioTrabajadorScreen>
 
   Color _obtenerColorStock(int cantidad, int minimo) {
     if (cantidad == 0) {
-      return const Color(0xFF757575); 
+      return Color(0xFF757575);
     } else if (cantidad <= minimo) {
-      return colorAcento; 
+      return colorAcento;
     } else {
-      return const Color(0xFF66BB6A); 
+      return Color(0xFF66BB6A);
     }
   }
 
@@ -100,11 +101,11 @@ class _InventarioTrabajadorScreenState extends State<InventarioTrabajadorScreen>
       selectedColor: color,
       backgroundColor: colorTarjeta,
       checkmarkColor: colorFondo,
-      showCheckmark: false, 
+      showCheckmark: false,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
         side: BorderSide(
-          color: seleccionado ? color : Colors.white10,
+          color: seleccionado ? color : StiloColors.text.withValues(alpha: .10),
           width: 1,
         ),
       ),
@@ -124,10 +125,10 @@ class _InventarioTrabajadorScreenState extends State<InventarioTrabajadorScreen>
       builder: (BuildContext context) {
         return Dialog(
           backgroundColor: Colors.transparent,
-          insetPadding: const EdgeInsets.all(10), 
+          insetPadding: EdgeInsets.all(10),
           child: GestureDetector(
-            onTap: () => Navigator.pop(context), 
-            child: InteractiveViewer( 
+            onTap: () => Navigator.pop(context),
+            child: InteractiveViewer(
               panEnabled: true,
               minScale: 0.5,
               maxScale: 4,
@@ -136,8 +137,8 @@ class _InventarioTrabajadorScreenState extends State<InventarioTrabajadorScreen>
                 child: InventoryPhoto(
                   imageUrl: imageUrl,
                   fit: BoxFit.contain,
-                  placeholder: (context, url) => const Center(child: CircularProgressIndicator(color: colorRosaVibrante)),
-                  errorWidget: (context, url, error) => const Icon(Icons.broken_image, color: Colors.white54, size: 50),
+                  placeholder: (context, url) => Center(child: CircularProgressIndicator(color: colorRosaVibrante)),
+                  errorWidget: (context, url, error) => Icon(Icons.broken_image, color: StiloColors.text.withValues(alpha: .54), size: 50),
                 ),
               ),
             ),
@@ -153,9 +154,9 @@ class _InventarioTrabajadorScreenState extends State<InventarioTrabajadorScreen>
       backgroundColor: colorFondo,
       appBar: AppBar(
         backgroundColor: colorFondo,
-        elevation: 0, 
-        iconTheme: const IconThemeData(color: colorTextoPrimario),
-        title: !_estaBuscando 
+        elevation: 0,
+        iconTheme: IconThemeData(color: colorTextoPrimario),
+        title: !_estaBuscando
           ? Text(
               'INVENTARIO',
               style: GoogleFonts.inter(
@@ -168,30 +169,30 @@ class _InventarioTrabajadorScreenState extends State<InventarioTrabajadorScreen>
           : TextField(contextMenuBuilder: privacyTextMenu,
               controller: _searchController,
               autofocus: true,
-              style: const TextStyle(color: Colors.white, fontSize: 16),
-              decoration: const InputDecoration(
+              style: TextStyle(color: StiloColors.text, fontSize: 16),
+              decoration: InputDecoration(
                 hintText: 'Buscar por nombre, categoría...',
-                hintStyle: TextStyle(color: Colors.white38, fontSize: 15),
+                hintStyle: TextStyle(color: StiloColors.text.withValues(alpha: .38), fontSize: 15),
                 border: InputBorder.none,
               ),
             ),
         actions: [
           if (!_estaBuscando) ...[
             IconButton(
-              icon: const Icon(Icons.bookmarks_outlined, color: colorAcento),
+              icon: Icon(Icons.bookmarks_outlined, color: colorAcento),
               tooltip: 'Ver Categorías',
               onPressed: () {
                 // AQUÍ ESTÁ LA CONEXIÓN CORRECTA
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const TrabajadorCategoriasScreen()),
+                  MaterialPageRoute(builder: (context) => TrabajadorCategoriasScreen()),
                 );
               },
             ),
           ],
-          _estaBuscando 
+          _estaBuscando
             ? IconButton(
-                icon: const Icon(Icons.close, color: colorRosaVibrante),
+                icon: Icon(Icons.close, color: colorRosaVibrante),
                 onPressed: () {
                   setState(() {
                     _estaBuscando = false;
@@ -201,7 +202,7 @@ class _InventarioTrabajadorScreenState extends State<InventarioTrabajadorScreen>
                 },
               )
             : IconButton(
-                icon: const Icon(Icons.search, color: colorTextoPrimario),
+                icon: Icon(Icons.search, color: colorTextoPrimario),
                 onPressed: () {
                   setState(() {
                     _estaBuscando = true;
@@ -214,10 +215,10 @@ class _InventarioTrabajadorScreenState extends State<InventarioTrabajadorScreen>
         stream: _inventarioService.getInsumosStream(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator(color: colorTextoPrimario));
+            return Center(child: CircularProgressIndicator(color: colorTextoPrimario));
           }
           if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return const Center(
+            return Center(
               child: Text(
                 'No hay insumos registrados.',
                 style: TextStyle(color: colorAcento),
@@ -244,67 +245,67 @@ class _InventarioTrabajadorScreenState extends State<InventarioTrabajadorScreen>
           } else if (_filtroStock == "Al Día") {
             insumosFiltrados = insumosFiltrados.where((i) => i.cantidadDisponible > i.stockMinimo).toList();
           }
-          
+
           insumosFiltrados.sort((a, b) => a.nombre.toLowerCase().compareTo(b.nombre.toLowerCase()));
 
           return Column(
             children: [
-              if (MediaQuery.sizeOf(context).height > 650 && MediaQuery.textScalerOf(context).scale(1) < 1.5) const Padding(padding: EdgeInsets.fromLTRB(16, 8, 16, 8), child: WarehouseHeader(title: 'Todo en su lugar.', subtitle: 'Existencias · Herramientas · Insumos', compact: true)),
+              if (MediaQuery.sizeOf(context).height > 650 && MediaQuery.textScalerOf(context).scale(1) < 1.5) Padding(padding: EdgeInsets.fromLTRB(16, 8, 16, 8), child: WarehouseHeader(title: 'Todo en su lugar.', subtitle: 'Existencias · Herramientas · Insumos', compact: true)),
               // --- FILTROS DE STOCK (CHIPS) ---
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                 child: Row(
                   children: [
                     _buildFilterChip("Todos", Colors.grey),
-                    const SizedBox(width: 8),
-                    _buildFilterChip("Agotados", const Color(0xFF757575)), 
-                    const SizedBox(width: 8),
-                    _buildFilterChip("Bajo", colorAcento), 
-                    const SizedBox(width: 8),
-                    _buildFilterChip("Al Día", const Color(0xFF66BB6A)), 
+                    SizedBox(width: 8),
+                    _buildFilterChip("Agotados", Color(0xFF757575)),
+                    SizedBox(width: 8),
+                    _buildFilterChip("Bajo", colorAcento),
+                    SizedBox(width: 8),
+                    _buildFilterChip("Al Día", Color(0xFF66BB6A)),
                   ],
                 ),
               ),
-              
+
               // --- LISTA DE INSUMOS ---
               Expanded(
-                child: insumosFiltrados.isEmpty 
-                  ? const Center(
+                child: insumosFiltrados.isEmpty
+                  ? Center(
                       child: Padding(
                         padding: EdgeInsets.all(20.0),
                         child: Text(
                           'No hay insumos que coincidan con los criterios de búsqueda o filtro.',
-                          style: TextStyle(color: Colors.white54),
-                          textAlign: TextAlign.center, 
+                          style: TextStyle(color: StiloColors.text.withValues(alpha: .54)),
+                          textAlign: TextAlign.center,
                         ),
                       ),
                     )
                   : ListView.builder(
-                      padding: const EdgeInsets.only(left: 16, right: 16, top: 8, bottom: 20), 
+                      padding: EdgeInsets.only(left: 16, right: 16, top: 8, bottom: 20),
                       itemCount: insumosFiltrados.length,
                       itemBuilder: (context, index) {
                         final insumo = insumosFiltrados[index];
-                        
+
                         return GestureDetector(
                           onTap: () {
                             print("Ver detalle de lectura de: ${insumo.nombre}");
                           },
                           child: Container(
-                            margin: const EdgeInsets.only(bottom: 16),
+                            margin: EdgeInsets.only(bottom: 16),
                             decoration: BoxDecoration(
-                              color: colorTarjeta, 
-                              borderRadius: BorderRadius.circular(12), 
+                              color: colorTarjeta,
+                              borderRadius: BorderRadius.circular(12),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.2),
+                                  color: StiloColors.background.withOpacity(0.2),
                                   spreadRadius: 1,
                                   blurRadius: 4,
-                                  offset: const Offset(0, 2),
+                                  offset: Offset(0, 2),
                                 ),
                               ],
                             ),
-                            child: IntrinsicHeight( 
+                            child: IntrinsicHeight(
                               child: Row(
                                 children: [
                                   // Barra de color lateral
@@ -312,21 +313,21 @@ class _InventarioTrabajadorScreenState extends State<InventarioTrabajadorScreen>
                                     width: 6,
                                     decoration: BoxDecoration(
                                       color: _obtenerColorBarra(insumo.categoria),
-                                      borderRadius: const BorderRadius.only(
+                                      borderRadius: BorderRadius.only(
                                         topLeft: Radius.circular(12),
                                         bottomLeft: Radius.circular(12),
                                       ),
                                     ),
                                   ),
-                                  
+
                                   // --- MINIATURA DE LA IMAGEN EN LA LISTA ---
                                   if (insumo.imagenUrl != null && insumo.imagenUrl!.isNotEmpty)
                                     Padding(
-                                      padding: const EdgeInsets.only(left: 12.0, top: 12.0, bottom: 12.0),
+                                      padding: EdgeInsets.only(left: 12.0, top: 12.0, bottom: 12.0),
                                       child: GestureDetector(
                                         onTap: () => _mostrarImagenExpandida(context, insumo.imagenUrl!, insumo.id),
                                         child: Hero(
-                                          tag: insumo.id, 
+                                          tag: insumo.id,
                                           child: ClipRRect(
                                             borderRadius: BorderRadius.circular(8),
                                             child: InventoryPhoto(
@@ -335,14 +336,14 @@ class _InventarioTrabajadorScreenState extends State<InventarioTrabajadorScreen>
                                               height: 65,
                                               fit: BoxFit.cover,
                                               placeholder: (context, url) => Container(
-                                                width: 65, height: 65, 
-                                                color: Colors.white10, 
-                                                child: const Center(child: CircularProgressIndicator(strokeWidth: 2, color: colorRosaVibrante))
+                                                width: 65, height: 65,
+                                                color: StiloColors.text.withValues(alpha: .10),
+                                                child: Center(child: CircularProgressIndicator(strokeWidth: 2, color: colorRosaVibrante))
                                               ),
                                               errorWidget: (context, url, error) => Container(
-                                                width: 65, height: 65, 
-                                                color: Colors.white10, 
-                                                child: const Icon(Icons.broken_image, color: Colors.white54)
+                                                width: 65, height: 65,
+                                                color: StiloColors.text.withValues(alpha: .10),
+                                                child: Icon(Icons.broken_image, color: StiloColors.text.withValues(alpha: .54))
                                               ),
                                             ),
                                           ),
@@ -351,58 +352,58 @@ class _InventarioTrabajadorScreenState extends State<InventarioTrabajadorScreen>
                                     )
                                   else
                                     Padding(
-                                      padding: const EdgeInsets.only(left: 12.0, top: 12.0, bottom: 12.0),
+                                      padding: EdgeInsets.only(left: 12.0, top: 12.0, bottom: 12.0),
                                       child: Container(
                                         width: 65, height: 65,
                                         decoration: BoxDecoration(
-                                          color: Colors.white10, 
+                                          color: StiloColors.text.withValues(alpha: .10),
                                           borderRadius: BorderRadius.circular(8)
                                         ),
-                                        child: const Icon(Icons.inventory_2_outlined, color: Colors.white54, size: 28),
+                                        child: Icon(Icons.inventory_2_outlined, color: StiloColors.text.withValues(alpha: .54), size: 28),
                                       ),
                                     ),
 
                                   Expanded(
                                     child: Padding(
-                                      padding: const EdgeInsets.all(12.0), 
+                                      padding: EdgeInsets.all(12.0),
                                       child: Column(
                                         crossAxisAlignment: CrossAxisAlignment.start,
-                                        mainAxisAlignment: MainAxisAlignment.center, 
+                                        mainAxisAlignment: MainAxisAlignment.center,
                                         children: [
                                           Text(
                                             insumo.nombre,
-                                            style: GoogleFonts.inter( 
+                                            style: GoogleFonts.inter(
                                               color: colorTextoPrimario,
                                               fontWeight: FontWeight.w600,
                                               fontSize: 15,
                                             ),
                                           ),
-                                          const SizedBox(height: 6), 
+                                          SizedBox(height: 6),
                                           Text(
                                             '${insumo.categoria.toUpperCase()} > ${insumo.subcategoria.toUpperCase()}',
                                             style: TextStyle(
-                                              color: colorTextoPrimario.withOpacity(0.6), 
+                                              color: colorTextoPrimario.withOpacity(0.6),
                                               fontSize: 12,
-                                              fontFamily: GoogleFonts.inter().fontFamily, 
+                                              fontFamily: GoogleFonts.inter().fontFamily,
                                             ),
                                           ),
-                                          const SizedBox(height: 12),
-                                          
+                                          SizedBox(height: 12),
+
                                           Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                            padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                                             decoration: BoxDecoration(
-                                              color: _obtenerColorStock(insumo.cantidadDisponible, insumo.stockMinimo).withOpacity(0.15), 
-                                              borderRadius: BorderRadius.circular(6), 
+                                              color: _obtenerColorStock(insumo.cantidadDisponible, insumo.stockMinimo).withOpacity(0.15),
+                                              borderRadius: BorderRadius.circular(6),
                                             ),
                                             child: Text(
                                               'STOCK: ${insumo.cantidadDisponible} ${insumo.unidadMedida}',
                                               style: GoogleFonts.inter(
-                                                color: _obtenerColorStock(insumo.cantidadDisponible, insumo.stockMinimo), 
+                                                color: _obtenerColorStock(insumo.cantidadDisponible, insumo.stockMinimo),
                                                 fontWeight: FontWeight.w700,
                                                 fontSize: 11,
                                                 letterSpacing: 0.5,
                                               ),
-                                              overflow: TextOverflow.ellipsis, 
+                                              overflow: TextOverflow.ellipsis,
                                               maxLines: 1,
                                             ),
                                           ),

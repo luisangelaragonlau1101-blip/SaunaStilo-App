@@ -1,9 +1,10 @@
+import '../presentation/appearance.dart';
 import '../services/external_transfer.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../services/ventas_service.dart';
 import '../models/cliente_model.dart';
-import 'cliente_detalle_screen.dart'; 
+import 'cliente_detalle_screen.dart';
 
 class AdminClientesScreen extends StatefulWidget {
   const AdminClientesScreen({Key? key}) : super(key: key);
@@ -14,16 +15,16 @@ class AdminClientesScreen extends StatefulWidget {
 
 class _AdminClientesScreenState extends State<AdminClientesScreen> {
   final VentasService _ventasService = VentasService();
-  final TextEditingController _searchController = TextEditingController(); 
+  final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode(); // <-- 1. Añadimos el FocusNode
-  String _searchQuery = ''; 
+  String _searchQuery = '';
 
   @override
   void initState() {
     super.initState();
     // <-- 2. Escuchamos los cambios de foco para refrescar la pantalla
     _searchFocusNode.addListener(() {
-      setState(() {}); 
+      setState(() {});
     });
   }
 
@@ -37,14 +38,14 @@ class _AdminClientesScreenState extends State<AdminClientesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF121212),
+      backgroundColor: StiloColors.surface,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF121212),
+        backgroundColor: StiloColors.surface,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white),
+        iconTheme: IconThemeData(color: StiloColors.text),
         title: Text(
           'CLIENTES',
-          style: GoogleFonts.inter(fontSize: 16, color: Colors.white, fontWeight: FontWeight.w700, letterSpacing: 1.5),
+          style: GoogleFonts.inter(fontSize: 16, color: StiloColors.text, fontWeight: FontWeight.w700, letterSpacing: 1.5),
         ),
         centerTitle: true,
       ),
@@ -52,24 +53,24 @@ class _AdminClientesScreenState extends State<AdminClientesScreen> {
         children: [
           // --- BARRA DE BÚSQUEDA ---
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+            padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
             child: TextField(contextMenuBuilder: privacyTextMenu,
-              controller: _searchController, 
+              controller: _searchController,
               focusNode: _searchFocusNode, // <-- 4. Se lo asignamos al TextField
               onChanged: (value) {
                 setState(() {
                   _searchQuery = value.toLowerCase();
                 });
               },
-              style: GoogleFonts.inter(color: Colors.white),
+              style: GoogleFonts.inter(color: StiloColors.text),
               decoration: InputDecoration(
                 hintText: 'Buscar por nombre o teléfono...',
-                hintStyle: GoogleFonts.inter(color: Colors.white54),
-                prefixIcon: const Icon(Icons.search, color: Colors.white54),
+                hintStyle: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .54)),
+                prefixIcon: Icon(Icons.search, color: StiloColors.text.withValues(alpha: .54)),
                 // --- BOTÓN "X" SIEMPRE QUE HAYA TEXTO O ESTÉ SELECCIONADO ---
                 suffixIcon: (_searchQuery.isNotEmpty || _searchFocusNode.hasFocus)
                     ? IconButton(
-                        icon: const Icon(Icons.close, color: Colors.white54),
+                        icon: Icon(Icons.close, color: StiloColors.text.withValues(alpha: .54)),
                         onPressed: () {
                           _searchController.clear();
                           setState(() {
@@ -80,40 +81,40 @@ class _AdminClientesScreenState extends State<AdminClientesScreen> {
                       )
                     : null,
                 filled: true,
-                fillColor: const Color(0xFF1E1E1E),
-                contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                fillColor: StiloColors.surface,
+                contentPadding: EdgeInsets.symmetric(vertical: 0),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Colors.white12, width: 1),
+                  borderSide: BorderSide(color: StiloColors.text.withValues(alpha: .12), width: 1),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Color(0xFF8B5CF6), width: 1),
+                  borderSide: BorderSide(color: StiloColors.accent, width: 1),
                 ),
               ),
             ),
           ),
-          
+
           // --- LISTA DE CLIENTES ---
           Expanded(
             child: StreamBuilder<List<ClienteModel>>(
               stream: _ventasService.obtenerClientes(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator(color: Color(0xFF8B5CF6)));
+                  return Center(child: CircularProgressIndicator(color: StiloColors.accent));
                 }
                 if (snapshot.hasError) {
                   return Center(child: Text('Error: ${snapshot.error}', style: GoogleFonts.inter(color: Colors.redAccent)));
                 }
                 if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return Center(child: Text('No hay clientes registrados.', style: GoogleFonts.inter(color: Colors.white54)));
+                  return Center(child: Text('No hay clientes registrados.', style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .54))));
                 }
 
                 final clientes = snapshot.data!;
-                
+
                 // --- LÓGICA DE FILTRADO ---
-                final clientesFiltrados = _searchQuery.isEmpty 
-                    ? clientes 
+                final clientesFiltrados = _searchQuery.isEmpty
+                    ? clientes
                     : clientes.where((cliente) {
                         final nombre = cliente.nombre.toLowerCase();
                         final telefono = cliente.telefono.toLowerCase();
@@ -123,24 +124,24 @@ class _AdminClientesScreenState extends State<AdminClientesScreen> {
                 if (clientesFiltrados.isEmpty) {
                   return Center(
                     child: Text(
-                      'No se encontraron resultados.', 
-                      style: GoogleFonts.inter(color: Colors.white54)
+                      'No se encontraron resultados.',
+                      style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .54))
                     )
                   );
                 }
 
                 return ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   itemCount: clientesFiltrados.length,
                   itemBuilder: (context, index) {
                     final cliente = clientesFiltrados[index];
                     return Card(
-                      color: const Color(0xFF1E1E1E),
+                      color: StiloColors.surface,
                       elevation: 0,
-                      margin: const EdgeInsets.only(bottom: 12),
+                      margin: EdgeInsets.only(bottom: 12),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
-                        side: const BorderSide(color: Colors.white12, width: 1),
+                        side: BorderSide(color: StiloColors.text.withValues(alpha: .12), width: 1),
                       ),
                       child: InkWell(
                         borderRadius: BorderRadius.circular(16),
@@ -153,21 +154,21 @@ class _AdminClientesScreenState extends State<AdminClientesScreen> {
                           );
                         },
                         child: Padding(
-                          padding: const EdgeInsets.all(16.0),
+                          padding: EdgeInsets.all(16.0),
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               // Avatar
                               Container(
-                                padding: const EdgeInsets.all(12),
+                                padding: EdgeInsets.all(12),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFF8B5CF6).withOpacity(0.15),
+                                  color: StiloColors.accent.withOpacity(0.15),
                                   borderRadius: BorderRadius.circular(14),
                                 ),
-                                child: const Icon(Icons.person_outline, color: Color(0xFF8B5CF6), size: 28),
+                                child: Icon(Icons.person_outline, color: StiloColors.accent, size: 28),
                               ),
-                              const SizedBox(width: 16),
-                              
+                              SizedBox(width: 16),
+
                               // Información del Cliente
                               Expanded(
                                 child: Column(
@@ -175,31 +176,31 @@ class _AdminClientesScreenState extends State<AdminClientesScreen> {
                                   children: [
                                     Text(
                                       cliente.nombre,
-                                      style: GoogleFonts.inter(fontWeight: FontWeight.w500, fontSize: 16, color: Colors.white),
+                                      style: GoogleFonts.inter(fontWeight: FontWeight.w500, fontSize: 16, color: StiloColors.text),
                                     ),
-                                    const SizedBox(height: 8),
+                                    SizedBox(height: 8),
                                     Row(
                                       children: [
-                                        const Icon(Icons.phone_outlined, size: 14, color: Color(0xFF64B5F6)),
-                                        const SizedBox(width: 6),
-                                        Text(cliente.telefono, style: GoogleFonts.inter(fontSize: 13, color: Colors.white70)),
+                                        Icon(Icons.phone_outlined, size: 14, color: Color(0xFF64B5F6)),
+                                        SizedBox(width: 6),
+                                        Text(cliente.telefono, style: GoogleFonts.inter(fontSize: 13, color: StiloColors.text.withValues(alpha: .70))),
                                       ],
                                     ),
-                                    const SizedBox(height: 4),
+                                    SizedBox(height: 4),
                                     Row(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        const Padding(
+                                        Padding(
                                           padding: EdgeInsets.only(top: 2.0),
                                           child: Icon(Icons.location_on_outlined, size: 14, color: Color(0xFF81C784)),
                                         ),
-                                        const SizedBox(width: 6),
+                                        SizedBox(width: 6),
                                         Expanded(
                                           child: Text(
                                             cliente.direccion,
                                             maxLines: 2,
                                             overflow: TextOverflow.ellipsis,
-                                            style: GoogleFonts.inter(fontSize: 13, color: Colors.white70),
+                                            style: GoogleFonts.inter(fontSize: 13, color: StiloColors.text.withValues(alpha: .70)),
                                           ),
                                         ),
                                       ],
@@ -207,26 +208,26 @@ class _AdminClientesScreenState extends State<AdminClientesScreen> {
                                   ],
                                 ),
                               ),
-                              
+
                               // Botones de acción
                               Column(
                                 children: [
                                   IconButton(
-                                    icon: const Icon(Icons.edit_outlined, color: Colors.white54, size: 22),
+                                    icon: Icon(Icons.edit_outlined, color: StiloColors.text.withValues(alpha: .54), size: 22),
                                     onPressed: () {
                                       _searchFocusNode.unfocus();
                                       _abrirFormularioCliente(cliente: cliente);
                                     },
-                                    constraints: const BoxConstraints(),
-                                    padding: const EdgeInsets.only(bottom: 12),
+                                    constraints: BoxConstraints(),
+                                    padding: EdgeInsets.only(bottom: 12),
                                   ),
                                   IconButton(
-                                    icon: const Icon(Icons.delete_outline, color: Color(0xFFE57373), size: 22),
+                                    icon: Icon(Icons.delete_outline, color: Color(0xFFE57373), size: 22),
                                     onPressed: () {
                                       _searchFocusNode.unfocus();
                                       _confirmarEliminacion(cliente);
                                     },
-                                    constraints: const BoxConstraints(),
+                                    constraints: BoxConstraints(),
                                     padding: EdgeInsets.zero,
                                   ),
                                 ],
@@ -244,13 +245,13 @@ class _AdminClientesScreenState extends State<AdminClientesScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        backgroundColor: Colors.white,
+        backgroundColor: StiloColors.text,
         onPressed: () {
            _searchFocusNode.unfocus();
            _abrirFormularioCliente();
         },
-        label: Text('Nuevo Cliente', style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: Colors.black)),
-        icon: const Icon(Icons.add, color: Colors.black),
+        label: Text('Nuevo Cliente', style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: StiloColors.background)),
+        icon: Icon(Icons.add, color: StiloColors.background),
       ),
     );
   }
@@ -268,18 +269,18 @@ class _AdminClientesScreenState extends State<AdminClientesScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF1E1E1E),
-        title: Text('¿Eliminar?', style: GoogleFonts.inter(color: Colors.white)),
-        content: Text('¿Seguro que deseas eliminar a ${cliente.nombre}?', style: GoogleFonts.inter(color: Colors.white70)),
+        backgroundColor: StiloColors.surface,
+        title: Text('¿Eliminar?', style: GoogleFonts.inter(color: StiloColors.text)),
+        content: Text('¿Seguro que deseas eliminar a ${cliente.nombre}?', style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .70))),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+          TextButton(onPressed: () => Navigator.pop(context), child: Text('Cancelar')),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
             onPressed: () async {
               Navigator.pop(context);
               await _ventasService.eliminarCliente(cliente.id);
             },
-            child: const Text('Eliminar', style: TextStyle(color: Colors.white)),
+            child: Text('Eliminar', style: TextStyle(color: StiloColors.text)),
           ),
         ],
       ),
@@ -326,10 +327,10 @@ class _FormularioClienteModalState extends State<_FormularioClienteModal> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
-        color: Color(0xFF1E1E1E), 
+      decoration: BoxDecoration(
+        color: StiloColors.surface,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        border: Border(top: BorderSide(color: Colors.white12, width: 1)),
+        border: Border(top: BorderSide(color: StiloColors.text.withValues(alpha: .12), width: 1)),
       ),
       padding: EdgeInsets.only(
         top: 24,
@@ -346,40 +347,40 @@ class _FormularioClienteModalState extends State<_FormularioClienteModal> {
             children: [
               Text(
                 widget.cliente == null ? 'Registrar Cliente' : 'Editar Cliente',
-                style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w700, color: Colors.white),
+                style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w700, color: StiloColors.text),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
               _crearTextField(
                 controller: _nombreController,
                 label: 'Nombre Completo',
                 icon: Icons.person_outline,
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               _crearTextField(
                 controller: _telefonoController,
                 label: 'Teléfono',
                 icon: Icons.phone_outlined,
                 keyboardType: TextInputType.phone,
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               _crearTextField(
                 controller: _direccionController,
                 label: 'Dirección Completa',
                 icon: Icons.location_on_outlined,
                 maxLines: 2,
               ),
-              const SizedBox(height: 30),
+              SizedBox(height: 30),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  foregroundColor: Colors.black,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  backgroundColor: StiloColors.text,
+                  foregroundColor: StiloColors.background,
+                  padding: EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
                 onPressed: _guardando ? null : _guardarFormulario,
                 child: _guardando
-                    ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.black, strokeWidth: 2))
+                    ? SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: StiloColors.background, strokeWidth: 2))
                     : Text(
                         widget.cliente == null ? 'GUARDAR CLIENTE' : 'GUARDAR CAMBIOS',
                         style: GoogleFonts.inter(fontWeight: FontWeight.w600, letterSpacing: 0.5),
@@ -403,20 +404,20 @@ class _FormularioClienteModalState extends State<_FormularioClienteModal> {
       controller: controller,
       maxLines: maxLines,
       keyboardType: keyboardType,
-      style: GoogleFonts.inter(color: Colors.white),
+      style: GoogleFonts.inter(color: StiloColors.text),
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: GoogleFonts.inter(color: Colors.white54),
-        prefixIcon: Icon(icon, color: Colors.white54),
+        labelStyle: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .54)),
+        prefixIcon: Icon(icon, color: StiloColors.text.withValues(alpha: .54)),
         filled: true,
-        fillColor: const Color(0xFF121212),
+        fillColor: StiloColors.surface,
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.white12),
+          borderSide: BorderSide(color: StiloColors.text.withValues(alpha: .12)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF8B5CF6)), 
+          borderSide: BorderSide(color: StiloColors.accent),
         ),
       ),
       validator: (value) => value!.isEmpty ? 'Este campo es obligatorio' : null,

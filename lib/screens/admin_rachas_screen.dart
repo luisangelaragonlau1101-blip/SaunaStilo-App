@@ -1,3 +1,4 @@
+import '../presentation/appearance.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -7,7 +8,7 @@ import '../models/asistencia_model.dart';
 class AdminRachasScreen extends StatefulWidget {
   final UserModel adminUser;
 
-  const AdminRachasScreen({
+  AdminRachasScreen({
     Key? key,
     required this.adminUser,
   }) : super(key: key);
@@ -17,11 +18,11 @@ class AdminRachasScreen extends StatefulWidget {
 }
 
 class _AdminRachasScreenState extends State<AdminRachasScreen> {
-  static const Color colorFondo = Color(0xFF121212);
-  static const Color colorSuperficie = Color(0xFF1E1E1E);
-  static const Color colorFuego = Color(0xFFFF9800);
-  static const Color colorFuegoOscuro = Color(0xFFFF5722);
-  static const Color colorHielo = Color(0xFF00E5FF); 
+  Color get colorFondo => StiloColors.surface;
+  Color get colorSuperficie => StiloColors.surface;
+  Color get colorFuego => Color(0xFFFF9800);
+  Color get colorFuegoOscuro => Color(0xFFFF5722);
+  Color get colorHielo => Color(0xFF00E5FF);
 
   // Definición de nuestras insignias / logros
   final List<Map<String, dynamic>> _insignias = [
@@ -29,28 +30,28 @@ class _AdminRachasScreenState extends State<AdminRachasScreen> {
       'dias': 7,
       'nombre': 'Bronce',
       'subtitulo': '7 días',
-      'color': const Color(0xFFCD7F32), 
+      'color': Color(0xFFCD7F32),
       'icono': Icons.star_border_rounded,
     },
     {
       'dias': 15,
       'nombre': 'Plata',
       'subtitulo': '15 días',
-      'color': const Color(0xFFC0C0C0), 
+      'color': Color(0xFFC0C0C0),
       'icono': Icons.star_half_rounded,
     },
     {
       'dias': 30,
       'nombre': 'Oro',
       'subtitulo': '30 días',
-      'color': const Color(0xFFFFD700), 
+      'color': Color(0xFFFFD700),
       'icono': Icons.star_rounded,
     },
     {
       'dias': 50,
       'nombre': 'Diamante',
       'subtitulo': '50 días',
-      'color': colorHielo, 
+      'color': colorHielo,
       'icono': Icons.diamond_rounded,
     },
   ];
@@ -80,7 +81,7 @@ class _AdminRachasScreenState extends State<AdminRachasScreen> {
         ultimoDiaProcesado = asistencia.fecha;
       } else if (estatusLimpio == 'justificada') {
         ultimoDiaProcesado = asistencia.fecha;
-        continue; 
+        continue;
       } else {
         rachaActual = 0;
         ultimoDiaProcesado = asistencia.fecha;
@@ -97,7 +98,7 @@ class _AdminRachasScreenState extends State<AdminRachasScreen> {
     for (var doc in usersSnap.docs) {
       final user = UserModel.fromFirestore(doc);
       // Omitimos a los admins en el ranking
-      if (user.rol == 'admin') continue; 
+      if (user.rol == 'admin') continue;
 
       final asisSnap = await FirebaseFirestore.instance
           .collection('asistencias')
@@ -110,7 +111,7 @@ class _AdminRachasScreenState extends State<AdminRachasScreen> {
           .toList();
 
       final rachas = _calcularRachas(asistencias);
-      
+
       leaderboard.add({
         'user': user,
         'racha': rachas['actual'] ?? 0,
@@ -126,10 +127,10 @@ class _AdminRachasScreenState extends State<AdminRachasScreen> {
     return Row(
       children: _insignias.map((insignia) {
         bool desbloqueada = rachaMaxima >= insignia['dias'];
-        if (!desbloqueada) return const SizedBox.shrink();
+        if (!desbloqueada) return SizedBox.shrink();
         return Container(
-          margin: const EdgeInsets.only(right: 6),
-          padding: const EdgeInsets.all(4),
+          margin: EdgeInsets.only(right: 6),
+          padding: EdgeInsets.all(4),
           decoration: BoxDecoration(
             color: insignia['color'].withOpacity(0.2),
             shape: BoxShape.circle,
@@ -153,13 +154,13 @@ class _AdminRachasScreenState extends State<AdminRachasScreen> {
         elevation: 0,
         centerTitle: true,
         leading: IconButton(
-          icon: const Icon(Icons.close_rounded, color: Colors.white, size: 28),
+          icon: Icon(Icons.close_rounded, color: StiloColors.text, size: 28),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           "Rachas del Equipo",
           style: GoogleFonts.montserrat(
-            color: Colors.white,
+            color: StiloColors.text,
             fontWeight: FontWeight.bold,
             fontSize: 20,
           ),
@@ -169,14 +170,14 @@ class _AdminRachasScreenState extends State<AdminRachasScreen> {
         future: _getLeaderboard(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator(color: colorHielo));
+            return Center(child: CircularProgressIndicator(color: colorHielo));
           }
 
           if (!snapshot.hasData || snapshot.data!.isEmpty) {
             return Center(
               child: Text(
                 "No hay trabajadores registrados aún.",
-                style: GoogleFonts.inter(color: Colors.white54, fontSize: 16),
+                style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .54), fontSize: 16),
               ),
             );
           }
@@ -184,8 +185,8 @@ class _AdminRachasScreenState extends State<AdminRachasScreen> {
           final posiciones = snapshot.data!;
 
           return ListView.builder(
-            physics: const BouncingScrollPhysics(),
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+            physics: BouncingScrollPhysics(),
+            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 24),
             itemCount: posiciones.length,
             itemBuilder: (context, index) {
               final data = posiciones[index];
@@ -196,27 +197,27 @@ class _AdminRachasScreenState extends State<AdminRachasScreen> {
               Color badgeColor;
               IconData badgeIcon;
               if (index == 0) {
-                badgeColor = const Color(0xFFFFD700); // Oro
+                badgeColor = Color(0xFFFFD700); // Oro
                 badgeIcon = Icons.emoji_events_rounded;
               } else if (index == 1) {
-                badgeColor = const Color(0xFFC0C0C0); // Plata
+                badgeColor = Color(0xFFC0C0C0); // Plata
                 badgeIcon = Icons.military_tech_rounded;
               } else if (index == 2) {
-                badgeColor = const Color(0xFFCD7F32); // Bronce
+                badgeColor = Color(0xFFCD7F32); // Bronce
                 badgeIcon = Icons.military_tech_rounded;
               } else {
-                badgeColor = Colors.white24;
+                badgeColor = StiloColors.text.withValues(alpha: .24);
                 badgeIcon = Icons.person_rounded;
               }
 
               return Container(
-                margin: const EdgeInsets.only(bottom: 16),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                margin: EdgeInsets.only(bottom: 16),
+                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                 decoration: BoxDecoration(
                   color: colorSuperficie,
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: index == 0 ? badgeColor.withOpacity(0.5) : Colors.white.withOpacity(0.05),
+                    color: index == 0 ? badgeColor.withOpacity(0.5) : StiloColors.text.withOpacity(0.05),
                     width: index == 0 ? 1.5 : 1,
                   ),
                 ),
@@ -227,13 +228,13 @@ class _AdminRachasScreenState extends State<AdminRachasScreen> {
                       child: Text(
                         "${index + 1}",
                         style: GoogleFonts.montserrat(
-                          color: index < 3 ? badgeColor : Colors.white38,
+                          color: index < 3 ? badgeColor : StiloColors.text.withValues(alpha: .38),
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                     ),
-                    
+
                     // --- NUEVO AVATAR CON FOTO PARA ADMIN ---
                     Stack(
                       clipBehavior: Clip.none,
@@ -253,9 +254,9 @@ class _AdminRachasScreenState extends State<AdminRachasScreen> {
                             bottom: -2,
                             right: -2,
                             child: Container(
-                              padding: const EdgeInsets.all(3),
-                              decoration: const BoxDecoration(
-                                color: colorSuperficie, 
+                              padding: EdgeInsets.all(3),
+                              decoration: BoxDecoration(
+                                color: colorSuperficie,
                                 shape: BoxShape.circle,
                               ),
                               child: Icon(badgeIcon, color: badgeColor, size: 14),
@@ -263,8 +264,8 @@ class _AdminRachasScreenState extends State<AdminRachasScreen> {
                           ),
                       ],
                     ),
-                    const SizedBox(width: 14),
-                    
+                    SizedBox(width: 14),
+
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -272,27 +273,27 @@ class _AdminRachasScreenState extends State<AdminRachasScreen> {
                           Text(
                             user.nombre.isNotEmpty ? user.nombre : "Sin nombre",
                             style: GoogleFonts.inter(
-                              color: Colors.white,
+                              color: StiloColors.text,
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                          const SizedBox(height: 2),
+                          SizedBox(height: 2),
                           Text(
                             user.rol.toUpperCase(),
                             style: GoogleFonts.inter(
-                              color: Colors.white54,
+                              color: StiloColors.text.withValues(alpha: .54),
                               fontSize: 11,
                               letterSpacing: 0.5,
                             ),
                           ),
-                          const SizedBox(height: 8),
+                          SizedBox(height: 8),
                           // Mininsignias añadidas aquí
                           _buildMiniInsignias(rachaMaxima),
                         ],
                       ),
                     ),
-                    
+
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
@@ -301,24 +302,24 @@ class _AdminRachasScreenState extends State<AdminRachasScreen> {
                             Text(
                               "$racha",
                               style: GoogleFonts.montserrat(
-                                color: racha > 0 ? colorFuego : Colors.white38,
+                                color: racha > 0 ? colorFuego : StiloColors.text.withValues(alpha: .38),
                                 fontSize: 24,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
-                            const SizedBox(width: 4),
+                            SizedBox(width: 4),
                             Icon(
                               Icons.local_fire_department_rounded,
-                              color: racha > 0 ? colorFuegoOscuro : Colors.white24,
+                              color: racha > 0 ? colorFuegoOscuro : StiloColors.text.withValues(alpha: .24),
                               size: 26,
                             ),
                           ],
                         ),
-                        const SizedBox(height: 2),
+                        SizedBox(height: 2),
                         Text(
                           "Récord: $rachaMaxima",
                           style: GoogleFonts.inter(
-                            color: Colors.white38,
+                            color: StiloColors.text.withValues(alpha: .38),
                             fontSize: 10,
                             fontWeight: FontWeight.w600,
                           ),

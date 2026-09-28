@@ -1,14 +1,15 @@
+import '../presentation/appearance.dart';
 import '../services/external_transfer.dart';
 import 'dart:io';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:intl/intl.dart'; 
+import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import '../models/proyecto_model.dart';
-import 'gestionar_solicitudes_salida_screen.dart'; 
+import 'gestionar_solicitudes_salida_screen.dart';
 import 'proyecto_chat_screen.dart';
 
 // --- CLASE AUXILIAR PARA LA VERIFICACIÓN DEL ALMACÉN ---
@@ -115,7 +116,7 @@ class _ProyectoDetalleAlmacenistaScreenState extends State<ProyectoDetalleAlmace
   Future<void> _enviarKit(String solicitudId) async {
     try {
       await FirebaseFirestore.instance.collection('solicitudes_salida').doc(solicitudId).update({
-        'estatus': 'enviada_a_obra', 
+        'estatus': 'enviada_a_obra',
       });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -123,9 +124,9 @@ class _ProyectoDetalleAlmacenistaScreenState extends State<ProyectoDetalleAlmace
           backgroundColor: Colors.green,
           content: Row(
             children: [
-              const Icon(Icons.check_circle_rounded, color: Colors.white),
-              const SizedBox(width: 12),
-              Expanded(child: Text("Kit enviado a obra exitosamente.", style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold))),
+              Icon(Icons.check_circle_rounded, color: StiloColors.text),
+              SizedBox(width: 12),
+              Expanded(child: Text("Kit enviado a obra exitosamente.", style: GoogleFonts.inter(color: StiloColors.text, fontWeight: FontWeight.bold))),
             ],
           )
         ));
@@ -143,13 +144,13 @@ class _ProyectoDetalleAlmacenistaScreenState extends State<ProyectoDetalleAlmace
       context: context,
       builder: (context) {
         return AlertDialog(
-          backgroundColor: const Color(0xFF1E1E1E),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: const BorderSide(color: Colors.white10)),
+          backgroundColor: StiloColors.surface,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: StiloColors.text.withValues(alpha: .10))),
           title: Row(
             children: [
-              const Icon(Icons.handyman, color: Colors.cyanAccent),
-              const SizedBox(width: 10),
-              Text("Contenido del Kit", style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+              Icon(Icons.handyman, color: Colors.cyanAccent),
+              SizedBox(width: 10),
+              Text("Contenido del Kit", style: GoogleFonts.inter(color: StiloColors.text, fontWeight: FontWeight.bold, fontSize: 16)),
             ],
           ),
           content: SizedBox(
@@ -157,32 +158,32 @@ class _ProyectoDetalleAlmacenistaScreenState extends State<ProyectoDetalleAlmace
             child: ListView.separated(
               shrinkWrap: true,
               itemCount: articulos.length,
-              separatorBuilder: (context, index) => const Divider(color: Colors.white10),
+              separatorBuilder: (context, index) => Divider(color: StiloColors.text.withValues(alpha: .10)),
               itemBuilder: (context, index) {
                 var item = articulos[index];
                 int cantidad = int.tryParse(item['cantidad']?.toString() ?? '1') ?? 1;
-                
+
                 // NUEVO: Identificamos si es retornable para la UI
                 bool esRet = item['esRetornable'] == true || item['esRetornable'] == 'true';
-                
+
                 return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8.0),
+                  padding: EdgeInsets.symmetric(vertical: 8.0),
                   child: Row(
                     children: [
                       Icon(esRet ? Icons.build_circle_outlined : Icons.lightbulb_outline, color: esRet ? Colors.orangeAccent : Colors.cyanAccent, size: 24),
-                      const SizedBox(width: 12),
+                      SizedBox(width: 12),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(item['nombreInsumo'] ?? 'Herramienta', style: GoogleFonts.inter(color: Colors.white, fontSize: 14)),
-                            Text(esRet ? "RETORNABLE" : "SE QUEDA EN OBRA", style: GoogleFonts.inter(color: Colors.white54, fontSize: 10, fontWeight: FontWeight.bold)),
+                            Text(item['nombreInsumo'] ?? 'Herramienta', style: GoogleFonts.inter(color: StiloColors.text, fontSize: 14)),
+                            Text(esRet ? "RETORNABLE" : "SE QUEDA EN OBRA", style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .54), fontSize: 10, fontWeight: FontWeight.bold)),
                           ]
                         )
                       ),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(color: Colors.white10, borderRadius: BorderRadius.circular(8)),
+                        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(color: StiloColors.text.withValues(alpha: .10), borderRadius: BorderRadius.circular(8)),
                         child: Text("x$cantidad", style: GoogleFonts.inter(color: Colors.cyanAccent, fontWeight: FontWeight.bold, fontSize: 13)),
                       )
                     ],
@@ -194,20 +195,20 @@ class _ProyectoDetalleAlmacenistaScreenState extends State<ProyectoDetalleAlmace
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: Text(estatus == 'pendiente' ? "Cancelar" : "Cerrar", style: GoogleFonts.inter(color: Colors.white70)),
+              child: Text(estatus == 'pendiente' ? "Cancelar" : "Cerrar", style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .70))),
             ),
             if (estatus == 'pendiente')
               ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.cyanAccent,
-                  foregroundColor: Colors.black,
+                  foregroundColor: StiloColors.background,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))
                 ),
-                icon: const Icon(Icons.local_shipping, size: 18),
+                icon: Icon(Icons.local_shipping, size: 18),
                 label: Text("Enviar Kit", style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
                 onPressed: () {
-                  Navigator.pop(context); 
-                  _enviarKit(solicitudId); 
+                  Navigator.pop(context);
+                  _enviarKit(solicitudId);
                 },
               ),
           ],
@@ -234,27 +235,27 @@ class _ProyectoDetalleAlmacenistaScreenState extends State<ProyectoDetalleAlmace
     return StreamBuilder<DocumentSnapshot>(
       stream: FirebaseFirestore.instance.collection('proyectos').doc(widget.proyecto.id).snapshots(),
       builder: (context, snapshot) {
-        
-        String estatusActual = widget.proyecto.estatus; 
-        
+
+        String estatusActual = widget.proyecto.estatus;
+
         if (snapshot.hasData && snapshot.data!.exists) {
           var data = snapshot.data!.data() as Map<String, dynamic>;
           estatusActual = data['estatus'] ?? widget.proyecto.estatus;
         }
 
         return Scaffold(
-          backgroundColor: const Color(0xFF121212),
+          backgroundColor: StiloColors.surface,
           appBar: AppBar(
-            backgroundColor: const Color(0xFF121212),
+            backgroundColor: StiloColors.surface,
             elevation: 0,
-            title: Text(widget.proyecto.titulo.toUpperCase(), 
+            title: Text(widget.proyecto.titulo.toUpperCase(),
               style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
             centerTitle: true,
-            iconTheme: const IconThemeData(color: Colors.white),
+            iconTheme: IconThemeData(color: StiloColors.text),
             actions: [
               IconButton(
                 tooltip: 'Chat y avances del proyecto',
-                icon: const Icon(Icons.forum_rounded, color: Color(0xFF70E1D0)),
+                icon: Icon(Icons.forum_rounded, color: Color(0xFF70E1D0)),
                 onPressed: () => Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -265,23 +266,23 @@ class _ProyectoDetalleAlmacenistaScreenState extends State<ProyectoDetalleAlmace
             ],
           ),
           body: SingleChildScrollView(
-            padding: const EdgeInsets.all(20),
+            padding: EdgeInsets.all(20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildStatusHeader(estatusActual),
-                const SizedBox(height: 24),
-           
-                Text("DETALLES DEL PROYECTO", style: GoogleFonts.inter(color: Colors.white54, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1.1)),
-                const SizedBox(height: 12),
+                SizedBox(height: 24),
+
+                Text("DETALLES DEL PROYECTO", style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .54), fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1.1)),
+                SizedBox(height: 12),
                 _buildInfoCard(),
-                const SizedBox(height: 30),
+                SizedBox(height: 30),
                 _buildDescripcionSection(),
-                const SizedBox(height: 30),
+                SizedBox(height: 30),
 
                 _buildListaKitsSalida(),
-                
-                const SizedBox(height: 40),
+
+                SizedBox(height: 40),
               ],
             ),
           ),
@@ -291,20 +292,20 @@ class _ProyectoDetalleAlmacenistaScreenState extends State<ProyectoDetalleAlmace
   }
 
   Widget _buildStatusHeader(String estatusActual) {
-    Color statusColor = estatusActual == 'finalizado' 
-        ? Colors.greenAccent 
-        : estatusActual == 'en_proceso' 
-            ? Colors.cyanAccent 
+    Color statusColor = estatusActual == 'finalizado'
+        ? Colors.greenAccent
+        : estatusActual == 'en_proceso'
+            ? Colors.cyanAccent
             : Colors.orangeAccent;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(color: statusColor.withOpacity(0.1), borderRadius: BorderRadius.circular(12), border: Border.all(color: statusColor.withOpacity(0.5))),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(Icons.info_outline, color: statusColor, size: 20),
-          const SizedBox(width: 8),
+          SizedBox(width: 8),
           Text(estatusActual.replaceAll('_', ' ').toUpperCase(), style: GoogleFonts.inter(color: statusColor, fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: 1.0)),
         ],
       ),
@@ -313,50 +314,50 @@ class _ProyectoDetalleAlmacenistaScreenState extends State<ProyectoDetalleAlmace
 
   Widget _buildInfoCard() {
     return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(color: const Color(0xFF1E1E1E), borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.white10)),
+      padding: EdgeInsets.all(20),
+      decoration: BoxDecoration(color: StiloColors.surface, borderRadius: BorderRadius.circular(20), border: Border.all(color: StiloColors.text.withValues(alpha: .10))),
       child: Column(
         children: [
           FutureBuilder<String>(
             future: _getNombreCliente(widget.proyecto.idCliente),
-            builder: (ctx, snap) => _buildDetailRow(Icons.person_outline, "Cliente", snap.data ?? "Cargando...", const Color(0xFF06B6D4)),
+            builder: (ctx, snap) => _buildDetailRow(Icons.person_outline, "Cliente", snap.data ?? "Cargando...", Color(0xFF06B6D4)),
           ),
-          const Divider(color: Colors.white10, height: 24),
-          
+          Divider(color: StiloColors.text.withValues(alpha: .10), height: 24),
+
           FutureBuilder<String>(
             future: _getDireccionCliente(widget.proyecto.idCliente),
-            builder: (ctx, snap) => _buildDetailRow(Icons.location_on_outlined, "Lugar de Entrega", snap.data ?? "Cargando...", const Color(0xFF06B6D4)),
+            builder: (ctx, snap) => _buildDetailRow(Icons.location_on_outlined, "Lugar de Entrega", snap.data ?? "Cargando...", Color(0xFF06B6D4)),
           ),
-          const Divider(color: Colors.white10, height: 24),
+          Divider(color: StiloColors.text.withValues(alpha: .10), height: 24),
 
           FutureBuilder<String>(
             future: _getNombreSauna(widget.proyecto.idSauna),
-            builder: (ctx, snap) => _buildDetailRow(Icons.hot_tub, "Tipo de madera", snap.data ?? "Cargando...", const Color(0xFF8B5CF6)),
+            builder: (ctx, snap) => _buildDetailRow(Icons.hot_tub, "Tipo de madera", snap.data ?? "Cargando...", StiloColors.accent),
           ),
-          const Divider(color: Colors.white10, height: 24),
-          
-          _buildDetailRow(Icons.straighten, "Medidas", widget.proyecto.medidas, const Color(0xFFF59E0B)),
-          const Divider(color: Colors.white10, height: 24),
-          
-          _buildDetailRow(Icons.calendar_today, "Inicio", DateFormat('dd/MM/yyyy HH:mm').format(widget.proyecto.fechaInicio), const Color(0xFF10B981)),
-          const Divider(color: Colors.white10, height: 24),
-          
-          _buildDetailRow(Icons.event_available, "Entrega", DateFormat('dd/MM/yyyy HH:mm').format(widget.proyecto.fechaEntrega), const Color(0xFF10B981)),
-          const Divider(color: Colors.white10, height: 24),
+          Divider(color: StiloColors.text.withValues(alpha: .10), height: 24),
+
+          _buildDetailRow(Icons.straighten, "Medidas", widget.proyecto.medidas, Color(0xFFF59E0B)),
+          Divider(color: StiloColors.text.withValues(alpha: .10), height: 24),
+
+          _buildDetailRow(Icons.calendar_today, "Inicio", DateFormat('dd/MM/yyyy HH:mm').format(widget.proyecto.fechaInicio), Color(0xFF10B981)),
+          Divider(color: StiloColors.text.withValues(alpha: .10), height: 24),
+
+          _buildDetailRow(Icons.event_available, "Entrega", DateFormat('dd/MM/yyyy HH:mm').format(widget.proyecto.fechaEntrega), Color(0xFF10B981)),
+          Divider(color: StiloColors.text.withValues(alpha: .10), height: 24),
 
           _buildDetailRow(
-            Icons.local_shipping_outlined, 
-            "Salida de Instalación", 
-            widget.proyecto.fechaSalidaInstalacion != null 
-                ? DateFormat('dd/MM/yyyy HH:mm').format(widget.proyecto.fechaSalidaInstalacion!) 
-                : "Sin agendar", 
+            Icons.local_shipping_outlined,
+            "Salida de Instalación",
+            widget.proyecto.fechaSalidaInstalacion != null
+                ? DateFormat('dd/MM/yyyy HH:mm').format(widget.proyecto.fechaSalidaInstalacion!)
+                : "Sin agendar",
             Colors.orangeAccent
           ),
-          const Divider(color: Colors.white10, height: 24),
-          
+          Divider(color: StiloColors.text.withValues(alpha: .10), height: 24),
+
           FutureBuilder<String>(
             future: _getNombresEncargados(widget.proyecto.encargados),
-            builder: (ctx, snap) => _buildDetailRow(Icons.badge_outlined, "Encargados", snap.data ?? "Cargando...", Colors.white70),
+            builder: (ctx, snap) => _buildDetailRow(Icons.badge_outlined, "Encargados", snap.data ?? "Cargando...", StiloColors.text.withValues(alpha: .70)),
           ),
         ],
       ),
@@ -365,17 +366,17 @@ class _ProyectoDetalleAlmacenistaScreenState extends State<ProyectoDetalleAlmace
 
   Widget _buildDetailRow(IconData icon, String label, String value, Color iconColor) {
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.start, 
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Icon(icon, color: iconColor, size: 20),
-        const SizedBox(width: 16),
-        Expanded( 
+        SizedBox(width: 16),
+        Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(label, style: GoogleFonts.inter(color: Colors.white54, fontSize: 12)),
-              const SizedBox(height: 2),
-              Text(value, style: GoogleFonts.inter(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w500)),
+              Text(label, style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .54), fontSize: 12)),
+              SizedBox(height: 2),
+              Text(value, style: GoogleFonts.inter(color: StiloColors.text, fontSize: 15, fontWeight: FontWeight.w500)),
             ],
           ),
         ),
@@ -387,15 +388,15 @@ class _ProyectoDetalleAlmacenistaScreenState extends State<ProyectoDetalleAlmace
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text("DESCRIPCIÓN", style: GoogleFonts.inter(color: Colors.white54, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1.1)),
-        const SizedBox(height: 12),
+        Text("DESCRIPCIÓN", style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .54), fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1.1)),
+        SizedBox(height: 12),
         Container(
           width: double.infinity,
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(color: const Color(0xFF1E1E1E), borderRadius: BorderRadius.circular(16)),
+          padding: EdgeInsets.all(16),
+          decoration: BoxDecoration(color: StiloColors.surface, borderRadius: BorderRadius.circular(16)),
           child: Text(
-            widget.proyecto.descripcion.isEmpty ? "Sin descripción agregada para este proyecto." : widget.proyecto.descripcion, 
-            style: GoogleFonts.inter(color: Colors.white70, fontSize: 15, height: 1.5)
+            widget.proyecto.descripcion.isEmpty ? "Sin descripción agregada para este proyecto." : widget.proyecto.descripcion,
+            style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .70), fontSize: 15, height: 1.5)
           ),
         ),
       ],
@@ -410,7 +411,7 @@ class _ProyectoDetalleAlmacenistaScreenState extends State<ProyectoDetalleAlmace
           .snapshots(),
       builder: (context, snapshot) {
         if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-          return const SizedBox.shrink(); 
+          return SizedBox.shrink();
         }
 
         var docs = snapshot.data!.docs;
@@ -424,8 +425,8 @@ class _ProyectoDetalleAlmacenistaScreenState extends State<ProyectoDetalleAlmace
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text("ESTATUS DE KITS DEL PROYECTO", style: GoogleFonts.inter(color: Colors.white54, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1.1)),
-            const SizedBox(height: 12),
+            Text("ESTATUS DE KITS DEL PROYECTO", style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .54), fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1.1)),
+            SizedBox(height: 12),
 
             ...docs.map((doc) {
               var data = doc.data() as Map<String, dynamic>;
@@ -434,24 +435,24 @@ class _ProyectoDetalleAlmacenistaScreenState extends State<ProyectoDetalleAlmace
               List reportes = data['reportes_danos'] ?? [];
               Timestamp? fecha = data['fechaSolicitud'] as Timestamp?;
               String fechaStr = fecha != null ? DateFormat('dd/MM/yyyy HH:mm').format(fecha.toDate()) : 'Sin fecha';
-              
+
               String usuarioSolicitanteId = data['usuarioId'] ?? data['solicitanteId'] ?? '';
-              
+
               bool tienePendientesPorRevisar = reportes.any((r) => r['estatusEvaluacion'] == 'pendiente');
 
               // --- CAMBIO AQUÍ: CALCULAR RETORNABLES ---
               int totalArticulos = 0;
               int totalRetornables = 0;
-              
+
               for (var a in articulos) {
                 int cant = int.tryParse(a['cantidad']?.toString() ?? '1') ?? 1;
                 totalArticulos += cant;
-                
+
                 if (a['esRetornable'] == true || a['esRetornable'] == 'true') {
                   totalRetornables += cant;
                 }
               }
-              
+
               int totalAprobadoATaller = 0;
               int totalYaReparado = 0;
 
@@ -460,12 +461,12 @@ class _ProyectoDetalleAlmacenistaScreenState extends State<ProyectoDetalleAlmace
                   int cant = int.tryParse(r['cantidad']?.toString() ?? '1') ?? 1;
                   totalAprobadoATaller += cant;
                   String repStatus = r['estatusReparacionInterno'] ?? '';
-                  if (repStatus.isNotEmpty && repStatus != 'pendiente' && repStatus != 'en_reparacion') { 
+                  if (repStatus.isNotEmpty && repStatus != 'pendiente' && repStatus != 'en_reparacion') {
                      totalYaReparado += cant;
                   }
                 }
               }
-              
+
               // Basamos la lógica de "todo en taller" solo en las retornables
               bool todoEnTaller = (totalRetornables > 0 && totalAprobadoATaller >= totalRetornables && totalYaReparado < totalAprobadoATaller);
               bool todoReparado = (totalRetornables > 0 && totalAprobadoATaller >= totalRetornables && totalYaReparado >= totalAprobadoATaller);
@@ -476,7 +477,7 @@ class _ProyectoDetalleAlmacenistaScreenState extends State<ProyectoDetalleAlmace
               if (estatus == 'pendiente') {
                 statusColor = Colors.yellowAccent;
                 estatusText = 'NUEVA SOLICITUD';
-              } else if (estatus == 'enviada_a_obra' || estatus == 'aprobada_entregada') { 
+              } else if (estatus == 'enviada_a_obra' || estatus == 'aprobada_entregada') {
                 statusColor = Colors.cyanAccent;
                 estatusText = 'EN TRÁNSITO A OBRA';
               } else if (estatus == 'recibida_en_obra') {
@@ -487,13 +488,13 @@ class _ProyectoDetalleAlmacenistaScreenState extends State<ProyectoDetalleAlmace
                   statusColor = Colors.redAccent;
                   estatusText = 'EN TALLER (REPARACIÓN)';
                 } else if (todoReparado) {
-                  statusColor = Colors.greenAccent; 
+                  statusColor = Colors.greenAccent;
                   estatusText = 'REPARADO Y DISPONIBLE';
                 } else {
                   statusColor = Colors.orangeAccent;
                   estatusText = 'EN USO (DAÑOS REPORTADOS)';
                 }
-              } else if (estatus == 'en_devolucion') { 
+              } else if (estatus == 'en_devolucion') {
                 statusColor = Colors.amber;
                 estatusText = 'LISTO PARA RECIBIR (DEVOLUCIÓN)';
               } else if (estatus == 'completada' || estatus == 'completada_con_danos') {
@@ -501,7 +502,7 @@ class _ProyectoDetalleAlmacenistaScreenState extends State<ProyectoDetalleAlmace
                 // Diferenciamos si se devolvió algo o si todo se quedó en obra
                 estatusText = totalRetornables > 0 ? 'DEVUELTO AL ALMACÉN' : 'CERRADO (SIN RETORNOS)';
               } else {
-                statusColor = Colors.white54;
+                statusColor = StiloColors.text.withValues(alpha: .54);
                 estatusText = estatus.toUpperCase();
               }
 
@@ -510,15 +511,15 @@ class _ProyectoDetalleAlmacenistaScreenState extends State<ProyectoDetalleAlmace
                   GestureDetector(
                     onTap: () => _mostrarDetalleKit(context, doc.id, estatus, articulos),
                     child: Container(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      padding: const EdgeInsets.all(16), 
+                      margin: EdgeInsets.only(bottom: 12),
+                      padding: EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF1E1E1E),
+                        color: StiloColors.surface,
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(color: statusColor.withOpacity(0.3)),
                         boxShadow: [
                           if (estatus == 'pendiente')
-                            BoxShadow(color: statusColor.withOpacity(0.1), blurRadius: 8, offset: const Offset(0, 2))
+                            BoxShadow(color: statusColor.withOpacity(0.1), blurRadius: 8, offset: Offset(0, 2))
                         ]
                       ),
                       child: Column(
@@ -528,28 +529,28 @@ class _ProyectoDetalleAlmacenistaScreenState extends State<ProyectoDetalleAlmace
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Container(
-                                padding: const EdgeInsets.all(10),
+                                padding: EdgeInsets.all(10),
                                 decoration: BoxDecoration(color: statusColor.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
                                 child: Icon(Icons.inventory_2_rounded, color: statusColor, size: 24),
                               ),
-                              const SizedBox(width: 16),
+                              SizedBox(width: 16),
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text("Kit con ${articulos.length} artículos", style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
-                                    const SizedBox(height: 6),
+                                    Text("Kit con ${articulos.length} artículos", style: GoogleFonts.inter(color: StiloColors.text, fontWeight: FontWeight.bold, fontSize: 15)),
+                                    SizedBox(height: 6),
                                     FutureBuilder<String>(
                                       future: _getNombreTrabajador(usuarioSolicitanteId),
                                       builder: (context, snapshot) {
                                         return Row(
                                           children: [
-                                            const Icon(Icons.person, color: Color(0xFF06B6D4), size: 14),
-                                            const SizedBox(width: 4),
+                                            Icon(Icons.person, color: Color(0xFF06B6D4), size: 14),
+                                            SizedBox(width: 4),
                                             Expanded(
                                               child: Text(
-                                                snapshot.data ?? 'Cargando...', 
-                                                style: GoogleFonts.inter(color: const Color(0xFF06B6D4), fontSize: 13, fontWeight: FontWeight.w500),
+                                                snapshot.data ?? 'Cargando...',
+                                                style: GoogleFonts.inter(color: Color(0xFF06B6D4), fontSize: 13, fontWeight: FontWeight.w500),
                                                 overflow: TextOverflow.ellipsis,
                                               ),
                                             ),
@@ -557,19 +558,19 @@ class _ProyectoDetalleAlmacenistaScreenState extends State<ProyectoDetalleAlmace
                                         );
                                       }
                                     ),
-                                    const SizedBox(height: 6),
-                                    Text(fechaStr, style: GoogleFonts.inter(color: Colors.white54, fontSize: 12)),
+                                    SizedBox(height: 6),
+                                    Text(fechaStr, style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .54), fontSize: 12)),
                                   ],
                                 ),
                               ),
                             ],
                           ),
-                          
-                          const SizedBox(height: 16),
+
+                          SizedBox(height: 16),
                           Align(
                             alignment: Alignment.centerRight,
                             child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                              padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                               decoration: BoxDecoration(
                                 color: statusColor.withOpacity(0.1),
                                 borderRadius: BorderRadius.circular(8),
@@ -582,42 +583,42 @@ class _ProyectoDetalleAlmacenistaScreenState extends State<ProyectoDetalleAlmace
                       ),
                     ),
                   ),
-                  
+
                   // --- BOTONES ---
                   if (estatus == 'recibida_con_danos' && tienePendientesPorRevisar)
                     Padding(
-                      padding: const EdgeInsets.only(bottom: 16),
+                      padding: EdgeInsets.only(bottom: 16),
                       child: SizedBox(
                         width: double.infinity,
                         height: 48,
                         child: ElevatedButton.icon(
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.orangeAccent,
-                            foregroundColor: Colors.black,
+                            foregroundColor: StiloColors.background,
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           ),
-                          icon: const Icon(Icons.plumbing),
+                          icon: Icon(Icons.plumbing),
                           label: Text("EVALUAR DAÑOS EN OBRA", style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
-                          onPressed: () => _mostrarModalEvaluarDanosAlmacen(context, doc.id, widget.proyecto.id, data['solicitanteNombre'] ?? 'Trabajador'), 
+                          onPressed: () => _mostrarModalEvaluarDanosAlmacen(context, doc.id, widget.proyecto.id, data['solicitanteNombre'] ?? 'Trabajador'),
                         ),
                       ),
                     ),
 
                   if (estatus == 'en_devolucion')
                     Padding(
-                      padding: const EdgeInsets.only(bottom: 16),
+                      padding: EdgeInsets.only(bottom: 16),
                       child: SizedBox(
                         width: double.infinity,
                         height: 48,
                         child: ElevatedButton.icon(
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.amber,
-                            foregroundColor: Colors.black,
+                            foregroundColor: StiloColors.background,
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           ),
-                          icon: const Icon(Icons.checklist_rtl),
+                          icon: Icon(Icons.checklist_rtl),
                           label: Text("INSPECCIONAR Y RECIBIR KIT", style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
-                          onPressed: () => _mostrarModalRecepcionAlmacen(context, doc.id, data), 
+                          onPressed: () => _mostrarModalRecepcionAlmacen(context, doc.id, data),
                         ),
                       ),
                     ),
@@ -678,7 +679,7 @@ class _EvaluarDanosAlmacenModalState extends State<EvaluarDanosAlmacenModal> {
 
         batch.set(insumoRef, {
             'cantidad_disponible': FieldValue.increment(-cantidad),
-            'en_reparacion': FieldValue.increment(cantidad),        
+            'en_reparacion': FieldValue.increment(cantidad),
         }, SetOptions(merge: true));
 
       } else if (decision == 'rechazado') {
@@ -691,7 +692,7 @@ class _EvaluarDanosAlmacenModalState extends State<EvaluarDanosAlmacenModal> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text("Evaluación guardada con éxito", style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold)), 
+          content: Text("Evaluación guardada con éxito", style: GoogleFonts.inter(color: StiloColors.text, fontWeight: FontWeight.bold)),
           backgroundColor: Colors.green
         ));
       }
@@ -708,18 +709,18 @@ class _EvaluarDanosAlmacenModalState extends State<EvaluarDanosAlmacenModal> {
       filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
       child: Container(
         height: MediaQuery.of(context).size.height * 0.85,
-        padding: const EdgeInsets.all(24),
-        decoration: const BoxDecoration(
-          color: Color(0xFF121212),
+        padding: EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: StiloColors.surface,
           borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
         ),
         child: StreamBuilder<DocumentSnapshot>(
           stream: FirebaseFirestore.instance.collection('solicitudes_salida').doc(widget.solicitudId).snapshots(),
           builder: (context, snapshot) {
-            if (!snapshot.hasData) return const Center(child: CircularProgressIndicator(color: Colors.orangeAccent));
-            
+            if (!snapshot.hasData) return Center(child: CircularProgressIndicator(color: Colors.orangeAccent));
+
             var data = snapshot.data!.data() as Map<String, dynamic>?;
-            if (data == null) return const Center(child: Text("Sin datos"));
+            if (data == null) return Center(child: Text("Sin datos"));
 
             List reportes = data['reportes_danos'] ?? [];
             var pendientesList = reportes.asMap().entries.where((e) => e.value['estatusEvaluacion'] == 'pendiente').toList();
@@ -729,14 +730,14 @@ class _EvaluarDanosAlmacenModalState extends State<EvaluarDanosAlmacenModal> {
               children: [
                 Center(
                   child: Container(
-                    width: 40, height: 4, margin: const EdgeInsets.only(bottom: 24),
-                    decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(10)),
+                    width: 40, height: 4, margin: EdgeInsets.only(bottom: 24),
+                    decoration: BoxDecoration(color: StiloColors.text.withOpacity(0.2), borderRadius: BorderRadius.circular(10)),
                   ),
                 ),
-                Text("Evaluar Daños de Obra", style: GoogleFonts.outfit(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 8),
-                Text("Determina si las herramientas que reportó el maestro van al taller.", style: GoogleFonts.inter(color: Colors.white54, fontSize: 13)),
-                const SizedBox(height: 16),
+                Text("Evaluar Daños de Obra", style: GoogleFonts.outfit(color: StiloColors.text, fontSize: 24, fontWeight: FontWeight.bold)),
+                SizedBox(height: 8),
+                Text("Determina si las herramientas que reportó el maestro van al taller.", style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .54), fontSize: 13)),
+                SizedBox(height: 16),
 
                 if (pendientesList.isEmpty)
                   Expanded(
@@ -744,9 +745,9 @@ class _EvaluarDanosAlmacenModalState extends State<EvaluarDanosAlmacenModal> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Icon(Icons.check_circle_outline, color: Colors.greenAccent, size: 64),
-                          const SizedBox(height: 16),
-                          Text("¡Todos los reportes evaluados!", style: GoogleFonts.inter(color: Colors.white, fontSize: 16)),
+                          Icon(Icons.check_circle_outline, color: Colors.greenAccent, size: 64),
+                          SizedBox(height: 16),
+                          Text("¡Todos los reportes evaluados!", style: GoogleFonts.inter(color: StiloColors.text, fontSize: 16)),
                         ],
                       ),
                     ),
@@ -754,66 +755,66 @@ class _EvaluarDanosAlmacenModalState extends State<EvaluarDanosAlmacenModal> {
                 else
                   Expanded(
                     child: ListView.separated(
-                      physics: const BouncingScrollPhysics(),
+                      physics: BouncingScrollPhysics(),
                       itemCount: pendientesList.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 16),
+                      separatorBuilder: (_, __) => SizedBox(height: 16),
                       itemBuilder: (context, idx) {
                         int indexEnArreglo = pendientesList[idx].key;
                         Map item = pendientesList[idx].value;
                         bool procesandoEste = _procesandoIndex == indexEnArreglo;
 
                         return Container(
-                          padding: const EdgeInsets.all(16),
+                          padding: EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF1E1E1E),
+                            color: StiloColors.surface,
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(color: Colors.orangeAccent.withOpacity(0.3))
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(item['nombreInsumo'] ?? '', style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
-                              const SizedBox(height: 4),
+                              Text(item['nombreInsumo'] ?? '', style: GoogleFonts.inter(color: StiloColors.text, fontWeight: FontWeight.bold, fontSize: 16)),
+                              SizedBox(height: 4),
                               Text("Cantidad reportada: ${item['cantidad']}", style: GoogleFonts.inter(color: Colors.orangeAccent, fontSize: 12, fontWeight: FontWeight.bold)),
-                              const SizedBox(height: 12),
-                              
+                              SizedBox(height: 12),
+
                               if (item['notasDelFallo'] != null && item['notasDelFallo'].toString().isNotEmpty)
                                 Container(
                                   width: double.infinity,
-                                  padding: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(color: Colors.black26, borderRadius: BorderRadius.circular(8)),
-                                  child: Text('"${item['notasDelFallo']}"', style: GoogleFonts.inter(color: Colors.white70, fontStyle: FontStyle.italic)),
+                                  padding: EdgeInsets.all(12),
+                                  decoration: BoxDecoration(color: StiloColors.background.withValues(alpha: .26), borderRadius: BorderRadius.circular(8)),
+                                  child: Text('"${item['notasDelFallo']}"', style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .70), fontStyle: FontStyle.italic)),
                                 ),
 
                               if (item['fotoUrl'] != null && item['fotoUrl'].toString().isNotEmpty)
                                 Padding(
-                                  padding: const EdgeInsets.only(top: 12),
+                                  padding: EdgeInsets.only(top: 12),
                                   child: ClipRRect(
                                     borderRadius: BorderRadius.circular(8),
                                     child: Image.network(item['fotoUrl'], height: 150, width: double.infinity, fit: BoxFit.cover),
                                   ),
                                 ),
 
-                              const SizedBox(height: 16),
-                              
+                              SizedBox(height: 16),
+
                               if (procesandoEste)
-                                const Center(child: CircularProgressIndicator(color: Colors.orangeAccent))
+                                Center(child: CircularProgressIndicator(color: Colors.orangeAccent))
                               else
                                 Row(
                                   children: [
                                     Expanded(
                                       child: ElevatedButton.icon(
-                                        style: ElevatedButton.styleFrom(backgroundColor: Colors.white10, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
-                                        icon: const Icon(Icons.close, size: 16),
+                                        style: ElevatedButton.styleFrom(backgroundColor: StiloColors.text.withValues(alpha: .10), foregroundColor: StiloColors.text, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
+                                        icon: Icon(Icons.close, size: 16),
                                         label: Text("Rechazar", style: GoogleFonts.inter(fontSize: 12)),
                                         onPressed: () => _evaluar(indexEnArreglo, 'rechazado', reportes, item),
                                       ),
                                     ),
-                                    const SizedBox(width: 8),
+                                    SizedBox(width: 8),
                                     Expanded(
                                       child: ElevatedButton.icon(
-                                        style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
-                                        icon: const Icon(Icons.handyman_rounded, size: 16),
+                                        style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, foregroundColor: StiloColors.text, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
+                                        icon: Icon(Icons.handyman_rounded, size: 16),
                                         label: Text("Al Taller", style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.bold)),
                                         onPressed: () => _evaluar(indexEnArreglo, 'taller', reportes, item),
                                       ),
@@ -865,7 +866,7 @@ class _VerificarRecepcionAlmacenModalState extends State<VerificarRecepcionAlmac
     for (var item in articulos) {
       bool esRetornable = item['esRetornable'] == true || item['esRetornable'] == 'true';
       String insumoId = item['insumoId']?.toString() ?? item['id']?.toString() ?? '';
-      
+
       bool estaEnTaller = reportes.any((rep) => (rep['insumoId'] == insumoId) && rep['estatusEvaluacion'] == 'taller');
 
       if (esRetornable && !estaEnTaller && insumoId.isNotEmpty) {
@@ -873,7 +874,7 @@ class _VerificarRecepcionAlmacenModalState extends State<VerificarRecepcionAlmac
           insumoId: insumoId,
           nombre: item['nombreInsumo'] ?? 'Herramienta',
           cantidad: int.tryParse(item['cantidad']?.toString() ?? '1') ?? 1,
-          tieneFalla: false, 
+          tieneFalla: false,
         ));
       }
     }
@@ -907,7 +908,7 @@ class _VerificarRecepcionAlmacenModalState extends State<VerificarRecepcionAlmac
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           behavior: SnackBarBehavior.floating,
           backgroundColor: Colors.blueAccent,
-          content: Text("Kit cerrado correctamente (sin retornos).", style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: Colors.white)),
+          content: Text("Kit cerrado correctamente (sin retornos).", style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: StiloColors.text)),
         ));
       }
     } catch (e) {
@@ -919,7 +920,7 @@ class _VerificarRecepcionAlmacenModalState extends State<VerificarRecepcionAlmac
 
   Future<void> _confirmarIngreso() async {
     setState(() => _isProcessing = true);
-    
+
     bool tieneFallasPrevias = widget.dataOriginal['tieneFallasParciales'] == true;
     List reportesAnteriores = widget.dataOriginal['reportes_danos'] ?? [];
     List nuevosReportes = [];
@@ -941,7 +942,7 @@ class _VerificarRecepcionAlmacenModalState extends State<VerificarRecepcionAlmac
           // ALMACENISTA DETECTA DAÑO -> SE VA A TALLER INMEDIATAMENTE
           nuevosDanos = true;
           String urlFinalFoto = "";
-          
+
           if (item.fotoRuta != null) {
             File file = File(item.fotoRuta!);
             String fileName = 'recepciones_almacen/${widget.solicitudId}_${item.insumoId}_${DateTime.now().millisecondsSinceEpoch}.jpg';
@@ -959,7 +960,7 @@ class _VerificarRecepcionAlmacenModalState extends State<VerificarRecepcionAlmac
               'cantidad': item.cantidad,
               'origen': 'recepcion_almacen_directa',
               'proyectoId': widget.dataOriginal['proyectoId'] ?? '',
-              'reportadoPor': 'Almacén (Inspección)', 
+              'reportadoPor': 'Almacén (Inspección)',
               'fechaIngreso': FieldValue.serverTimestamp(),
               'estatus': 'en_reparacion',
               'notasDelFallo': item.notasController.text.trim(),
@@ -998,16 +999,16 @@ class _VerificarRecepcionAlmacenModalState extends State<VerificarRecepcionAlmac
       await batch.commit();
 
       if (mounted) {
-        Navigator.pop(context); 
+        Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           behavior: SnackBarBehavior.floating, backgroundColor: nuevosDanos ? Colors.orangeAccent : Colors.green,
           content: Row(
             children: [
-              Icon(Icons.check_circle_rounded, color: nuevosDanos ? Colors.black : Colors.white),
-              const SizedBox(width: 12),
+              Icon(Icons.check_circle_rounded, color: nuevosDanos ? StiloColors.background : StiloColors.text),
+              SizedBox(width: 12),
               Expanded(child: Text(
-                nuevosDanos ? "Revisión lista. Herramientas dañadas enviadas al taller." : "Revisión exitosa. Kit reingresado a almacén.", 
-                style: GoogleFonts.inter(color: nuevosDanos ? Colors.black : Colors.white, fontWeight: FontWeight.bold)
+                nuevosDanos ? "Revisión lista. Herramientas dañadas enviadas al taller." : "Revisión exitosa. Kit reingresado a almacén.",
+                style: GoogleFonts.inter(color: nuevosDanos ? StiloColors.background : StiloColors.text, fontWeight: FontWeight.bold)
               )),
             ],
           )
@@ -1026,65 +1027,65 @@ class _VerificarRecepcionAlmacenModalState extends State<VerificarRecepcionAlmac
       filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
       child: Container(
         height: MediaQuery.of(context).size.height * 0.90,
-        decoration: const BoxDecoration(
-          color: Color(0xFF121212),
+        decoration: BoxDecoration(
+          color: StiloColors.surface,
           borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
         ),
         padding: EdgeInsets.only(top: 12, left: 20, right: 20, bottom: MediaQuery.of(context).viewInsets.bottom + 20),
         child: Column(
           children: [
-            Container(width: 40, height: 4, margin: const EdgeInsets.only(bottom: 24), decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(10))),
-            
+            Container(width: 40, height: 4, margin: EdgeInsets.only(bottom: 24), decoration: BoxDecoration(color: StiloColors.text.withOpacity(0.2), borderRadius: BorderRadius.circular(10))),
+
             Expanded(
               child: SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
+                physics: BouncingScrollPhysics(),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text("Inspección de Recepción", style: GoogleFonts.outfit(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 8),
-                    Text("Verifica cada herramienta. Si detectas un daño, repórtalo para enviarla al taller.", style: GoogleFonts.inter(color: Colors.white54, fontSize: 13)),
-                    const SizedBox(height: 24),
+                    Text("Inspección de Recepción", style: GoogleFonts.outfit(color: StiloColors.text, fontSize: 24, fontWeight: FontWeight.bold)),
+                    SizedBox(height: 8),
+                    Text("Verifica cada herramienta. Si detectas un daño, repórtalo para enviarla al taller.", style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .54), fontSize: 13)),
+                    SizedBox(height: 24),
 
                     if (_itemsAVerificar.isEmpty)
                       Center(child: Padding(
-                        padding: const EdgeInsets.all(20.0),
-                        child: Text("No hay herramientas retornables para verificar en este kit. Puedes cerrar el registro.", style: GoogleFonts.inter(color: Colors.white54, height: 1.5), textAlign: TextAlign.center),
+                        padding: EdgeInsets.all(20.0),
+                        child: Text("No hay herramientas retornables para verificar en este kit. Puedes cerrar el registro.", style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .54), height: 1.5), textAlign: TextAlign.center),
                       ))
                     else
                       ..._itemsAVerificar.map((item) {
                         return Container(
-                          margin: const EdgeInsets.only(bottom: 16),
+                          margin: EdgeInsets.only(bottom: 16),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF1E1E1E),
+                            color: StiloColors.surface,
                             borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: item.tieneFalla ? Colors.orangeAccent.withOpacity(0.5) : Colors.white.withOpacity(0.05)),
+                            border: Border.all(color: item.tieneFalla ? Colors.orangeAccent.withOpacity(0.5) : StiloColors.text.withOpacity(0.05)),
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Padding(
-                                padding: const EdgeInsets.only(top: 16, left: 16, right: 16, bottom: 8),
+                                padding: EdgeInsets.only(top: 16, left: 16, right: 16, bottom: 8),
                                 child: Row(
                                   children: [
                                     Icon(Icons.build_circle_outlined, color: item.tieneFalla ? Colors.orangeAccent : Colors.cyanAccent, size: 28),
-                                    const SizedBox(width: 12),
+                                    SizedBox(width: 12),
                                     Expanded(
-                                      child: Text(item.nombre, style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                                      child: Text(item.nombre, style: GoogleFonts.inter(color: StiloColors.text, fontWeight: FontWeight.bold, fontSize: 16)),
                                     ),
-                                    Text("Cant: ${item.cantidad}", style: GoogleFonts.outfit(color: Colors.white54, fontSize: 14, fontWeight: FontWeight.bold)),
+                                    Text("Cant: ${item.cantidad}", style: GoogleFonts.outfit(color: StiloColors.text.withValues(alpha: .54), fontSize: 14, fontWeight: FontWeight.bold)),
                                   ],
                                 ),
                               ),
-                              
+
                               SwitchListTile(
-                                title: Text("¿Llegó con falla o daño?", style: GoogleFonts.inter(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w500)),
-                                subtitle: Text("Mándala a taller si está averiada", style: GoogleFonts.inter(color: Colors.white54, fontSize: 12)),
+                                title: Text("¿Llegó con falla o daño?", style: GoogleFonts.inter(color: StiloColors.text, fontSize: 15, fontWeight: FontWeight.w500)),
+                                subtitle: Text("Mándala a taller si está averiada", style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .54), fontSize: 12)),
                                 value: item.tieneFalla,
-                                activeColor: Colors.black,
+                                activeColor: StiloColors.background,
                                 activeTrackColor: Colors.orangeAccent,
-                                inactiveThumbColor: Colors.white54,
-                                inactiveTrackColor: const Color(0xFF121212),
+                                inactiveThumbColor: StiloColors.text.withValues(alpha: .54),
+                                inactiveTrackColor: StiloColors.surface,
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                                 onChanged: (bool value) {
                                   setState(() {
@@ -1099,40 +1100,40 @@ class _VerificarRecepcionAlmacenModalState extends State<VerificarRecepcionAlmac
 
                               if (item.tieneFalla)
                                 Padding(
-                                  padding: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
+                                  padding: EdgeInsets.only(left: 16, right: 16, bottom: 16),
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      const Divider(color: Colors.white10),
-                                      const SizedBox(height: 8),
-                                      Text("Descripción del daño:", style: GoogleFonts.inter(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
-                                      const SizedBox(height: 8),
+                                      Divider(color: StiloColors.text.withValues(alpha: .10)),
+                                      SizedBox(height: 8),
+                                      Text("Descripción del daño:", style: GoogleFonts.inter(color: StiloColors.text, fontSize: 14, fontWeight: FontWeight.w600)),
+                                      SizedBox(height: 8),
                                       TextField(contextMenuBuilder: privacyTextMenu,
                                         controller: item.notasController,
                                         maxLines: 2,
-                                        style: GoogleFonts.inter(color: Colors.white),
+                                        style: GoogleFonts.inter(color: StiloColors.text),
                                         decoration: InputDecoration(
                                           hintText: "Ej. Falta una pieza, el motor suena mal...",
-                                          hintStyle: GoogleFonts.inter(color: Colors.white54, fontSize: 13),
+                                          hintStyle: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .54), fontSize: 13),
                                           filled: true,
-                                          fillColor: const Color(0xFF121212),
+                                          fillColor: StiloColors.surface,
                                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                                         ),
                                       ),
-                                      const SizedBox(height: 16),
-                                      
-                                      Text("Evidencia Fotográfica:", style: GoogleFonts.inter(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
-                                      const SizedBox(height: 8),
+                                      SizedBox(height: 16),
+
+                                      Text("Evidencia Fotográfica:", style: GoogleFonts.inter(color: StiloColors.text, fontSize: 14, fontWeight: FontWeight.w600)),
+                                      SizedBox(height: 8),
                                       GestureDetector(
-                                        onTap: _isProcessing ? null : () => _tomarFoto(item), 
+                                        onTap: _isProcessing ? null : () => _tomarFoto(item),
                                         child: Container(
                                           width: double.infinity,
                                           height: 100,
                                           decoration: BoxDecoration(
-                                            color: const Color(0xFF121212),
+                                            color: StiloColors.surface,
                                             borderRadius: BorderRadius.circular(12),
                                             border: Border.all(
-                                              color: item.fotoRuta != null ? Colors.greenAccent.withOpacity(0.5) : Colors.white.withOpacity(0.1),
+                                              color: item.fotoRuta != null ? Colors.greenAccent.withOpacity(0.5) : StiloColors.text.withOpacity(0.1),
                                               width: 1.5,
                                             ),
                                           ),
@@ -1140,9 +1141,9 @@ class _VerificarRecepcionAlmacenModalState extends State<VerificarRecepcionAlmac
                                               ? Column(
                                                   mainAxisAlignment: MainAxisAlignment.center,
                                                   children: [
-                                                    const Icon(Icons.camera_alt_outlined, color: Colors.cyanAccent, size: 24),
-                                                    const SizedBox(height: 8),
-                                                    Text("Tocar para tomar foto", style: GoogleFonts.inter(color: Colors.white54, fontSize: 12)),
+                                                    Icon(Icons.camera_alt_outlined, color: Colors.cyanAccent, size: 24),
+                                                    SizedBox(height: 8),
+                                                    Text("Tocar para tomar foto", style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .54), fontSize: 12)),
                                                   ],
                                                 )
                                               : Stack(
@@ -1150,19 +1151,19 @@ class _VerificarRecepcionAlmacenModalState extends State<VerificarRecepcionAlmac
                                                     Positioned.fill(
                                                       child: ClipRRect(
                                                         borderRadius: BorderRadius.circular(10),
-                                                        child: Image.file(File(item.fotoRuta!), fit: BoxFit.cover, opacity: const AlwaysStoppedAnimation(0.6)),
+                                                        child: Image.file(File(item.fotoRuta!), fit: BoxFit.cover, opacity: AlwaysStoppedAnimation(0.6)),
                                                       ),
                                                     ),
                                                     Center(
                                                       child: Container(
-                                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                                        decoration: BoxDecoration(color: Colors.black.withOpacity(0.7), borderRadius: BorderRadius.circular(16)),
+                                                        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                                        decoration: BoxDecoration(color: StiloColors.background.withOpacity(0.7), borderRadius: BorderRadius.circular(16)),
                                                         child: Row(
                                                           mainAxisSize: MainAxisSize.min,
                                                           children: [
-                                                            const Icon(Icons.check_circle_rounded, color: Colors.greenAccent, size: 16),
-                                                            const SizedBox(width: 8),
-                                                            Text("Foto lista", style: GoogleFonts.inter(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+                                                            Icon(Icons.check_circle_rounded, color: Colors.greenAccent, size: 16),
+                                                            SizedBox(width: 8),
+                                                            Text("Foto lista", style: GoogleFonts.inter(color: StiloColors.text, fontSize: 12, fontWeight: FontWeight.bold)),
                                                           ],
                                                         ),
                                                       ),
@@ -1170,8 +1171,8 @@ class _VerificarRecepcionAlmacenModalState extends State<VerificarRecepcionAlmac
                                                     Positioned(
                                                       top: 4, right: 4,
                                                       child: IconButton(
-                                                        icon: const Icon(Icons.close_rounded, color: Colors.white, size: 18),
-                                                        style: IconButton.styleFrom(backgroundColor: Colors.black54, padding: const EdgeInsets.all(4)),
+                                                        icon: Icon(Icons.close_rounded, color: StiloColors.text, size: 18),
+                                                        style: IconButton.styleFrom(backgroundColor: StiloColors.background.withValues(alpha: .54), padding: EdgeInsets.all(4)),
                                                         onPressed: () => setState(() => item.fotoRuta = null),
                                                       ),
                                                     )
@@ -1190,8 +1191,8 @@ class _VerificarRecepcionAlmacenModalState extends State<VerificarRecepcionAlmac
                 ),
               ),
             ),
-            
-            const SizedBox(height: 16),
+
+            SizedBox(height: 16),
             SizedBox(
               width: double.infinity,
               height: 56,
@@ -1199,22 +1200,22 @@ class _VerificarRecepcionAlmacenModalState extends State<VerificarRecepcionAlmac
               child: ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: _itemsAVerificar.isEmpty ? Colors.blueAccent : Colors.amber,
-                  foregroundColor: _itemsAVerificar.isEmpty ? Colors.white : Colors.black,
+                  foregroundColor: _itemsAVerificar.isEmpty ? StiloColors.text : StiloColors.background,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 ),
-                icon: _isProcessing ? const SizedBox.shrink() : Icon(_itemsAVerificar.isEmpty ? Icons.check_circle : Icons.inventory_2),
+                icon: _isProcessing ? SizedBox.shrink() : Icon(_itemsAVerificar.isEmpty ? Icons.check_circle : Icons.inventory_2),
                 onPressed: _isProcessing ? null : (_itemsAVerificar.isEmpty ? _cerrarKitDirecto : _confirmarIngreso),
-                label: _isProcessing 
-                    ? const CircularProgressIndicator(color: Colors.black)
+                label: _isProcessing
+                    ? CircularProgressIndicator(color: StiloColors.background)
                     : Text(
-                        _itemsAVerificar.isEmpty ? "CERRAR KIT DIRECTO" : "CONFIRMAR RECEPCIÓN", 
-                        style: GoogleFonts.outfit(color: _itemsAVerificar.isEmpty ? Colors.white : Colors.black, fontWeight: FontWeight.bold, fontSize: 16)
+                        _itemsAVerificar.isEmpty ? "CERRAR KIT DIRECTO" : "CONFIRMAR RECEPCIÓN",
+                        style: GoogleFonts.outfit(color: _itemsAVerificar.isEmpty ? StiloColors.text : StiloColors.background, fontWeight: FontWeight.bold, fontSize: 16)
                       ),
               ),
             )
           ],
         ),
       ),
-    ); 
+    );
   }
 }

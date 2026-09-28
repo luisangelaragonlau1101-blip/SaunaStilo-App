@@ -1,3 +1,4 @@
+import '../presentation/appearance.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -10,7 +11,7 @@ class ActividadesTrabajadorScreen extends StatelessWidget {
   final String trabajadorId;
   final String tituloProyecto;
 
-  const ActividadesTrabajadorScreen({
+  ActividadesTrabajadorScreen({
     Key? key,
     required this.proyectoId,
     required this.trabajadorId,
@@ -20,29 +21,29 @@ class ActividadesTrabajadorScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF121212),
+      backgroundColor: StiloColors.surface,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF121212),
+        backgroundColor: StiloColors.surface,
         elevation: 0,
         title: Text(
           "DIAGNÓSTICO Y AVANCES",
-          style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 1.2, color: Colors.white),
+          style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 1.2, color: StiloColors.text),
         ),
         centerTitle: true,
-        iconTheme: const IconThemeData(color: Colors.white),
+        iconTheme: IconThemeData(color: StiloColors.text),
       ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             child: Text(
               tituloProyecto.toUpperCase(),
-              style: GoogleFonts.inter(color: const Color(0xFFFFDE21), fontSize: 14, fontWeight: FontWeight.w600, letterSpacing: 1.0),
+              style: GoogleFonts.inter(color: Color(0xFFFFDE21), fontSize: 14, fontWeight: FontWeight.w600, letterSpacing: 1.0),
             ),
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(20, 6, 20, 4),
+            padding: EdgeInsets.fromLTRB(20, 6, 20, 4),
             child: _buildEncabezado(),
           ),
           Expanded(
@@ -56,29 +57,29 @@ class ActividadesTrabajadorScreen extends StatelessWidget {
   Widget _buildEncabezado() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E1E1E),
+        color: StiloColors.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFFFDE21).withOpacity(0.35)),
+        border: Border.all(color: Color(0xFFFFDE21).withOpacity(0.35)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.add_a_photo_outlined, color: Color(0xFFFFDE21)),
-          const SizedBox(width: 12),
+          Icon(Icons.add_a_photo_outlined, color: Color(0xFFFFDE21)),
+          SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   'REPORTA TU AVANCE',
-                  style: GoogleFonts.inter(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w800),
+                  style: GoogleFonts.inter(color: StiloColors.text, fontSize: 13, fontWeight: FontWeight.w800),
                 ),
-                const SizedBox(height: 6),
+                SizedBox(height: 6),
                 Text(
                   'Abre cada tarea para describir tu avance y subir todas las fotos o archivos que necesites. La evidencia es obligatoria para terminar.',
-                  style: GoogleFonts.inter(color: Colors.white60, fontSize: 12, height: 1.4),
+                  style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .60), fontSize: 12, height: 1.4),
                 ),
               ],
             ),
@@ -105,17 +106,17 @@ class ActividadesTrabajadorScreen extends StatelessWidget {
       builder: (context, snapshot) {
         if (snapshot.hasError) {
           return Center(
-            child: Text("ERROR LEYENDO FIREBASE:\n${snapshot.error}", style: const TextStyle(color: Colors.red)),
+            child: Text("ERROR LEYENDO FIREBASE:\n${snapshot.error}", style: TextStyle(color: Colors.red)),
           );
         }
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator(color: Color(0xFFFFDE21)));
+          return Center(child: CircularProgressIndicator(color: Color(0xFFFFDE21)));
         }
         if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
           return Center(
             child: Text(
               "No tienes actividades asignadas aún.",
-              style: GoogleFonts.inter(color: Colors.white38, fontSize: 16),
+              style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .38), fontSize: 16),
             ),
           );
         }
@@ -131,12 +132,12 @@ class ActividadesTrabajadorScreen extends StatelessWidget {
           });
 
         return ListView.builder(
-          padding: const EdgeInsets.all(20),
+          padding: EdgeInsets.all(20),
           itemCount: actividades.length,
           itemBuilder: (context, index) {
             final actividad = actividades[index];
             bool estaAtrasada = actividad.estatus != 'completado' && DateTime.now().isAfter(actividad.fechaTermino);
-            
+
             return _buildColorfulCard(context, actividad, estaAtrasada);
           },
         );
@@ -152,22 +153,22 @@ class ActividadesTrabajadorScreen extends StatelessWidget {
     final esHoy = _esHoy(actividad.fechaAsignada);
 
     if (actividad.estatus == 'completado') {
-      gradientColors = [const Color(0xFF0F766E), const Color(0xFF064E3B)]; // Verdes profundos
+      gradientColors = [StiloColors.border, StiloColors.surface]; // Verdes profundos
       iconColor = Colors.tealAccent;
     } else if (estaAtrasada) {
-      gradientColors = [const Color(0xFF991B1B), const Color(0xFF7F1D1D)]; // Rojos profundos
+      gradientColors = [Color(0xFF991B1B), Color(0xFF7F1D1D)]; // Rojos profundos
       iconColor = Colors.redAccent;
       badgeText = 'ATRASADO';
     } else if (actividad.estatus == 'en_progreso') {
-      gradientColors = [const Color(0xFF1E3A8A), const Color(0xFF312E81)]; // Azules nocturnos
+      gradientColors = [Color(0xFF1E3A8A), Color(0xFF312E81)]; // Azules nocturnos
       iconColor = Colors.cyanAccent;
     } else {
-      gradientColors = [const Color(0xFFB45309), const Color(0xFF78350F)]; // Dorados/Ocres
-      iconColor = const Color(0xFFFFDE21);
+      gradientColors = [Color(0xFFB45309), StiloColors.border]; // Dorados/Ocres
+      iconColor = Color(0xFFFFDE21);
     }
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
         gradient: LinearGradient(
@@ -179,7 +180,7 @@ class ActividadesTrabajadorScreen extends StatelessWidget {
           BoxShadow(
             color: gradientColors.last.withOpacity(0.4),
             blurRadius: 8,
-            offset: const Offset(0, 4),
+            offset: Offset(0, 4),
           )
         ],
       ),
@@ -196,7 +197,7 @@ class ActividadesTrabajadorScreen extends StatelessWidget {
             );
           },
           child: Padding(
-            padding: const EdgeInsets.all(20),
+            padding: EdgeInsets.all(20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -207,14 +208,14 @@ class ActividadesTrabajadorScreen extends StatelessWidget {
                     Expanded(
                       child: Text(
                         actividad.titulo.toUpperCase(),
-                        style: GoogleFonts.inter(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w800),
+                        style: GoogleFonts.inter(color: StiloColors.text, fontSize: 16, fontWeight: FontWeight.w800),
                       ),
                     ),
                     Container(
-                      margin: const EdgeInsets.only(left: 12),
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      margin: EdgeInsets.only(left: 12),
+                      padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                       decoration: BoxDecoration(
-                        color: Colors.black38,
+                        color: StiloColors.background.withValues(alpha: .38),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: iconColor.withOpacity(0.5)),
                       ),
@@ -225,54 +226,54 @@ class ActividadesTrabajadorScreen extends StatelessWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: 16),
                 Row(
                   children: [
-                    const Icon(Icons.event_available_outlined, color: Colors.white70, size: 18),
-                    const SizedBox(width: 10),
+                    Icon(Icons.event_available_outlined, color: StiloColors.text.withValues(alpha: .70), size: 18),
+                    SizedBox(width: 10),
                     Expanded(
                       child: Text(
                         "Tarea asignada: ${DateFormat('dd MMM yyyy').format(actividad.fechaAsignada)}",
-                        style: GoogleFonts.inter(color: Colors.white.withOpacity(0.9), fontSize: 13, fontWeight: FontWeight.w600),
+                        style: GoogleFonts.inter(color: StiloColors.text.withOpacity(0.9), fontSize: 13, fontWeight: FontWeight.w600),
                       ),
                     ),
                     if (esHoy)
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                        padding: EdgeInsets.symmetric(horizontal: 9, vertical: 4),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFFFDE21),
+                          color: Color(0xFFFFDE21),
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Text(
                           'HOY',
-                          style: GoogleFonts.inter(color: Colors.black87, fontSize: 10, fontWeight: FontWeight.w900),
+                          style: GoogleFonts.inter(color: StiloColors.background.withValues(alpha: .87), fontSize: 10, fontWeight: FontWeight.w900),
                         ),
                       ),
                   ],
                 ),
-                const SizedBox(height: 12),
+                SizedBox(height: 12),
                 Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: const BoxDecoration(
-                        color: Colors.black26,
+                      padding: EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: StiloColors.background.withValues(alpha: .26),
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
                         estaAtrasada ? Icons.timer_off_outlined : Icons.access_time_filled,
-                        color: Colors.white70,
+                        color: StiloColors.text.withValues(alpha: .70),
                         size: 16,
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    SizedBox(width: 12),
                     Expanded(
                       child: Text(
                         estaAtrasada
                             ? "Venció el: ${DateFormat('dd MMM yyyy - HH:mm').format(actividad.fechaTermino)}"
                             : "Límite: ${DateFormat('dd MMM yyyy - HH:mm').format(actividad.fechaTermino)}",
                         style: GoogleFonts.inter(
-                          color: Colors.white.withOpacity(0.9),
+                          color: StiloColors.text.withOpacity(0.9),
                           fontSize: 13,
                           fontWeight: FontWeight.w500,
                         ),
@@ -280,16 +281,16 @@ class ActividadesTrabajadorScreen extends StatelessWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
+                SizedBox(height: 12),
                 Row(
                   children: [
-                    const Icon(Icons.attach_file, color: Colors.white54, size: 17),
-                    const SizedBox(width: 8),
+                    Icon(Icons.attach_file, color: StiloColors.text.withValues(alpha: .54), size: 17),
+                    SizedBox(width: 8),
                     Text(
                       actividad.totalEvidencias == 1
                           ? '1 evidencia adjunta'
                           : '${actividad.totalEvidencias} evidencias adjuntas',
-                      style: GoogleFonts.inter(color: Colors.white70, fontSize: 12, fontStyle: FontStyle.italic),
+                      style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .70), fontSize: 12, fontStyle: FontStyle.italic),
                     ),
                   ],
                 ),

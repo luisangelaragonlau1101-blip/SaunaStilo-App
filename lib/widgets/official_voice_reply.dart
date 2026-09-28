@@ -1,3 +1,4 @@
+import '../presentation/appearance.dart';
 import 'dart:async';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
@@ -30,9 +31,9 @@ class _OfficialVoiceReplyState extends State<OfficialVoiceReply> {
     setState(() {_busy = true; _error = null;});
     try {
       final status = await _voice.status();
-      if (!status.enabled) throw const CustomVoiceException('La voz oficial aún no está activada. Administración debe crearla en Estudio de voz. La IA puede seguir respondiendo normalmente.');
+      if (!status.enabled) throw CustomVoiceException('La voz oficial aún no está activada. Administración debe crearla en Estudio de voz. La IA puede seguir respondiendo normalmente.');
       final result = await _voice.synthesize(_parts[part]);
-      if (result == null) throw const CustomVoiceException('No se generó la voz personalizada. Revisa la activación del servicio; no se sustituirá por otra voz sin avisarte.');
+      if (result == null) throw CustomVoiceException('No se generó la voz personalizada. Revisa la activación del servicio; no se sustituirá por otra voz sin avisarte.');
       if (mounted && epoch == _generation) setState(() => _audio[part] = result);
     } catch (e) {if (mounted && epoch == _generation) setState(() => _error = e is CustomVoiceException ? e.message : 'No se pudo generar el audio. Revisa el servicio de voz y vuelve a intentar.');}
     finally {if (mounted && epoch == _generation) setState(() => _busy = false);}
@@ -50,18 +51,18 @@ class _OfficialVoiceReplyState extends State<OfficialVoiceReply> {
   }
   void _move(int index) {++_generation; unawaited(_player.stop()); setState(() {_part = index; _playing = false; _error = null;});}
   @override
-  Widget build(BuildContext context) => SafeArea(child: SingleChildScrollView(padding: const EdgeInsets.all(24), child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-    Row(children: [const Expanded(child: Text('Voz oficial · Sauna Stilo', style: TextStyle(fontSize: 21, fontWeight: FontWeight.w800))), IconButton(tooltip: 'Cerrar voz', onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close_rounded))]),
-    const Text('Voz sintética autorizada por Ángel. El audio se genera únicamente al tocar el botón; requiere servicio activo.', style: TextStyle(color: Colors.white60, height: 1.4)),
-    const SizedBox(height: 16),
-    if (_parts.isNotEmpty) Text(_parts[_part], style: const TextStyle(height: 1.5)),
-    if (_parts.length > 1) Row(children: [IconButton(tooltip: 'Parte anterior', onPressed: _busy || _part == 0 ? null : () => _move(_part - 1), icon: const Icon(Icons.chevron_left)), Expanded(child: Text('Parte ${_part + 1} de ${_parts.length}', textAlign: TextAlign.center)), IconButton(tooltip: 'Parte siguiente', onPressed: _busy || _part == _parts.length - 1 ? null : () => _move(_part + 1), icon: const Icon(Icons.chevron_right))]),
-    if (_error != null) Padding(padding: const EdgeInsets.symmetric(vertical: 12), child: Text(_error!, style: const TextStyle(color: Colors.orangeAccent))),
-    const SizedBox(height: 16),
-    if (_busy) const Center(child: CircularProgressIndicator())
-    else if (_audio.containsKey(_part)) FilledButton.icon(onPressed: _listen, icon: Icon(_playing ? Icons.pause_rounded : Icons.play_arrow_rounded), label: const Text('Escuchar con voz de Ángel'))
-    else FilledButton.icon(onPressed: _parts.isEmpty ? null : _generate, icon: const Icon(Icons.graphic_eq_rounded), label: const Text('Generar con voz oficial')),
-    const SizedBox(height: 8), const Text('No se utiliza ni comparte tu sesión con el sitio de la guía.', style: TextStyle(color: Colors.white38, fontSize: 11)),
+  Widget build(BuildContext context) => SafeArea(child: SingleChildScrollView(padding: EdgeInsets.all(24), child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+    Row(children: [Expanded(child: Text('Voz oficial · Sauna Stilo', style: TextStyle(fontSize: 21, fontWeight: FontWeight.w800))), IconButton(tooltip: 'Cerrar voz', onPressed: () => Navigator.pop(context), icon: Icon(Icons.close_rounded))]),
+    Text('Voz sintética autorizada por Ángel. El audio se genera únicamente al tocar el botón; requiere servicio activo.', style: TextStyle(color: StiloColors.text.withValues(alpha: .60), height: 1.4)),
+    SizedBox(height: 16),
+    if (_parts.isNotEmpty) Text(_parts[_part], style: TextStyle(height: 1.5)),
+    if (_parts.length > 1) Row(children: [IconButton(tooltip: 'Parte anterior', onPressed: _busy || _part == 0 ? null : () => _move(_part - 1), icon: Icon(Icons.chevron_left)), Expanded(child: Text('Parte ${_part + 1} de ${_parts.length}', textAlign: TextAlign.center)), IconButton(tooltip: 'Parte siguiente', onPressed: _busy || _part == _parts.length - 1 ? null : () => _move(_part + 1), icon: Icon(Icons.chevron_right))]),
+    if (_error != null) Padding(padding: EdgeInsets.symmetric(vertical: 12), child: Text(_error!, style: TextStyle(color: Colors.orangeAccent))),
+    SizedBox(height: 16),
+    if (_busy) Center(child: CircularProgressIndicator())
+    else if (_audio.containsKey(_part)) FilledButton.icon(onPressed: _listen, icon: Icon(_playing ? Icons.pause_rounded : Icons.play_arrow_rounded), label: Text('Escuchar con voz de Ángel'))
+    else FilledButton.icon(onPressed: _parts.isEmpty ? null : _generate, icon: Icon(Icons.graphic_eq_rounded), label: Text('Generar con voz oficial')),
+    SizedBox(height: 8), Text('No se utiliza ni comparte tu sesión con el sitio de la guía.', style: TextStyle(color: StiloColors.text.withValues(alpha: .38), fontSize: 11)),
   ])));
 }
 List<String> splitVoiceReply(String text) {

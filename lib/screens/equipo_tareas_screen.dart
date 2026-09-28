@@ -1,3 +1,5 @@
+import '../presentation/appearance.dart';
+export 'work_workspace_screen.dart' show EquipoTareasScreen;
 import 'project_workspace_screen.dart';
 import 'daily_tasks_screen.dart';
 import 'extra_work_screen.dart';
@@ -15,13 +17,14 @@ import 'modal_asignar_actividades.dart';
 import 'trabajador_modal_detalle_actividad.dart' as worker;
 import 'admin_modal_detalle_actividad.dart' as admin;
 
-class EquipoTareasScreen extends StatefulWidget {
+class ProjectActivitiesScreen extends StatefulWidget {
   final UserModel usuario;
-  const EquipoTareasScreen({super.key, required this.usuario});
+  final bool embedded;
+  const ProjectActivitiesScreen({super.key, required this.usuario, this.embedded = false});
   @override
-  State<EquipoTareasScreen> createState() => _EquipoTareasScreenState();
+  State<ProjectActivitiesScreen> createState() => _ProjectActivitiesScreenState();
 }
-class _EquipoTareasScreenState extends State<EquipoTareasScreen> {
+class _ProjectActivitiesScreenState extends State<ProjectActivitiesScreen> {
   String? _proyectoId;
   String _proyectoTitulo = 'Mis tareas';
   bool _soloPendientes = true;
@@ -30,16 +33,7 @@ class _EquipoTareasScreenState extends State<EquipoTareasScreen> {
 
   Future<void> _crearTarea() async {
     if (!_puedeAsignar) return;
-    final scope = await showModalBottomSheet<String>(context: context, isScrollControlled: true,
-      backgroundColor: const Color(0xFF111012), shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(30))),
-      builder: (sheet) => TaskCreationChoice(admin: _puedeAsignar,
-        onGeneral: () => Navigator.pop(sheet, 'general'), onProject: () => Navigator.pop(sheet, 'project')));
-    if (!mounted || scope == null) return;
-    if (scope == 'project') { await _seleccionarProyecto(crear: true); return; }
-    setState(() { _proyectoId = null; _proyectoTitulo = 'Tareas del equipo'; });
-    final day = await showModalBottomSheet<String>(context: context, isScrollControlled: true, backgroundColor: Colors.transparent,
-      builder: (_) => ModalAsignarActividad(proyectoId: '', rolUsuario: widget.usuario.rol));
-    if (mounted && day != null) await Navigator.push(context, MaterialPageRoute<void>(builder: (_) => DailyTasksScreen(user: widget.usuario, day: DateTime(int.parse(day.substring(0, 4)), int.parse(day.substring(4, 6)), int.parse(day.substring(6, 8))))));
+    await _seleccionarProyecto(crear: true);
   }
   Future<void> _seleccionarProyecto({bool crear = false}) async {
     final proyecto = await elegirProyecto(context, widget.usuario,
@@ -53,14 +47,14 @@ class _EquipoTareasScreenState extends State<EquipoTareasScreen> {
   void _abrir(ActividadModel tarea) {
     if (_admin || tarea.asignadoATrabajadorId == widget.usuario.id) {
       showModalBottomSheet<void>(context: context, isScrollControlled: true,
-        backgroundColor: Colors.transparent, builder: (_) => _admin
+        backgroundColor: Colors.transparent, builder: (_) => _admin && tarea.asignadoATrabajadorId != widget.usuario.id
           ? admin.ModalDetalleActividad(actividad: tarea)
           : worker.ModalDetalleActividad(actividad: tarea));
     } else {
       showDialog<void>(context: context, builder: (context) => AlertDialog(
         title: Text(tarea.titulo), content: SingleChildScrollView(child: Text(
           '${tarea.descripcion}\n\nEstado: ${tarea.estatus}\nEvidencias: ${tarea.totalEvidencias}\nEntrega: ${DateFormat('dd/MM HH:mm').format(tarea.fechaTermino)}\n\nLos avances los registra la persona asignada.')),
-        actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cerrar'))]));
+        actions: [TextButton(onPressed: () => Navigator.pop(context), child: Text('Cerrar'))]));
     }
   }
   @override
@@ -68,33 +62,31 @@ class _EquipoTareasScreenState extends State<EquipoTareasScreen> {
     Query<Map<String, dynamic>> query = FirebaseFirestore.instance.collection('actividades');
     if (_proyectoId != null) { query = query.where('proyectoId', isEqualTo: _proyectoId); }
     else if (!_admin) { query = query.where('asignadoATrabajadorId', isEqualTo: widget.usuario.id); }
-    return Scaffold(backgroundColor: Colors.black,
-      appBar: AppBar(title: const Text('Proyectos y tareas')),
+    return Scaffold(backgroundColor: StiloColors.background,
+      appBar: widget.embedded ? null : AppBar(title: Text('Actividades de proyectos')),
       body: Column(children: [
-        Padding(padding: const EdgeInsets.fromLTRB(16, 12, 16, 0), child: SizedBox(width: double.infinity, child: FilledButton.icon(onPressed: () => Navigator.push(context, MaterialPageRoute<void>(builder: (_) => DailyTasksScreen(user: widget.usuario))), icon: const Icon(Icons.today), label: const Text('Tareas del día y evidencias')))),
-        Padding(padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10), child: Wrap(spacing: 8, runSpacing: 6, children: [
-          ActionChip(avatar: const Icon(Icons.workspaces_rounded, size: 18), label: const Text('Proyectos y avance'), onPressed: () => Navigator.push(context, MaterialPageRoute<void>(builder: (_) => ProjectWorkspaceScreen(usuario: widget.usuario)))),
-          ActionChip(avatar: const Icon(Icons.folder_open_rounded, size: 18), label: Text(_proyectoId == null ? 'Por proyecto' : _proyectoTitulo), onPressed: _seleccionarProyecto),
-          if (_proyectoId != null) ActionChip(label: const Text('Ver mis tareas'), onPressed: () => setState(() => _proyectoId = null)),
-          FilterChip(label: const Text('Pendientes'), selected: _soloPendientes, onSelected: (v) => setState(() => _soloPendientes = v)),
+        Padding(padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10), child: Wrap(spacing: 8, runSpacing: 6, children: [
+          ActionChip(avatar: Icon(Icons.folder_open_rounded, size: 18), label: Text(_proyectoId == null ? 'Por proyecto' : _proyectoTitulo), onPressed: _seleccionarProyecto),
+          if (_proyectoId != null) ActionChip(label: Text('Ver mis tareas'), onPressed: () => setState(() => _proyectoId = null)),
+          FilterChip(label: Text('Pendientes'), selected: _soloPendientes, onSelected: (v) => setState(() => _soloPendientes = v)),
         ])),
-        if (_puedeAsignar) Padding(padding: const EdgeInsets.fromLTRB(16, 0, 16, 12), child: SizedBox(width: double.infinity,
-          child: FilledButton.icon(onPressed: _crearTarea, icon: const Icon(Icons.add_rounded), label: const Text('Crear actividad y asignar tarea')))),
-        if (!_puedeAsignar) Padding(padding: const EdgeInsets.fromLTRB(16, 0, 16, 10), child: Column(children: [const Text('Completa tus asignaciones y añade evidencias. No puedes cambiar sus instrucciones ni asignarte tareas.', style: TextStyle(color: Colors.white60, fontSize: 12)), TextButton.icon(onPressed: () => Navigator.push(context, MaterialPageRoute<void>(builder: (_) => ExtraWorkScreen(user: widget.usuario))), icon: const Icon(Icons.auto_awesome_rounded, color: Color(0xFFFFB876)), label: const Text('Reportar trabajo extra ya realizado'))])),
-        if (_proyectoId != null) Padding(padding: const EdgeInsets.symmetric(horizontal: 16), child: ProjectProgressCard(projectId: _proyectoId!)),
+        if (_puedeAsignar) Padding(padding: EdgeInsets.fromLTRB(16, 0, 16, 12), child: SizedBox(width: double.infinity,
+          child: FilledButton.icon(onPressed: _crearTarea, icon: Icon(Icons.add_rounded), label: Text('Asignar actividad de proyecto')))),
+        if (!_puedeAsignar) Padding(padding: EdgeInsets.fromLTRB(16, 0, 16, 10), child: Column(children: [Text('Completa tus asignaciones y añade evidencias. No puedes cambiar sus instrucciones ni asignarte tareas.', style: TextStyle(color: StiloColors.text.withValues(alpha: .60), fontSize: 12)), TextButton.icon(onPressed: () => Navigator.push(context, MaterialPageRoute<void>(builder: (_) => ExtraWorkScreen(user: widget.usuario))), icon: Icon(Icons.auto_awesome_rounded, color: Color(0xFFFFB876)), label: Text('Reportar trabajo extra ya realizado'))])),
+        if (_proyectoId != null) Padding(padding: EdgeInsets.symmetric(horizontal: 16), child: ProjectProgressCard(projectId: _proyectoId!)),
         Expanded(child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(stream: query.snapshots(includeMetadataChanges: true), builder: (context, snapshot) {
-          if (snapshot.hasError) return const Center(child: Padding(padding: EdgeInsets.all(24), child: Text('No pudimos consultar estas tareas. Revisa tu conexión o pide a Administración que confirme tu asignación al proyecto.')));
-          if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+          if (snapshot.hasError) return Center(child: Padding(padding: EdgeInsets.all(24), child: Text('No pudimos consultar estas tareas. Revisa tu conexión o pide a Administración que confirme tu asignación al proyecto.')));
+          if (!snapshot.hasData) return Center(child: CircularProgressIndicator());
           final tareas = snapshot.data!.docs.map((d) => ActividadModel.fromJson(d.data(), d.id)).where((t) => !_soloPendientes || t.estatus != 'completado').toList()
             ..sort((a,b) => a.fechaTermino.compareTo(b.fechaTermino));
           if (tareas.isEmpty) return Center(child: Text(snapshot.data!.metadata.isFromCache ? 'Sin tareas guardadas en este dispositivo. Conecta para consultar el servidor.' : 'No hay tareas en esta vista.'));
-          return Column(children: [OfflineDataBadge(cached: snapshot.data!.metadata.isFromCache, pending: snapshot.data!.metadata.hasPendingWrites), Expanded(child: ListView.builder(padding: const EdgeInsets.fromLTRB(12, 0, 12, 24), itemCount: tareas.length, itemBuilder: (context, i) {
+          return Column(children: [OfflineDataBadge(cached: snapshot.data!.metadata.isFromCache, pending: snapshot.data!.metadata.hasPendingWrites), Expanded(child: ListView.builder(padding: EdgeInsets.fromLTRB(12, 0, 12, 24), itemCount: tareas.length, itemBuilder: (context, i) {
             final t = tareas[i];
-            return Card(child: ListTile(contentPadding: const EdgeInsets.all(16),
-              leading: Icon(t.estatus == 'completado' ? Icons.task_alt_rounded : Icons.assignment_outlined, color: const Color(0xFFB7FF2A)),
-              title: Text(t.titulo, style: const TextStyle(fontWeight: FontWeight.w700)),
+            return Card(child: ListTile(contentPadding: EdgeInsets.all(16),
+              leading: Icon(t.estatus == 'completado' ? Icons.task_alt_rounded : Icons.assignment_outlined, color: StiloColors.accent),
+              title: Text(t.titulo, style: TextStyle(fontWeight: FontWeight.w700)),
               subtitle: Text('${t.proyectoId.isEmpty ? 'General' : 'Proyecto'} · ${t.estatus} · ${t.totalEvidencias} evidencias\n${DateFormat('dd/MM · HH:mm').format(t.fechaTermino)}'),
-              trailing: const Icon(Icons.chevron_right_rounded), onTap: () => _abrir(t)));
+              trailing: Icon(Icons.chevron_right_rounded), onTap: () => _abrir(t)));
           }))]);
         })),
       ]));

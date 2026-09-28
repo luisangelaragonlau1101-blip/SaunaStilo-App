@@ -1,3 +1,4 @@
+import '../presentation/appearance.dart';
 import '../screens/engineering_screen.dart';
 import '../services/external_transfer.dart';
 import 'screen_security_guard.dart';
@@ -8,7 +9,7 @@ import '../models/user_model.dart';
 import '../services/team_profile_helpers.dart';
 import 'stilo_orbit.dart';
 
-const recognitionIcons = <String, IconData>{'calidad': Icons.verified_rounded, 'sauna': Icons.local_fire_department_rounded, 'equipo': Icons.groups_rounded, 'maestria': Icons.handyman_rounded, 'seguridad': Icons.shield_rounded, 'innovacion': Icons.auto_awesome_rounded, 'puntualidad': Icons.timer_rounded, 'lugar': Icons.location_on_rounded};
+final recognitionIcons = <String, IconData>{'calidad': Icons.verified_rounded, 'sauna': Icons.local_fire_department_rounded, 'equipo': Icons.groups_rounded, 'maestria': Icons.handyman_rounded, 'seguridad': Icons.shield_rounded, 'innovacion': Icons.auto_awesome_rounded, 'puntualidad': Icons.timer_rounded, 'lugar': Icons.location_on_rounded};
 
 class TeamProfileDetails extends StatelessWidget {
   final UserModel usuarioActual;
@@ -27,37 +28,37 @@ class TeamProfileDetails extends StatelessWidget {
       if (_admin) EngineeringAccessControl(administrator: usuarioActual, profileId: perfilId, profile: data),
       if (_admin) CapturePolicyControl(profileId: perfilId, enabled: data['bloquearCapturas'] == true),
       if (_admin && data['rol'] == AppRoles.trabajador) PersonalPanelControl(administrator: usuarioActual, profileId: perfilId, name: data['nombre']?.toString() ?? 'Personal', enabled: data['panelPersonal'] == true),
-      const SizedBox(height: 18),
+      SizedBox(height: 18),
       _section(context, 'LO QUE ME GUSTA', Icons.favorite_outline_rounded, () => _editInterests(context), editable: _admin || usuarioActual.id == perfilId),
-      const Text('Información opcional, compartida con el equipo.', style: TextStyle(color: Colors.white54, fontSize: 12)),
-      const SizedBox(height: 10),
-      if (interests.isEmpty && colors.isEmpty) const Text('Aún no ha agregado sus gustos.', style: TextStyle(color: Colors.white60)),
+      Text('Información opcional, compartida con el equipo.', style: TextStyle(color: StiloColors.text.withValues(alpha: .54), fontSize: 12)),
+      SizedBox(height: 10),
+      if (interests.isEmpty && colors.isEmpty) Text('Aún no ha agregado sus gustos.', style: TextStyle(color: StiloColors.text.withValues(alpha: .60))),
       Wrap(spacing: 7, runSpacing: 5, children: [
-        for (final interest in interests) Chip(avatar: const Icon(Icons.favorite_border, size: 16), label: Text(interest)),
-        for (final color in colors) Chip(avatar: const Icon(Icons.palette_outlined, size: 16), label: Text(color)),
+        for (final interest in interests) Chip(avatar: Icon(Icons.favorite_border, size: 16), label: Text(interest)),
+        for (final color in colors) Chip(avatar: Icon(Icons.palette_outlined, size: 16), label: Text(color)),
       ]),
-      const SizedBox(height: 16),
+      SizedBox(height: 16),
       _section(context, 'INSIGNIAS DE ADMINISTRACIÓN', Icons.workspace_premium_outlined, () => _add(context, 'insigniasAdmin', 'Otorgar insignia', 'Nombre de la insignia', 'Motivo del reconocimiento', badges.length), editable: _admin),
-      if (badges.isEmpty) const Text('Sin reconocimientos manuales todavía.', style: TextStyle(color: Colors.white60)),
+      if (badges.isEmpty) Text('Sin reconocimientos manuales todavía.', style: TextStyle(color: StiloColors.text.withValues(alpha: .60))),
       for (final b in badges) _entry(context, b, 'insigniasAdmin', Icons.verified_outlined),
-      const SizedBox(height: 16),
+      SizedBox(height: 16),
       _section(context, 'ESTADOS Y LUGARES DE INSTALACIÓN', Icons.location_on_outlined, () => _add(context, 'lugaresInstalacion', 'Agregar lugar', 'Estado y ciudad donde participó', 'Proyecto o participación (opcional)', places.length), editable: _admin),
-      if (places.isEmpty) const Text('Administración puede agregar la trayectoria de esta persona.', style: TextStyle(color: Colors.white60)),
+      if (places.isEmpty) Text('Administración puede agregar la trayectoria de esta persona.', style: TextStyle(color: StiloColors.text.withValues(alpha: .60))),
       for (final p in places) _entry(context, p, 'lugaresInstalacion', Icons.place_outlined),
     ]);
   }
   Widget _section(BuildContext context, String title, IconData icon, VoidCallback action, {required bool editable}) => Row(children: [
-    Icon(icon, size: 19, color: const Color(0xFFB7FF2A)), const SizedBox(width: 8),
-    Expanded(child: Text(title, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: .5))),
+    Icon(icon, size: 19, color: StiloColors.accent), SizedBox(width: 8),
+    Expanded(child: Text(title, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: .5))),
     if (editable) IconButton(tooltip: title == 'LO QUE ME GUSTA' ? 'Editar mis gustos' : 'Agregar', onPressed: action, icon: Icon(title == 'LO QUE ME GUSTA' ? Icons.edit_outlined : Icons.add_circle_outline)),
   ]);
-  Widget _entry(BuildContext context, Map item, String field, IconData icon) => Card(color: const Color(0xFF171217), child: ListTile(
+  Widget _entry(BuildContext context, Map item, String field, IconData icon) => Card(color: StiloColors.surface, child: ListTile(
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
     leading: StiloOrbitIcon(icon: recognitionIcons[item['icono']] ?? icon, color: stiloAccents[(item['acento'] is int && item['acento'] >= 0 ? item['acento'] as int : (item['nombre']?.toString().length ?? 0)) % stiloAccents.length], size: 44, active: true),
-    title: Text(item['nombre']?.toString() ?? '', style: const TextStyle(fontWeight: FontWeight.w700)),
+    title: Text(item['nombre']?.toString() ?? '', style: TextStyle(fontWeight: FontWeight.w700)),
     subtitle: (item['detalle']?.toString() ?? '').isEmpty ? null : Text(item['detalle'].toString()),
-    trailing: !_admin ? null : IconButton(tooltip: 'Quitar de este perfil', icon: const Icon(Icons.delete_outline, size: 20), onPressed: () async {
-      final yes = await showDialog<bool>(context: context, builder: (c) => AlertDialog(title: const Text('¿Quitar este registro?'), content: Text(item['nombre']?.toString() ?? ''), actions: [TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Cancelar')), FilledButton(onPressed: () => Navigator.pop(c, true), child: const Text('Quitar'))]));
+    trailing: !_admin ? null : IconButton(tooltip: 'Quitar de este perfil', icon: Icon(Icons.delete_outline, size: 20), onPressed: () async {
+      final yes = await showDialog<bool>(context: context, builder: (c) => AlertDialog(title: Text('¿Quitar este registro?'), content: Text(item['nombre']?.toString() ?? ''), actions: [TextButton(onPressed: () => Navigator.pop(c, false), child: Text('Cancelar')), FilledButton(onPressed: () => Navigator.pop(c, true), child: Text('Quitar'))]));
       if (yes == true && context.mounted) {
         try { await _ref.update({field: FieldValue.arrayRemove([Map<String, dynamic>.from(item)])}); }
         catch (_) { if (context.mounted) _notice(context, 'No se confirmó el cambio. Revisa tu conexión y los permisos de Administración.'); }
@@ -85,13 +86,13 @@ class TeamProfileDetails extends StatelessWidget {
         TextField(contextMenuBuilder: privacyTextMenu, controller: first, maxLength: firstMax, enabled: !busy, decoration: InputDecoration(labelText: firstLabel)),
         TextField(contextMenuBuilder: privacyTextMenu, controller: second, maxLength: secondMax, enabled: !busy, maxLines: 2, decoration: InputDecoration(labelText: secondLabel)),
         if (styleChanged != null) ...[
-          const Text('Elige el símbolo y su color', style: TextStyle(color: Colors.white70)),
+          Text('Elige el símbolo y su color', style: TextStyle(color: StiloColors.text.withValues(alpha: .70))),
           Wrap(spacing: 6, runSpacing: 8, children: [for (final e in recognitionIcons.entries) IconButton(tooltip: e.key, onPressed: busy ? null : () {update(() => chosenIcon = e.key); styleChanged(chosenIcon, chosenAccent);}, icon: StiloOrbitIcon(icon: e.value, color: stiloAccents[chosenAccent], size: 36, active: chosenIcon == e.key))]),
           Wrap(spacing: 8, children: List.generate(stiloAccents.length, (i) => IconButton(tooltip: 'Color ${i + 1}', onPressed: busy ? null : () {update(() => chosenAccent = i); styleChanged(chosenIcon, chosenAccent);}, icon: Icon(chosenAccent == i ? Icons.check_circle_rounded : Icons.circle, color: stiloAccents[i])))),
         ],
-        const Text('No incluyas domicilios de clientes, contraseñas ni información privada.', style: TextStyle(fontSize: 11, color: Colors.white54)),
-        if (error != null) Text(error!, style: const TextStyle(color: Colors.orangeAccent)),
-      ])), actions: [TextButton(onPressed: busy ? null : () => Navigator.pop(dialog), child: const Text('Cancelar')), FilledButton(onPressed: busy ? null : () async {
+        Text('No incluyas domicilios de clientes, contraseñas ni información privada.', style: TextStyle(fontSize: 11, color: StiloColors.text.withValues(alpha: .54))),
+        if (error != null) Text(error!, style: TextStyle(color: Colors.orangeAccent)),
+      ])), actions: [TextButton(onPressed: busy ? null : () => Navigator.pop(dialog), child: Text('Cancelar')), FilledButton(onPressed: busy ? null : () async {
         if (requiredFirst && first.text.trim().isEmpty) { update(() => error = 'Escribe un nombre.'); return; }
         update(() {busy = true; error = null;});
         try { await save(); if (dialog.mounted) Navigator.pop(dialog); }

@@ -1,3 +1,4 @@
+import '../presentation/appearance.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../services/attendance_gateway_service.dart';
@@ -22,7 +23,7 @@ class _AttendanceAdminSyncState extends State<AttendanceAdminSync> with WidgetsB
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     unawaited(_sync());
-    _timer = Timer.periodic(const Duration(seconds: 45), (_) => unawaited(_sync()));
+    _timer = Timer.periodic(Duration(seconds: 45), (_) => unawaited(_sync()));
   }
   @override
   void didUpdateWidget(covariant AttendanceAdminSync oldWidget) {
@@ -54,13 +55,13 @@ class _AttendanceAdminSyncState extends State<AttendanceAdminSync> with WidgetsB
   void dispose() { _timer?.cancel(); WidgetsBinding.instance.removeObserver(this); super.dispose(); }
   @override
   Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
     child: Row(children: [
-      if (_busy) const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+      if (_busy) SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
       else Icon(_error != null ? Icons.warning_amber_rounded : Icons.cloud_done_outlined, size: 20),
-      const SizedBox(width: 10),
-      Expanded(child: Text(_busy ? 'Actualizando entradas, comidas y salidas…' : _error ?? (_updatedDay == AttendanceGatewayService.dayKey(widget.day) ? 'Movimientos actualizados para revisión y nómina.' : 'Selecciona una fecha hasta hoy.'), style: TextStyle(fontSize: 12, color: _error != null ? Colors.orangeAccent : Colors.white70))),
-      IconButton(tooltip: 'Actualizar movimientos', onPressed: _busy ? null : _sync, icon: const Icon(Icons.refresh)),
+      SizedBox(width: 10),
+      Expanded(child: Text(_busy ? 'Actualizando entradas, comidas y salidas…' : _error ?? (_updatedDay == AttendanceGatewayService.dayKey(widget.day) ? 'Movimientos actualizados para revisión y nómina.' : 'Selecciona una fecha hasta hoy.'), style: TextStyle(fontSize: 12, color: _error != null ? Colors.orangeAccent : StiloColors.text.withValues(alpha: .70)))),
+      IconButton(tooltip: 'Actualizar movimientos', onPressed: _busy ? null : _sync, icon: Icon(Icons.refresh)),
     ]),
   );
 }

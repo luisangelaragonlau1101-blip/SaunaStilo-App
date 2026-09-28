@@ -1,3 +1,4 @@
+import '../presentation/appearance.dart';
 import '../widgets/team_profile_details.dart';
 import '../widgets/profile_networks.dart';
 import 'streak_overview_screen.dart';
@@ -28,10 +29,10 @@ class ConfiguracionScreen extends StatefulWidget {
 }
 
 class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
-  static const Color colorFondo = Color(0xFF000000);
-  static const Color colorTarjeta = Color(0xFF1E1E1E);
-  static const Color colorMorado = Color(0xFF8B5CF6);
-  
+  Color get colorFondo => StiloColors.background;
+  Color get colorTarjeta => StiloColors.surface;
+  Color get colorMorado => StiloColors.accent;
+
   bool _subiendoFoto = false;
   final _media = MediaUploadService();
 
@@ -49,18 +50,18 @@ class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
           contentType: _mimeImagen(pickedFile.name),
           folder: 'perfiles/${widget.usuario.id}',
         );
-        
+
         await FirebaseFirestore.instance.collection('usuarios').doc(widget.usuario.id).update({
           'fotoUrl': archivo.url,
           'fotoRuta': archivo.path,
         });
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Foto actualizada correctamente', style: TextStyle(color: Colors.white)), backgroundColor: Colors.green),
+          SnackBar(content: Text('Foto actualizada correctamente', style: TextStyle(color: StiloColors.text)), backgroundColor: Colors.green),
         );
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error al subir foto: $e', style: const TextStyle(color: Colors.white)), backgroundColor: Colors.redAccent),
+          SnackBar(content: Text('Error al subir foto: $e', style: TextStyle(color: StiloColors.text)), backgroundColor: Colors.redAccent),
         );
       } finally {
         setState(() => _subiendoFoto = false);
@@ -86,23 +87,23 @@ class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
         return AlertDialog(
           backgroundColor: colorTarjeta,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: Text('Editar Nombre', style: GoogleFonts.montserrat(color: Colors.white, fontWeight: FontWeight.bold)),
+          title: Text('Editar Nombre', style: GoogleFonts.montserrat(color: StiloColors.text, fontWeight: FontWeight.bold)),
           content: TextField(contextMenuBuilder: privacyTextMenu,
             controller: _nombreController,
-            style: const TextStyle(color: Colors.white),
+            style: TextStyle(color: StiloColors.text),
             cursorColor: colorMorado,
             textCapitalization: TextCapitalization.words,
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               hintText: "Escribe tu nombre",
-              hintStyle: TextStyle(color: Colors.white38),
+              hintStyle: TextStyle(color: StiloColors.text.withValues(alpha: .38)),
               focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: colorMorado)),
-              enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white24)),
+              enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: StiloColors.text.withValues(alpha: .24))),
             ),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: Text('Cancelar', style: GoogleFonts.inter(color: Colors.white54)),
+              child: Text('Cancelar', style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .54))),
             ),
             TextButton(
               onPressed: () async {
@@ -124,8 +125,8 @@ class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
 
   // 📅 LÓGICA PARA EDITAR CUMPLEAÑOS
   Future<void> _editarCumpleanos(DateTime? fechaActual) async {
-    DateTime initialDate = fechaActual ?? DateTime(2000); 
-    
+    DateTime initialDate = fechaActual ?? DateTime(2000);
+
     final DateTime? fechaSeleccionada = await showDatePicker(
       context: context,
       initialDate: initialDate,
@@ -134,11 +135,11 @@ class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
       builder: (context, child) {
         return Theme(
           data: ThemeData.dark().copyWith(
-            colorScheme: const ColorScheme.dark(
+            colorScheme: ColorScheme.dark(
               primary: colorMorado,
-              onPrimary: Colors.white,
+              onPrimary: StiloColors.text,
               surface: colorTarjeta,
-              onSurface: Colors.white,
+              onSurface: StiloColors.text,
             ),
           ),
           child: child!,
@@ -166,19 +167,19 @@ class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
             return AlertDialog(
               backgroundColor: colorTarjeta,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              title: Text('Cambiar Contraseña', style: GoogleFonts.montserrat(color: Colors.white, fontWeight: FontWeight.bold)),
+              title: Text('Cambiar Contraseña', style: GoogleFonts.montserrat(color: StiloColors.text, fontWeight: FontWeight.bold)),
               content: TextField(contextMenuBuilder: privacyTextMenu,
                 controller: _passwordController,
                 obscureText: _ocultarPassword,
-                style: const TextStyle(color: Colors.white),
+                style: TextStyle(color: StiloColors.text),
                 cursorColor: colorMorado,
                 decoration: InputDecoration(
                   hintText: "Nueva contraseña (mín. 8 caracteres)",
-                  hintStyle: const TextStyle(color: Colors.white38),
-                  focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: colorMorado)),
-                  enabledBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Colors.white24)),
+                  hintStyle: TextStyle(color: StiloColors.text.withValues(alpha: .38)),
+                  focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: colorMorado)),
+                  enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: StiloColors.text.withValues(alpha: .24))),
                   suffixIcon: IconButton(
-                    icon: Icon(_ocultarPassword ? Icons.visibility_off : Icons.visibility, color: Colors.white54),
+                    icon: Icon(_ocultarPassword ? Icons.visibility_off : Icons.visibility, color: StiloColors.text.withValues(alpha: .54)),
                     onPressed: () {
                       setStateDialog(() {
                         _ocultarPassword = !_ocultarPassword;
@@ -190,7 +191,7 @@ class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: Text('Cancelar', style: GoogleFonts.inter(color: Colors.white54)),
+                  child: Text('Cancelar', style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .54))),
                 ),
                 TextButton(
                   onPressed: () async {
@@ -198,21 +199,21 @@ class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
                     if (nuevaContrasena.length >= 8) {
                       try {
                         await FirebaseAuth.instance.currentUser!.updatePassword(nuevaContrasena);
-                        
+
                         if (mounted) {
                           Navigator.pop(context);
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Contraseña actualizada con éxito', style: TextStyle(color: Colors.white)), backgroundColor: Colors.green),
+                            SnackBar(content: Text('Contraseña actualizada con éxito', style: TextStyle(color: StiloColors.text)), backgroundColor: Colors.green),
                           );
                         }
                       } catch (e) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Error: Puede que necesites volver a iniciar sesión para hacer esto.', style: TextStyle(color: Colors.white)), backgroundColor: Colors.redAccent),
+                          SnackBar(content: Text('Error: Puede que necesites volver a iniciar sesión para hacer esto.', style: TextStyle(color: StiloColors.text)), backgroundColor: Colors.redAccent),
                         );
                       }
                     } else {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('La contraseña debe tener al menos 8 caracteres', style: TextStyle(color: Colors.white)), backgroundColor: Colors.orange),
+                        SnackBar(content: Text('La contraseña debe tener al menos 8 caracteres', style: TextStyle(color: StiloColors.text)), backgroundColor: Colors.orange),
                       );
                     }
                   },
@@ -231,24 +232,24 @@ class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
     return StreamBuilder<DocumentSnapshot>(
       stream: FirebaseFirestore.instance.collection('usuarios').doc(widget.usuario.id).snapshots(),
       builder: (context, snapshot) {
-        if (snapshot.hasError) return const Scaffold(body: Center(child: Text('No se pudo cargar tu perfil. Vuelve a abrirlo.')));
-        if (snapshot.hasData && !snapshot.data!.exists) return const Scaffold(body: Center(child: Text('Tu perfil no está disponible.')));
+        if (snapshot.hasError) return Scaffold(body: Center(child: Text('No se pudo cargar tu perfil. Vuelve a abrirlo.')));
+        if (snapshot.hasData && !snapshot.data!.exists) return Scaffold(body: Center(child: Text('Tu perfil no está disponible.')));
         if (!snapshot.hasData) {
-          return const Scaffold(backgroundColor: colorFondo, body: Center(child: CircularProgressIndicator(color: colorMorado)));
+          return Scaffold(backgroundColor: colorFondo, body: Center(child: CircularProgressIndicator(color: colorMorado)));
         }
 
         UserModel usuarioActualizado = UserModel.fromFirestore(snapshot.data!);
         Map<String, dynamic> rawData = snapshot.data!.data() as Map<String, dynamic>;
 
         final inicial = usuarioActualizado.nombre.isNotEmpty ? usuarioActualizado.nombre[0].toUpperCase() : 'U';
-        
+
         String mesRegistro = DateFormat('MMMM yyyy', 'es').format(usuarioActualizado.fechaRegistro);
         String fechaRegistroStr = "${mesRegistro[0].toUpperCase()}${mesRegistro.substring(1)}";
-        
-        String cumpleanosStr = usuarioActualizado.cumpleanos != null 
+
+        String cumpleanosStr = usuarioActualizado.cumpleanos != null
             ? "${usuarioActualizado.cumpleanos!.day.toString().padLeft(2, '0')} de ${DateFormat('MMMM', 'es').format(usuarioActualizado.cumpleanos!)}"
             : 'Toca para agregar';
-            
+
         if (usuarioActualizado.cumpleanos != null) {
           List<String> partes = cumpleanosStr.split(' de ');
           if (partes.length == 2) {
@@ -259,8 +260,8 @@ class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
         // --- EXTRACCIÓN DEL HORARIO ASIGNADO ---
         String horaEntrada = rawData['horaEntrada'] ?? 'Sin asignar';
         int tolerancia = rawData['toleranciaMinutos'] ?? 0;
-        String horarioTexto = horaEntrada == 'Sin asignar' 
-            ? 'Contacta al administrador' 
+        String horarioTexto = horaEntrada == 'Sin asignar'
+            ? 'Contacta al administrador'
             : '$horaEntrada hrs (Tolerancia: $tolerancia min)';
         bool isAdmin = usuarioActualizado.rol.toLowerCase() == 'admin';
 
@@ -271,24 +272,24 @@ class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Padding(
-                  padding: const EdgeInsets.all(20.0),
+                  padding: EdgeInsets.all(20.0),
                   child: Row(
                     children: [
                       if (!widget.embedded) Container(
                         decoration: BoxDecoration(
                           color: colorTarjeta,
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.white.withOpacity(0.1)),
+                          border: Border.all(color: StiloColors.text.withOpacity(0.1)),
                         ),
                         child: IconButton(
-                          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
+                          icon: Icon(Icons.arrow_back_ios_new_rounded, color: StiloColors.text, size: 20),
                           onPressed: () => Navigator.pop(context),
                         ),
                       ),
-                      const SizedBox(width: 16),
+                      SizedBox(width: 16),
                       Text(
                         "Perfil y Ajustes",
-                        style: GoogleFonts.montserrat(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
+                        style: GoogleFonts.montserrat(fontSize: 22, fontWeight: FontWeight.bold, color: StiloColors.text),
                       ),
                     ],
                   ),
@@ -296,17 +297,18 @@ class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
 
                 Expanded(
                   child: ListView(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    physics: const BouncingScrollPhysics(),
+                    padding: EdgeInsets.symmetric(horizontal: 20),
+                    physics: BouncingScrollPhysics(),
                     children: [
-                      ListTile(leading: const Icon(Icons.receipt_long_outlined), title: const Text('Nómina y registros'), subtitle: const Text('Horarios, bonos y descuentos guardados'), onTap: () => Navigator.push(context, MaterialPageRoute<void>(builder: (_) => isAdmin ? AdminAsistenciasScreen(nombreAdmin: usuarioActualizado.nombre) : PayrollRecordsScreen(user: usuarioActualizado)))),
-                      ListTile(leading: const Icon(Icons.local_fire_department_outlined), title: const Text('Rachas de asistencia'), onTap: () => Navigator.push(context, MaterialPageRoute<void>(builder: (_) => StreakOverviewScreen(user: usuarioActualizado)))),
-                      if (isAdmin) ListTile(leading: const Icon(Icons.military_tech_outlined), title: const Text('Otorgar insignias al equipo'), onTap: () => Navigator.push(context, MaterialPageRoute<void>(builder: (_) => PerfilesEquipoScreen(usuarioActual: usuarioActualizado)))),
+                      ListTile(leading: Icon(Icons.palette_outlined), title: Text('Personalizar mi panel'), subtitle: Text('Colores, vista sencilla y celebraciones'), onTap: () => Navigator.push(context, MaterialPageRoute<void>(builder: (_) => const AppearanceScreen()))),
+                      ListTile(leading: Icon(Icons.receipt_long_outlined), title: Text('Nómina y registros'), subtitle: Text('Horarios, bonos y descuentos guardados'), onTap: () => Navigator.push(context, MaterialPageRoute<void>(builder: (_) => isAdmin ? AdminAsistenciasScreen(nombreAdmin: usuarioActualizado.nombre) : PayrollRecordsScreen(user: usuarioActualizado)))),
+                      ListTile(leading: Icon(Icons.local_fire_department_outlined), title: Text('Rachas de asistencia'), onTap: () => Navigator.push(context, MaterialPageRoute<void>(builder: (_) => StreakOverviewScreen(user: usuarioActualizado)))),
+                      if (isAdmin) ListTile(leading: Icon(Icons.military_tech_outlined), title: Text('Otorgar insignias al equipo'), onTap: () => Navigator.push(context, MaterialPageRoute<void>(builder: (_) => PerfilesEquipoScreen(usuarioActual: usuarioActualizado)))),
                       // --- SECCIÓN DE PERFIL VISUAL ---
                       Center(
                         child: Column(
                           children: [
-                            const SizedBox(height: 10),
+                            SizedBox(height: 10),
                             GestureDetector(
                               onTap: _subiendoFoto ? null : _actualizarFotoPerfil,
                               child: Stack(
@@ -317,13 +319,13 @@ class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
                                     height: 110,
                                     decoration: BoxDecoration(
                                       shape: BoxShape.circle,
-                                      gradient: const LinearGradient(
-                                        colors: [Color(0xFF8B5CF6), Color(0xFF6D28D9)],
+                                      gradient: LinearGradient(
+                                        colors: [StiloColors.accent, Color(0xFF6D28D9)],
                                         begin: Alignment.topLeft,
                                         end: Alignment.bottomRight,
                                       ),
                                       boxShadow: [
-                                        BoxShadow(color: colorMorado.withOpacity(0.3), blurRadius: 15, offset: const Offset(0, 5)),
+                                        BoxShadow(color: colorMorado.withOpacity(0.3), blurRadius: 15, offset: Offset(0, 5)),
                                       ],
                                       image: usuarioActualizado.fotoUrl != null
                                           ? DecorationImage(
@@ -334,48 +336,48 @@ class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
                                     ),
                                     alignment: Alignment.center,
                                     child: _subiendoFoto
-                                        ? const CircularProgressIndicator(color: Colors.white)
+                                        ? CircularProgressIndicator(color: StiloColors.text)
                                         : (usuarioActualizado.fotoUrl == null
-                                            ? Text(inicial, style: GoogleFonts.montserrat(fontSize: 40, fontWeight: FontWeight.bold, color: Colors.white))
+                                            ? Text(inicial, style: GoogleFonts.montserrat(fontSize: 40, fontWeight: FontWeight.bold, color: StiloColors.text))
                                             : null),
                                   ),
                                   Container(
-                                    padding: const EdgeInsets.all(8),
+                                    padding: EdgeInsets.all(8),
                                     decoration: BoxDecoration(
                                       color: colorTarjeta,
                                       shape: BoxShape.circle,
-                                      border: Border.all(color: Colors.white24, width: 2),
+                                      border: Border.all(color: StiloColors.text.withValues(alpha: .24), width: 2),
                                     ),
-                                    child: const Icon(Icons.camera_alt_rounded, color: Colors.white, size: 16),
+                                    child: Icon(Icons.camera_alt_rounded, color: StiloColors.text, size: 16),
                                   ),
                                 ],
                               ),
                             ),
-                            const SizedBox(height: 16),
+                            SizedBox(height: 16),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Text(
                                   usuarioActualizado.nombre,
-                                  style: GoogleFonts.montserrat(fontSize: 24, fontWeight: FontWeight.w700, color: Colors.white),
+                                  style: GoogleFonts.montserrat(fontSize: 24, fontWeight: FontWeight.w700, color: StiloColors.text),
                                 ),
-                                const SizedBox(width: 8),
+                                SizedBox(width: 8),
                                 GestureDetector(
                                   onTap: () => _editarNombre(usuarioActualizado.nombre),
                                   child: Container(
-                                    padding: const EdgeInsets.all(4),
+                                    padding: EdgeInsets.all(4),
                                     decoration: BoxDecoration(
                                       color: colorMorado.withOpacity(0.2),
                                       shape: BoxShape.circle,
                                     ),
-                                    child: const Icon(Icons.edit_rounded, color: colorMorado, size: 16),
+                                    child: Icon(Icons.edit_rounded, color: colorMorado, size: 16),
                                   ),
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 4),
+                            SizedBox(height: 4),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                               decoration: BoxDecoration(
                                 color: colorMorado.withOpacity(0.15),
                                 borderRadius: BorderRadius.circular(20),
@@ -388,23 +390,23 @@ class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
                           ],
                         ),
                       ),
-                      
-                      const SizedBox(height: 20),
+
+                      SizedBox(height: 20),
                       TeamProfileDetails(usuarioActual: usuarioActualizado, perfilId: usuarioActualizado.id, data: rawData),
                       ProfileNetworks(profileId: usuarioActualizado.id, editable: true, data: rawData['redesSociales']),
-                      const SizedBox(height: 40),
+                      SizedBox(height: 40),
 
                       Text(
                         "MI CUENTA",
-                        style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w800, color: Colors.white38, letterSpacing: 1.2),
+                        style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w800, color: StiloColors.text.withValues(alpha: .38), letterSpacing: 1.2),
                       ),
-                      const SizedBox(height: 12),
-                      
+                      SizedBox(height: 12),
+
                       Container(
                         decoration: BoxDecoration(
                           color: colorTarjeta,
                           borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: Colors.white.withOpacity(0.05)),
+                          border: Border.all(color: StiloColors.text.withOpacity(0.05)),
                         ),
                         child: Column(
                           children: [
@@ -417,7 +419,7 @@ class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
                             _buildFilaAjuste(
                               icono: Icons.cake_outlined,
                               titulo: "Cumpleaños",
-                              valor: cumpleanosStr, 
+                              valor: cumpleanosStr,
                               mostrarBorde: true,
                               editable: true,
                               onTap: () => _editarCumpleanos(usuarioActualizado.cumpleanos),
@@ -432,67 +434,67 @@ class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
                         ),
                       ),
 
-                      const SizedBox(height: 30),
+                      SizedBox(height: 30),
 
                       // --- NUEVA SECCIÓN: HORARIO ASIGNADO ---
                       Text(
                         "HORARIO Y ASISTENCIA",
-                        style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w800, color: Colors.white38, letterSpacing: 1.2),
+                        style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w800, color: StiloColors.text.withValues(alpha: .38), letterSpacing: 1.2),
                       ),
-                      const SizedBox(height: 12),
+                      SizedBox(height: 12),
                       Container(
                         decoration: BoxDecoration(
                           color: colorTarjeta,
                           borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: Colors.white.withOpacity(0.05)),
+                          border: Border.all(color: StiloColors.text.withOpacity(0.05)),
                         ),
                         child: _buildFilaAjuste(
                           icono: Icons.access_time_filled_rounded,
                           titulo: "Entrada y Tolerancia",
-                          valor: horarioTexto, 
+                          valor: horarioTexto,
                           mostrarBorde: false,
                           editable: isAdmin, // Solo si es admin puede editar su propio horario aquí
                           onTap: isAdmin ? () => mostrarModalHorario(context, usuarioActualizado.id, usuarioActualizado.nombre) : null,
                         ),
                       ),
 
-                      const SizedBox(height: 30),
+                      SizedBox(height: 30),
 
                       Text(
                         "SEGURIDAD",
-                        style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w800, color: Colors.white38, letterSpacing: 1.2),
+                        style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w800, color: StiloColors.text.withValues(alpha: .38), letterSpacing: 1.2),
                       ),
-                      const SizedBox(height: 12),
-                      
+                      SizedBox(height: 12),
+
                       Container(
                         decoration: BoxDecoration(
                           color: colorTarjeta,
                           borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: Colors.white.withOpacity(0.05)),
+                          border: Border.all(color: StiloColors.text.withOpacity(0.05)),
                         ),
                         child: _buildFilaAjuste(
                           icono: Icons.lock_outline_rounded,
                           titulo: "Contraseña",
-                          valor: "••••••••", 
+                          valor: "••••••••",
                           mostrarBorde: false,
                           editable: true,
                           onTap: _cambiarContrasena,
                         ),
                       ),
 
-                      const SizedBox(height: 30),
+                      SizedBox(height: 30),
 
                       if (isAdmin) ...[
                         Text(
                           "ADMINISTRACIÓN",
-                          style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w800, color: Colors.white38, letterSpacing: 1.2),
+                          style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w800, color: StiloColors.text.withValues(alpha: .38), letterSpacing: 1.2),
                         ),
-                        const SizedBox(height: 12),
+                        SizedBox(height: 12),
                         Container(
                           decoration: BoxDecoration(
                             color: colorTarjeta,
                             borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: Colors.white.withOpacity(0.05)),
+                            border: Border.all(color: StiloColors.text.withOpacity(0.05)),
                           ),
                           child: _buildFilaAjuste(
                             icono: Icons.manage_accounts_rounded,
@@ -510,15 +512,15 @@ class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
                             },
                           ),
                         ),
-                        const SizedBox(height: 30),
+                        SizedBox(height: 30),
                       ],
                       GestureDetector(
                         onTap: () async {
                           await AuthService().logout();
-                          Navigator.of(context).pop(); 
+                          Navigator.of(context).pop();
                         },
                         child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          padding: EdgeInsets.symmetric(vertical: 16),
                           decoration: BoxDecoration(
                             color: Colors.redAccent.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(16),
@@ -528,8 +530,8 @@ class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              const Icon(Icons.logout_rounded, color: Colors.redAccent, size: 20),
-                              const SizedBox(width: 8),
+                              Icon(Icons.logout_rounded, color: Colors.redAccent, size: 20),
+                              SizedBox(width: 8),
                               Text(
                                 "Cerrar Sesión",
                                 style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.redAccent),
@@ -538,7 +540,7 @@ class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
                           ),
                         ),
                       ),
-                      const SizedBox(height: 40),
+                      SizedBox(height: 40),
                     ],
                   ),
                 ),
@@ -551,9 +553,9 @@ class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
   }
 
   Widget _buildFilaAjuste({
-    required IconData icono, 
-    required String titulo, 
-    required String valor, 
+    required IconData icono,
+    required String titulo,
+    required String valor,
     bool mostrarBorde = true,
     bool editable = false,
     VoidCallback? onTap,
@@ -562,16 +564,16 @@ class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
       onTap: onTap,
       borderRadius: BorderRadius.circular(20),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         decoration: BoxDecoration(
-          border: mostrarBorde 
-              ? Border(bottom: BorderSide(color: Colors.white.withOpacity(0.05), width: 1))
+          border: mostrarBorde
+              ? Border(bottom: BorderSide(color: StiloColors.text.withOpacity(0.05), width: 1))
               : null,
         ),
         child: Row(
           children: [
-            Icon(icono, color: Colors.white54, size: 22),
-            const SizedBox(width: 16),
+            Icon(icono, color: StiloColors.text.withValues(alpha: .54), size: 22),
+            SizedBox(width: 16),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -579,12 +581,12 @@ class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
                 children: [
                   Text(
                     titulo,
-                    style: GoogleFonts.inter(fontSize: 14, color: Colors.white, fontWeight: FontWeight.w500),
+                    style: GoogleFonts.inter(fontSize: 14, color: StiloColors.text, fontWeight: FontWeight.w500),
                   ),
-                  const SizedBox(height: 2),
+                  SizedBox(height: 2),
                   Text(
                     valor,
-                    style: GoogleFonts.inter(fontSize: 13, color: Colors.white38),
+                    style: GoogleFonts.inter(fontSize: 13, color: StiloColors.text.withValues(alpha: .38)),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -592,7 +594,7 @@ class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
               ),
             ),
             if (editable)
-              const Icon(Icons.edit_rounded, color: colorMorado, size: 18),
+              Icon(Icons.edit_rounded, color: colorMorado, size: 18),
           ],
         ),
       ),

@@ -1,3 +1,4 @@
+import '../presentation/appearance.dart';
 import '../services/external_transfer.dart';
 import 'configuracion_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -17,7 +18,7 @@ class PerfilSocialScreen extends StatelessWidget {
   final UserModel usuarioActual;
   final String perfilId;
 
-  const PerfilSocialScreen({
+  PerfilSocialScreen({
     super.key,
     required this.usuarioActual,
     required this.perfilId,
@@ -31,12 +32,12 @@ class PerfilSocialScreen extends StatelessWidget {
     return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
       stream: FirebaseFirestore.instance.collection('usuarios').doc(perfilId).snapshots(),
       builder: (context, perfilSnapshot) {
-        if (perfilSnapshot.hasError) return const Scaffold(body: Center(child: Text('No se pudo cargar el perfil. Revisa conexión y permisos.')));
-        if (perfilSnapshot.hasData && !perfilSnapshot.data!.exists) return const Scaffold(body: Center(child: Text('Este perfil ya no está disponible.')));
+        if (perfilSnapshot.hasError) return Scaffold(body: Center(child: Text('No se pudo cargar el perfil. Revisa conexión y permisos.')));
+        if (perfilSnapshot.hasData && !perfilSnapshot.data!.exists) return Scaffold(body: Center(child: Text('Este perfil ya no está disponible.')));
         final data = perfilSnapshot.data?.data();
         if (data == null) {
-          return const Scaffold(
-            backgroundColor: Colors.black,
+          return Scaffold(
+            backgroundColor: StiloColors.background,
             body: Center(child: CircularProgressIndicator()),
           );
         }
@@ -54,9 +55,9 @@ class PerfilSocialScreen extends StatelessWidget {
                   .where('asignadoATrabajadorId', isEqualTo: perfilId)
             : null;
         return Scaffold(
-          backgroundColor: Colors.black,
+          backgroundColor: StiloColors.background,
           appBar: AppBar(
-            backgroundColor: Colors.black,
+            backgroundColor: StiloColors.background,
             title: Text('PERFIL', style: GoogleFonts.montserrat(fontWeight: FontWeight.w900)),
           ),
           body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
@@ -65,7 +66,7 @@ class PerfilSocialScreen extends StatelessWidget {
               final actividades = actividadesSnapshot.data?.docs
                       .map((doc) => ActividadModel.fromJson(doc.data(), doc.id))
                       .toList(growable: false) ??
-                  const <ActividadModel>[];
+                  <ActividadModel>[];
               return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
                 stream: FirebaseFirestore.instance.collection('publicaciones_sociales').snapshots(),
                 builder: (context, publicacionesSnapshot) {
@@ -137,7 +138,7 @@ class PerfilSocialScreen extends StatelessWidget {
                     .collection('salidas_instalacion')
                     .where('usuarioId', isEqualTo: perfilId)
                     .snapshots()
-              : const Stream<QuerySnapshot<Map<String, dynamic>>>.empty(),
+              : Stream<QuerySnapshot<Map<String, dynamic>>>.empty(),
           builder: (context, salidasSnapshot) {
             final salidas = salidasSnapshot.data?.docs.toList(growable: true) ??
                 <QueryDocumentSnapshot<Map<String, dynamic>>>[];
@@ -157,7 +158,7 @@ class PerfilSocialScreen extends StatelessWidget {
             return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
               stream: usuarioActual.rol == AppRoles.admin
                   ? FirebaseFirestore.instance.collection('clientes').snapshots()
-                  : const Stream<QuerySnapshot<Map<String, dynamic>>>.empty(),
+                  : Stream<QuerySnapshot<Map<String, dynamic>>>.empty(),
               builder: (context, clientesSnapshot) {
                 final clientes = <String, Map<String, dynamic>>{
                   for (final doc in clientesSnapshot.data?.docs ??
@@ -165,35 +166,35 @@ class PerfilSocialScreen extends StatelessWidget {
                     doc.id: doc.data(),
                 };
                 return ListView(
-                  padding: const EdgeInsets.fromLTRB(18, 8, 18, 100),
+                  padding: EdgeInsets.fromLTRB(18, 8, 18, 100),
                   children: [
                     _cabecera(context, nombre, rol, foto, cumpleanos),
                     TeamProfileDetails(usuarioActual: usuarioActual, perfilId: perfilId, data: perfil),
                     ProfileNetworks(profileId: perfilId, editable: _esPropio, data: perfil['redesSociales']),
-                    const SizedBox(height: 14),
+                    SizedBox(height: 14),
                     _metricas(actividades, posts.length, totalInstalaciones),
-                    const SizedBox(height: 20),
+                    SizedBox(height: 20),
                     _insignias(actividades, totalInstalaciones),
-                    const SizedBox(height: 22),
+                    SizedBox(height: 22),
                     _instalaciones(
                       proyectos,
                       salidas,
                       clientes,
                       actividades,
                     ),
-                    const SizedBox(height: 20),
+                    SizedBox(height: 20),
                     _sugerencias(context, nombre),
-                    const SizedBox(height: 22),
+                    SizedBox(height: 22),
                     Text(
                       'AVANCES PUBLICADOS',
                       style: GoogleFonts.inter(
-                        color: Colors.white54,
+                        color: StiloColors.text.withValues(alpha: .54),
                         fontSize: 12,
                         fontWeight: FontWeight.w900,
                         letterSpacing: 1,
                       ),
                     ),
-                    const SizedBox(height: 10),
+                    SizedBox(height: 10),
                     if (posts.isEmpty)
                       _vacio('Aún no ha publicado avances.')
                     else
@@ -217,20 +218,20 @@ class PerfilSocialScreen extends StatelessWidget {
   ) {
     final social = SocialService();
     return Container(
-      padding: const EdgeInsets.all(22),
+      padding: EdgeInsets.all(22),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(26),
         gradient: LinearGradient(
           colors: rol == AppRoles.admin
-              ? const [Color(0xFF242424), Color(0xFF6D28D9)]
-              : const [Color(0xFF111827), Color(0xFF0F766E)],
+              ? [StiloColors.surface, Color(0xFF6D28D9)]
+              : [StiloColors.surface, StiloColors.border],
         ),
       ),
       child: Column(
         children: [
           CircleAvatar(
             radius: 48,
-            backgroundColor: Colors.white12,
+            backgroundColor: StiloColors.text.withValues(alpha: .12),
             backgroundImage: foto.isNotEmpty ? NetworkImage(foto) : null,
             child: foto.isEmpty
                 ? Text(
@@ -239,37 +240,37 @@ class PerfilSocialScreen extends StatelessWidget {
                   )
                 : null,
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
           Text(
             nombre,
             textAlign: TextAlign.center,
             style: GoogleFonts.montserrat(
-              color: Colors.white,
+              color: StiloColors.text,
               fontSize: 23,
               fontWeight: FontWeight.w900,
             ),
           ),
           Text(
             rol == AppRoles.admin ? 'ADMINISTRACIÓN SAUNA STILO' : rol.toUpperCase(),
-            style: GoogleFonts.inter(color: Colors.white60, fontSize: 11),
+            style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .60), fontSize: 11),
           ),
           if (cumpleanos != null) ...[
-            const SizedBox(height: 6),
+            SizedBox(height: 6),
             Text(
               '🎂 ${DateFormat('d MMMM', 'es').format(cumpleanos)}',
-              style: GoogleFonts.inter(color: Colors.white70, fontSize: 11),
+              style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .70), fontSize: 11),
             ),
           ],
           if (!_esPropio) ...[
-            const SizedBox(height: 15),
+            SizedBox(height: 15),
             StreamBuilder<bool>(
               stream: social.siguiendo(seguidorId: usuarioActual.id, seguidoId: perfilId),
               builder: (context, snapshot) {
                 final siguiendo = snapshot.data ?? false;
                 return FilledButton.icon(
                   style: FilledButton.styleFrom(
-                    backgroundColor: siguiendo ? Colors.white12 : Colors.white,
-                    foregroundColor: siguiendo ? Colors.white : Colors.black,
+                    backgroundColor: siguiendo ? StiloColors.text.withValues(alpha: .12) : StiloColors.text,
+                    foregroundColor: siguiendo ? StiloColors.text : StiloColors.background,
                   ),
                   onPressed: () => social.alternarSeguimiento(
                     seguidor: usuarioActual,
@@ -298,7 +299,7 @@ class PerfilSocialScreen extends StatelessWidget {
     return GridView.count(
       crossAxisCount: 2,
       shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
+      physics: NeverScrollableScrollPhysics(),
       mainAxisSpacing: 8,
       crossAxisSpacing: 8,
       childAspectRatio: 2.35,
@@ -313,20 +314,20 @@ class PerfilSocialScreen extends StatelessWidget {
 
   Widget _metrica(String titulo, int valor) {
     return Container(
-        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 5),
+        padding: EdgeInsets.symmetric(vertical: 14, horizontal: 5),
         decoration: BoxDecoration(
-          color: const Color(0xFF171717),
+          color: StiloColors.surface,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.white10),
+          border: Border.all(color: StiloColors.text.withValues(alpha: .10)),
         ),
         child: Column(
           children: [
             Text('$valor', style: GoogleFonts.montserrat(fontSize: 20, fontWeight: FontWeight.w900)),
-            const SizedBox(height: 3),
+            SizedBox(height: 3),
             Text(
               titulo,
               textAlign: TextAlign.center,
-              style: GoogleFonts.inter(color: Colors.white38, fontSize: 8, fontWeight: FontWeight.w800),
+              style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .38), fontSize: 8, fontWeight: FontWeight.w800),
             ),
           ],
         ),
@@ -342,19 +343,19 @@ class PerfilSocialScreen extends StatelessWidget {
     }).length;
     final logros = <(String, IconData, Color)>[];
     if (completadas.isNotEmpty) {
-      logros.add(('Primera misión', Icons.flag_rounded, const Color(0xFF00E676)));
+      logros.add(('Primera misión', Icons.flag_rounded, Color(0xFF00E676)));
     }
     if (completadas.length >= 5) {
-      logros.add(('Cumplidor', Icons.task_alt_rounded, const Color(0xFFFF729C)));
+      logros.add(('Cumplidor', Icons.task_alt_rounded, Color(0xFFFF729C)));
     }
     if (evidencias >= 10) {
-      logros.add(('Evidencia impecable', Icons.verified_rounded, const Color(0xFF8B5CF6)));
+      logros.add(('Evidencia impecable', Icons.verified_rounded, StiloColors.accent));
     }
     if (puntuales >= 5) {
-      logros.add(('Siempre a tiempo', Icons.timer_rounded, const Color(0xFFFF9800)));
+      logros.add(('Siempre a tiempo', Icons.timer_rounded, Color(0xFFFF9800)));
     }
     if (instalaciones >= 1) {
-      logros.add(('Instalador en campo', Icons.location_on_rounded, const Color(0xFF70E1D0)));
+      logros.add(('Instalador en campo', Icons.location_on_rounded, Color(0xFF70E1D0)));
     }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -362,13 +363,13 @@ class PerfilSocialScreen extends StatelessWidget {
         Text(
           'LOGROS E INSIGNIAS',
           style: GoogleFonts.inter(
-            color: Colors.white54,
+            color: StiloColors.text.withValues(alpha: .54),
             fontSize: 12,
             fontWeight: FontWeight.w900,
             letterSpacing: 1,
           ),
         ),
-        const SizedBox(height: 10),
+        SizedBox(height: 10),
         if (logros.isEmpty)
           _vacio('Completa tareas con evidencia para desbloquear insignias.')
         else
@@ -377,7 +378,7 @@ class PerfilSocialScreen extends StatelessWidget {
             runSpacing: 8,
             children: logros.map((logro) {
               return Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                padding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                 decoration: BoxDecoration(
                   color: logro.$3.withOpacity(.13),
                   borderRadius: BorderRadius.circular(28),
@@ -387,11 +388,11 @@ class PerfilSocialScreen extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     StiloOrbitIcon(icon: logro.$2, color: logro.$3, size: 34, active: true),
-                    const SizedBox(width: 6),
+                    SizedBox(width: 6),
                     Text(
                       logro.$1,
                       style: GoogleFonts.inter(
-                        color: Colors.white,
+                        color: StiloColors.text,
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
                       ),
@@ -419,13 +420,13 @@ class PerfilSocialScreen extends StatelessWidget {
         Text(
           'LUGARES E INSTALACIONES',
           style: GoogleFonts.inter(
-            color: Colors.white54,
+            color: StiloColors.text.withValues(alpha: .54),
             fontSize: 12,
             fontWeight: FontWeight.w900,
             letterSpacing: 1,
           ),
         ),
-        const SizedBox(height: 10),
+        SizedBox(height: 10),
         if (registros.isEmpty)
           _vacio('Todavía no hay instalaciones registradas en este perfil.')
         else
@@ -435,7 +436,7 @@ class PerfilSocialScreen extends StatelessWidget {
                 ? data['proyectoId']?.toString() ?? ''
                 : doc.id;
             final cliente = clientes[data['id_cliente']?.toString()] ??
-                const <String, dynamic>{};
+                <String, dynamic>{};
             final fechaRaw = usaRegistrosNuevos
                 ? data['fecha']
                 : data['fecha_salida_instalacion'];
@@ -453,12 +454,12 @@ class PerfilSocialScreen extends StatelessWidget {
               }
             }
             return Container(
-              margin: const EdgeInsets.only(bottom: 9),
-              padding: const EdgeInsets.all(14),
+              margin: EdgeInsets.only(bottom: 9),
+              padding: EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: const Color(0xFF171717),
+                color: StiloColors.surface,
                 borderRadius: BorderRadius.circular(17),
-                border: Border.all(color: const Color(0xFF70E1D0).withOpacity(.18)),
+                border: Border.all(color: Color(0xFF70E1D0).withOpacity(.18)),
               ),
               child: Row(
                 children: [
@@ -470,7 +471,7 @@ class PerfilSocialScreen extends StatelessWidget {
                         width: 48,
                         height: 48,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => const CircleAvatar(
+                        errorBuilder: (_, __, ___) => CircleAvatar(
                           backgroundColor: Color(0x1F70E1D0),
                           child: Icon(
                             Icons.location_on_rounded,
@@ -480,14 +481,14 @@ class PerfilSocialScreen extends StatelessWidget {
                       ),
                     )
                   else
-                    const CircleAvatar(
+                    CircleAvatar(
                       backgroundColor: Color(0x1F70E1D0),
                       child: Icon(
                         Icons.location_on_rounded,
                         color: Color(0xFF70E1D0),
                       ),
                     ),
-                  const SizedBox(width: 11),
+                  SizedBox(width: 11),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -498,7 +499,7 @@ class PerfilSocialScreen extends StatelessWidget {
                                   'Instalación Sauna Stilo'
                               : data['titulo']?.toString() ??
                                   'Instalación Sauna Stilo',
-                          style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w800),
+                          style: GoogleFonts.inter(color: StiloColors.text, fontWeight: FontWeight.w800),
                         ),
                         Text(
                           usaRegistrosNuevos
@@ -510,9 +511,9 @@ class PerfilSocialScreen extends StatelessWidget {
                               : direccion,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          style: GoogleFonts.inter(color: Colors.white54, fontSize: 11),
+                          style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .54), fontSize: 11),
                         ),
-                        Text(fecha, style: GoogleFonts.inter(color: Colors.white30, fontSize: 10)),
+                        Text(fecha, style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .30), fontSize: 10)),
                       ],
                     ),
                   ),
@@ -534,17 +535,17 @@ class PerfilSocialScreen extends StatelessWidget {
             Text(
               'SUGERENCIAS EN EL PERFIL',
               style: GoogleFonts.inter(
-                color: Colors.white54,
+                color: StiloColors.text.withValues(alpha: .54),
                 fontSize: 12,
                 fontWeight: FontWeight.w900,
                 letterSpacing: 1,
               ),
             ),
-            const Spacer(),
+            Spacer(),
             if (!_esPropio)
               IconButton(
                 onPressed: () => _escribirSugerencia(context, ref, nombrePerfil),
-                icon: const Icon(Icons.add_comment_rounded, color: Color(0xFF00E5FF)),
+                icon: Icon(Icons.add_comment_rounded, color: Color(0xFF00E5FF)),
               ),
           ],
         ),
@@ -564,17 +565,17 @@ class PerfilSocialScreen extends StatelessWidget {
                 final data = doc.data();
                 return ListTile(
                   contentPadding: EdgeInsets.zero,
-                  leading: const CircleAvatar(
-                    backgroundColor: Colors.white10,
-                    child: Icon(Icons.chat_bubble_outline_rounded, color: Colors.white54, size: 18),
+                  leading: CircleAvatar(
+                    backgroundColor: StiloColors.text.withValues(alpha: .10),
+                    child: Icon(Icons.chat_bubble_outline_rounded, color: StiloColors.text.withValues(alpha: .54), size: 18),
                   ),
                   title: Text(
                     data['autorNombre']?.toString() ?? 'Compañero',
-                    style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13),
+                    style: GoogleFonts.inter(color: StiloColors.text, fontWeight: FontWeight.w700, fontSize: 13),
                   ),
                   subtitle: Text(
                     data['texto']?.toString() ?? '',
-                    style: GoogleFonts.inter(color: Colors.white54, height: 1.35),
+                    style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .54), height: 1.35),
                   ),
                 );
               }).toList(growable: false),
@@ -594,16 +595,16 @@ class PerfilSocialScreen extends StatelessWidget {
     await showDialog<void>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        backgroundColor: const Color(0xFF171717),
+        backgroundColor: StiloColors.surface,
         title: Text('Sugerencia para $nombrePerfil'),
         content: TextField(contextMenuBuilder: privacyTextMenu,
           controller: controller,
           maxLines: 4,
           textCapitalization: TextCapitalization.sentences,
-          decoration: const InputDecoration(hintText: 'Escribe una sugerencia respetuosa y útil'),
+          decoration: InputDecoration(hintText: 'Escribe una sugerencia respetuosa y útil'),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Cancelar')),
+          TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text('Cancelar')),
           FilledButton(
             onPressed: () async {
               final texto = controller.text.trim();
@@ -630,7 +631,7 @@ class PerfilSocialScreen extends StatelessWidget {
               await batch.commit();
               if (dialogContext.mounted) Navigator.pop(dialogContext);
             },
-            child: const Text('Enviar'),
+            child: Text('Enviar'),
           ),
         ],
       ),
@@ -642,12 +643,12 @@ class PerfilSocialScreen extends StatelessWidget {
     final data = doc.data();
     final imagenes = data['imagenes'] is Iterable
         ? (data['imagenes'] as Iterable).map((e) => e.toString()).toList(growable: false)
-        : const <String>[];
+        : <String>[];
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(14),
+      margin: EdgeInsets.only(bottom: 10),
+      padding: EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFF171717),
+        color: StiloColors.surface,
         borderRadius: BorderRadius.circular(18),
       ),
       child: Row(
@@ -660,10 +661,10 @@ class PerfilSocialScreen extends StatelessWidget {
                 width: 62,
                 height: 62,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => const SizedBox(width: 62, height: 62),
+                errorBuilder: (_, __, ___) => SizedBox(width: 62, height: 62),
               ),
             ),
-          if (imagenes.isNotEmpty) const SizedBox(width: 12),
+          if (imagenes.isNotEmpty) SizedBox(width: 12),
           Expanded(
             child: Text(
               data['texto']?.toString().isNotEmpty == true
@@ -671,7 +672,7 @@ class PerfilSocialScreen extends StatelessWidget {
                   : 'Avance fotográfico',
               maxLines: 3,
               overflow: TextOverflow.ellipsis,
-              style: GoogleFonts.inter(color: Colors.white70, height: 1.35),
+              style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .70), height: 1.35),
             ),
           ),
         ],
@@ -682,12 +683,12 @@ class PerfilSocialScreen extends StatelessWidget {
   Widget _vacio(String texto) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(.03),
+        color: StiloColors.text.withOpacity(.03),
         borderRadius: BorderRadius.circular(15),
       ),
-      child: Text(texto, style: GoogleFonts.inter(color: Colors.white38)),
+      child: Text(texto, style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .38))),
     );
   }
 }

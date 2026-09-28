@@ -1,3 +1,4 @@
+import '../presentation/appearance.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -12,9 +13,9 @@ class ActividadesProyectoScreen extends StatelessWidget {
   final String estatusProyecto;
   final String rolUsuario; // <--- 1. AGREGAMOS EL ROL
 
-  const ActividadesProyectoScreen({
-    Key? key, 
-    required this.proyectoId, 
+  ActividadesProyectoScreen({
+    Key? key,
+    required this.proyectoId,
     required this.estatusProyecto,
     required this.rolUsuario, // <--- 2. LO PEDIMOS AQUÍ
   }) : super(key: key);
@@ -27,22 +28,22 @@ class ActividadesProyectoScreen extends StatelessWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF1E1E1E),
+        backgroundColor: StiloColors.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(
           'Eliminar Actividad',
-          style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold),
+          style: GoogleFonts.inter(color: StiloColors.text, fontWeight: FontWeight.bold),
         ),
         content: Text(
           '¿Estás seguro de que deseas eliminar la actividad "${actividad.titulo}"? Esta acción no se puede deshacer.',
-          style: GoogleFonts.inter(color: Colors.white70),
+          style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .70)),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: Text(
               'Cancelar',
-              style: GoogleFonts.inter(color: Colors.white54, fontWeight: FontWeight.w600),
+              style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .54), fontWeight: FontWeight.w600),
             ),
           ),
           ElevatedButton(
@@ -55,7 +56,7 @@ class ActividadesProyectoScreen extends StatelessWidget {
                 await _actividadesService.eliminarActividad(actividad.id);
 
                 if (context.mounted) {
-                  Navigator.pop(context); 
+                  Navigator.pop(context);
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text('Actividad eliminada', style: GoogleFonts.inter()),
@@ -77,7 +78,7 @@ class ActividadesProyectoScreen extends StatelessWidget {
             },
             child: Text(
               'Eliminar',
-              style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold),
+              style: GoogleFonts.inter(color: StiloColors.text, fontWeight: FontWeight.bold),
             ),
           ),
         ],
@@ -88,48 +89,48 @@ class ActividadesProyectoScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF121212),
+      backgroundColor: StiloColors.surface,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF121212),
+        backgroundColor: StiloColors.surface,
         elevation: 0,
         title: Text(
           'DIAGNÓSTICO Y TAREAS',
-          style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 1.2, color: Colors.white),
+          style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 1.2, color: StiloColors.text),
         ),
         centerTitle: true,
-        iconTheme: const IconThemeData(color: Colors.white),
+        iconTheme: IconThemeData(color: StiloColors.text),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildEncabezado(),
-            const SizedBox(height: 20),
+            SizedBox(height: 20),
             StreamBuilder<List<ActividadModel>>(
               stream: _actividadesService.obtenerActividadesPorProyecto(proyectoId),
               builder: (context, snapshot) {
                 if (snapshot.hasError) {
                   return Container(
-                    padding: const EdgeInsets.all(20),
+                    padding: EdgeInsets.all(20),
                     color: Colors.red.withOpacity(0.2),
                     child: Text("ERROR LEYENDO FIREBASE:\n${snapshot.error}",
-                      style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+                      style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
                   );
                 }
 
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator(color: Color(0xFFFFDE21)));
+                  return Center(child: CircularProgressIndicator(color: Color(0xFFFFDE21)));
                 }
 
                 if (!snapshot.hasData || snapshot.data!.isEmpty) {
                   return Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(color: const Color(0xFF1E1E1E), borderRadius: BorderRadius.circular(16)),
+                    padding: EdgeInsets.all(16),
+                    decoration: BoxDecoration(color: StiloColors.surface, borderRadius: BorderRadius.circular(16)),
                     child: Text(
                       "Todavía no hay tareas asignadas para este proyecto.",
-                      style: GoogleFonts.inter(color: Colors.white38, fontSize: 14),
+                      style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .38), fontSize: 14),
                       textAlign: TextAlign.center,
                     ),
                   );
@@ -145,7 +146,7 @@ class ActividadesProyectoScreen extends StatelessWidget {
 
                 return ListView.builder(
                   shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
+                  physics: NeverScrollableScrollPhysics(),
                   itemCount: actividades.length,
                   itemBuilder: (context, index) {
                     final actividad = actividades[index];
@@ -160,12 +161,12 @@ class ActividadesProyectoScreen extends StatelessWidget {
         ),
       ),
       floatingActionButton: estatusProyecto == 'finalizado'
-          ? null 
+          ? null
           : FloatingActionButton.extended(
-              backgroundColor: const Color(0xFFFFDE21),
-              foregroundColor: Colors.black87,
+              backgroundColor: Color(0xFFFFDE21),
+              foregroundColor: StiloColors.background.withValues(alpha: .87),
               elevation: 4,
-              icon: const Icon(Icons.add_task),
+              icon: Icon(Icons.add_task),
               label: Text(
                 'Asignar tarea del día',
                 style: GoogleFonts.inter(fontWeight: FontWeight.bold),
@@ -174,7 +175,7 @@ class ActividadesProyectoScreen extends StatelessWidget {
                 showModalBottomSheet(
                   context: context,
                   isScrollControlled: true,
-                  backgroundColor: Colors.transparent, 
+                  backgroundColor: Colors.transparent,
                   builder: (context) => ModalAsignarActividad(
                     proyectoId: proyectoId,
                     rolUsuario: rolUsuario, // <--- AGREGAR AQUÍ
@@ -188,29 +189,29 @@ class ActividadesProyectoScreen extends StatelessWidget {
   Widget _buildEncabezado() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E1E1E),
+        color: StiloColors.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFFFDE21).withOpacity(0.35)),
+        border: Border.all(color: Color(0xFFFFDE21).withOpacity(0.35)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.assignment_turned_in_outlined, color: Color(0xFFFFDE21)),
-          const SizedBox(width: 12),
+          Icon(Icons.assignment_turned_in_outlined, color: Color(0xFFFFDE21)),
+          SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   'ASIGNA Y REVISA EL TRABAJO DEL DÍA',
-                  style: GoogleFonts.inter(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w800),
+                  style: GoogleFonts.inter(color: StiloColors.text, fontSize: 13, fontWeight: FontWeight.w800),
                 ),
-                const SizedBox(height: 6),
+                SizedBox(height: 6),
                 Text(
                   'Asigna tareas a cada trabajador y revisa sus avances. Para terminar una tarea deberán adjuntar evidencia obligatoria.',
-                  style: GoogleFonts.inter(color: Colors.white60, fontSize: 12, height: 1.4),
+                  style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .60), fontSize: 12, height: 1.4),
                 ),
               ],
             ),
@@ -234,22 +235,22 @@ class ActividadesProyectoScreen extends StatelessWidget {
     final esHoy = _esHoy(actividad.fechaAsignada);
 
     if (actividad.estatus == 'completado') {
-      gradientColors = [const Color(0xFF0F766E), const Color(0xFF064E3B)]; 
+      gradientColors = [StiloColors.border, StiloColors.surface];
       iconColor = Colors.tealAccent;
     } else if (estaAtrasada) {
-      gradientColors = [const Color(0xFF991B1B), const Color(0xFF7F1D1D)]; 
+      gradientColors = [Color(0xFF991B1B), Color(0xFF7F1D1D)];
       iconColor = Colors.redAccent;
       badgeText = 'ATRASADO';
     } else if (actividad.estatus == 'en_progreso') {
-      gradientColors = [const Color(0xFF1E3A8A), const Color(0xFF312E81)]; 
+      gradientColors = [Color(0xFF1E3A8A), Color(0xFF312E81)];
       iconColor = Colors.cyanAccent;
     } else {
-      gradientColors = [const Color(0xFFB45309), const Color(0xFF78350F)]; 
-      iconColor = const Color(0xFFFFDE21);
+      gradientColors = [Color(0xFFB45309), StiloColors.border];
+      iconColor = Color(0xFFFFDE21);
     }
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
         gradient: LinearGradient(
@@ -261,7 +262,7 @@ class ActividadesProyectoScreen extends StatelessWidget {
           BoxShadow(
             color: gradientColors.last.withOpacity(0.4),
             blurRadius: 8,
-            offset: const Offset(0, 4),
+            offset: Offset(0, 4),
           )
         ],
       ),
@@ -281,7 +282,7 @@ class ActividadesProyectoScreen extends StatelessWidget {
             _mostrarDialogoEliminar(context, actividad);
           },
           child: Padding(
-            padding: const EdgeInsets.all(20),
+            padding: EdgeInsets.all(20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -292,13 +293,13 @@ class ActividadesProyectoScreen extends StatelessWidget {
                     Expanded(
                       child: Text(
                         actividad.titulo.toUpperCase(),
-                        style: GoogleFonts.inter(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w800),
+                        style: GoogleFonts.inter(color: StiloColors.text, fontSize: 16, fontWeight: FontWeight.w800),
                       ),
                     ),
-                    
+
                     if (actividad.estatus == 'pendiente')
                       Padding(
-                        padding: const EdgeInsets.only(right: 8.0),
+                        padding: EdgeInsets.only(right: 8.0),
                         child: InkWell(
                         onTap: () {
                             showModalBottomSheet(
@@ -308,19 +309,19 @@ class ActividadesProyectoScreen extends StatelessWidget {
                               builder: (context) => ModalAsignarActividad(
                                 proyectoId: proyectoId,
                                 rolUsuario: rolUsuario, // <--- AGREGAR AQUÍ TAMBIÉN
-                                actividadAEditar: actividad, 
+                                actividadAEditar: actividad,
                               ),
                             );
                           },
                           child: Container(
-                            padding: const EdgeInsets.all(6),
+                            padding: EdgeInsets.all(6),
                             decoration: BoxDecoration(
-                              color: Colors.black26,
+                              color: StiloColors.background.withValues(alpha: .26),
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            child: const Icon(
+                            child: Icon(
                               Icons.edit,
-                              color: Colors.white,
+                              color: StiloColors.text,
                               size: 16,
                             ),
                           ),
@@ -328,10 +329,10 @@ class ActividadesProyectoScreen extends StatelessWidget {
                       ),
 
                     Container(
-                      margin: const EdgeInsets.only(left: 4),
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      margin: EdgeInsets.only(left: 4),
+                      padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                       decoration: BoxDecoration(
-                        color: Colors.black38,
+                        color: StiloColors.background.withValues(alpha: .38),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: iconColor.withOpacity(0.5)),
                       ),
@@ -342,54 +343,54 @@ class ActividadesProyectoScreen extends StatelessWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: 16),
                 Row(
                   children: [
-                    const Icon(Icons.event_available_outlined, color: Colors.white70, size: 18),
-                    const SizedBox(width: 10),
+                    Icon(Icons.event_available_outlined, color: StiloColors.text.withValues(alpha: .70), size: 18),
+                    SizedBox(width: 10),
                     Expanded(
                       child: Text(
                         "Tarea asignada: ${DateFormat('dd MMM yyyy').format(actividad.fechaAsignada)}",
-                        style: GoogleFonts.inter(color: Colors.white.withOpacity(0.9), fontSize: 13, fontWeight: FontWeight.w600),
+                        style: GoogleFonts.inter(color: StiloColors.text.withOpacity(0.9), fontSize: 13, fontWeight: FontWeight.w600),
                       ),
                     ),
                     if (esHoy)
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                        padding: EdgeInsets.symmetric(horizontal: 9, vertical: 4),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFFFDE21),
+                          color: Color(0xFFFFDE21),
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Text(
                           'HOY',
-                          style: GoogleFonts.inter(color: Colors.black87, fontSize: 10, fontWeight: FontWeight.w900),
+                          style: GoogleFonts.inter(color: StiloColors.background.withValues(alpha: .87), fontSize: 10, fontWeight: FontWeight.w900),
                         ),
                       ),
                   ],
                 ),
-                const SizedBox(height: 12),
+                SizedBox(height: 12),
                 Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: const BoxDecoration(
-                        color: Colors.black26,
+                      padding: EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: StiloColors.background.withValues(alpha: .26),
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
                         estaAtrasada ? Icons.timer_off_outlined : Icons.access_time_filled,
-                        color: Colors.white70,
+                        color: StiloColors.text.withValues(alpha: .70),
                         size: 16,
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    SizedBox(width: 12),
                     Expanded(
                       child: Text(
                         estaAtrasada
                             ? "Venció el: ${DateFormat('dd MMM yyyy - HH:mm').format(actividad.fechaTermino)}"
                             : "Límite: ${DateFormat('dd MMM yyyy - HH:mm').format(actividad.fechaTermino)}",
                         style: GoogleFonts.inter(
-                          color: Colors.white.withOpacity(0.9),
+                          color: StiloColors.text.withOpacity(0.9),
                           fontSize: 13,
                           fontWeight: FontWeight.w500,
                         ),
@@ -397,7 +398,7 @@ class ActividadesProyectoScreen extends StatelessWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
+                SizedBox(height: 12),
                 FutureBuilder<String>(
                   future: FirebaseFirestore.instance
                       .collection('usuarios')
@@ -408,23 +409,23 @@ class ActividadesProyectoScreen extends StatelessWidget {
                     return Row(
                       children: [
                         Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: const BoxDecoration(
-                            color: Colors.black26,
+                          padding: EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: StiloColors.background.withValues(alpha: .26),
                             shape: BoxShape.circle,
                           ),
-                          child: const Icon(
+                          child: Icon(
                             Icons.person_outline,
-                            color: Colors.white70,
+                            color: StiloColors.text.withValues(alpha: .70),
                             size: 16,
                           ),
                         ),
-                        const SizedBox(width: 12),
+                        SizedBox(width: 12),
                         Expanded(
                           child: Text(
                             "Asignado: ${userSnap.data ?? 'Cargando...'}",
                             style: GoogleFonts.inter(
-                              color: Colors.white.withOpacity(0.9),
+                              color: StiloColors.text.withOpacity(0.9),
                               fontSize: 13,
                               fontWeight: FontWeight.w500,
                             ),
@@ -434,16 +435,16 @@ class ActividadesProyectoScreen extends StatelessWidget {
                     );
                   },
                 ),
-                const SizedBox(height: 12),
+                SizedBox(height: 12),
                 Row(
                   children: [
-                    const Icon(Icons.attach_file, color: Colors.white54, size: 17),
-                    const SizedBox(width: 8),
+                    Icon(Icons.attach_file, color: StiloColors.text.withValues(alpha: .54), size: 17),
+                    SizedBox(width: 8),
                     Text(
                       actividad.totalEvidencias == 1
                           ? '1 evidencia adjunta'
                           : '${actividad.totalEvidencias} evidencias adjuntas',
-                      style: GoogleFonts.inter(color: Colors.white70, fontSize: 12, fontStyle: FontStyle.italic),
+                      style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .70), fontSize: 12, fontStyle: FontStyle.italic),
                     ),
                   ],
                 ),

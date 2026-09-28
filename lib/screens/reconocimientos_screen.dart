@@ -1,3 +1,4 @@
+import '../presentation/appearance.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -11,8 +12,8 @@ class ReconocimientosScreen extends StatelessWidget {
 
   const ReconocimientosScreen({super.key, required this.usuario});
 
-  static const _fondo = Color(0xFF050505);
-  static const _oro = Color(0xFFFFDE21);
+  static Color get _fondo => StiloColors.background;
+  static final _oro = Color(0xFFFFDE21);
 
   @override
   Widget build(BuildContext context) {
@@ -40,15 +41,15 @@ class ReconocimientosScreen extends StatelessWidget {
                       .snapshots(),
             builder: (context, actividadesSnapshot) {
               if (usuariosSnapshot.hasError || actividadesSnapshot.hasError) {
-                return const Center(
+                return Center(
                   child: Text(
                     'No se pudieron cargar los reconocimientos.',
-                    style: TextStyle(color: Colors.white70),
+                    style: TextStyle(color: StiloColors.text.withValues(alpha: .70)),
                   ),
                 );
               }
               if (!usuariosSnapshot.hasData || !actividadesSnapshot.hasData) {
-                return const Center(child: CircularProgressIndicator(color: _oro));
+                return Center(child: CircularProgressIndicator(color: _oro));
               }
               final nombres = <String, String>{
                 for (final doc in usuariosSnapshot.data!.docs)
@@ -64,22 +65,22 @@ class ReconocimientosScreen extends StatelessWidget {
                         .where((resultado) => resultado.usuarioId == usuario.id)
                         .toList(growable: false);
               return ListView(
-                padding: const EdgeInsets.fromLTRB(18, 8, 18, 100),
+                padding: EdgeInsets.fromLTRB(18, 8, 18, 100),
                 children: [
                   _encabezado(resultados),
-                  const SizedBox(height: 20),
+                  SizedBox(height: 20),
                   Text(
                     usuario.rol == AppRoles.admin
                         ? 'TABLERO DEL EQUIPO'
                         : 'MIS INSIGNIAS',
                     style: GoogleFonts.inter(
-                      color: Colors.white54,
+                      color: StiloColors.text.withValues(alpha: .54),
                       fontSize: 12,
                       fontWeight: FontWeight.w900,
                       letterSpacing: 1.2,
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  SizedBox(height: 12),
                   if (visibles.isEmpty)
                     _vacio()
                   else
@@ -102,10 +103,10 @@ class ReconocimientosScreen extends StatelessWidget {
     final lider = resultados.isEmpty ? null : resultados.first;
     final mes = DateFormat('MMMM yyyy', 'es').format(DateTime.now());
     return Container(
-      padding: const EdgeInsets.all(22),
+      padding: EdgeInsets.all(22),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(24),
-        gradient: const LinearGradient(
+        gradient: LinearGradient(
           colors: [Color(0xFFFFC400), Color(0xFFFF6D00)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -113,8 +114,8 @@ class ReconocimientosScreen extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Icon(Icons.workspace_premium_rounded, size: 62, color: Colors.black),
-          const SizedBox(width: 16),
+          Icon(Icons.workspace_premium_rounded, size: 62, color: StiloColors.background),
+          SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -122,16 +123,16 @@ class ReconocimientosScreen extends StatelessWidget {
                 Text(
                   'DESEMPEÑO · ${mes.toUpperCase()}',
                   style: GoogleFonts.inter(
-                    color: Colors.black54,
+                    color: StiloColors.background.withValues(alpha: .54),
                     fontSize: 11,
                     fontWeight: FontWeight.w900,
                   ),
                 ),
-                const SizedBox(height: 5),
+                SizedBox(height: 5),
                 Text(
                   lider == null ? 'Aún sin resultados' : lider.nombre,
                   style: GoogleFonts.montserrat(
-                    color: Colors.black,
+                    color: StiloColors.background,
                     fontSize: 22,
                     fontWeight: FontWeight.w900,
                   ),
@@ -140,7 +141,7 @@ class ReconocimientosScreen extends StatelessWidget {
                   lider == null
                       ? 'Las insignias aparecerán al completar actividades.'
                       : '${lider.completadasMes} tareas terminadas este mes',
-                  style: GoogleFonts.inter(color: Colors.black87),
+                  style: GoogleFonts.inter(color: StiloColors.background.withValues(alpha: .87)),
                 ),
               ],
             ),
@@ -152,15 +153,15 @@ class ReconocimientosScreen extends StatelessWidget {
 
   Widget _vacio() {
     return Container(
-      padding: const EdgeInsets.all(26),
+      padding: EdgeInsets.all(26),
       decoration: BoxDecoration(
-        color: const Color(0xFF171717),
+        color: StiloColors.surface,
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
         'Completa tus primeras tareas con evidencia para desbloquear insignias.',
         textAlign: TextAlign.center,
-        style: GoogleFonts.inter(color: Colors.white54, height: 1.4),
+        style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .54), height: 1.4),
       ),
     );
   }
@@ -217,21 +218,21 @@ class _TarjetaTrabajador extends StatelessWidget {
   final int posicion;
   final _ResultadoTrabajador resultado;
 
-  const _TarjetaTrabajador({required this.posicion, required this.resultado});
+  _TarjetaTrabajador({required this.posicion, required this.resultado});
 
   @override
   Widget build(BuildContext context) {
     final insignias = resultado.insignias;
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(18),
+      margin: EdgeInsets.only(bottom: 12),
+      padding: EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: const Color(0xFF171717),
+        color: StiloColors.surface,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: posicion == 1
-              ? const Color(0xFFFFDE21).withOpacity(.5)
-              : Colors.white10,
+              ? Color(0xFFFFDE21).withOpacity(.5)
+              : StiloColors.text.withValues(alpha: .10),
         ),
       ),
       child: Column(
@@ -241,15 +242,15 @@ class _TarjetaTrabajador extends StatelessWidget {
             children: [
               CircleAvatar(
                 backgroundColor: posicion == 1
-                    ? const Color(0xFFFFDE21)
-                    : Colors.white12,
-                foregroundColor: posicion == 1 ? Colors.black : Colors.white,
+                    ? Color(0xFFFFDE21)
+                    : StiloColors.text.withValues(alpha: .12),
+                foregroundColor: posicion == 1 ? StiloColors.background : StiloColors.text,
                 child: Text(
                   '$posicion',
                   style: GoogleFonts.montserrat(fontWeight: FontWeight.w900),
                 ),
               ),
-              const SizedBox(width: 13),
+              SizedBox(width: 13),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -257,25 +258,25 @@ class _TarjetaTrabajador extends StatelessWidget {
                     Text(
                       resultado.nombre,
                       style: GoogleFonts.montserrat(
-                        color: Colors.white,
+                        color: StiloColors.text,
                         fontSize: 17,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
                     Text(
                       '${resultado.completadas} terminadas · ${resultado.evidencias} evidencias · ${resultado.puntos} pts',
-                      style: GoogleFonts.inter(color: Colors.white54, fontSize: 12),
+                      style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .54), fontSize: 12),
                     ),
                   ],
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 14),
+          SizedBox(height: 14),
           if (insignias.isEmpty)
             Text(
               'Siguiente meta: completar la primera tarea con evidencia.',
-              style: GoogleFonts.inter(color: Colors.white38, fontSize: 12),
+              style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .38), fontSize: 12),
             )
           else
             Wrap(
@@ -284,7 +285,7 @@ class _TarjetaTrabajador extends StatelessWidget {
               children: insignias
                   .map(
                     (insignia) => Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                      padding: EdgeInsets.symmetric(horizontal: 10, vertical: 7),
                       decoration: BoxDecoration(
                         color: insignia.color.withOpacity(.14),
                         borderRadius: BorderRadius.circular(12),
@@ -294,11 +295,11 @@ class _TarjetaTrabajador extends StatelessWidget {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(insignia.icono, color: insignia.color, size: 16),
-                          const SizedBox(width: 6),
+                          SizedBox(width: 6),
                           Text(
                             insignia.nombre,
                             style: GoogleFonts.inter(
-                              color: Colors.white,
+                              color: StiloColors.text,
                               fontSize: 11,
                               fontWeight: FontWeight.w700,
                             ),
@@ -323,7 +324,7 @@ class _ResultadoTrabajador {
   final int evidencias;
   final int puntuales;
 
-  const _ResultadoTrabajador({
+  _ResultadoTrabajador({
     required this.usuarioId,
     required this.nombre,
     required this.completadas,
@@ -338,27 +339,27 @@ class _ResultadoTrabajador {
     final resultado = <_Insignia>[];
     if (completadas >= 1) {
       resultado.add(
-        const _Insignia('Primera misión', Icons.flag_rounded, Color(0xFF00E676)),
+        _Insignia('Primera misión', Icons.flag_rounded, Color(0xFF00E676)),
       );
     }
     if (completadas >= 5) {
       resultado.add(
-        const _Insignia('Cumplidor', Icons.task_alt_rounded, Color(0xFF00B0FF)),
+        _Insignia('Cumplidor', Icons.task_alt_rounded, Color(0xFF00B0FF)),
       );
     }
     if (evidencias >= 10) {
       resultado.add(
-        const _Insignia('Evidencia impecable', Icons.verified_rounded, Color(0xFF8B5CF6)),
+        _Insignia('Evidencia impecable', Icons.verified_rounded, StiloColors.accent),
       );
     }
     if (puntuales >= 5) {
       resultado.add(
-        const _Insignia('Siempre a tiempo', Icons.timer_rounded, Color(0xFFFF9800)),
+        _Insignia('Siempre a tiempo', Icons.timer_rounded, Color(0xFFFF9800)),
       );
     }
     if (completadasMes >= 10) {
       resultado.add(
-        const _Insignia('Estrella del mes', Icons.star_rounded, Color(0xFFFFDE21)),
+        _Insignia('Estrella del mes', Icons.star_rounded, Color(0xFFFFDE21)),
       );
     }
     return resultado;
@@ -370,5 +371,5 @@ class _Insignia {
   final IconData icono;
   final Color color;
 
-  const _Insignia(this.nombre, this.icono, this.color);
+  _Insignia(this.nombre, this.icono, this.color);
 }

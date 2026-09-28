@@ -1,3 +1,4 @@
+import '../presentation/appearance.dart';
 import 'dart:async';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
@@ -65,7 +66,7 @@ class _AudioMessagePlayerState extends State<AudioMessagePlayer> with WidgetsBin
     } catch (_) {
       if (mounted) {
         _loaded = false;
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No se pudo escuchar el audio. Revisa Internet, el volumen y toca Reproducir para reintentar.')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('No se pudo escuchar el audio. Revisa Internet, el volumen y toca Reproducir para reintentar.')));
       }
     } finally {if (mounted && token == _generation) setState(() => _loading = false);}
   }
@@ -73,18 +74,18 @@ class _AudioMessagePlayerState extends State<AudioMessagePlayer> with WidgetsBin
   @override
   Widget build(BuildContext context) {
     final total = _duration > Duration.zero ? _duration : Duration(seconds: widget.durationSeconds);
-    return ConstrainedBox(constraints: const BoxConstraints(maxWidth: 300), child: Container(
-      padding: const EdgeInsets.fromLTRB(5, 6, 10, 6),
+    return ConstrainedBox(constraints: BoxConstraints(maxWidth: 300), child: Container(
+      padding: EdgeInsets.fromLTRB(5, 6, 10, 6),
       decoration: BoxDecoration(color: widget.color.withOpacity(.09), borderRadius: BorderRadius.circular(28), border: Border.all(color: widget.color.withOpacity(.28))),
       child: Row(mainAxisSize: MainAxisSize.min, children: [
         IconButton(tooltip: _playing ? 'Pausar audio' : 'Reproducir audio', onPressed: _loading ? null : _toggle,
           icon: _loading ? SizedBox.square(dimension: 21, child: CircularProgressIndicator(strokeWidth: 2, color: widget.color)) : Icon(_playing ? Icons.pause_rounded : Icons.play_arrow_rounded, color: widget.color)),
         Flexible(child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(children: [Icon(Icons.graphic_eq_rounded, size: 19, color: widget.color), const SizedBox(width: 6), const Text('Nota de voz · 1×', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700))]),
-          if (total.inMilliseconds > 0) SizedBox(height: 20, child: SliderTheme(data: SliderTheme.of(context).copyWith(trackHeight: 2, thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 4)), child: Slider(
+          Row(children: [Icon(Icons.graphic_eq_rounded, size: 19, color: widget.color), SizedBox(width: 6), Text('Nota de voz · 1×', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700))]),
+          if (total.inMilliseconds > 0) SizedBox(height: 20, child: SliderTheme(data: SliderTheme.of(context).copyWith(trackHeight: 2, thumbShape: RoundSliderThumbShape(enabledThumbRadius: 4)), child: Slider(
             activeColor: widget.color, min: 0, max: total.inMilliseconds.toDouble(), value: _position.inMilliseconds.clamp(0, total.inMilliseconds).toDouble(),
             onChanged: !_loaded ? null : (v) async {try {await _player.seek(Duration(milliseconds: v.round()));} catch (_) {}}))),
-          Text('${_time(_position)} / ${total.inSeconds > 0 ? _time(total) : 'Audio'}', style: const TextStyle(fontSize: 10, color: Colors.white60)),
+          Text('${_time(_position)} / ${total.inSeconds > 0 ? _time(total) : 'Audio'}', style: TextStyle(fontSize: 10, color: StiloColors.text.withValues(alpha: .60))),
         ])),
       ]),
     ));

@@ -1,3 +1,4 @@
+import '../presentation/appearance.dart';
 import '../services/external_transfer.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -27,23 +28,23 @@ class _JustificarFaltaScreenState extends State<JustificarFaltaScreen> {
   void dispose() { _reason.dispose(); super.dispose(); }
   Query<Map<String, dynamic>> get _own => FirebaseFirestore.instance.collection('asistencias').where('trabajadorId', isEqualTo: widget.usuario.id);
   @override
-  Widget build(BuildContext context) => Scaffold(backgroundColor: Colors.black, appBar: AppBar(title: const Text('Justificar una falta')), body: ListView(padding: const EdgeInsets.all(18), children: [
-    const Text('Explica lo ocurrido', style: TextStyle(fontSize: 25, fontWeight: FontWeight.w800)),
-    const SizedBox(height: 8), const Text('Tu solicitud será revisada por Administración. Enviarla no equivale a aprobarla ni modifica tus horas de entrada o salida.', style: TextStyle(color: Colors.white60, height: 1.45)),
-    const SizedBox(height: 16), OutlinedButton.icon(onPressed: _busy ? null : () async { final date = await showDatePicker(context: context, initialDate: _date, firstDate: DateTime(2020), lastDate: mexicoToday()); if (date != null && mounted) setState(() => _date = date); }, icon: const Icon(Icons.event_outlined), label: Text(DateFormat('dd/MM/yyyy').format(_date))),
-    const SizedBox(height: 10), TextField(contextMenuBuilder: privacyTextMenu, controller: _reason, enabled: !_busy, minLines: 4, maxLines: 8, maxLength: 2000, decoration: const InputDecoration(labelText: 'Motivo', hintText: 'Describe el motivo de tu ausencia…', alignLabelWithHint: true)),
-    OutlinedButton.icon(onPressed: _busy ? null : _pickEvidence, icon: const Icon(Icons.add_photo_alternate_outlined), label: Text(_evidence == null ? 'Agregar evidencia (opcional)' : 'Cambiar evidencia')),
-    if (_preview != null) Column(children: [Image.memory(_preview!, height: 120), TextButton(onPressed: _busy ? null : () => setState(() { _evidence = null; _preview = null; }), child: const Text('Quitar evidencia'))]),
-    const Text('La evidencia se guarda en un espacio restringido a tu cuenta y Administración. No la envíes en chats generales.', style: TextStyle(color: Colors.white54, fontSize: 12)),
-    const SizedBox(height: 14), FilledButton.icon(onPressed: _busy ? null : _send, icon: const Icon(Icons.send_outlined), label: Text(_busy ? 'Enviando…' : 'Enviar a revisión')),
-    if (_error != null) Padding(padding: const EdgeInsets.symmetric(vertical: 14), child: Text(_error!, style: const TextStyle(color: Colors.orangeAccent))),
-    const SizedBox(height: 24), const Text('MIS SOLICITUDES', style: TextStyle(fontWeight: FontWeight.w800, letterSpacing: 1)),
+  Widget build(BuildContext context) => Scaffold(backgroundColor: StiloColors.background, appBar: AppBar(title: Text('Justificar una falta')), body: ListView(padding: EdgeInsets.all(18), children: [
+    Text('Explica lo ocurrido', style: TextStyle(fontSize: 25, fontWeight: FontWeight.w800)),
+    SizedBox(height: 8), Text('Tu solicitud será revisada por Administración. Enviarla no equivale a aprobarla ni modifica tus horas de entrada o salida.', style: TextStyle(color: StiloColors.text.withValues(alpha: .60), height: 1.45)),
+    SizedBox(height: 16), OutlinedButton.icon(onPressed: _busy ? null : () async { final date = await showDatePicker(context: context, initialDate: _date, firstDate: DateTime(2020), lastDate: mexicoToday()); if (date != null && mounted) setState(() => _date = date); }, icon: Icon(Icons.event_outlined), label: Text(DateFormat('dd/MM/yyyy').format(_date))),
+    SizedBox(height: 10), TextField(contextMenuBuilder: privacyTextMenu, controller: _reason, enabled: !_busy, minLines: 4, maxLines: 8, maxLength: 2000, decoration: InputDecoration(labelText: 'Motivo', hintText: 'Describe el motivo de tu ausencia…', alignLabelWithHint: true)),
+    OutlinedButton.icon(onPressed: _busy ? null : _pickEvidence, icon: Icon(Icons.add_photo_alternate_outlined), label: Text(_evidence == null ? 'Agregar evidencia (opcional)' : 'Cambiar evidencia')),
+    if (_preview != null) Column(children: [Image.memory(_preview!, height: 120), TextButton(onPressed: _busy ? null : () => setState(() { _evidence = null; _preview = null; }), child: Text('Quitar evidencia'))]),
+    Text('La evidencia se guarda en un espacio restringido a tu cuenta y Administración. No la envíes en chats generales.', style: TextStyle(color: StiloColors.text.withValues(alpha: .54), fontSize: 12)),
+    SizedBox(height: 14), FilledButton.icon(onPressed: _busy ? null : _send, icon: Icon(Icons.send_outlined), label: Text(_busy ? 'Enviando…' : 'Enviar a revisión')),
+    if (_error != null) Padding(padding: EdgeInsets.symmetric(vertical: 14), child: Text(_error!, style: TextStyle(color: Colors.orangeAccent))),
+    SizedBox(height: 24), Text('MIS SOLICITUDES', style: TextStyle(fontWeight: FontWeight.w800, letterSpacing: 1)),
     StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(stream: _own.snapshots(), builder: (c, snapshot) {
-      if (snapshot.hasError) return const Padding(padding: EdgeInsets.all(14), child: Text('No se pudo cargar el historial. Revisa tu conexión y los permisos.'));
-      if (!snapshot.hasData) return const Padding(padding: EdgeInsets.all(14), child: LinearProgressIndicator());
+      if (snapshot.hasError) return Padding(padding: EdgeInsets.all(14), child: Text('No se pudo cargar el historial. Revisa tu conexión y los permisos.'));
+      if (!snapshot.hasData) return Padding(padding: EdgeInsets.all(14), child: LinearProgressIndicator());
       final docs = snapshot.data!.docs.where((d) => (d.data()['motivoFalta']?.toString() ?? '').isNotEmpty).toList()..sort((a, b) => b.id.compareTo(a.id));
-      if (docs.isEmpty) return const Padding(padding: EdgeInsets.symmetric(vertical: 15), child: Text('Todavía no tienes solicitudes.', style: TextStyle(color: Colors.white54)));
-      return Column(children: docs.take(50).map((d) {final p = d.data(); return Card(color: const Color(0xFF111012), child: ListTile(leading: const Icon(Icons.fact_check_outlined), title: Text(p['fecha'] is Timestamp ? DateFormat('dd/MM/yyyy').format((p['fecha'] as Timestamp).toDate()) : 'Solicitud'), subtitle: Text('${p['motivoFalta']}\n${(p['estatusJustificacion'] ?? 'pendiente_revision').toString().replaceAll('_', ' ')}')));}).toList());
+      if (docs.isEmpty) return Padding(padding: EdgeInsets.symmetric(vertical: 15), child: Text('Todavía no tienes solicitudes.', style: TextStyle(color: StiloColors.text.withValues(alpha: .54))));
+      return Column(children: docs.take(50).map((d) {final p = d.data(); return Card(color: StiloColors.surface, child: ListTile(leading: Icon(Icons.fact_check_outlined), title: Text(p['fecha'] is Timestamp ? DateFormat('dd/MM/yyyy').format((p['fecha'] as Timestamp).toDate()) : 'Solicitud'), subtitle: Text('${p['motivoFalta']}\n${(p['estatusJustificacion'] ?? 'pendiente_revision').toString().replaceAll('_', ' ')}')));}).toList());
     }),
   ]));
   Future<void> _pickEvidence() async {
@@ -65,7 +66,7 @@ class _JustificarFaltaScreenState extends State<JustificarFaltaScreen> {
       if (!mounted) return;
       _reason.clear();
       setState(() { _evidence = null; _preview = null; });
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Justificación guardada, pendiente de revisión por Administración.')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Justificación guardada, pendiente de revisión por Administración.')));
     } catch (_) {if (mounted) setState(() => _error = 'No se confirmó el guardado. Revisa conexión, permisos o si la fecha ya fue aprobada. Tu motivo sigue aquí.');}
     finally {if (mounted) setState(() => _busy = false);}
   }

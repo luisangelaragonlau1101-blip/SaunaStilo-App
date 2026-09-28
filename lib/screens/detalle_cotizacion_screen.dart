@@ -1,3 +1,4 @@
+import '../presentation/appearance.dart';
 import '../services/external_transfer.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -77,12 +78,12 @@ class _DetalleCotizacionScreenState extends State<DetalleCotizacionScreen> {
         'titulo': _cotizacionActual.datosProyecto.titulo,
         'id_sauna': _cotizacionActual.datosProyecto.idSauna,
         'id_cliente': idClienteFinal,
-        'estatus': 'pendiente', 
+        'estatus': 'pendiente',
         'fecha_inicio': Timestamp.now(),
-        'fecha_entrega': Timestamp.fromDate(DateTime.now().add(const Duration(days: 30))), 
+        'fecha_entrega': Timestamp.fromDate(DateTime.now().add(Duration(days: 30))),
         'medidas': _cotizacionActual.datosProyecto.medidas,
         'descripcion': _cotizacionActual.datosProyecto.descripcion,
-        'encargados': [], 
+        'encargados': [],
       });
 
     // 2. 👇 CREAMOS EL DOCUMENTO EN LA SUBCOLECCIÓN 'FINANZAS' CON LA ESTRUCTURA CORRECTA
@@ -97,7 +98,7 @@ class _DetalleCotizacionScreenState extends State<DetalleCotizacionScreen> {
       await firestore.collection('seguimiento_cotizaciones').doc(_cotizacionActual.id).update({
         'estatus_cotizacion': 'ACEPTADA',
         'id_cliente': idClienteFinal,
-        'cliente_es_nuevo': false, 
+        'cliente_es_nuevo': false,
       });
 
       setState(() {
@@ -118,7 +119,7 @@ class _DetalleCotizacionScreenState extends State<DetalleCotizacionScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text('¡Cotización Aceptada! Cliente, Proyecto e información financiera creados.'),
             backgroundColor: Colors.green,
           ),
@@ -143,7 +144,7 @@ class _DetalleCotizacionScreenState extends State<DetalleCotizacionScreen> {
       final nuevaNota = NotaSeguimiento(
         fecha: DateTime.now(),
         comentario: textoNota,
-        completada: false, 
+        completada: false,
         creadaPor: _nombreAdminActual, // 👈 ASIGNAMOS QUIÉN CREÓ LA NOTA
       );
 
@@ -184,7 +185,7 @@ class _DetalleCotizacionScreenState extends State<DetalleCotizacionScreen> {
   Future<void> _cambiarEstadoNota(int indexOriginal, bool nuevoEstado) async {
     try {
       List<NotaSeguimiento> notasActualizadas = List.from(_cotizacionActual.notasSeguimiento);
-      
+
       // Creamos una nueva instancia de la nota.
       // Si se marca como completada, se actualiza el 'creadaPor' al admin actual.
       // Si se desmarca, se queda con el admin actual también (ya que él fue quien la desmarcó).
@@ -229,25 +230,25 @@ class _DetalleCotizacionScreenState extends State<DetalleCotizacionScreen> {
     final formatoFecha = DateFormat('dd/MM/yyyy - hh:mm a');
 
     return Scaffold(
-      backgroundColor: const Color(0xFF121212),
+      backgroundColor: StiloColors.surface,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF121212),
+        backgroundColor: StiloColors.surface,
         title: Text("DETALLE DE COTIZACIÓN", style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 15)),
         centerTitle: true,
-        iconTheme: const IconThemeData(color: Colors.white),
+        iconTheme: IconThemeData(color: StiloColors.text),
       ),
       body: _procesandoEstatus
-          ? const Center(child: CircularProgressIndicator(color: Color(0xFF8B5CF6)))
+          ? Center(child: CircularProgressIndicator(color: StiloColors.accent))
           : ListView(
-              padding: const EdgeInsets.all(20),
+              padding: EdgeInsets.all(20),
               children: [
                 // CABECERA DE ESTATUS Y ADMIN ENCARGADO
                 Container(
-                  padding: const EdgeInsets.all(16),
+                  padding: EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF1E1E1E),
+                    color: StiloColors.surface,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.white12),
+                    border: Border.all(color: StiloColors.text.withValues(alpha: .12)),
                   ),
                   child: Column(
                     children: [
@@ -257,14 +258,14 @@ class _DetalleCotizacionScreenState extends State<DetalleCotizacionScreen> {
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text("Monto Cotizado", style: GoogleFonts.inter(color: Colors.white54, fontSize: 12)),
-                              const SizedBox(height: 4),
+                              Text("Monto Cotizado", style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .54), fontSize: 12)),
+                              SizedBox(height: 4),
                               Text(formatoMoneda.format(_cotizacionActual.montoCotizado),
                                   style: GoogleFonts.inter(color: Colors.greenAccent, fontSize: 20, fontWeight: FontWeight.bold)),
                             ],
                           ),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                             decoration: BoxDecoration(
                               color: _cotizacionActual.estatusCotizacion == 'ACEPTADA'
                                   ? Colors.green.withOpacity(0.2)
@@ -282,28 +283,28 @@ class _DetalleCotizacionScreenState extends State<DetalleCotizacionScreen> {
                           ),
                         ],
                       ),
-                      const Divider(color: Colors.white12, height: 24),
+                      Divider(color: StiloColors.text.withValues(alpha: .12), height: 24),
                       Row(
                         children: [
-                          const Icon(Icons.assignment_ind_outlined, color: Color(0xFF8B5CF6), size: 18),
-                          const SizedBox(width: 8),
-                          Text("Encargado: ", style: GoogleFonts.inter(color: Colors.white54, fontSize: 13)),
+                          Icon(Icons.assignment_ind_outlined, color: StiloColors.accent, size: 18),
+                          SizedBox(width: 8),
+                          Text("Encargado: ", style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .54), fontSize: 13)),
                           Text(
-                            _cotizacionActual.adminEncargado.isEmpty ? 'Sin asignar' : _cotizacionActual.adminEncargado, 
-                            style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)
+                            _cotizacionActual.adminEncargado.isEmpty ? 'Sin asignar' : _cotizacionActual.adminEncargado,
+                            style: GoogleFonts.inter(color: StiloColors.text, fontWeight: FontWeight.bold, fontSize: 13)
                           ),
                         ],
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(height: 24),
+                SizedBox(height: 24),
 
                 // SECCIÓN CLIENTE
                 _buildSectionCard(
                   title: "DATOS DEL CLIENTE",
                   icon: Icons.person_outline,
-                  color: const Color(0xFF06B6D4),
+                  color: Color(0xFF06B6D4),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -314,13 +315,13 @@ class _DetalleCotizacionScreenState extends State<DetalleCotizacionScreen> {
                     ],
                   ),
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: 16),
 
                 // SECCIÓN PROYECTO
                 _buildSectionCard(
                   title: "DATOS DEL PROYECTO",
                   icon: Icons.hot_tub_outlined,
-                  color: const Color(0xFF8B5CF6),
+                  color: StiloColors.accent,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -330,19 +331,19 @@ class _DetalleCotizacionScreenState extends State<DetalleCotizacionScreen> {
                     ],
                   ),
                 ),
-                const SizedBox(height: 24),
+                SizedBox(height: 24),
 
                 // SECCIÓN CHECKLIST DE TAREAS / NOTAS
                 Text(
                   "TAREAS Y NOTAS DE SEGUIMIENTO (${_cotizacionActual.notasSeguimiento.length})",
-                  style: GoogleFonts.inter(color: const Color(0xFFF59E0B), fontSize: 13, fontWeight: FontWeight.bold, letterSpacing: 1),
+                  style: GoogleFonts.inter(color: Color(0xFFF59E0B), fontSize: 13, fontWeight: FontWeight.bold, letterSpacing: 1),
                 ),
-                const SizedBox(height: 12),
+                SizedBox(height: 12),
 
                 if (_cotizacionActual.notasSeguimiento.isEmpty)
                   Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    child: Text("No hay tareas registradas en esta cotización.", style: GoogleFonts.inter(color: Colors.white38, fontSize: 13)),
+                    padding: EdgeInsets.symmetric(vertical: 12),
+                    child: Text("No hay tareas registradas en esta cotización.", style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .38), fontSize: 13)),
                   )
                 else
                   ...List.generate(_cotizacionActual.notasSeguimiento.length, (index) {
@@ -350,16 +351,16 @@ class _DetalleCotizacionScreenState extends State<DetalleCotizacionScreen> {
                     final nota = _cotizacionActual.notasSeguimiento[indexReverso];
 
                     return Container(
-                      margin: const EdgeInsets.only(bottom: 10),
+                      margin: EdgeInsets.only(bottom: 10),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF1E1E1E), 
+                        color: StiloColors.surface,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: nota.completada ? Colors.greenAccent.withOpacity(0.2) : Colors.white12),
+                        border: Border.all(color: nota.completada ? Colors.greenAccent.withOpacity(0.2) : StiloColors.text.withValues(alpha: .12)),
                       ),
                       child: CheckboxListTile(
                         controlAffinity: ListTileControlAffinity.leading,
                         activeColor: Colors.greenAccent,
-                        checkColor: const Color(0xFF1E1E1E),
+                        checkColor: StiloColors.surface,
                         value: nota.completada,
                         onChanged: (bool? valor) {
                           if (valor != null) {
@@ -367,20 +368,20 @@ class _DetalleCotizacionScreenState extends State<DetalleCotizacionScreen> {
                           }
                         },
                         title: Text(
-                          nota.comentario, 
+                          nota.comentario,
                           style: TextStyle(
-                            color: nota.completada ? Colors.white38 : Colors.white, 
+                            color: nota.completada ? StiloColors.text.withValues(alpha: .38) : StiloColors.text,
                             fontSize: 14,
                             decoration: nota.completada ? TextDecoration.lineThrough : null,
                           ),
                         ),
                         // 👇 AQUÍ AÑADIMOS EL NOMBRE DE QUIÉN COMPLETÓ/CREÓ LA TAREA
                         subtitle: Padding(
-                          padding: const EdgeInsets.only(top: 4.0),
+                          padding: EdgeInsets.only(top: 4.0),
                           child: Text(
-                            "${formatoFecha.format(nota.fecha)} • ${nota.completada ? 'Completada por' : 'Añadida por'} ${nota.creadaPor}", 
+                            "${formatoFecha.format(nota.fecha)} • ${nota.completada ? 'Completada por' : 'Añadida por'} ${nota.creadaPor}",
                             style: TextStyle(
-                              color: nota.completada ? Colors.greenAccent.withOpacity(0.6) : Colors.white38, 
+                              color: nota.completada ? Colors.greenAccent.withOpacity(0.6) : StiloColors.text.withValues(alpha: .38),
                               fontSize: 11
                             )
                           ),
@@ -389,7 +390,7 @@ class _DetalleCotizacionScreenState extends State<DetalleCotizacionScreen> {
                     );
                   }).toList(),
 
-                const SizedBox(height: 16),
+                SizedBox(height: 16),
 
                 // INPUT PARA AGREGAR NUEVA NOTA RÁPIDA
                 Row(
@@ -397,25 +398,25 @@ class _DetalleCotizacionScreenState extends State<DetalleCotizacionScreen> {
                     Expanded(
                       child: TextField(contextMenuBuilder: privacyTextMenu,
                         controller: _nuevaNotaController,
-                        style: const TextStyle(color: Colors.white),
+                        style: TextStyle(color: StiloColors.text),
                         decoration: InputDecoration(
                           hintText: "Escribe una tarea o comentario de seguimiento...",
-                          hintStyle: const TextStyle(color: Colors.white38, fontSize: 13),
+                          hintStyle: TextStyle(color: StiloColors.text.withValues(alpha: .38), fontSize: 13),
                           filled: true,
-                          fillColor: const Color(0xFF1E1E1E),
+                          fillColor: StiloColors.surface,
                           enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
-                          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFF59E0B))),
+                          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Color(0xFFF59E0B))),
                         ),
                       ),
                     ),
-                    const SizedBox(width: 10),
+                    SizedBox(width: 10),
                     IconButton(
-                      icon: const Icon(Icons.send, color: Color(0xFFF59E0B)),
+                      icon: Icon(Icons.send, color: Color(0xFFF59E0B)),
                       onPressed: _agregarNotaSeguimiento,
                     )
                   ],
                 ),
-                const SizedBox(height: 40),
+                SizedBox(height: 40),
 
                 // BOTÓN DINÁMICO DE ACCIÓN DE ESTATUS
                 if (_cotizacionActual.estatusCotizacion == 'PENDIENTE')
@@ -424,18 +425,18 @@ class _DetalleCotizacionScreenState extends State<DetalleCotizacionScreen> {
                     height: 55,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(12),
-                      gradient: const LinearGradient(colors: [Color(0xFF10B981), Color(0xFF059669)]),
+                      gradient: LinearGradient(colors: [Color(0xFF10B981), Color(0xFF059669)]),
                     ),
                     child: ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(backgroundColor: Colors.transparent, shadowColor: Colors.transparent),
                       onPressed: _aprobarCotizacion,
-                      icon: const Icon(Icons.check_circle_outline, color: Colors.white),
-                      label: Text("ACEPTAR COTIZACIÓN", style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 15)),
+                      icon: Icon(Icons.check_circle_outline, color: StiloColors.text),
+                      label: Text("ACEPTAR COTIZACIÓN", style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: StiloColors.text, fontSize: 15)),
                     ),
                   )
                 else
                   Container(
-                    padding: const EdgeInsets.all(16),
+                    padding: EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       color: Colors.green.withOpacity(0.05),
                       borderRadius: BorderRadius.circular(12),
@@ -444,8 +445,8 @@ class _DetalleCotizacionScreenState extends State<DetalleCotizacionScreen> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.verified, color: Colors.greenAccent, size: 20),
-                        const SizedBox(width: 8),
+                        Icon(Icons.verified, color: Colors.greenAccent, size: 20),
+                        SizedBox(width: 8),
                         Expanded(
                           child: Text(
                             "ESTA COTIZACIÓN YA GENERÓ UN PROYECTO",
@@ -456,7 +457,7 @@ class _DetalleCotizacionScreenState extends State<DetalleCotizacionScreen> {
                       ],
                     ),
                   ),
-                const SizedBox(height: 24),
+                SizedBox(height: 24),
               ],
             ),
     );
@@ -469,18 +470,18 @@ class _DetalleCotizacionScreenState extends State<DetalleCotizacionScreen> {
         Row(
           children: [
             Icon(icon, color: color, size: 16),
-            const SizedBox(width: 6),
+            SizedBox(width: 6),
             Text(title, style: GoogleFonts.inter(color: color, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1)),
           ],
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: 8),
         Container(
           width: double.infinity,
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: const Color(0xFF1E1E1E),
+            color: StiloColors.surface,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.white12),
+            border: Border.all(color: StiloColors.text.withValues(alpha: .12)),
           ),
           child: child,
         )
@@ -490,13 +491,13 @@ class _DetalleCotizacionScreenState extends State<DetalleCotizacionScreen> {
 
   Widget _buildInfoRow(String label, String value) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8.0),
+      padding: EdgeInsets.only(bottom: 8.0),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: const TextStyle(color: Colors.white54, fontWeight: FontWeight.w500, fontSize: 14)),
-          const SizedBox(width: 6),
-          Expanded(child: Text(value, style: const TextStyle(color: Colors.white, fontSize: 14))),
+          Text(label, style: TextStyle(color: StiloColors.text.withValues(alpha: .54), fontWeight: FontWeight.w500, fontSize: 14)),
+          SizedBox(width: 6),
+          Expanded(child: Text(value, style: TextStyle(color: StiloColors.text, fontSize: 14))),
         ],
       ),
     );

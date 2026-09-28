@@ -1,3 +1,6 @@
+import '../screens/warehouse_workspace_screen.dart';
+import '../screens/business_workspace_screen.dart';
+import '../screens/human_resources_screen.dart';
 import '../screens/admin_inbox_screen.dart';
 import '../screens/notification_health_screen.dart';
 import '../screens/extra_work_screen.dart';
@@ -90,6 +93,10 @@ String _normalize(String text) {
 }
 
 class AppActionCatalog {
+  static List<AppAction> mainMenu(UserModel user) {
+    const grouped = {'proyectos', 'asistencia', 'almacen_movimientos', 'solicitudes_almacen', 'prestamos', 'cajitas', 'cajita', 'proveedores', 'equipo', 'asistencias', 'rachas', 'racha', 'plan_personal', 'bandeja_admin', 'clientes', 'ventas', 'cotizaciones', 'conocimiento_ia', 'alerta_general', 'voz', 'guia', 'trabajo_extra'};
+    return forUser(user).where((a) => !grouped.contains(a.id)).toList();
+  }
   static const _cyan = Color(0xFFB7FF2A);
   static const _mint = Color(0xFFC6FF68);
   static const _violet = Color(0xFFC13CFF);
@@ -103,6 +110,7 @@ class AppActionCatalog {
     final master = user.rol == AppRoles.maestro;
 
     final actions = <AppAction>[
+      if (admin) AppAction(id: 'gestion', title: 'Gestión de la empresa', subtitle: 'Recursos Humanos, finanzas y administración', icon: Icons.business_center_outlined, color: _pink, keywords: const ['siigo', 'aspel', 'nomina', 'recursos humanos'], builder: (_) => BusinessWorkspaceScreen(user: user)),
       if (admin) AppAction(id: 'plan_personal', title: 'Organizar al personal', subtitle: 'Asignar comidas, compras, eventos y pendientes', icon: Icons.edit_calendar_rounded, color: _amber, keywords: const ['hogar','compras','eventos','comida','personal'], builder: (_) => PersonalPlanningAdminScreen(user: user)),
       if (user.usesPersonalPanel) AppAction(id: 'mi_dia', title: 'Mi día', subtitle: 'Mi plan, comidas, compras y eventos', icon: Icons.wb_sunny_rounded, color: _amber, keywords: const ['hogar','compras','eventos','comida'], builder: (_) => PersonalDayScreen(user: user)),
       if (admin || warehouse) AppAction(id: 'almacen_movimientos', title: 'Control de almacén', subtitle: 'Aprobar salidas, recibir devoluciones e historial', icon: Icons.warehouse_rounded, color: _amber, primary: true, keywords: const ['préstamos', 'salidas', 'entradas', 'aprobar'], builder: (_) => const AdminSolicitudesHerramientasScreen()),
@@ -113,12 +121,12 @@ class AppActionCatalog {
       AppAction(id: 'estado_notificaciones', title: 'Notificaciones y sonido', subtitle: 'Revisar este teléfono y probar el sonido local', icon: Icons.notifications_active_rounded, color: _pink, builder: (_) => NotificationHealthScreen(user: user)),
       if (admin) AppAction(id: 'bandeja_admin', title: 'Solicitudes por revisar', subtitle: 'Herramientas, comida, idiomas y trabajo extra', icon: Icons.inbox_rounded, color: _pink, keywords: const ['aprobar', 'solicitudes', 'pendientes'], builder: (_) => AdminInboxScreen(user: user)),
       AppAction(id: 'trabajo_extra', title: 'Lo que hice de más', subtitle: 'Reportar trabajo realizado o faltantes; no crea tareas', icon: Icons.auto_awesome_rounded, color: _mint, keywords: const ['extra', 'reporte', 'faltante'], builder: (_) => ExtraWorkScreen(user: user)),
-      if (admin || user.panelIngenieria) AppAction(id: 'ingenieria', title: 'Ingeniería industrial', subtitle: 'Producción, calidad, tiempos y mejora continua', icon: Icons.precision_manufacturing_rounded, color: _pink, builder: (_) => EngineeringScreen(user: user)),
+      if (user.panelIngenieria) AppAction(id: 'ingenieria', title: 'Ingeniería industrial', subtitle: 'Producción, calidad, tiempos y mejora continua', icon: Icons.precision_manufacturing_rounded, color: _pink, builder: (_) => EngineeringScreen(user: user)),
       AppAction(id: 'juegos', title: 'Pausa Stilo · Juegos', subtitle: 'Sin Wi-Fi · hasta 4 en el mismo teléfono', icon: Icons.sports_esports_rounded, color: _violet, keywords: const ['jugar','memoria','gato','cuatro','carrera','territorios','offline'], builder: (_) => TeamGamesScreen(user: user)),
       AppAction(id: 'equipo', title: admin ? 'Administrar perfiles' : 'Nuestro equipo', subtitle: admin ? 'Otorgar insignias y agregar lugares de instalación' : 'Personas, intereses e instalaciones', icon: Icons.groups_outlined, color: _mint, keywords: const ['insignias', 'lugares', 'instalaciones', 'personas'], builder: (_) => PerfilesEquipoScreen(usuarioActual: user)),
       AppAction(id: 'prestamos', title: 'Préstamos de herramienta', subtitle: 'Solicitar, prestar, recibir y devolver', icon: Icons.handyman_outlined, color: _mint, keywords: const ['compañero', 'cajita', 'herramientas'], builder: (_) => PrestamosEquipoScreen(usuario: user)),
       if (!admin) AppAction(id: 'justificar', title: 'Justificar una falta', subtitle: 'Enviar motivo y consultar su revisión', icon: Icons.fact_check_outlined, color: _pink, keywords: const ['ausencia', 'justificación', 'falta'], builder: (_) => JustificarFaltaScreen(usuario: user)),
-      AppAction(id: 'tareas', title: 'Mis tareas', subtitle: 'Actividades, avances y evidencias', icon: Icons.assignment_outlined, color: _mint, primary: true, keywords: const ['actividades', 'jornada', 'pendientes'], builder: (_) => EquipoTareasScreen(usuario: user)),
+      AppAction(id: 'tareas', title: 'Proyectos y tareas', subtitle: 'Tareas del día, proyectos, grupos y evidencias', icon: Icons.assignment_outlined, color: _mint, primary: true, keywords: const ['actividades', 'proyectos', 'grupos', 'jornada', 'pendientes'], builder: (_) => EquipoTareasScreen(usuario: user)),
       AppAction(
         id: 'ia',
         title: 'Online Smart',
@@ -228,7 +236,7 @@ class AppActionCatalog {
         AppAction(id: 'racha', title: 'Mi racha', subtitle: 'Tu constancia', icon: Icons.local_fire_department_rounded, color: const Color(0xFFFF536A), builder: (_) => StreakOverviewScreen(user: user)),
       ]);
     }
-    return actions;
+    return actions.map((a) => a.id == 'inventario' ? AppAction(id: a.id, title: 'Almacén', subtitle: 'Productos, solicitudes y herramientas', icon: Icons.warehouse_outlined, color: a.color, builder: (_) => WarehouseWorkspaceScreen(user: user)) : a).toList();
   }
 
   static Widget _alertAll(BuildContext _) => const AdminAlertaGeneralScreen();
