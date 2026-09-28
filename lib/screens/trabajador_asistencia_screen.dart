@@ -307,6 +307,7 @@ class _TrabajadorAsistenciaScreenState extends State<TrabajadorAsistenciaScreen>
 
   @override
   Widget build(BuildContext context) {
+    final ahora = AttendanceGatewayService.today;
 
     return Scaffold(
       backgroundColor: const Color(0xFF000000),

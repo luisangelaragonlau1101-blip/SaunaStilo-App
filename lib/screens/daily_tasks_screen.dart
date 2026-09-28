@@ -131,9 +131,11 @@ class _DailyTaskDetailState extends State<DailyTaskDetail> {
         if (photo == null) return;
         bytes = await photo.readAsBytes(); name = photo.name;
       } else {
-        final result = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['jpg', 'jpeg', 'png', 'webp', 'pdf'], withData: true);
-        if (result == null) return;
-        bytes = result.files.single.bytes; name = result.files.single.name;
+        final files = await FilePicker.pickFiles(type: FileType.custom, allowedExtensions: ['jpg', 'jpeg', 'png', 'webp', 'pdf'], allowMultiple: false);
+        if (files.isEmpty) return;
+        final file = files.single;
+        if (await file.length() > 2 * 1024 * 1024) throw StateError('El archivo debe pesar como máximo 2 MB.');
+        bytes = await file.readAsBytes(); name = file.name;
       }
       if (bytes == null || bytes.isEmpty || bytes.length > 2 * 1024 * 1024) throw StateError('Elige una foto o PDF de hasta 2 MB. Puedes usar Tomar foto para reducir su tamaño.');
       if (mounted) setState(() { _pendingBytes = bytes; _pendingName = name; _error = null; });

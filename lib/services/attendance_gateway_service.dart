@@ -36,25 +36,26 @@ class AttendanceGatewayService {
     StreamSubscription<void>? changes;
     var busy = false;
     var reload = false;
+    var cancelled = false;
     Future<void> refresh() async {
-      if (controller.isClosed) return;
+      if (cancelled || controller.isClosed) return;
       if (busy) { reload = true; return; }
       busy = true;
       try {
         final value = await load();
-        if (!controller.isClosed) controller.add(value);
+        if (!cancelled && !controller.isClosed) controller.add(value);
       } catch (error, stack) {
-        if (!controller.isClosed) controller.addError(error, stack);
+        if (!cancelled && !controller.isClosed) controller.addError(error, stack);
       } finally {
         busy = false;
-        if (reload && !controller.isClosed) { reload = false; unawaited(refresh()); }
+        if (reload && !cancelled && !controller.isClosed) { reload = false; unawaited(refresh()); }
       }
     }
     controller = StreamController<T>(onListen: () {
       unawaited(refresh());
       timer = Timer.periodic(const Duration(seconds: 45), (_) => unawaited(refresh()));
       changes = _changes.stream.listen((_) => unawaited(refresh()));
-    }, onCancel: () { timer?.cancel(); changes?.cancel(); });
+    }, onCancel: () { cancelled = true; timer?.cancel(); changes?.cancel(); });
     return controller.stream;
   }
 
