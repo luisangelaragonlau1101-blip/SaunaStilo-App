@@ -17,6 +17,7 @@ class ReconocimientosScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context);
     return Scaffold(
       backgroundColor: _fondo,
       appBar: AppBar(
@@ -222,6 +223,7 @@ class _TarjetaTrabajador extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context);
     final insignias = resultado.insignias;
     return Container(
       margin: EdgeInsets.only(bottom: 12),

@@ -150,6 +150,7 @@ class _InventarioTrabajadorScreenState extends State<InventarioTrabajadorScreen>
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context);
     return Scaffold(
       backgroundColor: colorFondo,
       appBar: AppBar(

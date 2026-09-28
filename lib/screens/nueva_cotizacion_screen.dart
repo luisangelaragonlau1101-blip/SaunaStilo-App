@@ -305,6 +305,7 @@ class _NuevaCotizacionScreenState extends State<NuevaCotizacionScreen> {
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context);
     List<DropdownMenuItem<String>> itemsSaunas = _saunasCatalogo.map((sauna) {
       return DropdownMenuItem<String>(
         value: sauna.id,

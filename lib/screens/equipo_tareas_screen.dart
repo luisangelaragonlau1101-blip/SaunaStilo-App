@@ -59,6 +59,7 @@ class _ProjectActivitiesScreenState extends State<ProjectActivitiesScreen> {
   }
   @override
   Widget build(BuildContext context) {
+    Theme.of(context);
     Query<Map<String, dynamic>> query = FirebaseFirestore.instance.collection('actividades');
     if (_proyectoId != null) { query = query.where('proyectoId', isEqualTo: _proyectoId); }
     else if (!_admin) { query = query.where('asignadoATrabajadorId', isEqualTo: widget.usuario.id); }

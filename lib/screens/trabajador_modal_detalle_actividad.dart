@@ -294,6 +294,7 @@ class _ModalDetalleActividadState extends State<ModalDetalleActividad> {
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context);
     return StreamBuilder<List<AvanceActividad>>(
       stream: _actividadesService.obtenerAvancesActividad(widget.actividad.id),
       builder: (context, avancesSnapshot) {

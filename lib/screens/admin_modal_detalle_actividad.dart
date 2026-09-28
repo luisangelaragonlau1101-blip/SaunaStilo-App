@@ -147,6 +147,7 @@ class _ModalDetalleActividadState extends State<ModalDetalleActividad> {
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context);
     final estaAtrasada = widget.actividad.estatus != 'completado' &&
         DateTime.now().isAfter(widget.actividad.fechaTermino);
     final textoEstatus = estaAtrasada

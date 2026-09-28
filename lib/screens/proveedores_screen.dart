@@ -46,6 +46,7 @@ class _ProveedoresScreenState extends State<ProveedoresScreen> {
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context);
     return Scaffold(
       backgroundColor: StiloColors.surface,
       appBar: AppBar(
@@ -390,6 +391,7 @@ class _FormularioProveedorModalState extends State<_FormularioProveedorModal> {
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context);
     return Container(
       decoration: BoxDecoration(
         color: StiloColors.surface,

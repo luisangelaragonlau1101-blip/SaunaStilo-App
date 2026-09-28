@@ -320,6 +320,7 @@ class _RecepcionInventarioScreenState extends State<RecepcionInventarioScreen> {
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context);
     return Scaffold(
       backgroundColor: colorFondo,
       appBar: AppBar(

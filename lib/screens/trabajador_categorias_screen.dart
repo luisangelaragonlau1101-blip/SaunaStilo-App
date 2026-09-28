@@ -53,6 +53,7 @@ class _TrabajadorCategoriasScreenState extends State<TrabajadorCategoriasScreen>
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context);
     return Scaffold(
       backgroundColor: colorFondo,
       appBar: AppBar(

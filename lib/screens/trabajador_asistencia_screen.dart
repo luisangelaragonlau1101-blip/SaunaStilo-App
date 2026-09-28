@@ -308,6 +308,7 @@ class _TrabajadorAsistenciaScreenState extends State<TrabajadorAsistenciaScreen>
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context);
     final ahora = AttendanceGatewayService.today;
 
     return Scaffold(

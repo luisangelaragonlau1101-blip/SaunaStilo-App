@@ -64,6 +64,8 @@ class _OperationsShellState extends State<OperationsShell> {
   });
   @override
   Widget build(BuildContext context) {
+    Theme.of(context);
+    Theme.of(context);
     _page(_index);
     return PersonalMessageOverlay(usuario: widget.usuario, child: Scaffold(
       backgroundColor: StiloColors.background,
@@ -93,6 +95,7 @@ class _OperationsHomeState extends State<_OperationsHome> {
   }
   @override
   Widget build(BuildContext context) {
+    Theme.of(context);
     final actions = AppActionCatalog.mainMenu(widget.usuario);
 
     return SafeArea(bottom: false, child: ListView(padding: EdgeInsets.fromLTRB(18, 12, 18, 24), children: [
@@ -122,6 +125,7 @@ class OperationsTaskList extends StatelessWidget {
   const OperationsTaskList({super.key, required this.usuario, this.compact = false});
   @override
   Widget build(BuildContext context) {
+    Theme.of(context);
     final admin = usuario.rol == AppRoles.admin;
     final query = admin ? FirebaseFirestore.instance.collection('actividades') : FirebaseFirestore.instance.collection('actividades').where('asignadoATrabajadorId', isEqualTo: usuario.id);
     return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(stream: query.snapshots(), builder: (context, snapshot) {

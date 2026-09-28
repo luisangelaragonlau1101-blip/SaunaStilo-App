@@ -80,6 +80,7 @@ class _JornadaCompactaState extends State<JornadaCompacta> with WidgetsBindingOb
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context);
     return StreamBuilder<Map<String, dynamic>>(
       stream: _journal,
       builder: (context, snapshot) {

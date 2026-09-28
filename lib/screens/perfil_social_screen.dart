@@ -29,6 +29,7 @@ class PerfilSocialScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context);
     if (_esPropio) return ConfiguracionScreen(usuario: usuarioActual);
     return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
       stream: FirebaseFirestore.instance.collection('usuarios').doc(perfilId).snapshots(),

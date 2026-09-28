@@ -20,6 +20,7 @@ class ProfileNetworks extends StatelessWidget {
   const ProfileNetworks({super.key, required this.profileId, required this.editable, this.data});
   @override
   Widget build(BuildContext context) {
+    Theme.of(context);
     final links = ProfileSocialLinks.fromData(data);
     return Padding(padding: EdgeInsets.only(top: 20), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Row(children: [Expanded(child: Text('MI MUNDO · REDES Y MÚSICA', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12, letterSpacing: .7))),

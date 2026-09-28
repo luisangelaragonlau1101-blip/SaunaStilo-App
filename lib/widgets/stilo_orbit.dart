@@ -1,10 +1,9 @@
 import '../presentation/appearance.dart';
 import 'package:flutter/material.dart';
 
-List<Color> get stiloAccents => <Color>[
-  StiloColors.accent, Color(0xFFFF729C), StiloColors.accent,
-  Color(0xFFFFB876), Color(0xFF7CE3BD),
-];
+List<Color> get stiloAccents => AppearanceController.instance.palette.light
+  ? const [Color(0xFF406600), Color(0xFF9D174D), Color(0xFF6D28D9), Color(0xFF9A3412), Color(0xFF116149)]
+  : const [Color(0xFFB7FF2A), Color(0xFFFF729C), Color(0xFFC798FF), Color(0xFFFFB876), Color(0xFF7CE3BD)];
 
 /// Shared, rounded brand treatment. No remote artwork or replacement company logo.
 class StiloOrbitIcon extends StatelessWidget {
@@ -14,7 +13,9 @@ class StiloOrbitIcon extends StatelessWidget {
   final bool active;
   const StiloOrbitIcon({super.key, required this.icon, required this.color, this.size = 48, this.active = false});
   @override
-  Widget build(BuildContext context) => AnimatedContainer(
+  Widget build(BuildContext context) {
+    Theme.of(context);
+    return AnimatedContainer(
     duration: Duration(milliseconds: MediaQuery.disableAnimationsOf(context) ? 0 : 180),
     width: size, height: size,
     decoration: BoxDecoration(shape: BoxShape.circle,
@@ -32,6 +33,7 @@ class StiloOrbitIcon extends StatelessWidget {
       Icon(icon, color: color, size: size * .47),
     ]),
   );
+  }
 }
 
 class StiloDock extends StatelessWidget {
@@ -40,7 +42,9 @@ class StiloDock extends StatelessWidget {
   final ValueChanged<int> onSelected;
   const StiloDock({super.key, required this.selectedIndex, required this.destinations, required this.onSelected});
   @override
-  Widget build(BuildContext context) => SafeArea(top: false, child: Container(
+  Widget build(BuildContext context) {
+    Theme.of(context);
+    return SafeArea(top: false, child: Container(
     margin: EdgeInsets.fromLTRB(10, 5, 10, 8),
     padding: EdgeInsets.symmetric(horizontal: 5, vertical: 9),
     decoration: BoxDecoration(color: StiloColors.surface, borderRadius: BorderRadius.circular(38),
@@ -62,6 +66,7 @@ class StiloDock extends StatelessWidget {
               ]))))))));
     })),
   ));
+  }
 }
 
 class AdminOperationsCard extends StatelessWidget {
@@ -69,7 +74,9 @@ class AdminOperationsCard extends StatelessWidget {
   final VoidCallback onTeam;
   const AdminOperationsCard({super.key, required this.onAttendance, required this.onTeam});
   @override
-  Widget build(BuildContext context) => Container(padding: EdgeInsets.all(18),
+  Widget build(BuildContext context) {
+    Theme.of(context);
+    return Container(padding: EdgeInsets.all(18),
     decoration: BoxDecoration(borderRadius: BorderRadius.circular(28),
       gradient: LinearGradient(colors: [StiloColors.surface, StiloColors.surface]),
       border: Border.all(color: StiloColors.border)),
@@ -85,4 +92,5 @@ class AdminOperationsCard extends StatelessWidget {
       ]),
     ]),
   );
+  }
 }

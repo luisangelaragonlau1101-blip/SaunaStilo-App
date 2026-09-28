@@ -143,6 +143,7 @@ class _RachaAsistenciasScreenState extends State<RachaAsistenciasScreen> with Si
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context);
     return Scaffold(
       backgroundColor: colorFondo,
       appBar: AppBar(

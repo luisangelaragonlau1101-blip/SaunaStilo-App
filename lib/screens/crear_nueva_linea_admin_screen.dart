@@ -222,6 +222,7 @@ class _CrearNuevaLineaAdminScreenState extends State<CrearNuevaLineaAdminScreen>
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context);
     final formatoFecha = DateFormat('dd/MM/yyyy');
 
     return Scaffold(

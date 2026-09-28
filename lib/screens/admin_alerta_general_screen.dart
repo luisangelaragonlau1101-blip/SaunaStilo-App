@@ -34,7 +34,8 @@ class _AdminAlertState extends State<AdminAlertaGeneralScreen>{
   }catch(e){if(mounted)setState(()=>_error=e is StateError?e.message.toString():e is ArgumentError?e.message.toString():'No se confirmó el envío. Reintentar conserva el mismo identificador para evitar duplicados.');}
   finally{if(mounted)setState(()=>_sending=false);}
  }
- @override Widget build(BuildContext context){final locked=_sending||_pending!=null;
+ @override Widget build(BuildContext context){
+    Theme.of(context);final locked=_sending||_pending!=null;
  return Scaffold(backgroundColor:StiloColors.background,appBar:AppBar(title:Text('Alerta General · Personalizada')),body:ListView(padding:EdgeInsets.all(20),children:[
   Container(padding:EdgeInsets.all(22),decoration:BoxDecoration(borderRadius:BorderRadius.circular(30),gradient:LinearGradient(colors:[StiloColors.surface,StiloColors.surface]),border:Border.all(color:Color(0xFF8E1538))),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Icon(Icons.campaign_rounded,size:46,color:Color(0xFFFF729C)),SizedBox(height:12),Text('La atención del equipo,\ncon tu mensaje.',style:TextStyle(fontSize:26,fontWeight:FontWeight.w900)),SizedBox(height:10),Text('Conserva la alarma general o elige exactamente a quién avisar.',style:TextStyle(color:StiloColors.text.withValues(alpha: .70)))])),
   SizedBox(height:20),DropdownButtonFormField<String>(initialValue:_audience,decoration:InputDecoration(labelText:'Destinatarios'),items:[DropdownMenuItem(value:'todos',child:Text('Todo el equipo')),DropdownMenuItem(value:'personas',child:Text('Elegir personas')),DropdownMenuItem(value:'rol',child:Text('Un rol del equipo'))],onChanged:locked?null:(v)=>setState(()=>_audience=v!)),

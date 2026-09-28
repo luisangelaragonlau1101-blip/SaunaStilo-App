@@ -54,6 +54,7 @@ class _EngineeringState extends State<EngineeringScreen> {
     if (mounted && error == null) await _load();
   }
   @override Widget build(BuildContext context) {
+    Theme.of(context);
     if (!widget.user.panelIngenieria) return Scaffold(body: Center(child: Text('Ingeniería requiere autorización de Administración.')));
     final list = records ?? <Map<String, dynamic>>[];
     final content = SafeArea(bottom: false, child: RefreshIndicator(onRefresh: _load, child: ListView(physics: AlwaysScrollableScrollPhysics(), padding: EdgeInsets.all(18), children: [
@@ -132,6 +133,7 @@ class _EngineeringAccessState extends State<EngineeringAccessControl> {
     finally { if (mounted) setState(() => busy = false); }
   }
   @override Widget build(BuildContext context) {
+    Theme.of(context);
     if (widget.administrator.rol != AppRoles.admin) return SizedBox.shrink();
     return Card(child: Column(children: [
       SwitchListTile(secondary: Icon(Icons.precision_manufacturing_rounded, color: StiloColors.accent), title: Text('Panel de Ingeniería'), subtitle: Text('Producción, calidad, tiempos y mejoras'), value: widget.profile['panelIngenieria'] == true, onChanged: busy ? null : (v) => _change('panel', v)),

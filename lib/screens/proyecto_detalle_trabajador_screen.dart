@@ -565,6 +565,7 @@ class _ProyectoDetalleTrabajadorScreenState extends State<ProyectoDetalleTrabaja
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context);
     return StreamBuilder<DocumentSnapshot>(
       stream: FirebaseFirestore.instance.collection('proyectos').doc(widget.proyecto.id).snapshots(),
       builder: (context, snapshot) {
@@ -1565,6 +1566,7 @@ class _RecepcionKitModalState extends State<RecepcionKitModal> {
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context);
     return BackdropFilter(
       filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
       child: Container(

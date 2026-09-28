@@ -27,6 +27,7 @@ class DetallePedidoScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context);
     Color statusColor;
     String statusStr = pedido.statusPedido.toLowerCase();
 

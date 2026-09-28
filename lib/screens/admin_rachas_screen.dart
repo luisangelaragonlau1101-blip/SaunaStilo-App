@@ -148,6 +148,7 @@ class _AdminRachasScreenState extends State<AdminRachasScreen> {
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context);
     return Scaffold(
       backgroundColor: colorFondo,
       appBar: AppBar(

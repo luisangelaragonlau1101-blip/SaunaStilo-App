@@ -84,6 +84,7 @@ class _AsistenteIaLegadoScreenState extends State<AsistenteIaLegadoScreen> {
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context);
     return Scaffold(
       backgroundColor: _bg,
       appBar: AppBar(

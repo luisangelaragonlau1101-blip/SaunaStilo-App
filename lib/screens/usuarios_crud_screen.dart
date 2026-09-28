@@ -485,6 +485,7 @@ class _UsuariosCrudScreenState extends State<UsuariosCrudScreen> {
 
 @override
   Widget build(BuildContext context) {
+    Theme.of(context);
     return Scaffold(
       backgroundColor: colorFondo,
       appBar: AppBar(

@@ -160,6 +160,7 @@ Future<void> _marcarComoReparado(BuildContext context, String insumoId) async {
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context);
     return Scaffold(
       backgroundColor: colorFondo,
       appBar: AppBar(

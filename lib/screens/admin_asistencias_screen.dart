@@ -617,6 +617,7 @@ class _AdminAsistenciasScreenState extends State<AdminAsistenciasScreen> {
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context);
     DateTime inicioDia = DateTime.utc(_fechaSeleccionada.year, _fechaSeleccionada.month, _fechaSeleccionada.day, 6);
     DateTime finDia = inicioDia.add(Duration(days: 1)).subtract(Duration(milliseconds: 1));
 

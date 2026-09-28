@@ -19,6 +19,7 @@ class _CalendarioCumpleanosScreenState extends State<CalendarioCumpleanosScreen>
   bool _monthOnly = false;
   @override
   Widget build(BuildContext context) {
+    Theme.of(context);
     final today = mexicoToday();
     return Scaffold(backgroundColor: StiloColors.background, appBar: AppBar(title: Text('Cumpleaños del equipo')), body: Column(children: [
       Container(margin: EdgeInsets.all(18), padding: EdgeInsets.all(20), decoration: BoxDecoration(borderRadius: BorderRadius.circular(24), gradient: LinearGradient(colors: [StiloColors.surface, StiloColors.surface])), child: Row(children: [Icon(Icons.celebration_outlined, size: 35, color: StiloColors.accent), SizedBox(width: 15), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('Celebramos a nuestra gente', style: TextStyle(fontSize: 21, fontWeight: FontWeight.w800)), SizedBox(height: 5), Text('Fechas, intereses y detalles que nos unen.', style: TextStyle(color: StiloColors.text.withValues(alpha: .60)))]))])),

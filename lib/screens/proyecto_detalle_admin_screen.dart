@@ -248,6 +248,7 @@ class _ProyectoDetalleAdminScreenState extends State<ProyectoDetalleAdminScreen>
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context);
     return StreamBuilder<DocumentSnapshot>(
       stream: FirebaseFirestore.instance.collection('proyectos').doc(widget.proyecto.id).snapshots(),
       builder: (context, snapshot) {
@@ -873,6 +874,7 @@ class _EvaluarDanosAlmacenModalState extends State<EvaluarDanosAlmacenModal> {
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context);
     return BackdropFilter(
       filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
       child: Container(
@@ -1184,6 +1186,7 @@ class _VerificarRecepcionAlmacenModalState extends State<VerificarRecepcionAlmac
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context);
     return BackdropFilter(
       filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
       child: Container(

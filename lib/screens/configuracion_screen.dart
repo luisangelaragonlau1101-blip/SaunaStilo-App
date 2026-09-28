@@ -46,7 +46,7 @@ class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
       final files = await FilePicker.pickFiles(type: FileType.image, allowMultiple: false);
       if (files.isEmpty) return;
       if (await files.single.length() > 8 * 1024 * 1024) throw StateError('Elige una foto menor de 8 MB.');
-      final photo = await InventoryPhotoCodec.encode(await files.single.readAsBytes());
+      final photo = await InventoryPhotoCodec.encode(await files.single.readAsBytes(), maxWidth: 160);
       await FirebaseFirestore.instance.collection('usuarios').doc(widget.usuario.id).update({'fotoUrl': photo, 'fotoRuta': ''});
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Foto de perfil guardada.')));
     } catch (_) {
@@ -214,6 +214,7 @@ class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context);
     return StreamBuilder<DocumentSnapshot>(
       stream: FirebaseFirestore.instance.collection('usuarios').doc(widget.usuario.id).snapshots(),
       builder: (context, snapshot) {

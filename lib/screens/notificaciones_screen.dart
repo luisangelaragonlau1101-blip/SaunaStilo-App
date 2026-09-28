@@ -21,6 +21,7 @@ class NotificacionesScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context);
     final service = NotificacionesService();
     final admin = usuario.rol == AppRoles.admin;
     return Scaffold(

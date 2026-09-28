@@ -117,6 +117,7 @@ class _EditarPedidoScreenState extends State<EditarPedidoScreen> {
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context);
     return Scaffold(
       backgroundColor: StiloColors.surface,
       appBar: AppBar(

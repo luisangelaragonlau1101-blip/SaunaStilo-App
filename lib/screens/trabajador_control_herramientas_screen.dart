@@ -85,6 +85,7 @@ class _ControlHerramientasScreenState extends State<ControlHerramientasScreen> {
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context);
     return Scaffold(
       backgroundColor: colorFondo,
       appBar: AppBar(
@@ -1157,6 +1158,7 @@ class _ReporteDevolucionModalState extends State<ReporteDevolucionModal> {
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context);
     return BackdropFilter(
       filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
       child: Container(

@@ -73,6 +73,7 @@ class _AudioMessagePlayerState extends State<AudioMessagePlayer> with WidgetsBin
   String _time(Duration d) => '${d.inSeconds ~/ 60}:${(d.inSeconds % 60).toString().padLeft(2, '0')}';
   @override
   Widget build(BuildContext context) {
+    Theme.of(context);
     final total = _duration > Duration.zero ? _duration : Duration(seconds: widget.durationSeconds);
     return ConstrainedBox(constraints: BoxConstraints(maxWidth: 300), child: Container(
       padding: EdgeInsets.fromLTRB(5, 6, 10, 6),

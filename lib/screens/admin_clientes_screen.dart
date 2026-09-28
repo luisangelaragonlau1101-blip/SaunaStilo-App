@@ -37,6 +37,7 @@ class _AdminClientesScreenState extends State<AdminClientesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context);
     return Scaffold(
       backgroundColor: StiloColors.surface,
       appBar: AppBar(
@@ -326,6 +327,7 @@ class _FormularioClienteModalState extends State<_FormularioClienteModal> {
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context);
     return Container(
       decoration: BoxDecoration(
         color: StiloColors.surface,

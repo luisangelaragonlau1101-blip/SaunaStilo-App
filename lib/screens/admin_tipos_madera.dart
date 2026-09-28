@@ -42,6 +42,7 @@ class _CatalogoSaunasScreenState extends State<CatalogoSaunasScreen> {
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context);
     return Scaffold(
       backgroundColor: StiloColors.surface,
       appBar: AppBar(
@@ -378,6 +379,7 @@ class _FormularioMaderaModalState extends State<_FormularioMaderaModal> {
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context);
     return Container(
       decoration: BoxDecoration(
         color: StiloColors.surface,

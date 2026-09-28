@@ -62,6 +62,7 @@ class _AdminInboxState extends State<AdminInboxScreen> {
   }
   void _open(Widget screen) => Navigator.push(context, MaterialPageRoute<void>(builder: (_) => screen)).then((_) { if (mounted) _load(); });
   @override Widget build(BuildContext context) {
+    Theme.of(context);
     if (widget.user.rol != AppRoles.admin) return Scaffold(body: Center(child: Text('Solo Administración.')));
     return Scaffold(backgroundColor: StiloColors.background, appBar: AppBar(title: Text('Bandeja de Administración'), actions: [IconButton(tooltip: 'Actualizar solicitudes', onPressed: busy ? null : () => _load(reloadPeople: true), icon: Icon(Icons.refresh_rounded))]),
       body: RefreshIndicator(onRefresh: () => _load(reloadPeople: true), child: ListView(physics: AlwaysScrollableScrollPhysics(), padding: EdgeInsets.all(18), children: [

@@ -78,6 +78,7 @@ class _GestionarSolicitudesSalidaScreenState extends State<GestionarSolicitudesS
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context);
     return Scaffold(
       backgroundColor: StiloColors.surface,
       appBar: AppBar(
@@ -469,6 +470,7 @@ class _ChecklistDevolucionModalState extends State<ChecklistDevolucionModal> {
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context);
     bool noHayRetornables = widget.articulos.where((i) => i['esRetornable'] == true).isEmpty;
 
     return BackdropFilter(

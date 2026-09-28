@@ -88,6 +88,7 @@ class _TrainingAdminState extends State<TrainingAdminScreen>{
   }catch(e){if(mounted)setState(()=>_error=CompanyLearningService.message(e));}finally{if(mounted)setState(()=>_busy=false);}
  }
  @override Widget build(BuildContext context){
+    Theme.of(context);
   if(widget.user.rol!=AppRoles.admin)return Scaffold(body:Center(child:Text('Solo Administración.')));
   return Scaffold(backgroundColor:StiloColors.background,appBar:AppBar(title:Text('Formación del equipo'),actions:[IconButton(onPressed:_busy?null:_load,icon:Icon(Icons.refresh_rounded))]),body:ListView(padding:EdgeInsets.all(18),children:[
    Text('Solicitudes · revisión · constancias',style:TextStyle(fontSize:22,fontWeight:FontWeight.w800)),SizedBox(height:16),

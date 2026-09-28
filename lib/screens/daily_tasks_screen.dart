@@ -157,6 +157,7 @@ class _DailyTaskDetailState extends State<DailyTaskDetail> {
   }
   @override void dispose() { _comment.dispose(); super.dispose(); }
   @override Widget build(BuildContext context) {
+    Theme.of(context);
     final editable = _own && _ready && !_busy && _task['status'] != 'completado';
     return Scaffold(appBar: AppBar(title: Text('Tarea y evidencias'), actions: [IconButton(tooltip: 'Actualizar tarea', onPressed: _busy ? null : _load, icon: Icon(Icons.refresh))]),
       body: ListView(padding: EdgeInsets.all(20), children: [

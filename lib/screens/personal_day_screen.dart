@@ -93,6 +93,7 @@ class _PersonalDayState extends State<PersonalDayScreen> with WidgetsBindingObse
     showDialog<void>(context:context,builder:(c)=>AlertDialog(icon:Icon(Icons.celebration_rounded,color:StiloColors.accent,size:52),title:Text('¡Terminaste tu jornada laboral!'),content:Text('Excelente trabajo. Tu salida fue confirmada. Gracias por todo lo que haces. ✨'),actions:[FilledButton(onPressed:()=>Navigator.pop(c),child:Text('¡Gracias!'))]));
   }
   @override Widget build(BuildContext context) {
+    Theme.of(context);
     final body=SafeArea(bottom:false,child:RefreshIndicator(onRefresh:_load,child:ListView(padding:EdgeInsets.fromLTRB(18,12,18,28),children:[
       if(widget.embedded)...[
         Row(children:[Image.asset('assets/logo_saunastilo.png',width:124,height:48),Spacer(),IconButton(tooltip:'Todas mis opciones',onPressed:widget.onOptions,icon:Icon(Icons.apps_rounded))]),
@@ -162,7 +163,8 @@ class _PersonalDayState extends State<PersonalDayScreen> with WidgetsBindingObse
 class PersonalCompletionBanner extends StatelessWidget {
  final List<Map<String,dynamic>> items;
  const PersonalCompletionBanner({super.key,required this.items});
- @override Widget build(BuildContext context){final done=items.where((i)=>i['done']==true).length,all=items.isNotEmpty&&done==items.length;
+ @override Widget build(BuildContext context){
+    Theme.of(context);final done=items.where((i)=>i['done']==true).length,all=items.isNotEmpty&&done==items.length;
   return Container(margin:EdgeInsets.only(bottom:16),padding:EdgeInsets.all(17),decoration:BoxDecoration(color:StiloColors.surface,borderRadius:BorderRadius.circular(25)),child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[Text(all?'¡Pendientes del día completados! ✨':'Tu avance: $done de ${items.length}',style:TextStyle(fontWeight:FontWeight.w800,color:StiloColors.accent)),SizedBox(height:9),LinearProgressIndicator(value:items.isEmpty?0:done/items.length,borderRadius:BorderRadius.circular(10)),if(all)Padding(padding:EdgeInsets.only(top:9),child:Text('Cuando termine tu horario, confirma tu salida en Mi jornada.',style:TextStyle(color:StiloColors.text.withValues(alpha: .70),fontSize:12)))]));
  }
 }
@@ -210,7 +212,8 @@ class _PersonalItemFormState extends State<PersonalItemForm>{
 class PersonalPlanningAdminScreen extends StatelessWidget{
  final UserModel user;
  const PersonalPlanningAdminScreen({super.key,required this.user});
- @override Widget build(BuildContext context){if(user.rol!=AppRoles.admin)return Scaffold(body:Center(child:Text('Solo Administración.')));
+ @override Widget build(BuildContext context){
+    Theme.of(context);if(user.rol!=AppRoles.admin)return Scaffold(body:Center(child:Text('Solo Administración.')));
  return Scaffold(backgroundColor:StiloColors.background,appBar:AppBar(title:Text('Organizar al personal')),body:StreamBuilder<QuerySnapshot<Map<String,dynamic>>>(stream:FirebaseFirestore.instance.collection('usuarios').snapshots(),builder:(c,s){
   if(s.hasError)return Center(child:Text('No se pudo cargar el personal. Revisa conexión y permisos.'));
   if(!s.hasData)return Center(child:CircularProgressIndicator());

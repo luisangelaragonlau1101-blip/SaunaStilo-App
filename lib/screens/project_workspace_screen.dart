@@ -21,6 +21,7 @@ class ProjectWorkspaceScreen extends StatelessWidget {
   const ProjectWorkspaceScreen({super.key, required this.usuario, this.embedded = false});
   @override
   Widget build(BuildContext context) {
+    Theme.of(context);
     final admin = usuario.rol == AppRoles.admin;
     final query = admin ? FirebaseFirestore.instance.collection('proyectos') : FirebaseFirestore.instance.collection('proyectos').where('encargados', arrayContains: usuario.id);
     return Scaffold(backgroundColor: StiloColors.background, appBar: embedded ? null : AppBar(title: Text('Proyectos y grupos'), actions: [

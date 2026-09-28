@@ -23,6 +23,7 @@ class _HomeProgressState extends State<HomeProgressPanel>{
  void _refresh()async{final uid=widget.user.id;try{final p=await LearningStore.read(uid);if(mounted&&widget.user.id==uid)setState((){_learning=p;_learningError=false;});}catch(_){if(mounted&&widget.user.id==uid)setState(()=>_learningError=true);}}
  @override void dispose(){LearningStore.revision.removeListener(_refresh);super.dispose();}
  @override Widget build(BuildContext context){
+    Theme.of(context);
   final admin=widget.user.rol==AppRoles.admin,db=FirebaseFirestore.instance;
   final attendance=AttendanceHistoryService.watch(widget.user.id, team: admin);
   return StreamBuilder<AttendanceHistory>(stream:attendance,builder:(context,s){

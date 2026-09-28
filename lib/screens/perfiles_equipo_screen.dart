@@ -22,6 +22,7 @@ class _PerfilesEquipoScreenState extends State<PerfilesEquipoScreen> {
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context);
     return Scaffold(
       backgroundColor: StiloColors.background,
       appBar: AppBar(

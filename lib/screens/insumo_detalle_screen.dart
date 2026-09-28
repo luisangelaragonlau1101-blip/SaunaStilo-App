@@ -204,6 +204,7 @@ class _InsumoDetalleScreenState extends State<InsumoDetalleScreen> {
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context);
     return Scaffold(
       backgroundColor: colorFondo,
       appBar: AppBar(

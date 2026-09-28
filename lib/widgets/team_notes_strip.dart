@@ -80,6 +80,7 @@ class TeamNoteDetails extends StatelessWidget {
   const TeamNoteDetails({super.key, required this.data});
   @override
   Widget build(BuildContext context) {
+    Theme.of(context);
     String url = '';
     try {url = ProfileSocialLinks.music(data['musicaUrl']?.toString() ?? '');} on FormatException { /* Never launch unsafe stored content. */ }
     final link = url;

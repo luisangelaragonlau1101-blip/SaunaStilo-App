@@ -38,6 +38,7 @@ class _CatalogoSaunasTrabajadorScreenState extends State<CatalogoSaunasTrabajado
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context);
     return Scaffold(
       backgroundColor: StiloColors.surface,
       appBar: AppBar(

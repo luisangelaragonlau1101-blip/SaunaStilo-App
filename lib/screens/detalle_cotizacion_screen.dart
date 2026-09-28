@@ -226,6 +226,7 @@ class _DetalleCotizacionScreenState extends State<DetalleCotizacionScreen> {
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context);
     final formatoMoneda = NumberFormat.currency(symbol: '\$', decimalDigits: 2);
     final formatoFecha = DateFormat('dd/MM/yyyy - hh:mm a');
 

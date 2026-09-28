@@ -54,6 +54,7 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context);
     return Scaffold(
       backgroundColor: _fondo,
       appBar: AppBar(
@@ -1759,6 +1760,7 @@ class _VisorHistoriasScreenState extends State<_VisorHistoriasScreen> {
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context);
     return Scaffold(
       backgroundColor: StiloColors.background,
       body: Stack(
@@ -2040,6 +2042,7 @@ class _GaleriaPostState extends State<_GaleriaPost> {
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context);
     return AspectRatio(
       aspectRatio: 1,
       child: Stack(
@@ -2132,6 +2135,7 @@ class _GaleriaVideosPost extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context);
     return Column(
       children: [
         for (var index = 0; index < videos.length; index++) ...[
@@ -2174,6 +2178,7 @@ class _VideoPostState extends State<_VideoPost> {
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context);
     return FutureBuilder<void>(
       future: _inicializacion,
       builder: (context, snapshot) {

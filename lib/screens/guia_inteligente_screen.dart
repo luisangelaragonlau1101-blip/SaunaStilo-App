@@ -73,6 +73,7 @@ class _GuiaInteligenteScreenState extends State<GuiaInteligenteScreen> {
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context);
     final actions = AppActionCatalog.forUser(widget.usuario)
         .where((action) => action.id != 'guia')
         .take(6)

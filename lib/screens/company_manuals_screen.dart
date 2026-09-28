@@ -17,6 +17,7 @@ class _ManualsState extends State<CompanyManualsScreen>{
  Future<void> _load()async{try{final s=await CompanyLearningService().call('manual-list');if(mounted)setState((){_items=(s['items'] as List).map((e)=>Map<String,dynamic>.from(e)).toList();_error=null;});}catch(e){if(mounted)setState(()=>_error=CompanyLearningService.message(e));}}
  Future<void> _edit([Map<String,dynamic>? item])async{await Navigator.push(context,MaterialPageRoute<void>(builder:(_)=>CompanyManualEditor(item:item)));if(mounted)await _load();}
  @override Widget build(BuildContext context){
+    Theme.of(context);
   if(widget.user.rol!=AppRoles.admin)return Scaffold(body:Center(child:Text('Solo Administración administra el conocimiento.')));
   return Scaffold(backgroundColor:StiloColors.background,appBar:AppBar(title:Text('Conocimiento de la IA'),actions:[IconButton(tooltip:'Actualizar',onPressed:_load,icon:Icon(Icons.refresh_rounded))]),body:ListView(padding:EdgeInsets.all(20),children:[
    Text('Los procedimientos de Sauna Stilo',style:TextStyle(fontSize:27,fontWeight:FontWeight.w800)),SizedBox(height:12),Text('Carga un manual, revisa su contenido y decide quién puede consultarlo. La IA utiliza solo versiones publicadas y muestra los fragmentos que respaldan su respuesta.',style:TextStyle(color:StiloColors.text.withValues(alpha: .70),height:1.5)),SizedBox(height:20),

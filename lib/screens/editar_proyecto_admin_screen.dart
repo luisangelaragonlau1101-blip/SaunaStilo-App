@@ -273,6 +273,7 @@ class _EditarProyectoAdminScreenState extends State<EditarProyectoAdminScreen> {
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context);
     double cotizacionActual = double.tryParse(_cotizacionController.text) ?? 0.0;
 
     // El acumulado se calcula sumando el pago histórico + el nuevo abono ingresado

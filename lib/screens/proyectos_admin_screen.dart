@@ -94,6 +94,7 @@ class _ProyectosAdminScreenState extends State<ProyectosAdminScreen> {
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context);
     return Scaffold(
       backgroundColor: StiloColors.surface,
       appBar: AppBar(

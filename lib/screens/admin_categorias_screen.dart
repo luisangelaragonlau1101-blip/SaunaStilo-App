@@ -206,6 +206,7 @@ class _AdminCategoriasScreenState extends State<AdminCategoriasScreen> {
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context);
     return Scaffold(
       backgroundColor: colorFondo,
       appBar: AppBar(

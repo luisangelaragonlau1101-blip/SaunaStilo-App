@@ -342,6 +342,7 @@ class _InventarioAdminScreenState extends State<InventarioAdminScreen> {
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context);
     return Scaffold(
       backgroundColor: colorFondo,
       appBar: AppBar(

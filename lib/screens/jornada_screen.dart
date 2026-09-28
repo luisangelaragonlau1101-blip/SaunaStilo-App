@@ -9,6 +9,7 @@ class JornadaScreen extends StatelessWidget {
   const JornadaScreen({super.key, required this.usuario});
   @override
   Widget build(BuildContext context) {
+    Theme.of(context);
 
     return Scaffold(
       appBar: AppBar(title: Text('Mi jornada'), actions: [IconButton(tooltip: 'Historial de asistencia', icon: Icon(Icons.history_rounded), onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => PayrollRecordsScreen(user: usuario))))]),

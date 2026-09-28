@@ -34,6 +34,7 @@ class _TrabajadorCajitaHerramientasScreenState extends State<TrabajadorCajitaHer
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context);
     final cajitaProvider = Provider.of<CajitaInventarioProvider>(context);
 
     return Scaffold(

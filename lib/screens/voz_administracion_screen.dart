@@ -72,6 +72,7 @@ class _VozAdministracionScreenState extends State<VozAdministracionScreen> {
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context);
     if (!_admin) return Scaffold(backgroundColor: _bg, body: SafeArea(child: Center(child: Padding(
       padding: EdgeInsets.all(28), child: Text('Este estudio de voz está disponible únicamente para Administración.', textAlign: TextAlign.center, style: TextStyle(color: StiloColors.text.withValues(alpha: .70), fontSize: 16)),
     ))));

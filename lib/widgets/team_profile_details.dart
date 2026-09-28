@@ -20,6 +20,7 @@ class TeamProfileDetails extends StatelessWidget {
   DocumentReference<Map<String, dynamic>> get _ref => FirebaseFirestore.instance.collection('usuarios').doc(perfilId);
   @override
   Widget build(BuildContext context) {
+    Theme.of(context);
     final interests = profileTags(data['intereses']);
     final colors = profileTags(data['coloresFavoritos']);
     final badges = data['insigniasAdmin'] is List ? (data['insigniasAdmin'] as List).whereType<Map>().toList() : <Map>[];

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../models/user_model.dart';
 import '../presentation/appearance.dart';
@@ -14,11 +15,27 @@ String? celebrationFor(DateTime today, DateTime? birthday) {
   return null;
 }
 String roleLabel(UserModel user) => user.panelIngenieria ? 'Ingeniería' : switch (user.rol) {'admin' => 'Administración', 'maestro' => 'Maestro', 'almacenista' => 'Almacén', _ => 'Mi equipo'};
-class PersonalHeader extends StatelessWidget {
+class PersonalHeader extends StatefulWidget {
   final UserModel user;
   final VoidCallback? onProfile;
   const PersonalHeader({super.key, required this.user, this.onProfile});
+  @override State<PersonalHeader> createState() => _PersonalHeaderState();
+}
+class _PersonalHeaderState extends State<PersonalHeader> with WidgetsBindingObserver {
+  Timer? _midnight;
+  UserModel get user => widget.user;
+  VoidCallback? get onProfile => widget.onProfile;
+  @override void initState() { super.initState(); WidgetsBinding.instance.addObserver(this); _schedule(); }
+  void _schedule() {
+    _midnight?.cancel();
+    final now = DateTime.now().toUtc().subtract(const Duration(hours: 6));
+    final next = DateTime.utc(now.year, now.month, now.day + 1);
+    _midnight = Timer(next.difference(now) + const Duration(seconds: 1), () { if (mounted) { setState(() {}); _schedule(); } });
+  }
+  @override void didChangeAppLifecycleState(AppLifecycleState state) { if (state == AppLifecycleState.resumed) { setState(() {}); _schedule(); } }
+  @override void dispose() { _midnight?.cancel(); WidgetsBinding.instance.removeObserver(this); super.dispose(); }
   @override Widget build(BuildContext context) {
+    Theme.of(context);
     final colors = Theme.of(context).colorScheme;
     final celebration = AppearanceController.instance.celebrations ? celebrationFor(mexicoToday(), user.cumpleanos) : null;
     return Container(padding: const EdgeInsets.all(20), decoration: BoxDecoration(borderRadius: BorderRadius.circular(28), gradient: LinearGradient(colors: [colors.primary.withValues(alpha: .16), colors.surfaceContainerLow]), border: Border.all(color: colors.outlineVariant)), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [

@@ -231,6 +231,7 @@ class _CrearProyectoAdminScreenState extends State<CrearProyectoAdminScreen> {
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context);
     double cotizacionActual = double.tryParse(_cotizacionController.text) ?? 0.0;
     double pagoInicialActual = double.tryParse(_pagoInicialController.text) ?? 0.0;
     double restante = cotizacionActual - pagoInicialActual;

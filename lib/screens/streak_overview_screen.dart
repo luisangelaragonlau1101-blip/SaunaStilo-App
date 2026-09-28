@@ -16,6 +16,7 @@ class StreakOverviewScreen extends StatelessWidget{
   const StreakOverviewScreen({super.key,required this.user});
   @override
   Widget build(BuildContext context){
+    Theme.of(context);
     final admin=user.rol==AppRoles.admin;
     final db=FirebaseFirestore.instance;
     final query=AttendanceHistoryService.watch(user.id, team: admin);

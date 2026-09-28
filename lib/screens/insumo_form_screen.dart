@@ -188,6 +188,7 @@ Future<void> _escanearCodigoFormulario() async {
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context);
     final bool esEdicion = widget.insumo != null;
 
     return Scaffold(
