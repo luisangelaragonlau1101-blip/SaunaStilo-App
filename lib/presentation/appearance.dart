@@ -25,7 +25,7 @@ class AppearanceController extends ChangeNotifier {
   String _palette = 'stilo';
   bool celebrations = true, compact = false;
   int _generation = 0;
-  Future<void> _writes = Future.value();
+  Future<void>? _writes;
   String? get userId => _uid;
   StiloPalette get palette => stiloPalettes.firstWhere((p) => p.id == _palette, orElse: () => stiloPalettes.first);
   Future<void> bindUser(String? uid) async {
@@ -48,7 +48,7 @@ class AppearanceController extends ChangeNotifier {
     if (paletteId != null && !stiloPalettes.any((p) => p.id == paletteId)) throw ArgumentError('Color desconocido.');
     final generation = _generation;
     final nextPalette = paletteId ?? _palette, nextCelebrations = festive ?? celebrations, nextCompact = simple ?? compact;
-    final operation = _writes.catchError((Object _) {}).then((_) async {
+    final operation = (_writes ?? Future<void>.value()).catchError((Object _) {}).then((_) async {
       final prefs = await SharedPreferences.getInstance();
       final saved = await prefs.setString('stilo.appearance.$uid.palette', nextPalette);
       final savedFestive = await prefs.setBool('stilo.appearance.$uid.celebrations', nextCelebrations);
