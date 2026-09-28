@@ -8,6 +8,8 @@ import 'dart:typed_data';
 import '../models/user_model.dart';
 import '../models/asistencia_model.dart';
 import '../services/asistencia_service.dart';
+import '../services/attendance_gateway_service.dart';
+import '../services/company_learning_service.dart';
 
 import 'dart:async';
 import 'package:geolocator/geolocator.dart';
@@ -23,6 +25,7 @@ class TrabajadorAsistenciaScreen extends StatefulWidget {
 
 class _TrabajadorAsistenciaScreenState extends State<TrabajadorAsistenciaScreen> {
   final AsistenciaService _asistenciaService = AsistenciaService();
+  late final Stream<Map<String, dynamic>> _jornada = _asistenciaService.gateway.watchDay(widget.trabajador.id);
   final TextEditingController _motivoFaltaController = TextEditingController();
   
   XFile? _evidenciaFile;
@@ -304,8 +307,6 @@ class _TrabajadorAsistenciaScreenState extends State<TrabajadorAsistenciaScreen>
 
   @override
   Widget build(BuildContext context) {
-    DateTime ahora = DateTime.now();
-    String docId = "${widget.trabajador.id}_${DateFormat('yyyyMMdd').format(ahora)}";
 
     return Scaffold(
       backgroundColor: const Color(0xFF000000),
@@ -322,17 +323,19 @@ class _TrabajadorAsistenciaScreenState extends State<TrabajadorAsistenciaScreen>
           ),
         ],
       ),
-      body: StreamBuilder<DocumentSnapshot>(
-        stream: FirebaseFirestore.instance.collection('asistencias').doc(docId).snapshots(),
+      body: StreamBuilder<Map<String, dynamic>>(
+        stream: _jornada,
         builder: (context, snapshot) {
           
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator(color: Colors.blueAccent));
           }
 
+          if (snapshot.hasError) return Center(child: Padding(padding: const EdgeInsets.all(24), child: Column(mainAxisSize: MainAxisSize.min, children: [Text(CompanyLearningService.message(snapshot.error!)), TextButton(onPressed: AttendanceGatewayService.refresh, child: const Text('Actualizar jornada'))])));
           AsistenciaModel? asistencia;
-          if (snapshot.hasData && snapshot.data!.exists) {
-            asistencia = AsistenciaModel.fromFirestore(snapshot.data!);
+          final data = snapshot.data?['data'] as Map<String, dynamic>?;
+          if (data != null && data.isNotEmpty) {
+            asistencia = AsistenciaModel.fromData(snapshot.data!['asistenciaId'] as String, data);
           }
 
           // --- CÁLCULO DE MÚLTIPLES BONOS Y MULTAS PARA LA VISTA PRINCIPAL ---
@@ -1065,31 +1068,12 @@ class _TrabajadorAsistenciaScreenState extends State<TrabajadorAsistenciaScreen>
 
                     // --- LISTA Y CÁLCULOS ---
                     Expanded(
-                      child: StreamBuilder<QuerySnapshot>(
-                        stream: FirebaseFirestore.instance
-                            .collection('asistencias')
-                            .where('trabajadorId', isEqualTo: widget.trabajador.id)
-                            .snapshots(),
+                      child: StreamBuilder<List<AsistenciaModel>>(
+                        stream: _asistenciaService.gateway.watchHistory(widget.trabajador.id, inicioSemana, finSemana),
                         builder: (context, snapshot) {
-                          if (snapshot.connectionState == ConnectionState.waiting) {
-                            return Center(child: CircularProgressIndicator(color: primaryPurple));
-                          }
-
-                          var allDocs = snapshot.data?.docs ?? [];
-                          
-                          var docsSemana = allDocs.where((doc) {
-                            var data = doc.data() as Map<String, dynamic>;
-                            if (data['fecha'] == null) return false;
-                            DateTime fecha = (data['fecha'] as Timestamp).toDate();
-                            return fecha.isAfter(inicioSemana.subtract(const Duration(seconds: 1))) && 
-                                   fecha.isBefore(finSemana.add(const Duration(seconds: 1)));
-                          }).toList();
-
-                          docsSemana.sort((a, b) {
-                            Timestamp tA = (a.data() as Map)['fecha'] ?? Timestamp.now();
-                            Timestamp tB = (b.data() as Map)['fecha'] ?? Timestamp.now();
-                            return tB.compareTo(tA); 
-                          });
+                          if (snapshot.connectionState == ConnectionState.waiting) return Center(child: CircularProgressIndicator(color: primaryPurple));
+                          if (snapshot.hasError) return Center(child: Text(CompanyLearningService.message(snapshot.error!)));
+                          final docsSemana = [...snapshot.data ?? <AsistenciaModel>[]]..sort((a, b) => b.fecha.compareTo(a.fecha));
 
                           Duration totalHorasSemana = Duration.zero;
                           int diasConRetardo = 0; 
@@ -1097,7 +1081,7 @@ class _TrabajadorAsistenciaScreenState extends State<TrabajadorAsistenciaScreen>
                           double totalMultasSemana = 0.0;
 
                           for (var doc in docsSemana) {
-                            AsistenciaModel asis = AsistenciaModel.fromFirestore(doc);
+                            AsistenciaModel asis = doc;
                             
                             // Acumular los bonos y multas de la semana
                             if (asis.listaBonos != null) {
@@ -1265,7 +1249,7 @@ class _TrabajadorAsistenciaScreenState extends State<TrabajadorAsistenciaScreen>
                                     padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
                                     itemCount: docsSemana.length,
                                     itemBuilder: (context, index) {
-                                      AsistenciaModel asistencia = AsistenciaModel.fromFirestore(docsSemana[index]);
+                                      AsistenciaModel asistencia = docsSemana[index];
                                       
                                       bool tieneComida = asistencia.salidaComidaSolicitada != null || 
                                                          asistencia.salidaComidaReal != null || 

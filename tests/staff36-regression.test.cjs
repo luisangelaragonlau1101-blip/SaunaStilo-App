@@ -7,7 +7,7 @@ test('background permission checks never ask Android again and a denied permissi
  assert.doesNotMatch(receiver,/if \(mounted\) _showPushAction\('No se pudieron sincronizar/);
 });
 test('meal controls reuse the verified attendance actions and administrators never register their own attendance',()=>{
- const source=read('lib/widgets/jornada_compacta.dart');assert.match(source,/_register\('solicitar_comida'\)/);assert.match(source,/_register\('regreso_comida'\)/);assert.match(source,/widget.usuario.rol == AppRoles.admin \? const SizedBox.shrink/);assert.match(source,/result.data\['exito'\] != true/);
+ const source=read('lib/widgets/jornada_compacta.dart');assert.match(source,/_register\('solicitar_comida'\)/);assert.match(source,/_register\('regreso_comida'\)/);assert.match(source,/widget.usuario.rol == AppRoles.admin\) return const SizedBox.shrink/);assert.match(source,/result\['exito'\] != true/);
 });
 test('personal tasks and shopping creation and edits are administrative while extra reports are separate',()=>{
  const panel=read('lib/screens/personal_day_screen.dart'),service=read('tools/online-smart34/personal-day.mjs');

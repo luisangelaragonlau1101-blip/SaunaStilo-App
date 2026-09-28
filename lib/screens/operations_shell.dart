@@ -1,3 +1,4 @@
+import 'daily_tasks_screen.dart';
 import 'admin_inbox_screen.dart';
 import 'engineering_screen.dart';
 import '../services/external_transfer.dart';
@@ -105,6 +106,7 @@ class _OperationsHomeState extends State<_OperationsHome> {
       else JornadaCompacta(usuario: widget.usuario),
       const SizedBox(height: 16),
       Row(children: [const Expanded(child: Text('Mis tareas', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800))), TextButton(onPressed: () => widget.onTab(3), child: const Text('Ver todas'))]),
+      OutlinedButton.icon(onPressed: () => Navigator.push(context, MaterialPageRoute<void>(builder: (_) => DailyTasksScreen(user: widget.usuario))), icon: const Icon(Icons.today), label: const Text('Tareas del día · asignaciones y evidencias')),
       OperationsTaskList(usuario: widget.usuario, compact: true),
       const SizedBox(height: 16),
       FilledButton.icon(onPressed: () => widget.onTab(2), icon: const Icon(Icons.contact_phone_outlined), label: const Text('Llamar o escribir a una persona'), style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(52))),

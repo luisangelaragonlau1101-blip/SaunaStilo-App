@@ -43,8 +43,8 @@ test('private chats preserve members and do not lose a saved message when push f
 test('attendance confirms server success and cannot silently accept invalid coordinates', () => {
   const s=read('lib/services/asistencia_service.dart');
   assert.match(s,/if \(!ubicacionValida\) throw StateError/);
-  assert.match(s,/data\['exito'\] != true/);
-  assert.match(read('lib/screens/jornada_screen.dart'),/Registrar entrada/);
+  assert.match(read('lib/services/attendance_gateway_service.dart'),/result\['exito'\] != true/);
+  assert.match(read('lib/widgets/jornada_compacta.dart'),/Registrar entrada/);
 });
 test('master task creation never changes project status without admin role', () => {
   const s=read('lib/services/actividades_service.dart');

@@ -8,7 +8,7 @@ test('home has work progress only and local lobby has only original boards',()=>
 test('session is sent only in a secure header, never in iframe or manual generation prompt',()=>{
  const client=read('lib/services/company_learning_service.dart');assert.match(client,/X-Sauna-Token/);assert.match(client,/getIdToken/);
  assert.doesNotMatch(read('lib/screens/online_smart_screen.dart'),/getIdToken|X-Sauna-Token/);
- const api=read('tools/online-smart34/sauna-service.mjs');assert.match(api,/accounts:lookup/);assert.match(api,/validSince/);assert.match(api,/fields\|\|\{\}/);assert.match(api,/manual-publish/);
+ const api=read('tools/online-smart34/sauna-service.mjs');assert.match(api,/accounts:lookup/);assert.match(api,/validSince/);assert.match(api,/fields\s*\|\|\s*\{\}/);assert.match(api,/manual-publish/);
 });
 test('alarm reuses create-only push and unchanged urgent sound rather than sending a new alarm during QA',()=>{
  const screen=read('lib/screens/admin_alerta_general_screen.dart');assert.match(screen,/batch.commit/);assert.match(screen,/_pending/);assert.match(screen,/_batchId/);

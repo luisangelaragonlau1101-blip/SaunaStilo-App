@@ -1,4 +1,5 @@
 import 'project_workspace_screen.dart';
+import 'daily_tasks_screen.dart';
 import 'extra_work_screen.dart';
 import '../workflow/staff_policy.dart';
 import '../widgets/project_progress_card.dart';
@@ -29,16 +30,16 @@ class _EquipoTareasScreenState extends State<EquipoTareasScreen> {
 
   Future<void> _crearTarea() async {
     if (!_puedeAsignar) return;
-    if (!_admin) { await _seleccionarProyecto(crear: true); return; }
     final scope = await showModalBottomSheet<String>(context: context, isScrollControlled: true,
       backgroundColor: const Color(0xFF111012), shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(30))),
-      builder: (sheet) => TaskCreationChoice(admin: true,
+      builder: (sheet) => TaskCreationChoice(admin: _puedeAsignar,
         onGeneral: () => Navigator.pop(sheet, 'general'), onProject: () => Navigator.pop(sheet, 'project')));
     if (!mounted || scope == null) return;
     if (scope == 'project') { await _seleccionarProyecto(crear: true); return; }
     setState(() { _proyectoId = null; _proyectoTitulo = 'Tareas del equipo'; });
-    await showModalBottomSheet<void>(context: context, isScrollControlled: true, backgroundColor: Colors.transparent,
+    final day = await showModalBottomSheet<String>(context: context, isScrollControlled: true, backgroundColor: Colors.transparent,
       builder: (_) => ModalAsignarActividad(proyectoId: '', rolUsuario: widget.usuario.rol));
+    if (mounted && day != null) await Navigator.push(context, MaterialPageRoute<void>(builder: (_) => DailyTasksScreen(user: widget.usuario, day: DateTime(int.parse(day.substring(0, 4)), int.parse(day.substring(4, 6)), int.parse(day.substring(6, 8))))));
   }
   Future<void> _seleccionarProyecto({bool crear = false}) async {
     final proyecto = await elegirProyecto(context, widget.usuario,
@@ -70,6 +71,7 @@ class _EquipoTareasScreenState extends State<EquipoTareasScreen> {
     return Scaffold(backgroundColor: Colors.black,
       appBar: AppBar(title: const Text('Proyectos y tareas')),
       body: Column(children: [
+        Padding(padding: const EdgeInsets.fromLTRB(16, 12, 16, 0), child: SizedBox(width: double.infinity, child: FilledButton.icon(onPressed: () => Navigator.push(context, MaterialPageRoute<void>(builder: (_) => DailyTasksScreen(user: widget.usuario))), icon: const Icon(Icons.today), label: const Text('Tareas del día y evidencias')))),
         Padding(padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10), child: Wrap(spacing: 8, runSpacing: 6, children: [
           ActionChip(avatar: const Icon(Icons.workspaces_rounded, size: 18), label: const Text('Proyectos y avance'), onPressed: () => Navigator.push(context, MaterialPageRoute<void>(builder: (_) => ProjectWorkspaceScreen(usuario: widget.usuario)))),
           ActionChip(avatar: const Icon(Icons.folder_open_rounded, size: 18), label: Text(_proyectoId == null ? 'Por proyecto' : _proyectoTitulo), onPressed: _seleccionarProyecto),
