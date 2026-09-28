@@ -65,16 +65,21 @@ void main() {
   testWidgets('celebration toggle refreshes the existing header without a color change', (tester) async {
     SharedPreferences.setMockInitialValues({});
     final settings = AppearanceController.instance;
+    debugPrint('preferences refresh: bind');
     await tester.runAsync(() => settings.bindUser('birthday-test'));
+    debugPrint('preferences refresh: build');
     final today = DateTime.now().toUtc().subtract(const Duration(hours: 6));
     final person = member('trabajador', birthday: DateTime(2000, today.month, today.day));
     await tester.pumpWidget(MaterialApp(theme: stiloTheme(settings.palette), home: Scaffold(body: PersonalHeader(user: person))));
     expect(find.textContaining('Feliz cumpleaños'), findsOneWidget);
+    debugPrint('preferences refresh: hide');
     await tester.runAsync(() => settings.save(festive: false)); await tester.pump();
     expect(find.textContaining('Feliz cumpleaños'), findsNothing);
+    debugPrint('preferences refresh: show');
     await tester.runAsync(() => settings.save(festive: true)); await tester.pump();
     expect(find.textContaining('Feliz cumpleaños'), findsOneWidget);
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.runAsync(() => settings.bindUser(null));
-  });
+    debugPrint('preferences refresh: complete');
+  }, timeout: const Timeout(Duration(seconds: 45)));
 }
