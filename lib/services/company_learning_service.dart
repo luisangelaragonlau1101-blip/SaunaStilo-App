@@ -12,10 +12,14 @@ import 'local_attendance_fallback.dart';
 /// approvals available when the optional AppDeploy service is paused. Private
 /// learning/manual actions retain the service route and its session checks.
 class CompanyLearningService {
-  final FirebaseAuth _auth;
+  final FirebaseAuth? _authOverride;
 
   CompanyLearningService({FirebaseAuth? auth})
-      : _auth = auth ?? FirebaseAuth.instance;
+      : _authOverride = auth;
+
+  // Keep construction side-effect free for offline screens and widget tests;
+  // Firebase is resolved only when an authenticated operation is requested.
+  FirebaseAuth get _auth => _authOverride ?? FirebaseAuth.instance;
 
   static final endpoint = Uri.parse(
     'https://api-v2.appdeploy.ai/app/ollin-smart-vxs23c/api/sauna',
