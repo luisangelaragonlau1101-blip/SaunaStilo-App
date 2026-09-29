@@ -4,7 +4,6 @@ import 'dart:typed_data';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-import '../models/actividad_model.dart';
 import '../models/evidencia_actividad_model.dart';
 import 'actividades_service.dart';
 import 'notificaciones_service.dart';
@@ -87,9 +86,6 @@ class FirestoreDailyTasksService {
     if (value == 'en_proceso' || value == 'progreso') return 'en_progreso';
     return value.isEmpty ? 'pendiente' : value;
   }
-
-  String _name(Map<String, dynamic> data, String fallback) =>
-      (data['nombre'] ?? data['Nombre'] ?? fallback).toString();
 
   Future<List<QueryDocumentSnapshot<Map<String, dynamic>>>> _visibleDocs(
     Map<String, dynamic> profile,
