@@ -52,6 +52,7 @@ class ActividadModel {
   DateTime fechaTermino;
   DateTime fechaAsignada;
   DateTime? completadoEn;
+  DateTime? aprobadoEn;
   String estatus;
   String observacionesAdmin;
   String comentariosTrabajador;
@@ -71,6 +72,7 @@ class ActividadModel {
     required this.fechaTermino,
     DateTime? fechaAsignada,
     this.completadoEn,
+    this.aprobadoEn,
     this.estatus = 'pendiente',
     this.observacionesAdmin = '',
     this.comentariosTrabajador = '',
@@ -89,6 +91,10 @@ class ActividadModel {
   /// Usa el contador de la nueva estructura y cae al arreglo histórico sin
   /// sumarlos, porque durante la migración ambos pueden representar los mismos
   /// archivos.
+  bool get aprobada => estatus == 'completado' && aprobadoEn != null;
+  bool get porAprobar => estatus == 'en_revision' || estatus == 'completado' && aprobadoEn == null;
+  String get estadoVisible => porAprobar ? 'en_revision' : estatus;
+
   int get totalEvidencias =>
       evidenciasCount > 0 ? evidenciasCount : evidenciaFotos.length;
 
@@ -131,6 +137,7 @@ class ActividadModel {
       fechaAsignada:
           _fechaDesdeFirestore(json['fechaAsignada']) ?? fechaInicio,
       completadoEn: _fechaDesdeFirestore(json['completadoEn']),
+      aprobadoEn: _fechaDesdeFirestore(json['aprobadoEn']),
       estatus: _normalizarEstatus(json['estatus']),
       observacionesAdmin: _textoSeguro(json['observacionesAdmin']),
       comentariosTrabajador: _textoSeguro(json['comentariosTrabajador']),
@@ -154,6 +161,7 @@ class ActividadModel {
       'fechaTermino': fechaTermino,
       'fechaAsignada': fechaAsignada,
       'completadoEn': completadoEn,
+      if (aprobadoEn != null) 'aprobadoEn': aprobadoEn,
       'estatus': estatus,
       'observacionesAdmin': observacionesAdmin,
       'comentariosTrabajador': comentariosTrabajador,

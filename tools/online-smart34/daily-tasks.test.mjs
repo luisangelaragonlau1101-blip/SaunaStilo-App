@@ -44,18 +44,21 @@ test('administrator and master assign to every active role; recipients and autho
 
 test('a recipient uploads evidence, completes, and the assigning master rereads the attachment and status', async () => {
   const f = fixture(), { task } = await f.create();
-  await assert.rejects(f.call('daily-complete', { taskId: task.taskId, operationId: 'finish' }), /evidencia/);
+  await assert.rejects(f.call('daily-complete', { taskId: task.taskId, operationId: 'finish' }), /foto|terminaste/);
   const evidence = { taskId: task.taskId, operationId: 'photo-1', name: 'trabajo.png', base64: Buffer.from([137,80,78,71,13,10,26,10,0,0,0]).toString('base64') };
   const saved = await f.call('daily-evidence', evidence);
   assert.equal(saved.task.evidenceCount, 1); assert.equal(saved.task.status, 'en_progreso');
   assert.ok(saved.task.evidence[0].url.startsWith('https://isolated.example.invalid/'));
   await f.call('daily-evidence', evidence); assert.equal(f.files.size, 1);
   await f.call('daily-progress', { taskId: task.taskId, operationId: 'note', comment: 'Trabajo revisado y ordenado.' });
-  await f.call('daily-complete', { taskId: task.taskId, operationId: 'finish' });
+  const delivered = await f.call('daily-complete', { taskId: task.taskId, operationId: 'finish' });
+  assert.equal(delivered.task.status, 'en_revision');
   const reviewed = await f.call('daily-read', { taskId: task.taskId }, users.master);
-  assert.equal(reviewed.task.status, 'completado'); assert.equal(reviewed.task.evidenceCount, 1);
+  assert.equal(reviewed.task.status, 'en_revision'); assert.equal(reviewed.task.evidenceCount, 1);
+  await f.call('daily-review', { taskId: task.taskId, operationId: 'approve-1', submissionId: delivered.task.submissionId, decision: 'approve' }, users.master);
+  const approved = await f.call('daily-read', { taskId: task.taskId }, users.master);
+  assert.equal(approved.task.status, 'completado'); assert.equal(approved.task.completedAt, '2026-09-28T15:00:00.000Z');
   assert.ok(reviewed.task.history.some(e => e.comment === 'Trabajo revisado y ordenado.'));
-  assert.equal(reviewed.task.completedAt, '2026-09-28T15:00:00.000Z');
   await assert.rejects(f.call('daily-progress', { taskId: task.taskId, operationId: 'late', comment: 'Late' }), /terminada/);
 });
 

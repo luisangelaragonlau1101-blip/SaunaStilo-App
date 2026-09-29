@@ -11,6 +11,7 @@ export function createDailyTasksService({
   Fault,
   fetcher = fetch,
   clock = () => new Date(),
+  notify = async () => ({ notificationSaved: true }),
 }) {
   const check = (ok, message, status = 400) => {
     if (!ok) throw new Fault(message, status);
@@ -29,15 +30,15 @@ export function createDailyTasksService({
     u.role === 'admin' || task.createdBy === u.uid || task.userId === u.uid;
   const date = (value) => {
     check(
-      typeof value === 'string' && /^20\d{6}$/.test(value),
+      typeof value === 'string' && /^20\d{4}(\d{2})?$/.test(value),
       'Selecciona el día de la tarea.',
     );
     const d = new Date(
-      `${value.slice(0, 4)}-${value.slice(4, 6)}-${value.slice(6)}T12:00:00Z`,
+      `${value.slice(0, 4)}-${value.slice(4, 6)}-${value.length === 6 ? '01' : value.slice(6)}T12:00:00Z`,
     );
     check(
       Number.isFinite(d.getTime()) &&
-        d.toISOString().slice(0, 10).replaceAll('-', '') === value,
+        d.toISOString().slice(0, value.length === 6 ? 7 : 10).replaceAll('-', '') === value,
       'Fecha inválida.',
     );
     return value;
@@ -78,7 +79,7 @@ export function createDailyTasksService({
   }
   async function state(task, urls = false) {
     const events = (await list(eventTable(task.taskId))).sort(
-      (a, b) => a.at.localeCompare(b.at) || a.id.localeCompare(b.id),
+      (a, b) => (a.sequence ?? 0) - (b.sequence ?? 0) || a.at.localeCompare(b.at) || a.id.localeCompare(b.id),
     );
     const evidence = [],
       seen = new Set();
@@ -97,15 +98,38 @@ export function createDailyTasksService({
     let signed = [];
     if (urls && evidence.length)
       signed = await storage.url(evidence.map((e) => e.path));
-    const completed = events.find((e) => e.kind === 'completed');
+    // Old completed receipts represent delivery, not administrative approval.
+    // A review always names its submission; concurrent decisions cannot approve
+    // a later delivery or erase a previously accepted review.
+    let status = events.length ? 'en_progreso' : 'pendiente';
+    let submission = null, review = null, percentage = 0;
+    const decisions = new Set();
+    for (const e of events) {
+      if (e.kind === 'progress' && Number.isInteger(e.percentage)) percentage = e.percentage;
+      if (['submitted', 'completed'].includes(e.kind) && status !== 'completado' && status !== 'en_revision') {
+        submission = e;
+        review = null;
+        status = 'en_revision';
+        percentage = 100;
+      }
+      if (['approved', 'changes_requested'].includes(e.kind) &&
+          submission && e.submissionId === submission.operationId &&
+          !decisions.has(e.submissionId)) {
+        decisions.add(e.submissionId);
+        review = e;
+        status = e.kind === 'approved' ? 'completado' : 'cambios_solicitados';
+        if (status === 'cambios_solicitados') percentage = Math.min(percentage, 90);
+      }
+    }
     return {
       ...task,
-      status: completed
-        ? 'completado'
-        : events.length
-          ? 'en_progreso'
-          : 'pendiente',
-      completedAt: completed?.at || null,
+      workKind: task.workKind || 'dia',
+      status,
+      percentage,
+      submissionId: submission?.operationId || null,
+      submittedAt: submission?.at || null,
+      completedAt: status === 'completado' ? review?.at : null,
+      reviewComment: review?.comment || '',
       evidenceCount: evidence.length,
       evidence: urls
         ? evidence.map(({ path, ...e }) => ({
@@ -116,12 +140,13 @@ export function createDailyTasksService({
       history: urls
         ? events
             .filter((e) => e.kind !== 'evidence')
-            .map(({ id, kind, comment, at, actorName }) => ({
+            .map(({ id, kind, comment, at, actorName, percentage }) => ({
               id,
               kind,
               comment,
               at,
               actorName,
+              percentage,
             }))
         : [],
     };
@@ -162,7 +187,7 @@ export function createDailyTasksService({
       'No se confirmó el guardado. Actualiza la tarea antes de reintentar.',
       503,
     );
-    return state(task, true);
+    return id;
   }
   return async function daily(action, b, u, { token } = {}) {
     check(
@@ -171,12 +196,21 @@ export function createDailyTasksService({
       403,
     );
     const day = date(b.day);
+    const operational = day.length === 6;
+    async function response(task, event, actor = u) {
+      const current = await state(task, true);
+      const notice = await notify({ task: current, event, user: actor, token });
+      return { saved: true, task: current, ...notice };
+    }
     if (action === 'daily-create') {
       check(
         assigner(u),
         'Solo administradores y maestros asignan tareas del día.',
         403,
       );
+      const workKind = b.workKind || 'dia';
+      check((operational ? ['instalacion', 'envio'] : ['dia', 'extra']).includes(workKind),
+        'Elige el tipo de trabajo y su fecha.');
       const title = text(b.title, 150, 3),
         details = text(b.details || '', 2000, 0),
         operationId = text(b.operationId, 100);
@@ -188,11 +222,11 @@ export function createDailyTasksService({
         check(
           old.userId === b.userId &&
             old.title === title &&
-            old.details === details,
+            old.details === details && (old.workKind || 'dia') === workKind,
           'Ese intento ya guardó otra tarea. Abre una nueva asignación.',
           409,
         );
-        return { saved: true, task: await state(old, true) };
+        return response(old, { kind: 'assigned', operationId });
       }
       check(
         existing.length < 80,
@@ -209,6 +243,7 @@ export function createDailyTasksService({
         day,
         title,
         details,
+        workKind,
         userId: b.userId,
         userName,
         createdBy: u.uid,
@@ -222,10 +257,7 @@ export function createDailyTasksService({
         'No se confirmó la asignación. Conserva el formulario y vuelve a intentar.',
         503,
       );
-      return {
-        saved: true,
-        task: await state(await getTask(day, taskId, u), true),
-      };
+      return response(await getTask(day, taskId, u), { kind: 'assigned', operationId });
     }
     if (action === 'daily-list') {
       const visible = (await tasks(day)).filter((t) => canRead(t, u));
@@ -236,20 +268,26 @@ export function createDailyTasksService({
     const task = await getTask(day, b.taskId, u);
     if (action === 'daily-read') return { task: await state(task, true) };
     check(
-      ['daily-evidence', 'daily-progress', 'daily-complete'].includes(action),
+      ['daily-evidence', 'daily-progress', 'daily-complete', 'daily-review'].includes(action),
       'Acción no reconocida.',
       404,
     );
     check(
-      task.userId === u.uid,
+      action === 'daily-review'
+        ? assigner(u) && (u.role === 'admin' || task.createdBy === u.uid)
+        : task.userId === u.uid || (operational && u.role === 'admin' && action !== 'daily-complete'),
       'La evidencia y la entrega las registra la persona asignada.',
       403,
     );
     const rows = await list(eventTable(task.taskId)),
       current = await state(task);
     const operationId = text(b.operationId, 100);
-    if (rows.some((e) => e.operationId === operationId))
-      return { saved: true, task: await state(task, true) };
+    const previous = rows.find((e) => e.operationId === operationId);
+    if (previous) {
+      check(previous.actorId === u.uid && previous.action === action,
+        'Este intento pertenece a otra operación.', 409);
+      return response(task, previous);
+    }
     check(current.status !== 'completado', 'La tarea ya está terminada.', 409);
     check(
       rows.length < 80,
@@ -258,34 +296,40 @@ export function createDailyTasksService({
     );
     const common = {
       operationId,
+      action,
+      sequence: rows.length + 1,
       actorId: u.uid,
       actorName: u.name,
       at: clock().toISOString(),
     };
-    if (action === 'daily-complete') {
-      check(
-        current.evidenceCount > 0,
-        'Adjunta por lo menos una evidencia antes de terminar.',
-        409,
-      );
-      return {
-        saved: true,
-        task: await addEvent(task, {
-          ...common,
-          kind: 'completed',
-          comment: 'Tarea terminada con evidencia.',
-        }),
-      };
+    if (action === 'daily-review') {
+      check(current.status === 'en_revision' && b.submissionId === current.submissionId,
+        'La entrega cambió. Actualiza antes de revisarla.', 409);
+      check(['approve', 'changes'].includes(b.decision), 'Selecciona una revisión válida.');
+      const event = { ...common, submissionId: current.submissionId,
+        kind: b.decision === 'approve' ? 'approved' : 'changes_requested',
+        comment: text(b.comment || (b.decision === 'approve' ? 'Entrega aprobada.' : ''), 2000) };
+      await addEvent(task, event);
+      return response(task, event);
     }
-    if (action === 'daily-progress')
-      return {
-        saved: true,
-        task: await addEvent(task, {
-          ...common,
-          kind: 'progress',
-          comment: text(b.comment, 2000),
-        }),
-      };
+    check(current.status !== 'en_revision', 'Tu entrega está en revisión. Espera la respuesta.', 409);
+    if (action === 'daily-complete') {
+      const comment = text(b.comment || '', 2000, 0);
+      check(current.evidenceCount > 0 || comment.length >= 5,
+        'Adjunta una foto o escribe qué terminaste.', 409);
+      const event = { ...common, kind: 'submitted', comment: comment || 'Trabajo terminado; evidencias adjuntas.' };
+      await addEvent(task, event);
+      return response(task, event);
+    }
+    if (action === 'daily-progress') {
+      const percentage = b.percentage ?? current.percentage;
+      check(Number.isInteger(percentage) && percentage >= 0 && percentage <= 100,
+        'El avance debe estar entre 0 y 100 %.');
+      const event = { ...common, kind: 'progress', percentage,
+        comment: text(b.comment, 2000) };
+      await addEvent(task, event);
+      return response(task, event);
+    }
     check(
       typeof b.base64 === 'string' &&
         b.base64.length <= 2800000 &&
@@ -335,16 +379,15 @@ export function createDailyTasksService({
       'No se pudo subir la evidencia. La tarea sigue pendiente.',
       503,
     );
-    return {
-      saved: true,
-      task: await addEvent(task, {
-        ...common,
-        kind: 'evidence',
-        name,
-        path,
-        contentType,
-        size: bytes.length,
-      }),
+    const event = {
+      ...common,
+      kind: 'evidence',
+      name,
+      path,
+      contentType,
+      size: bytes.length,
     };
+    await addEvent(task, event);
+    return response(task, event);
   };
 }

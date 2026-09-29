@@ -18,8 +18,8 @@ class LocalGuide {
     if (q.contains('herramienta') || q.contains('inventario') || q.contains('cajita')) {
       return '1. En Inicio busca “Inventario”.\n2. Busca la herramienta y abre su detalle.\n3. Usa la opción de solicitud disponible para tu rol y verifica su estado antes de retirar el material.\n4. Consulta las herramientas asignadas en “Mi cajita” o “Cajitas”.\nLa disponibilidad se verifica en el inventario; esta guía no confirma existencias ni autoriza préstamos.';
     }
-    if (RegExp(r'\b(mensaje|mensajes|chat|llamada|videollamada)\b').hasMatch(q)) {
-      return '1. En Inicio toca “Chat” o “Mensajes”.\n2. Elige al integrante del equipo.\n3. Escribe el mensaje o utiliza las opciones de adjuntos.\n4. Para una llamada, toca el icono de teléfono o cámara y entra a la reunión.\nLos avisos requieren permiso en cada dispositivo. Las llamadas actuales usan una sala externa, no un timbrado telefónico nativo.';
+    if (RegExp(r'\b(mensaje|mensajes|chat)\b').hasMatch(q)) {
+      return '1. En Inicio toca “Mensajes”.\n2. Elige al integrante o el grupo del proyecto.\n3. Escribe, dicta o adjunta fotos, archivos y audios.\n4. Revisa el centro de avisos para ver las actualizaciones del equipo.';
     }
     if (q.contains('proyecto') || q.contains('evidencia') || q.contains('avance')) {
       return '1. En Inicio busca “Proyectos”.\n2. Abre un proyecto al que tengas acceso.\n3. En su actividad registra el avance y adjunta la evidencia.\n4. Espera la confirmación de guardado antes de salir.\nSolo aparecen las opciones permitidas para tu rol; esta guía no modifica proyectos.';

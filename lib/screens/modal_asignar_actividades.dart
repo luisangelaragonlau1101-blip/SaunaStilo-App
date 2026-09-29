@@ -14,7 +14,9 @@ class ModalAsignarActividad extends StatefulWidget {
   final String proyectoId, rolUsuario;
   final ActividadModel? actividadAEditar;
   final DateTime? initialDay;
-  const ModalAsignarActividad({super.key, required this.proyectoId, required this.rolUsuario, this.actividadAEditar, this.initialDay});
+  final String workKind;
+  final bool operations;
+  const ModalAsignarActividad({super.key, required this.proyectoId, required this.rolUsuario, this.actividadAEditar, this.initialDay, this.workKind = 'dia', this.operations = false});
   @override
   State<ModalAsignarActividad> createState() => _ModalAsignarActividadState();
 }
@@ -22,6 +24,7 @@ class _ModalAsignarActividadState extends State<ModalAsignarActividad> {
   final _form = GlobalKey<FormState>();
   final _title = TextEditingController(), _body = TextEditingController();
   late String _id;
+  late String _workKind;
   late final String _uid;
   late final String _draftKey;
   String? _target, _error;
@@ -31,11 +34,12 @@ class _ModalAsignarActividadState extends State<ModalAsignarActividad> {
   @override
   void initState() {
     super.initState();
+    _workKind = widget.workKind;
     if (widget.initialDay != null) { _day = widget.initialDay!; _deadline = DateTime(_day.year, _day.month, _day.day, 19); }
     final old = widget.actividadAEditar;
     _uid = FirebaseAuth.instance.currentUser?.uid ?? '';
     _id = old?.id ?? FirebaseFirestore.instance.collection('actividades').doc().id;
-    _draftKey = 'tarea:${widget.proyectoId}:${old?.id ?? 'nueva'}';
+    _draftKey = 'tarea:${widget.proyectoId}:${widget.workKind}:${old?.id ?? 'nueva'}';
     if (old != null) {_title.text = old.titulo; _body.text = old.descripcion; _target = old.asignadoATrabajadorId; _day = old.fechaAsignada; _deadline = old.fechaTermino;}
     _load();
   }
@@ -97,7 +101,8 @@ class _ModalAsignarActividadState extends State<ModalAsignarActividad> {
       final daily = old == null && widget.proyectoId.isEmpty;
       if (daily) {
         final response = await CompanyLearningService().call('daily-create', {
-          'day': AttendanceGatewayService.dayKey(_day), 'operationId': _id, 'title': task.titulo,
+          'day': widget.operations ? DateFormat('yyyyMM').format(_day) : AttendanceGatewayService.dayKey(_day),
+          'workKind': _workKind, 'operationId': _id, 'title': task.titulo,
           'details': task.descripcion, 'userId': _target,
           'dueAt': DateTime.utc(_deadline.year, _deadline.month, _deadline.day, _deadline.hour + 6, _deadline.minute).toIso8601String(),
         });
@@ -126,10 +131,11 @@ class _ModalAsignarActividadState extends State<ModalAsignarActividad> {
         Text(widget.actividadAEditar == null ? 'Crear y asignar tarea' : 'Editar tarea', style: TextStyle(fontSize: 23,fontWeight: FontWeight.w800)),
         SizedBox(height: 8), Text('La tarea se confirma en el servidor. Sin conexión puedes conservar un borrador.', style: TextStyle(color: StiloColors.text.withValues(alpha: .60))),
         SizedBox(height: 12),
-        Text(widget.proyectoId.isEmpty ? 'TAREA DEL DÍA · CUALQUIER PERFIL ACTIVO' : 'TAREA VINCULADA AL PROYECTO', style: TextStyle(color: StiloColors.accent, fontWeight: FontWeight.w700, fontSize: 11)),
+        Text(widget.proyectoId.isEmpty ? (widget.operations ? 'INSTALACIONES Y ENVÍOS' : _workKind == 'extra' ? 'TAREA EXTRA · SIN PROYECTO' : 'TAREA DEL DÍA · CUALQUIER PERFIL ACTIVO') : 'TAREA VINCULADA AL PROYECTO', style: TextStyle(color: StiloColors.accent, fontWeight: FontWeight.w700, fontSize: 11)),
         SizedBox(height: 15),
+        if (widget.operations) Padding(padding: EdgeInsets.only(bottom: 14), child: SegmentedButton<String>(segments: const [ButtonSegment(value: 'instalacion', label: Text('Instalación'), icon: Icon(Icons.handyman_outlined)), ButtonSegment(value: 'envio', label: Text('Envío'), icon: Icon(Icons.local_shipping_outlined))], selected: {_workKind}, onSelectionChanged: _busy ? null : (v) => setState(() => _workKind = v.first))),
         TextFormField(contextMenuBuilder: privacyTextMenu, controller: _title, enabled: !_busy, maxLength: 150, decoration: InputDecoration(labelText: 'Nombre de la tarea'), validator: (v) => (v?.trim().length ?? 0)<3 ? 'Escribe al menos 3 caracteres.' : null),
-        TextFormField(contextMenuBuilder: privacyTextMenu, controller: _body, enabled: !_busy, maxLength: 2000, minLines: 2, maxLines: 5, decoration: InputDecoration(labelText: 'Indicaciones y evidencia requerida')),
+        TextFormField(contextMenuBuilder: privacyTextMenu, controller: _body, enabled: !_busy, maxLength: 2000, minLines: 2, maxLines: 5, decoration: InputDecoration(labelText: widget.operations ? 'Destino, referencia e indicaciones' : 'Indicaciones de la tarea')),
         if (_loading) LinearProgressIndicator() else DropdownButtonFormField<String>(initialValue: _target, key: ValueKey('$_target:${_people.length}'), isExpanded: true,
           decoration: InputDecoration(labelText: 'Asignar a'), items: _people.map((p) => DropdownMenuItem(value: p['id'], child: Text(p['nombre']!, overflow: TextOverflow.ellipsis))).toList(),
           onChanged: _busy ? null : (v) => setState(() => _target = v), validator: (v) => v == null ? 'Selecciona a una persona.' : null),

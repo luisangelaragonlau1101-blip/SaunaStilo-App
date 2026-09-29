@@ -32,8 +32,8 @@ class NotificacionesScreen extends StatelessWidget {
         actions: [
           if (admin)
             IconButton(
-              tooltip: 'LLAMAR A TODO EL EQUIPO',
-              onPressed: () => _confirmarLlamadaGeneral(context, service),
+              tooltip: 'AVISAR A TODO EL EQUIPO',
+              onPressed: () => _confirmarAvisoGeneral(context, service),
               icon: Icon(Icons.campaign_rounded, color: _urgente, size: 28),
             ),
           TextButton(
@@ -102,7 +102,7 @@ class NotificacionesScreen extends StatelessWidget {
         borderRadius: BorderRadius.circular(22),
         child: InkWell(
           borderRadius: BorderRadius.circular(22),
-          onTap: () => _confirmarLlamadaGeneral(context, service),
+          onTap: () => _confirmarAvisoGeneral(context, service),
           child: Container(
             padding: EdgeInsets.all(16),
             decoration: BoxDecoration(borderRadius: BorderRadius.circular(22), border: Border.all(color: _urgente.withOpacity(.65))),
@@ -110,7 +110,7 @@ class NotificacionesScreen extends StatelessWidget {
               Container(width: 50, height: 50, decoration: BoxDecoration(color: _urgente.withOpacity(.15), shape: BoxShape.circle), child: Icon(Icons.notifications_active_rounded, color: _urgente, size: 28)),
               SizedBox(width: 13),
               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('LLAMAR A TODO EL EQUIPO', style: GoogleFonts.inter(color: StiloColors.text, fontWeight: FontWeight.w900, fontSize: 14)),
+                Text('AVISAR A TODO EL EQUIPO', style: GoogleFonts.inter(color: StiloColors.text, fontWeight: FontWeight.w900, fontSize: 14)),
                 SizedBox(height: 4),
                 Text('Alerta crítica para todos los dispositivos registrados.', style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .54), fontSize: 10.5)),
               ])),
@@ -122,36 +122,36 @@ class NotificacionesScreen extends StatelessWidget {
     );
   }
 
-  Future<void> _confirmarLlamadaGeneral(BuildContext context, NotificacionesService service) async {
-    final motivo = TextEditingController(text: 'Atención inmediata: Administración está llamando a todo el equipo.');
+  Future<void> _confirmarAvisoGeneral(BuildContext context, NotificacionesService service) async {
+    final motivo = TextEditingController(text: 'Atención importante: Administración publicó un aviso para todo el equipo.');
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
         backgroundColor: StiloColors.surface,
-        title: Row(children: [Icon(Icons.warning_amber_rounded, color: _urgente), SizedBox(width: 9), Expanded(child: Text('Llamada general'))]),
+        title: Row(children: [Icon(Icons.warning_amber_rounded, color: _urgente), SizedBox(width: 9), Expanded(child: Text('Aviso general'))]),
         content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text('Se enviará una alerta crítica a TODO el equipo. Úsala únicamente cuando necesites su atención inmediata.'),
+          Text('Se enviará un aviso importante a TODO el equipo.'),
           SizedBox(height: 14),
-          TextField(contextMenuBuilder: privacyTextMenu, controller: motivo, maxLength: 220, maxLines: 3, decoration: InputDecoration(labelText: 'Motivo de la llamada')),
+          TextField(contextMenuBuilder: privacyTextMenu, controller: motivo, maxLength: 220, maxLines: 3, decoration: InputDecoration(labelText: 'Mensaje del aviso')),
         ]),
         actions: [
           TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: Text('Cancelar')),
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: _urgente, foregroundColor: StiloColors.text),
             onPressed: () => Navigator.pop(dialogContext, true),
-            child: Text('LLAMAR A TODOS'),
+            child: Text('AVISAR A TODOS'),
           ),
         ],
       ),
     );
     if (confirmed != true || !context.mounted) return;
     try {
-      await service.llamarATodoElEquipo(mensaje: motivo.text);
+      await service.enviarAlertaGeneral(mensaje: motivo.text);
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('🚨 Llamada general enviada al sistema de notificaciones.'), backgroundColor: StiloColors.border));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('🚨 Aviso general enviado al sistema de notificaciones.'), backgroundColor: StiloColors.border));
     } catch (error) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('No se pudo enviar la llamada general: $error'), backgroundColor: Colors.redAccent));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('No se pudo enviar el aviso general: $error'), backgroundColor: Colors.redAccent));
     } finally {
       motivo.dispose();
     }

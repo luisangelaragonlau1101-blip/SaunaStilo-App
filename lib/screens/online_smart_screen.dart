@@ -60,7 +60,7 @@ class _OnlineSmartScreenState extends State<OnlineSmartScreen> {
           SizedBox(height: 12),
           Text('Online Smart, inteligencia artificial mexicana creada por ANGEL ZALDÍVAR. El manual siguiente funciona sin consultar IA.', style: TextStyle(color: StiloColors.text.withValues(alpha: .70), height: 1.5)),
           SizedBox(height: 14),
-          for (final question in ['¿Cómo registro mi entrada?', '¿Dónde encuentro mis tareas?', '¿Cómo envío una evidencia?', '¿Dónde pido una herramienta?', '¿Cómo envío un mensaje?', '¿Cómo hago una llamada?', '¿Cómo grabo mi voz?'])
+          for (final question in ['¿Cómo registro mi entrada?', '¿Dónde encuentro mis tareas?', '¿Cómo envío una evidencia?', '¿Dónde pido una herramienta?', '¿Cómo envío un mensaje?', '¿Cómo grabo mi voz?'])
             ExpansionTile(title: Text(question), childrenPadding: EdgeInsets.fromLTRB(16, 0, 16, 20), children: [
               Text(LocalGuide.answer(question, widget.usuario.rol) ?? 'En Inicio abre Proyectos, Chats o Todas las opciones. En Asistente puedes preguntar el paso que necesitas.', style: TextStyle(color: StiloColors.text.withValues(alpha: .70), height: 1.5)),
             ]),

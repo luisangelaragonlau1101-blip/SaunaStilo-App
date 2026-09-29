@@ -195,7 +195,7 @@ class _AvisosSonorosState extends State<AvisosSonoros> with WidgetsBindingObserv
             return;
           }
 
-          final destacados = nuevos.where((a) => a.tipo == 'aviso_personal' || (a.esLlamada && DateTime.now().difference(a.fecha).inSeconds < 60)).toList();
+          final destacados = nuevos.where((a) => a.tipo == 'aviso_personal').toList();
           if (destacados.isNotEmpty && !_avisoPersonalVisible && !_alarmaActiva) {
             await _mostrarPersonal(destacados.first);
             return;
@@ -240,10 +240,10 @@ class _AvisosSonorosState extends State<AvisosSonoros> with WidgetsBindingObserv
       if (!mounted) return;
       open = await showDialog<bool>(context: context, builder: (c) => AlertDialog(
         backgroundColor: StiloColors.surface,
-        title: Row(children: [Icon(aviso.esLlamada ? Icons.call_outlined : Icons.notifications_active_outlined, color: StiloColors.accent), SizedBox(width: 12), Expanded(child: Text(aviso.titulo))]),
+        title: Row(children: [Icon(Icons.notifications_active_outlined, color: StiloColors.accent), SizedBox(width: 12), Expanded(child: Text(aviso.titulo))]),
         content: SingleChildScrollView(child: Text(aviso.mensaje, style: TextStyle(fontSize: 18, height: 1.5))),
         actions: [TextButton(onPressed: () => Navigator.pop(c, false), child: Text('Recibido')),
-          FilledButton(onPressed: () => Navigator.pop(c, true), child: Text(aviso.esLlamada ? 'Abrir llamada' : 'Ver mensaje'))],
+          FilledButton(onPressed: () => Navigator.pop(c, true), child: Text('Ver mensaje'))],
       )) ?? false;
       try { await _notificacionesService.marcarLeida(aviso.id, widget.usuario.id); } catch (_) {}
     } finally {

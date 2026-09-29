@@ -1,3 +1,4 @@
+import 'widgets/global_assistant_layer.dart';
 import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'presentation/appearance.dart';
@@ -84,9 +85,15 @@ class MyApp extends StatefulWidget {
 }
 class _MyAppState extends State<MyApp> {
   StreamSubscription<User?>? _auth;
+  final _navigatorKey = GlobalKey<NavigatorState>();
+  String? _userId;
   @override void initState() {
     super.initState();
-    _auth = FirebaseAuth.instance.authStateChanges().listen((user) => AppearanceController.instance.bindUser(user?.uid));
+    _userId = FirebaseAuth.instance.currentUser?.uid;
+    _auth = FirebaseAuth.instance.authStateChanges().listen((user) {
+      AppearanceController.instance.bindUser(user?.uid);
+      if (mounted) setState(() => _userId = user?.uid);
+    });
   }
   @override void dispose() { _auth?.cancel(); super.dispose(); }
   @override Widget build(BuildContext context) {
@@ -99,7 +106,9 @@ class _MyAppState extends State<MyApp> {
         title: 'Sauna Stilo', debugShowCheckedModeBanner: false,
         localizationsDelegates: const [GlobalMaterialLocalizations.delegate, GlobalWidgetsLocalizations.delegate, GlobalCupertinoLocalizations.delegate],
         supportedLocales: const [Locale('es', 'MX'), Locale('es', 'ES')],
-        theme: stiloTheme(AppearanceController.instance.palette), builder: (context, child) => ScreenSecurityGuard(child: child ?? const SizedBox.shrink()), home: Wrapper(),
+        theme: stiloTheme(AppearanceController.instance.palette), navigatorKey: _navigatorKey,
+        builder: (context, child) => ScreenSecurityGuard(child: GlobalAssistantLayer(key: ValueKey(_userId),
+          userId: _userId, navigatorKey: _navigatorKey, child: child ?? const SizedBox.shrink())), home: Wrapper(),
       )),
     );
   }
