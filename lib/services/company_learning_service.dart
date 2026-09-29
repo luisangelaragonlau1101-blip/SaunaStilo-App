@@ -1,6 +1,5 @@
 import 'dart:convert';
 
-import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:http/http.dart' as http;
 
@@ -85,7 +84,7 @@ class CompanyLearningService {
 
     if (action.startsWith('daily-')) {
       try {
-        return await FirestoreDailyTasksService(auth: _auth).run(action, data);
+        return await FirestoreDailyTasksService(firebaseAuth: _auth).run(action, data);
       } catch (error) {
         // Existing AppDeploy tasks remain a compatibility path if a device
         // cannot read Firestore (for example, while Firebase reconnects).
@@ -99,7 +98,7 @@ class CompanyLearningService {
       } catch (_) {
         // Attendance remains usable on the device while the optional service
         // is paused. Every result is marked pendingSync by the fallback.
-        return LocalAttendanceFallback(auth: _auth).run(action, {
+        return LocalAttendanceFallback(firebaseAuth: _auth).run(action, {
           ...data,
           if (!data.containsKey('day')) 'day': _todayKey(),
         });
