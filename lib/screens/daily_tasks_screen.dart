@@ -235,6 +235,10 @@ class _DailyTaskDetailState extends State<DailyTaskDetail> {
         const SizedBox(height: 7), Text('${_task['percentage'] ?? 0} % de avance'),
         if (_task['status'] == 'en_revision') const Padding(padding: EdgeInsets.symmetric(vertical: 12), child: Text('Trabajo entregado. Falta la aprobación para finalizar.')),
         if ((_task['reviewComment'] ?? '').toString().isNotEmpty) Card(child: Padding(padding: const EdgeInsets.all(16), child: Text('Revisión: ${_task['reviewComment']}'))),
+        if (_own && editable) ...[
+          const SizedBox(height: 12),
+          FilledButton.icon(onPressed: _deliver, icon: const Icon(Icons.task_alt), label: const Text('Marcar como terminada')),
+        ],
         if (_busy) const Padding(padding: EdgeInsets.symmetric(vertical: 12), child: LinearProgressIndicator()),
         if (_error != null) Padding(padding: const EdgeInsets.symmetric(vertical: 12), child: Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error))),
         if (_noticeWarning != null) Card(child: Column(children: [Padding(padding: const EdgeInsets.all(12), child: Text(_noticeWarning!)), TextButton(onPressed: !enabled || _retryAction == null ? null : () => _send(_retryAction!, _retryData!), child: const Text('Reintentar aviso'))])),
@@ -253,7 +257,6 @@ class _DailyTaskDetailState extends State<DailyTaskDetail> {
             if (!await _upload() || !mounted) return;
             if (await _send('daily-progress', {'comment': comment, 'percentage': percentage}) && mounted) _comment.clear();
           } : null, icon: const Icon(Icons.save_outlined), label: const Text('Guardar avance')),
-          if (_own) FilledButton.icon(onPressed: editable ? _deliver : null, icon: const Icon(Icons.task_alt), label: const Text('Marcar como terminada')),
           const Text('Entrega con una foto, un archivo o una descripción. Después se revisa y aprueba.', style: TextStyle(fontSize: 12)),
         ],
         if (review) ...[
