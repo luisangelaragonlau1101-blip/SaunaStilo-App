@@ -1,3 +1,4 @@
+import '../widgets/today_tasks_card.dart';
 import '../presentation/appearance.dart';
 import '../widgets/personal_header.dart';
 import '../widgets/home_shortcuts.dart';
@@ -62,6 +63,7 @@ class _EngineeringState extends State<EngineeringScreen> {
       if (widget.embedded) ...[PersonalHeader(user: widget.user), SizedBox(height: 14), MainHomeShortcuts(user: widget.user), SizedBox(height: 14)],
       Container(padding: EdgeInsets.all(20), decoration: BoxDecoration(borderRadius: BorderRadius.circular(30), gradient: LinearGradient(colors: [StiloColors.surface, StiloColors.surface]), border: Border.all(color: Color(0xFF6E4069))), child: Row(children: [StiloOrbitIcon(icon: Icons.precision_manufacturing_rounded, color: StiloColors.accent, size: 54, active: true), SizedBox(width: 14), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('Hola, ${widget.user.nombre.split(' ').first}', style: TextStyle(color: StiloColors.text.withValues(alpha: .60))), Text('Ingeniería industrial', style: TextStyle(fontSize: 25, fontWeight: FontWeight.w900)), SizedBox(height: 5), Text('Producción · calidad · tiempos · mejoras', style: TextStyle(fontSize: 12, color: StiloColors.text.withValues(alpha: .60)))]))])),
       if (widget.embedded) Padding(padding: EdgeInsets.only(top: 14), child: JornadaCompacta(usuario: widget.user)),
+      if (widget.embedded) Padding(padding: EdgeInsets.only(top: 18), child: TodayTasksCard(user: widget.user)),
       SizedBox(height: 16), Wrap(spacing: 8, runSpacing: 8, children: [Chip(avatar: Icon(Icons.analytics_rounded), label: Text('${list.length} registros')), Chip(avatar: Icon(Icons.verified_rounded, color: StiloColors.accent), label: Text('${list.where((r) => r['status'] == 'cerrado').length} cerrados'))]),
       OutlinedButton.icon(onPressed: busy ? null : () async { final d = await showDatePicker(context: context, initialDate: day, firstDate: DateTime(2020), lastDate: DateTime(2099)); if (d != null && mounted) { setState(() { day = d; records = null; }); await _load(); } }, icon: Icon(Icons.event_rounded), label: Text('Fecha · ${staffDate(day)}')),
       FilledButton.icon(onPressed: busy ? null : () async { await Navigator.push(context, MaterialPageRoute<void>(builder: (_) => EngineeringForm(date: day, service: service))); if (mounted) await _load(); }, icon: Icon(Icons.add_chart_rounded), label: Text('Registrar medición o mejora')),

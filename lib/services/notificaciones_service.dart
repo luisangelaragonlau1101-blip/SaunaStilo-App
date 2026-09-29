@@ -43,34 +43,27 @@ class NotificacionesService {
     }
   }
 
-  Future<String> enviarAlertaGeneral({required String mensaje}) async {
-    return _enviarCritica(mensaje: mensaje, llamada: false);
+  Future<bool> enviarEvento({String? id, required String titulo, required String mensaje,
+    required String tipo, String destinatarioId = '', List<String> rolesDestinatarios = const [],
+    Map<String, dynamic> campos = const {}}) async {
+    try {
+      await _ref.doc(id).set({...datosAviso(titulo: titulo, mensaje: mensaje, tipo: tipo,
+        destinatarioId: destinatarioId, rolesDestinatarios: rolesDestinatarios), ...campos}).timeout(const Duration(seconds: 8));
+      return true;
+    } catch (_) { return false; }
   }
 
-  /// Crea una invitación crítica para TODO el equipo. El backend valida que
-  /// `creadoPor` pertenezca a un administrador antes de enviar el push.
-  Future<String> llamarATodoElEquipo({String mensaje = 'Administración solicita la atención inmediata de todo el equipo.'}) async {
-    return _enviarCritica(mensaje: mensaje, llamada: true);
-  }
-
-  Future<String> _enviarCritica({required String mensaje, required bool llamada}) async {
+  Future<String> enviarAlertaGeneral({String mensaje = 'Administración publicó un aviso importante para todo el equipo.'}) async {
     final uid = FirebaseAuth.instance.currentUser?.uid ?? '';
     if (uid.isEmpty) throw StateError('Debes iniciar sesión como administrador.');
     final texto = mensaje.trim();
-    if (texto.isEmpty) throw ArgumentError('Escribe el motivo de la alerta.');
+    if (texto.isEmpty) throw ArgumentError('Escribe el mensaje del aviso.');
     final ref = await _ref.add({
-      'titulo': llamada ? '🚨 LLAMADA GENERAL · SAUNA STILO' : '🚨 ALERTA GENERAL · SAUNA STILO',
+      'titulo': '🚨 AVISO GENERAL · SAUNA STILO',
       'mensaje': texto.length > 420 ? texto.substring(0, 420) : texto,
-      'tipo': 'alarma_admin',
-      'destinatarioId': 'todos',
-      'rolesDestinatarios': <String>['todos'],
-      'leidosPor': <String>[],
-      'creadoPor': uid,
-      'fecha': FieldValue.serverTimestamp(),
-      'prioridad': 'critica',
-      'requiereAtencion': true,
-      'esLlamada': llamada,
-      'ruta': llamada ? 'mensajes' : 'avisos',
+      'tipo': 'alarma_admin', 'destinatarioId': 'todos', 'rolesDestinatarios': <String>['todos'],
+      'leidosPor': <String>[], 'creadoPor': uid, 'fecha': FieldValue.serverTimestamp(),
+      'prioridad': 'critica', 'requiereAtencion': true, 'ruta': 'avisos',
     });
     return ref.id;
   }

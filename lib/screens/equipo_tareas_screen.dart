@@ -1,3 +1,4 @@
+import '../widgets/work_status.dart';
 import '../presentation/appearance.dart';
 export 'work_workspace_screen.dart' show EquipoTareasScreen;
 import 'project_workspace_screen.dart';
@@ -47,7 +48,7 @@ class _ProjectActivitiesScreenState extends State<ProjectActivitiesScreen> {
   void _abrir(ActividadModel tarea) {
     if (_admin || tarea.asignadoATrabajadorId == widget.usuario.id) {
       showModalBottomSheet<void>(context: context, isScrollControlled: true,
-        backgroundColor: Colors.transparent, builder: (_) => _admin && tarea.asignadoATrabajadorId != widget.usuario.id
+        backgroundColor: Colors.transparent, builder: (_) => _admin
           ? admin.ModalDetalleActividad(actividad: tarea)
           : worker.ModalDetalleActividad(actividad: tarea));
     } else {
@@ -78,15 +79,15 @@ class _ProjectActivitiesScreenState extends State<ProjectActivitiesScreen> {
         Expanded(child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(stream: query.snapshots(includeMetadataChanges: true), builder: (context, snapshot) {
           if (snapshot.hasError) return Center(child: Padding(padding: EdgeInsets.all(24), child: Text('No pudimos consultar estas tareas. Revisa tu conexión o pide a Administración que confirme tu asignación al proyecto.')));
           if (!snapshot.hasData) return Center(child: CircularProgressIndicator());
-          final tareas = snapshot.data!.docs.map((d) => ActividadModel.fromJson(d.data(), d.id)).where((t) => !_soloPendientes || t.estatus != 'completado').toList()
+          final tareas = snapshot.data!.docs.map((d) => ActividadModel.fromJson(d.data(), d.id)).where((t) => !_soloPendientes || !t.aprobada).toList()
             ..sort((a,b) => a.fechaTermino.compareTo(b.fechaTermino));
           if (tareas.isEmpty) return Center(child: Text(snapshot.data!.metadata.isFromCache ? 'Sin tareas guardadas en este dispositivo. Conecta para consultar el servidor.' : 'No hay tareas en esta vista.'));
           return Column(children: [OfflineDataBadge(cached: snapshot.data!.metadata.isFromCache, pending: snapshot.data!.metadata.hasPendingWrites), Expanded(child: ListView.builder(padding: EdgeInsets.fromLTRB(12, 0, 12, 24), itemCount: tareas.length, itemBuilder: (context, i) {
             final t = tareas[i];
             return Card(child: ListTile(contentPadding: EdgeInsets.all(16),
-              leading: Icon(t.estatus == 'completado' ? Icons.task_alt_rounded : Icons.assignment_outlined, color: StiloColors.accent),
+              leading: Icon(t.aprobada ? Icons.task_alt_rounded : Icons.assignment_outlined, color: StiloColors.accent),
               title: Text(t.titulo, style: TextStyle(fontWeight: FontWeight.w700)),
-              subtitle: Text('${t.proyectoId.isEmpty ? 'General' : 'Proyecto'} · ${t.estatus} · ${t.totalEvidencias} evidencias\n${DateFormat('dd/MM · HH:mm').format(t.fechaTermino)}'),
+              subtitle: Text('${t.proyectoId.isEmpty ? 'General' : 'Proyecto'} · ${workStatusLabel(t.estadoVisible)} · ${t.totalEvidencias} evidencias\n${DateFormat('dd/MM · HH:mm').format(t.fechaTermino)}'),
               trailing: Icon(Icons.chevron_right_rounded), onTap: () => _abrir(t)));
           }))]);
         })),

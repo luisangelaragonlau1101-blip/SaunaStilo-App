@@ -7,7 +7,6 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../models/proyecto_model.dart';
 import '../models/user_model.dart';
@@ -92,11 +91,6 @@ class _ProyectoChatScreenState extends State<ProyectoChatScreen> {
         ),
         actions: [
           DictadoButton(controller: _controller, enabled: !_enviando),
-          IconButton(
-            tooltip: 'Llamada grupal',
-            onPressed: _usuario == null ? null : () => _iniciarReunion(soloAudio: true),
-            icon: Icon(Icons.call_rounded, color: StiloColors.accent),
-          ),
         ],
       ),
       body: _cargandoUsuario
@@ -129,7 +123,7 @@ class _ProyectoChatScreenState extends State<ProyectoChatScreen> {
           SizedBox(width: 12),
           Expanded(
             child: Text(
-              'Aquí queda el historial completo de la instalación: mensajes, fotos, audios y reuniones del equipo.',
+              'Aquí queda el historial completo de la instalación: mensajes, fotos, audios y avances del equipo.',
               style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .60), fontSize: 11, height: 1.35),
             ),
           ),
@@ -182,7 +176,6 @@ class _ProyectoChatScreenState extends State<ProyectoChatScreen> {
     final nombre = data['autorNombre']?.toString() ?? 'Equipo';
     final texto = data['texto']?.toString() ?? '';
     final audioUrl = data['audioUrl']?.toString() ?? '';
-    final reunionUrl = data['reunionUrl']?.toString() ?? '';
     final imagenes = data['imagenes'] is Iterable
         ? (data['imagenes'] as Iterable).map((item) => item.toString()).toList(growable: false)
         : <String>[];
@@ -244,14 +237,6 @@ class _ProyectoChatScreenState extends State<ProyectoChatScreen> {
             if (audioUrl.isNotEmpty) ...[
               SizedBox(height: 8),
               AudioMessagePlayer(url: audioUrl, durationSeconds: duracion, color: propio ? StiloColors.accent : _acento),
-            ],
-            if (reunionUrl.isNotEmpty && data['tipo'] == 'llamada') ...[
-              SizedBox(height: 8),
-              FilledButton.icon(
-                onPressed: () => _abrirUrl(reunionUrl),
-                icon: Icon(Icons.call_rounded),
-                label: Text('ENTRAR A LA REUNIÓN'),
-              ),
             ],
             SizedBox(height: 6),
             Row(
@@ -404,32 +389,6 @@ class _ProyectoChatScreenState extends State<ProyectoChatScreen> {
       _mensajeError('No se pudo enviar el avance. Revisa la conexión o los permisos de fotos.');
     } finally {
       if (mounted) setState(() => _enviando = false);
-    }
-  }
-
-  Future<void> _iniciarReunion({required bool soloAudio}) async {
-    if (!soloAudio) return;
-    final room = 'SaunaStiloProyecto${widget.proyecto.id.replaceAll(RegExp(r'[^A-Za-z0-9]'), '')}';
-    final url = soloAudio
-        ? 'https://meet.jit.si/$room#config.startWithVideoMuted=true'
-        : 'https://meet.jit.si/$room';
-    try {
-      await _chat.anunciarReunion(
-        proyecto: widget.proyecto,
-        autor: _usuario!,
-        url: url,
-        soloAudio: soloAudio,
-      );
-      await _abrirUrl(url);
-    } catch (_) {
-      _mensajeError('No se pudo iniciar la reunión. Intenta nuevamente.');
-    }
-  }
-
-  Future<void> _abrirUrl(String value) async {
-    final uri = Uri.parse(value);
-    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
-      if (!await launchUrl(uri)) _mensajeError('No se pudo abrir la reunión.');
     }
   }
 

@@ -31,7 +31,7 @@ class _PersonalMessageOverlayState extends State<PersonalMessageOverlay> with Wi
     final date = data['fecha'];
     if (date is! Timestamp) return false;
     final age = DateTime.now().difference(date.toDate());
-    return !age.isNegative && age.inSeconds < (data['esLlamada'] == true ? 60 : 900);
+    return !age.isNegative && age.inSeconds < 900;
   }
   void _listen() {
     _sub = FirebaseFirestore.instance.collection('notificaciones').where('destinatarioId', isEqualTo: widget.usuario.id).snapshots().listen((snapshot) {
@@ -64,37 +64,21 @@ class _PersonalMessageOverlayState extends State<PersonalMessageOverlay> with Wi
         final author = await FirebaseFirestore.instance.collection('usuarios').doc(content['autorId'].toString()).get();
         if (!mounted || !author.exists) continue;
         final contact = UserModel.fromFirestore(author);
-        final call = data['esLlamada'] == true;
-        if (call && _recent(data)) {
-          try { await _audio.setReleaseMode(ReleaseMode.loop); await _audio.play(AssetSource('sounds/urgent_alarm.ogg'), volume: 1); } catch (_) {}
-          _stop?.cancel(); _stop = Timer(const Duration(seconds: 20), () => _audio.stop());
-        }
-        if (!call) {
-          try { await _audio.setReleaseMode(ReleaseMode.release); await _audio.play(AssetSource('sounds/beep.ogg'), volume: 1); } catch (_) {}
-        }
+        try { await _audio.setReleaseMode(ReleaseMode.release); await _audio.play(AssetSource('sounds/beep.ogg'), volume: 1); } catch (_) {}
         final result = await showDialog<String>(context: context, builder: (c) => AlertDialog(
-          backgroundColor: const Color(0xFF130C10),
-          icon: Icon(call ? Icons.phone_in_talk_rounded : Icons.mark_chat_unread_outlined, color: const Color(0xFFB7FF2A), size: 34),
-          title: Text(call ? '${contact.nombre} te llama' : 'Mensaje de ${contact.nombre}'),
-          content: SingleChildScrollView(child: Text(call ? 'Invitación a una sala de llamada. Pulsa Entrar para abrirla.' : (content['texto']?.toString().isNotEmpty == true ? content['texto'].toString() : 'Te envió un archivo o una nota de voz. Abre el chat para verlo.'), style: const TextStyle(height: 1.45))),
-          actions: [TextButton(onPressed: () => Navigator.pop(c, 'dismiss'), child: const Text('Entendido')), FilledButton(onPressed: () => Navigator.pop(c, 'open'), child: Text(call ? 'Entrar' : 'Abrir chat'))],
+          backgroundColor: const Color(0xFF130C10), icon: const Icon(Icons.mark_chat_unread_outlined, color: Color(0xFFB7FF2A), size: 34),
+          title: Text('Mensaje de ${contact.nombre}'),
+          content: SingleChildScrollView(child: Text(content['texto']?.toString().isNotEmpty == true ? content['texto'].toString() : 'Te envió un archivo o una nota de voz. Abre el chat para verlo.', style: const TextStyle(height: 1.45))),
+          actions: [TextButton(onPressed: () => Navigator.pop(c, 'dismiss'), child: const Text('Entendido')), FilledButton(onPressed: () => Navigator.pop(c, 'open'), child: const Text('Abrir chat'))],
         ));
-        _stop?.cancel(); await _audio.stop();
+        await _audio.stop();
         if (!mounted) break;
         try { await notice.reference.update({'leidosPor': FieldValue.arrayUnion([widget.usuario.id])}); } catch (_) {}
-        if (result == 'open' && mounted) {
-          final url = Uri.tryParse(content['reunionUrl']?.toString() ?? '');
-          if (call && _recent(data) && url?.scheme == 'https' && url?.host == 'meet.jit.si') {
-            final opened = await launchUrl(url!, mode: LaunchMode.externalApplication);
-            if (!opened && mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No se abrió la sala. Puedes entrar desde el chat.')));
-          } else {
-            await Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => ConversacionPrivadaScreen(usuario: widget.usuario, contacto: contact)));
-          }
-        }
+        if (result == 'open' && mounted) await Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => ConversacionPrivadaScreen(usuario: widget.usuario, contacto: contact)));
       }
     } catch (_) {
       // Protected message reads can fail if project or account access was revoked.
-    } finally { _stop?.cancel(); await _audio.stop(); _showing = false; }
+    } finally { await _audio.stop(); _showing = false; }
   }
   @override
   void dispose() { WidgetsBinding.instance.removeObserver(this); _sub?.cancel(); _stop?.cancel(); _queue.clear(); unawaited(_audio.dispose()); super.dispose(); }

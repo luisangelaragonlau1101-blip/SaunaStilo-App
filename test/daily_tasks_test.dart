@@ -13,7 +13,8 @@ class DailyFake extends CompanyLearningService {
     calls.add(action);
     if (fail) throw StateError('No se confirmó el guardado.');
     if (action == 'daily-list') return {'items': [{...task}]};
-    if (action == 'daily-complete') task['status'] = 'completado';
+    if (action == 'daily-complete') { task['status'] = 'en_revision'; task['submissionId'] = 'finish'; }
+    if (action == 'daily-review') task['status'] = 'completado';
     return {'task': {...task}, 'saved': true};
   }
 }
@@ -32,11 +33,11 @@ void main() {
     await t.pumpWidget(MaterialApp(theme: ThemeData.dark(), home: DailyTaskDetail(user: person('trabajador'), task: api.task, service: api)));
     await t.pumpAndSettle();
     expect(find.text('foto.jpg'), findsOneWidget);
-    final submit = find.text('Entregar tarea terminada'); await t.ensureVisible(submit); await t.pumpAndSettle();
+    final submit = find.text('Marcar como terminada'); await t.ensureVisible(submit); await t.pumpAndSettle();
     api.fail = true; await t.tap(submit); await t.pumpAndSettle();
     expect(api.task['status'], 'en_progreso'); expect(find.text('No se confirmó el guardado.'), findsOneWidget);
     api.fail = false; await t.ensureVisible(submit); await t.tap(submit); await t.pumpAndSettle();
-    expect(api.task['status'], 'completado'); expect(find.text('Entregar tarea terminada'), findsNothing);
+    expect(api.task['status'], 'en_revision'); expect(find.text('Marcar como terminada'), findsNothing);
     expect(t.takeException(), isNull);
   });
   testWidgets('a master reviewing another person sees evidence without recipient delivery controls', (t) async {

@@ -10,7 +10,6 @@ import '../widgets/protected_media_viewer.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../models/proyecto_model.dart';
 import '../models/user_model.dart';
 import '../services/media_upload_service.dart';
@@ -29,11 +28,11 @@ class MensajesEquipoScreen extends StatefulWidget {
 }
 class _MensajesEquipoScreenState extends State<MensajesEquipoScreen> {
   String _query = '';
-  void _open(UserModel contact, {bool call = false}) => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => ConversacionPrivadaScreen(usuario: widget.usuario, contacto: contact, iniciarLlamada: call)));
+  void _open(UserModel contact) => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => ConversacionPrivadaScreen(usuario: widget.usuario, contacto: contact)));
   @override
   Widget build(BuildContext context) => DefaultTabController(length: 2, child: Scaffold(
     backgroundColor: StiloColors.background,
-    appBar: AppBar(title: Text('Chats y llamadas'), bottom: TabBar(labelColor: StiloColors.accent, indicatorColor: StiloColors.accent, tabs: [Tab(text: 'Personas'), Tab(text: 'Por proyecto')])),
+    appBar: AppBar(title: Text('Mensajes y equipo'), bottom: TabBar(labelColor: StiloColors.accent, indicatorColor: StiloColors.accent, tabs: [Tab(text: 'Personas'), Tab(text: 'Por proyecto')])),
     body: TabBarView(children: [
       Column(children: [
         TeamNotesStrip(user: widget.usuario),
@@ -45,10 +44,7 @@ class _MensajesEquipoScreenState extends State<MensajesEquipoScreen> {
           if (people.isEmpty) return _ChatStatus('No hay integrantes que coincidan con la búsqueda.');
           return ListView.builder(itemCount: people.length, itemBuilder: (context, i) {
             final person = people[i];
-            return ListTile(contentPadding: EdgeInsets.symmetric(horizontal: 18, vertical: 6), leading: _Avatar(person), title: Text(person.nombre, style: TextStyle(fontWeight: FontWeight.w700)), subtitle: Text(person.rol, style: TextStyle(color: StiloColors.text.withValues(alpha: .54), fontSize: 11)), onTap: () => _open(person), trailing: Row(mainAxisSize: MainAxisSize.min, children: [
-              IconButton(tooltip: 'Escribir a ${person.nombre}', icon: Icon(Icons.chat_bubble_outline_rounded, color: StiloColors.accent), onPressed: () => _open(person)),
-              IconButton(tooltip: 'Llamar a ${person.nombre}', icon: Icon(Icons.call_outlined, color: StiloColors.accent), onPressed: () => _open(person, call: true)),
-            ]));
+            return ListTile(contentPadding: EdgeInsets.symmetric(horizontal: 18, vertical: 6), leading: _Avatar(person), title: Text(person.nombre, style: TextStyle(fontWeight: FontWeight.w700)), subtitle: Text(person.rol, style: TextStyle(color: StiloColors.text.withValues(alpha: .54), fontSize: 11)), onTap: () => _open(person), trailing: IconButton(tooltip: 'Escribir a ${person.nombre}', icon: Icon(Icons.chat_bubble_outline_rounded, color: StiloColors.accent), onPressed: () => _open(person)));
           });
         })),
       ]),
@@ -74,8 +70,7 @@ class _MensajesEquipoScreenState extends State<MensajesEquipoScreen> {
 class ConversacionPrivadaScreen extends StatefulWidget {
   final UserModel usuario;
   final UserModel contacto;
-  final bool iniciarLlamada;
-  const ConversacionPrivadaScreen({super.key, required this.usuario, required this.contacto, this.iniciarLlamada = false});
+  const ConversacionPrivadaScreen({super.key, required this.usuario, required this.contacto});
   @override
   State<ConversacionPrivadaScreen> createState() => _ConversacionPrivadaScreenState();
 }
@@ -98,7 +93,6 @@ class _ConversacionPrivadaScreenState extends State<ConversacionPrivadaScreen> {
   void initState() {
     super.initState();
     _ready = _service.ensureConversation(widget.usuario, widget.contacto);
-    if (widget.iniciarLlamada) _ready.then((_) { if (mounted) _call(); }).catchError((Object _) {});
   }
   @override
   void dispose() { _text.dispose(); super.dispose(); }
@@ -106,9 +100,7 @@ class _ConversacionPrivadaScreenState extends State<ConversacionPrivadaScreen> {
   @override
   Widget build(BuildContext context) => Scaffold(
     backgroundColor: StiloColors.background,
-    appBar: AppBar(titleSpacing: 0, title: Row(children: [_Avatar(widget.contacto, radius: 18), SizedBox(width: 8), Expanded(child: Text(widget.contacto.nombre, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)))]), actions: [
-      IconButton(tooltip: 'Llamar', onPressed: _busy ? null : () => _call(), icon: Icon(Icons.call_outlined, color: _accent)),
-    ]),
+    appBar: AppBar(titleSpacing: 0, title: Row(children: [_Avatar(widget.contacto, radius: 18), SizedBox(width: 8), Expanded(child: Text(widget.contacto.nombre, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)))])),
     body: FutureBuilder<void>(future: _ready, builder: (context, ready) {
       if (ready.hasError) return Center(child: Column(mainAxisSize: MainAxisSize.min, children: [_ChatStatus('No se pudo abrir esta conversación. Revisa tu sesión y conexión.'), FilledButton(onPressed: () => setState(() => _ready = _service.ensureConversation(widget.usuario, widget.contacto)), child: Text('Reintentar'))]));
       if (ready.connectionState != ConnectionState.done) return Center(child: CircularProgressIndicator());
@@ -143,7 +135,6 @@ class _ConversacionPrivadaScreenState extends State<ConversacionPrivadaScreen> {
     final own = d['autorId'] == widget.usuario.id;
     final text = d['texto']?.toString() ?? '';
     final audio = d['audioUrl']?.toString() ?? '';
-    final meeting = d['reunionUrl']?.toString() ?? '';
     final raw = d['archivos'];
     final files = raw is List ? raw.whereType<Map>().toList() : <Map>[];
     return Align(alignment: own ? Alignment.centerRight : Alignment.centerLeft, child: Container(constraints: BoxConstraints(maxWidth: 430), margin: EdgeInsets.only(bottom: 10), padding: EdgeInsets.all(14), decoration: BoxDecoration(color: own ? StiloColors.surface : StiloColors.surface, borderRadius: BorderRadius.circular(20), border: Border.all(color: own ? StiloColors.border : StiloColors.text.withValues(alpha: .12))), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -151,7 +142,6 @@ class _ConversacionPrivadaScreenState extends State<ConversacionPrivadaScreen> {
       SharedMediaCard(text: text),
       for (final f in files) _attachment(f),
       if (audio.isNotEmpty) AudioMessagePlayer(url: audio, durationSeconds: (d['duracionSegundos'] as num?)?.toInt() ?? 0, color: _accent),
-      if (meeting.isNotEmpty && d['tipo'] == 'llamada') Padding(padding: EdgeInsets.only(top: 10), child: FilledButton.icon(icon: Icon(Icons.call_outlined), label: Text('Entrar a la llamada'), onPressed: () => _openUrl(meeting, meeting: true))),
       SizedBox(height: 6),
       Text(d['fecha'] is Timestamp ? DateFormat('dd/MM HH:mm').format((d['fecha'] as Timestamp).toDate()) : 'Guardando…', style: TextStyle(color: StiloColors.text.withValues(alpha: .38), fontSize: 10)),
     ])));
@@ -201,29 +191,11 @@ class _ConversacionPrivadaScreenState extends State<ConversacionPrivadaScreen> {
       if (!notified) _notice('Audio guardado; el aviso no fue confirmado.');
     } finally { if (mounted) setState(() => _busy = false); }
   }
-  Future<void> _call() async {
-    if (_busy || !mounted) return;
-    final accepted = await showDialog<bool>(context: context, builder: (c) => AlertDialog(title: Text('¿Llamar a ${widget.contacto.nombre}?'), content: Text('Se enviará una invitación privada. Después puedes entrar a la sala desde el chat. El timbrado depende del permiso y volumen de su teléfono.'), actions: [TextButton(onPressed: () => Navigator.pop(c, false), child: Text('Cancelar')), FilledButton(onPressed: () => Navigator.pop(c, true), child: Text('Llamar'))]));
-    if (accepted != true || !mounted) return;
-    setState(() => _busy = true);
-    try {
-      final id = _messages.doc().id;
-      final url = 'https://meet.jit.si/SaunaStilo-$id';
-      final notified = await _service.saveMessage(user: widget.usuario, contact: widget.contacto, messageId: id, call: true, data: {'texto': 'Invitación a llamada de voz.', 'reunionUrl': '$url#config.startWithVideoMuted=true', 'tipo': 'llamada', 'archivos': <Map<String, dynamic>>[]});
-      _notice(notified ? 'Invitación registrada. Entra a la llamada desde el chat. La entrega al teléfono aún debe confirmarse.' : 'Invitación guardada, pero no se confirmó su aviso.');
-    } catch (_) { _notice('No se pudo registrar la invitación de llamada.'); }
-    finally { if (mounted) setState(() => _busy = false); }
-  }
   Future<void> _emoji() async {
     final value = await showModalBottomSheet<String>(context: context, builder: (c) => SafeArea(child: Padding(padding: EdgeInsets.all(20), child: Wrap(spacing: 12, runSpacing: 12, children: ['👍','❤️','🔥','👏','✅','💪','🛠️','♨️','📸','🚐','🎉','😂'].map((e) => InkWell(onTap: () => Navigator.pop(c,e), child: Padding(padding: EdgeInsets.all(8), child: Text(e, style: TextStyle(fontSize: 32))))).toList()))));
     if (value != null && mounted) { _text.text += value; _text.selection = TextSelection.collapsed(offset: _text.text.length); }
   }
-  Future<void> _openUrl(String value, {bool meeting = false}) async {
-    final uri = Uri.tryParse(value);
-    if (uri == null || uri.scheme != 'https' || (meeting && uri.host != 'meet.jit.si')) { _notice('Enlace no permitido.'); return; }
-    if (!meeting) { await showProtectedMedia(context, value); return; }
-    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) _notice('No se pudo abrir el enlace. Revisa los permisos del navegador.');
-  }
+  Future<void> _openUrl(String value) async { if (!value.startsWith('https://')) { _notice('Enlace no permitido.'); return; } await showProtectedMedia(context, value); }
 }
 class _PendingFile {
   final String name;

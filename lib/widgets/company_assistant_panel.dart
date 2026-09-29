@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:typed_data';
+import 'audio_note_button.dart';
 import '../presentation/appearance.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
@@ -39,6 +42,21 @@ class _CompanyAssistantState extends State<CompanyAssistantPanel> with WidgetsBi
       if (_autoRead && TickerMode.of(context)) _speak(full);
     } catch (e) { if (mounted) setState(() => _error = CompanyLearningService.message(e)); }
     finally { if (mounted) setState(() => _busy = false); }
+  }
+  Future<void> _transcribe(Uint8List wav, int seconds) async {
+    if (_busy) throw StateError('Espera la respuesta actual.');
+    setState(() { _busy = true; _error = null; });
+    try {
+      final result = await (widget.service ?? CompanyLearningService()).call('assistant-transcribe', {'base64': base64Encode(wav)});
+      final transcript = result['text']?.toString().trim() ?? '';
+      if (transcript.isEmpty) throw StateError('No se entendió el audio. Graba de nuevo.');
+      if (!mounted) return;
+      input.text = transcript;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Audio recibido. Revisa el texto y toca Enviar.')));
+    } catch (error) {
+      if (mounted) setState(() => _error = CompanyLearningService.message(error));
+      rethrow; // AudioNoteComposer keeps the recording for retry.
+    } finally { if (mounted) setState(() => _busy = false); }
   }
   Future<void> _speak(String text) async {
     final ticket = ++_speech;
@@ -84,7 +102,8 @@ class _CompanyAssistantState extends State<CompanyAssistantPanel> with WidgetsBi
     ])),
     SafeArea(top: false, child: Padding(padding: EdgeInsets.fromLTRB(16, 8, 16, 12), child: Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
       Expanded(child: TextField(contextMenuBuilder: privacyTextMenu, controller: input, enabled: !_busy, minLines: 1, maxLines: 4, maxLength: 2500, decoration: InputDecoration(hintText: '¿Cómo le hago con…?', counterText: ''), onSubmitted: (_) => _send())),
-      SizedBox(width: 8), IconButton.filled(tooltip: 'Enviar pregunta', onPressed: _busy ? null : _send, icon: _busy ? SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : Icon(Icons.send_rounded)),
+      IgnorePointer(ignoring: _busy, child: AudioNoteButton(onAudioReady: _transcribe, color: StiloColors.accent, maximumSeconds: 40)),
+      SizedBox(width: 4), IconButton.filled(tooltip: 'Enviar pregunta', onPressed: _busy ? null : _send, icon: _busy ? SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : Icon(Icons.send_rounded)),
     ]))),
   ]);
 }

@@ -1,3 +1,4 @@
+import '../widgets/today_tasks_card.dart';
 import '../presentation/appearance.dart';
 import '../widgets/personal_header.dart';
 import 'business_workspace_screen.dart';
@@ -108,6 +109,7 @@ class _OperationsHomeState extends State<_OperationsHome> {
       MainHomeShortcuts(user: widget.usuario, onTab: widget.onTab),
       SizedBox(height: 16),
       JornadaCompacta(usuario: widget.usuario),
+      SizedBox(height: 18), TodayTasksCard(user: widget.usuario),
       SizedBox(height: 16),
       if (widget.usuario.rol == AppRoles.admin) Card(child: ListTile(contentPadding: EdgeInsets.all(18), leading: Icon(Icons.business_center_outlined), title: Text('Gestión de la empresa'), subtitle: Text('Recursos Humanos, finanzas y administración'), trailing: Icon(Icons.chevron_right), onTap: () => Navigator.push(context, MaterialPageRoute<void>(builder: (_) => BusinessWorkspaceScreen(user: widget.usuario))))),
       if (!AppearanceController.instance.compact) HomeProgressPanel(user: widget.usuario,
@@ -133,7 +135,7 @@ class OperationsTaskList extends StatelessWidget {
     return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(stream: query.snapshots(), builder: (context, snapshot) {
       if (snapshot.hasError) return Padding(padding: EdgeInsets.all(16), child: Text('No pudimos consultar las tareas. Revisa conexión y permisos.', style: TextStyle(color: Colors.orangeAccent)));
       if (!snapshot.hasData) return Padding(padding: EdgeInsets.all(16), child: LinearProgressIndicator());
-      final tasks = snapshot.data!.docs.map((d) => ActividadModel.fromJson(d.data(), d.id)).where((a) => !compact || a.estatus != 'completado').toList()..sort((a,b) => a.fechaTermino.compareTo(b.fechaTermino));
+      final tasks = snapshot.data!.docs.map((d) => ActividadModel.fromJson(d.data(), d.id)).where((a) => !compact || !a.aprobada).toList()..sort((a,b) => a.fechaTermino.compareTo(b.fechaTermino));
       if (tasks.isEmpty) return Container(padding: EdgeInsets.all(20), width: double.infinity, decoration: BoxDecoration(color: StiloColors.surface, borderRadius: BorderRadius.circular(20)), child: Text('No hay tareas pendientes en esta vista.', style: TextStyle(color: StiloColors.text.withValues(alpha: .60))));
       return Column(children: (compact ? tasks.take(4) : tasks).map((task) => Card(color: StiloColors.surface, child: ListTile(contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 7), leading: Icon(task.estatus == 'completado' ? Icons.task_alt_rounded : Icons.assignment_outlined, color: StiloColors.accent), title: Text(task.titulo, style: TextStyle(fontWeight: FontWeight.w700)), subtitle: Text('${DateFormat('dd/MM HH:mm').format(task.fechaTermino)} · ${task.estatus.replaceAll('_', ' ')}'), trailing: Icon(Icons.chevron_right_rounded), onTap: () => showModalBottomSheet<void>(context: context, isScrollControlled: true, useSafeArea: true, builder: (_) => admin ? admin_detail.ModalDetalleActividad(actividad: task) : worker_detail.ModalDetalleActividad(actividad: task))))).toList());
     });

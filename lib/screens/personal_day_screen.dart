@@ -1,3 +1,4 @@
+import '../widgets/today_tasks_card.dart';
 import '../presentation/appearance.dart';
 import '../widgets/personal_header.dart';
 import '../widgets/home_shortcuts.dart';
@@ -102,6 +103,7 @@ class _PersonalDayState extends State<PersonalDayScreen> with WidgetsBindingObse
         MainHomeShortcuts(user: widget.user), SizedBox(height: 14),
         HomeProgressPanel(user:widget.user,onStreak:()=>Navigator.push(context,MaterialPageRoute<void>(builder:(_)=>StreakOverviewScreen(user:widget.user))),onProfile:widget.onProfile??(){},onLearn:()=>Navigator.push(context,MaterialPageRoute<void>(builder:(_)=>TrainingAccessScreen(user:widget.user)))),
         JornadaCompacta(usuario:widget.user,onExitConfirmed:_finished),SizedBox(height:18),
+        TodayTasksCard(user: widget.user), SizedBox(height: 18),
       ],
       Container(padding:EdgeInsets.all(20),decoration:BoxDecoration(borderRadius:BorderRadius.circular(30),gradient:LinearGradient(colors:[StiloColors.surface,StiloColors.surface]),border:Border.all(color:StiloColors.border)),child:Row(children:[StiloOrbitIcon(icon:Icons.wb_sunny_rounded,color:Color(0xFFFFB876),size:52,active:true),SizedBox(width:14),Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text(_own?'Mi día':'Día de ${widget.targetName??'la persona'}',style:TextStyle(fontSize:25,fontWeight:FontWeight.w900)),SizedBox(height:5),Text('Comidas · compras · eventos · pendientes',style:TextStyle(color:StiloColors.text.withValues(alpha: .60),fontSize:12,height:1.4))]))])),
       Row(children:[IconButton(tooltip:'Día anterior',onPressed:_busy?null:()=>_changeDay(_day.subtract(Duration(days:1))),icon:Icon(Icons.chevron_left_rounded)),Expanded(child:TextButton.icon(onPressed:_busy?null:_chooseDay,icon:Icon(Icons.calendar_month_rounded),label:Text(DateFormat('dd/MM/yyyy').format(_day)))),IconButton(tooltip:'Día siguiente',onPressed:_busy?null:()=>_changeDay(_day.add(Duration(days:1))),icon:Icon(Icons.chevron_right_rounded)),IconButton(tooltip:'Actualizar plan',onPressed:_busy?null:_load,icon:Icon(Icons.refresh_rounded))]),
@@ -171,7 +173,7 @@ class PersonalCompletionBanner extends StatelessWidget {
 class _PersonalAssistantService extends CompanyLearningService {
  final CompanyLearningService parent;final String uid,date;
  _PersonalAssistantService(this.parent,this.uid,this.date);
- @override Future<Map<String,dynamic>> call(String action,[Map<String,dynamic> data=const {}])=>parent.call('personal-ask',{...data,'userId':uid,'date':date,'includePlan':true});
+ @override Future<Map<String,dynamic>> call(String action,[Map<String,dynamic> data=const {}])=>action == 'manual-ask' ? parent.call('personal-ask',{...data,'userId':uid,'date':date,'includePlan':true}) : parent.call(action, data);
 }
 
 class PersonalItemForm extends StatefulWidget {

@@ -150,11 +150,11 @@ class AppActionCatalog {
       AppAction(
         id: 'mensajes',
         title: 'Mensajes',
-        subtitle: 'Chats, grupos y llamadas',
+        subtitle: 'Mensajes, grupos y avances',
         icon: Icons.forum_rounded,
         color: _violet,
         primary: true,
-        keywords: const ['chat', 'llamada', 'equipo'],
+        keywords: const ['chat', 'mensaje', 'equipo'],
         builder: (_) => MensajesEquipoScreen(usuario: user),
       ),
       AppAction(

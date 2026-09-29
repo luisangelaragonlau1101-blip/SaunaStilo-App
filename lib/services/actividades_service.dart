@@ -126,12 +126,13 @@ class ActividadesService {
   /// Registra un avance y sube todos sus archivos, uno por uno, sin imponer un
   /// límite de cantidad. Cada archivo vive en su propio documento para evitar
   /// que el documento principal alcance el límite de tamaño de Firestore.
-  Future<void> registrarAvance({
+  Future<bool> registrarAvance({
     required String actividadId,
     required String trabajadorId,
     required String comentario,
     required List<ArchivoEvidenciaPendiente> archivos,
     bool esCierre = false,
+    String? operationId,
   }) async {
     final actividadIdLimpio = actividadId.trim();
     final trabajadorIdLimpio = trabajadorId.trim();
@@ -157,11 +158,16 @@ class ActividadesService {
     final actividadData =
         actividadSnapshot.data() ?? const <String, dynamic>{};
     _validarTrabajadorAsignado(actividadData, trabajadorIdLimpio);
-    if (_estatus(actividadData) == 'completado') {
+    final avanceRef = operationId == null
+        ? _avancesRef(actividadIdLimpio).doc()
+        : _avancesRef(actividadIdLimpio).doc(operationId);
+    if (operationId != null && (await avanceRef.get()).exists) {
+      return _avisarActividad(actividadData, actividadIdLimpio, avanceRef.id, esCierre);
+    }
+    if (['completado', 'en_revision'].contains(_estatus(actividadData))) {
       throw StateError('Una actividad completada ya no admite avances.');
     }
 
-    final avanceRef = _avancesRef(actividadIdLimpio).doc();
     final evidenciasSubidas = <_EvidenciaSubida>[];
     final documentosEvidenciaEscritos =
         <DocumentReference<Map<String, dynamic>>>[];
@@ -251,25 +257,25 @@ class ActividadesService {
         _validarTrabajadorAsignado(dataActual, trabajadorIdLimpio);
 
         final estatusActual = _estatus(dataActual);
-        if (estatusActual == 'completado') {
+        if (['completado', 'en_revision'].contains(estatusActual)) {
           throw StateError('La actividad ya fue completada.');
         }
-        if (esCierre && !['pendiente', 'en_progreso'].contains(estatusActual)) {
+        if (esCierre && !['pendiente', 'en_progreso', 'cambios_solicitados'].contains(estatusActual)) {
           throw StateError(
             'La actividad no admite una entrega en su estado actual.',
           );
         }
         if (!esCierre &&
             estatusActual != 'pendiente' &&
-            estatusActual != 'en_progreso') {
+            estatusActual != 'en_progreso' && estatusActual != 'cambios_solicitados') {
           throw StateError('La actividad no admite nuevos avances.');
         }
 
         final totalEvidencias =
             _contadorEvidencias(dataActual) + evidenciasSubidas.length;
-        if (esCierre && totalEvidencias <= 0) {
+        if (esCierre && totalEvidencias <= 0 && comentarioLimpio.length < 5) {
           throw StateError(
-            'Debes subir por lo menos una evidencia antes de completar la tarea.',
+            'Adjunta una foto o describe el trabajo terminado.',
           );
         }
 
@@ -292,20 +298,8 @@ class ActividadesService {
           actualizaciones['cantidadEvidencias'] = totalEvidencias;
         }
         if (esCierre) {
-          actualizaciones['estatus'] = 'completado';
+          actualizaciones['estatus'] = 'en_revision';
           actualizaciones['completadoEn'] = FieldValue.serverTimestamp();
-          final avisoRef = _db.collection('notificaciones').doc();
-          transaction.set(
-            avisoRef,
-            NotificacionesService.datosAviso(
-              titulo: 'Tarea terminada',
-              mensaje: (dataActual['titulo'] is String)
-                  ? dataActual['titulo'] as String
-                  : 'Un trabajador terminó una actividad',
-              tipo: 'tarea',
-              rolesDestinatarios: const ['admin'],
-            ),
-          );
         } else if (estatusActual == 'pendiente') {
           actualizaciones['estatus'] = 'en_progreso';
           actualizaciones['iniciadoEn'] = FieldValue.serverTimestamp();
@@ -317,6 +311,43 @@ class ActividadesService {
       await _eliminarBlobsSubidos(evidenciasSubidas);
       throw Exception('No se pudo registrar el avance: $e');
     }
+    return _avisarActividad(actividadData, actividadIdLimpio, avanceRef.id, esCierre);
+  }
+
+  Future<bool> _avisarActividad(Map<String, dynamic> data, String id, String eventId, bool entrega) =>
+      NotificacionesService(firestore: _db).enviarEvento(
+        id: 'actividad_${id}_$eventId', titulo: entrega ? 'Actividad por aprobar' : 'Nuevo avance de actividad',
+        mensaje: data['titulo']?.toString() ?? 'Actividad actualizada', tipo: 'tarea',
+        destinatarioId: data['creadoPor']?.toString() ?? '', rolesDestinatarios: const ['admin'],
+        campos: {'actividadId': id, 'proyectoId': data['proyectoId'] ?? ''});
+
+  Future<bool> revisarActividad({required String actividadId, required bool aprobar,
+    required String comentario, required DateTime? entregaEsperada}) async {
+    final uid = (_auth ?? FirebaseAuth.instance).currentUser?.uid;
+    if (uid == null) throw StateError('Inicia sesión.');
+    if (!aprobar && comentario.trim().isEmpty) throw StateError('Explica qué debe corregirse.');
+    final ref = _actividadesRef.doc(actividadId);
+    final event = _avancesRef(actividadId).doc();
+    Map<String, dynamic> data = {};
+    await _db.runTransaction((tx) async {
+      final profile = await tx.get(_db.collection('usuarios').doc(uid));
+      final snapshot = await tx.get(ref);
+      if (profile.data()?['rol'] != 'admin' || profile.data()?['activo'] == false) throw StateError('Solo Administración aprueba estas actividades.');
+      if (!snapshot.exists) throw StateError('La actividad ya no existe.');
+      data = snapshot.data()!;
+      if (!['en_revision', 'completado'].contains(_estatus(data)) || data['aprobadoEn'] != null) throw StateError('Esta actividad no tiene una entrega pendiente de aprobación.');
+      final actual = data['completadoEn'];
+      if ((actual is Timestamp ? actual.toDate() : null) != entregaEsperada) throw StateError('La entrega cambió. Actualiza antes de revisarla.');
+      tx.update(ref, {'estatus': aprobar ? 'completado' : 'cambios_solicitados',
+        'observacionesAdmin': comentario.trim(), 'revisadoPor': uid, 'revisadoEn': FieldValue.serverTimestamp(),
+        'aprobadoEn': aprobar ? FieldValue.serverTimestamp() : null});
+      tx.set(event, {'comentario': '${aprobar ? 'Aprobada y finalizada' : 'Cambios solicitados'}${comentario.trim().isEmpty ? '' : ': ${comentario.trim()}'}',
+        'trabajadorId': uid, 'fecha': FieldValue.serverTimestamp(), 'esCierre': false, 'cantidadEvidencias': 0});
+    });
+    return NotificacionesService(firestore: _db).enviarEvento(id: 'revision_${event.id}',
+      titulo: aprobar ? 'Actividad aprobada' : 'Actividad: cambios solicitados',
+      mensaje: data['titulo']?.toString() ?? 'Revisa tu actividad', tipo: 'tarea',
+      destinatarioId: data['asignadoATrabajadorId']?.toString() ?? '', campos: {'actividadId': actividadId});
   }
 
   /// Pasa una actividad pendiente a en progreso. La operación es idempotente
@@ -353,35 +384,8 @@ class ActividadesService {
     required String actividadId,
     required String trabajadorId,
   }) async {
-    _validarSesionAutenticada(trabajadorId.trim());
-    final actividadRef = _actividadesRef.doc(actividadId.trim());
-    await _db.runTransaction((transaction) async {
-      final snapshot = await transaction.get(actividadRef);
-      if (!snapshot.exists) throw StateError('La actividad ya no existe.');
-      final data = snapshot.data() ?? const <String, dynamic>{};
-      _validarTrabajadorAsignado(data, trabajadorId.trim());
-
-      final estatusActual = _estatus(data);
-      if (estatusActual != 'en_progreso') {
-        throw StateError(
-          'La actividad debe estar en progreso antes de completarla.',
-        );
-      }
-      final totalEvidencias = _contadorEvidencias(data);
-      if (totalEvidencias <= 0) {
-        throw StateError(
-          'Debes subir por lo menos una evidencia antes de completar la tarea.',
-        );
-      }
-
-      transaction.update(actividadRef, {
-        'estatus': 'completado',
-        'completadoEn': FieldValue.serverTimestamp(),
-        // Normaliza documentos antiguos que solo tenían evidenciaFotos.
-        'evidenciasCount': totalEvidencias,
-        'cantidadEvidencias': totalEvidencias,
-      });
-    });
+    await registrarAvance(actividadId: actividadId, trabajadorId: trabajadorId,
+      comentario: 'Trabajo terminado; se entrega para revisión.', archivos: [], esCierre: true);
   }
 
   // El cierre debe pasar por registrarAvance(esCierre: true) o por el método
