@@ -7,7 +7,7 @@ test('background permission checks never ask Android again and a denied permissi
  assert.doesNotMatch(receiver,/if \(mounted\) _showPushAction\('No se pudieron sincronizar/);
 });
 test('meal controls use the server capability and only confirmed writes complete the shift',()=>{
- const source=read('lib/widgets/jornada_compacta.dart');assert.match(source,/_manual \? 'salida_comida' : 'solicitar_comida'/);assert.match(source,/_register\('regreso_comida'\)/);assert.match(source,/AppRoles.admin && !_manual/);assert.match(source,/result\['exito'\] != true/);
+ const source=read('lib/widgets/jornada_compacta.dart');assert.match(source,/_register\('salida_comida'\)/);assert.match(source,/_register\('regreso_comida'\)/);assert.match(source,/_busy \|\| !_manual/);assert.match(source,/result\['exito'\] != true/);assert.doesNotMatch(source,/Solicitar hora de comida/);
 });
 test('personal tasks and shopping creation and edits are administrative while extra reports are separate',()=>{
  const panel=read('lib/screens/personal_day_screen.dart'),service=read('tools/online-smart34/personal-day.mjs');

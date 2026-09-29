@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'jornada_pause.dart';
 
 class AsistenciaModel {
   final String id;
@@ -28,6 +29,7 @@ class AsistenciaModel {
   // --- LISTAS DE BONOS Y MULTAS (NUEVO FORMATO MÚLTIPLE) ---
   final List<Map<String, dynamic>>? listaBonos;
   final List<Map<String, dynamic>>? listaMultas;
+  final List<JornadaPause> pausas;
   
   final List<String>? historialModificaciones;
 
@@ -54,6 +56,7 @@ class AsistenciaModel {
     this.historialModificaciones,
     this.listaBonos,
     this.listaMultas,
+    this.pausas = const [],
   });
 
   factory AsistenciaModel.fromFirestore(DocumentSnapshot doc) {
@@ -111,6 +114,7 @@ class AsistenciaModel {
 
       listaBonos: parsedBonos,
       listaMultas: parsedMultas,
+      pausas: JornadaPause.parse(data['pausasJornada']),
     );
   }
 

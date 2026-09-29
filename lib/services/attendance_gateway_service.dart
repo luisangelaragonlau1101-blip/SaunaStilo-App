@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/asistencia_model.dart';
 import 'company_learning_service.dart';
@@ -72,6 +73,23 @@ class AttendanceGatewayService {
       if (longitude != null) 'longitud': longitude,
     }));
     if (result['exito'] != true) throw StateError('El servidor no confirmó el registro. Actualiza tu jornada antes de reintentar.');
+    refresh();
+    return result;
+  }
+
+  static String newRequestId() {
+    final random = Random.secure();
+    return List.generate(4, (_) => random.nextInt(0x100000000).toRadixString(16).padLeft(8, '0')).join();
+  }
+
+  Future<Map<String, dynamic>> recordPause({required String direction, required String requestId, String? kind, String? detail, String? pauseId}) async {
+    final result = decodeDay(await api.call('attendance-pause', {
+      'direction': direction, 'requestId': requestId,
+      if (kind != null) 'kind': kind,
+      if (detail != null) 'detail': detail,
+      if (pauseId != null) 'pauseId': pauseId,
+    }));
+    if (result['exito'] != true) throw StateError('No se confirmó la pausa. Actualiza para comprobar su estado.');
     refresh();
     return result;
   }

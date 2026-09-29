@@ -3,6 +3,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/user_model.dart';
+import '../models/jornada_pause.dart';
+import 'jornada_pause_history.dart';
 import '../screens/payroll_records_screen.dart';
 import '../services/asistencia_service.dart';
 import '../services/attendance_gateway_service.dart';
@@ -27,6 +29,7 @@ class _JornadaCompactaState extends State<JornadaCompacta> with WidgetsBindingOb
   bool _busy = false;
   bool _manual = false;
   String? _error;
+  Map<String, String>? _pauseRetry;
 
   @override
   void initState() {
@@ -37,6 +40,7 @@ class _JornadaCompactaState extends State<JornadaCompacta> with WidgetsBindingOb
   void _connect() {
     _service = widget.service ?? AsistenciaService();
     _confirmed = null;
+    _pauseRetry = null;
     _journal = _service.gateway.watchDay(widget.usuario.id);
   }
   @override
@@ -55,7 +59,7 @@ class _JornadaCompactaState extends State<JornadaCompacta> with WidgetsBindingOb
       ? DateFormat('HH:mm').format(value.toDate().toUtc().subtract(Duration(hours: 6))) : '—';
 
   Future<void> _register(String action) async {
-    if (_busy || (widget.usuario.rol == AppRoles.admin && !_manual)) return;
+    if (_busy || !_manual) return;
     if (action == 'salida') {
       final confirmed = await showDialog<bool>(context: context, builder: (c) => AlertDialog(
         title: Text('¿Registrar tu salida?'),
@@ -67,12 +71,36 @@ class _JornadaCompactaState extends State<JornadaCompacta> with WidgetsBindingOb
     }
     setState(() { _busy = true; _error = null; });
     try {
-      final result = await _service.registrarMovimiento(action, manual: _manual);
+      final result = await _service.registrarMovimiento(action, manual: true);
       if (result['exito'] != true) throw StateError('No se confirmó el movimiento. Actualiza tu jornada.');
       if (!mounted) return;
       setState(() => _confirmed = result);
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(result['mensaje']?.toString() ?? 'Registro guardado.')));
       if (action == 'salida') widget.onExitConfirmed?.call();
+    } catch (error) {
+      if (mounted) setState(() => _error = CompanyLearningService.message(error));
+    } finally { if (mounted) setState(() => _busy = false); }
+  }
+
+  Future<void> _openPause() async {
+    if (_busy) return;
+    final picked = await showDialog<Map<String, String>>(context: context, builder: (_) => _PauseDialog(initial: _pauseRetry));
+    if (picked != null && mounted) await _recordPause(direction: 'out', kind: picked['kind'], detail: picked['detail']);
+  }
+
+  Future<void> _recordPause({required String direction, String? kind, String? detail, String? pauseId}) async {
+    if (_busy) return;
+    final intent = {'direction': direction, if (kind != null) 'kind': kind, if (detail != null) 'detail': detail, if (pauseId != null) 'pauseId': pauseId};
+    final retry = _pauseRetry;
+    final requestId = retry != null && intent.length == retry.length - 1 && intent.entries.every((e) => retry[e.key] == e.value)
+        ? retry['requestId']! : AttendanceGatewayService.newRequestId();
+    _pauseRetry = {...intent, 'requestId': requestId};
+    setState(() { _busy = true; _error = null; });
+    try {
+      final result = await _service.gateway.recordPause(direction: direction, requestId: requestId, kind: kind, detail: detail, pauseId: pauseId);
+      if (!mounted) return;
+      setState(() { _confirmed = result; _pauseRetry = null; });
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(result['mensaje']?.toString() ?? 'Movimiento guardado.')));
     } catch (error) {
       if (mounted) setState(() => _error = CompanyLearningService.message(error));
     } finally { if (mounted) setState(() => _busy = false); }
@@ -89,7 +117,10 @@ class _JornadaCompactaState extends State<JornadaCompacta> with WidgetsBindingOb
         if (_confirmed != null && live != null) {
           final saved = _confirmed!['data'] as Map;
           final current = live['data'] as Map;
-          if (_confirmed!['day'] != live['day'] || ['horaEntrada', 'salidaComidaSolicitada', 'salidaComidaReal', 'regresoComidaReal', 'horaSalida'].every((k) => saved[k] == null || current[k] != null)) _confirmed = null;
+          final revision = _confirmed!['receiptRevision'];
+          final caughtUp = revision != null ? revision == live['receiptRevision']
+              : ['horaEntrada', 'salidaComidaSolicitada', 'salidaComidaReal', 'regresoComidaReal', 'horaSalida'].every((k) => saved[k] == null || current[k] != null);
+          if (_confirmed!['day'] != live['day'] || caughtUp) _confirmed = null;
         }
         final record = _confirmed ?? live;
         final data = Map<String, dynamic>.from(record?['data'] as Map? ?? {});
@@ -97,9 +128,12 @@ class _JornadaCompactaState extends State<JornadaCompacta> with WidgetsBindingOb
         final left = data['horaSalida'] is Timestamp;
         final mealStarted = data['salidaComidaReal'] is Timestamp;
         final mealReturned = data['regresoComidaReal'] is Timestamp;
-        final mealPending = data['salidaComidaSolicitada'] is Timestamp && !mealStarted;
         _manual = record?['supportsManual'] == true;
-        final ready = record != null && !snapshot.hasError && !_busy && (widget.usuario.rol != AppRoles.admin || _manual);
+        final ready = record != null && !snapshot.hasError && !_busy && _manual;
+        final pauses = JornadaPause.parse(data['pausasJornada']);
+        final openPauses = pauses.where((p) => p.returned == null).toList();
+        final openPause = openPauses.isEmpty ? null : openPauses.first;
+        final supportsPauses = record?['supportsPauses'] == true;
         return Container(
           padding: EdgeInsets.all(18),
           decoration: BoxDecoration(color: StiloColors.surface, borderRadius: BorderRadius.circular(24), border: Border.all(color: StiloColors.surface)),
@@ -113,22 +147,32 @@ class _JornadaCompactaState extends State<JornadaCompacta> with WidgetsBindingOb
             SizedBox(height: 6),
             Text('Horario: ${widget.usuario.horaEntrada ?? '09:00'}–${widget.usuario.horaSalida ?? '19:00'} · Ciudad de México', style: TextStyle(color: StiloColors.text.withValues(alpha: .54), fontSize: 11)),
             SizedBox(height: 14),
-            if (_manual) Text('Registro manual con hora del servidor. No solicita ubicación.', style: TextStyle(color: StiloColors.text.withValues(alpha: .60), fontSize: 12)),
-            if (!_manual && widget.usuario.rol == AppRoles.admin) Text('Tu registro personal sencillo está pendiente de la actualización del servicio.', style: TextStyle(color: Colors.orangeAccent)),
+            if (_manual) Text('Toca el movimiento que necesitas registrar. La hora se guarda al confirmar.', style: TextStyle(color: StiloColors.text.withValues(alpha: .60), fontSize: 12)),
+            if (!_manual && record != null) Text('El registro sencillo está pendiente de la actualización del servicio. Toca actualizar.', style: TextStyle(color: Colors.orangeAccent)),
             FilledButton.icon(key: ValueKey('attendance-entry'), onPressed: ready && !entered ? () => _register('entrada') : null, icon: Icon(Icons.login_rounded), label: Text(entered ? 'Entrada registrada' : 'Registrar entrada')),
             if (entered) ...[
               SizedBox(height: 16),
               Text('Hora de comida', style: TextStyle(fontWeight: FontWeight.w800)),
               SizedBox(height: 8),
               Text('Salida ${_hour(data['salidaComidaReal'])} · Regreso ${_hour(data['regresoComidaReal'])}', style: TextStyle(color: StiloColors.text.withValues(alpha: .70))),
-              if (!left && !mealStarted && (!mealPending || _manual))
-                OutlinedButton.icon(key: ValueKey('attendance-meal'), onPressed: ready ? () => _register(_manual ? 'salida_comida' : 'solicitar_comida') : null, icon: Icon(Icons.restaurant_rounded), label: Text(_manual ? 'Salir a comer' : 'Solicitar hora de comida')),
-              if (mealPending && !_manual) Padding(padding: EdgeInsets.symmetric(vertical: 8), child: Text('Solicitud guardada. Espera la autorización de Administración.', style: TextStyle(color: Color(0xFFFFB876)))),
+              if (!left && !mealStarted)
+                OutlinedButton.icon(key: ValueKey('attendance-meal'), onPressed: ready && openPause == null ? () => _register('salida_comida') : null, icon: Icon(Icons.restaurant_rounded), label: Text('Salir a comer')),
               if (!left && mealStarted && !mealReturned)
                 FilledButton.icon(key: ValueKey('attendance-return'), onPressed: ready ? () => _register('regreso_comida') : null, icon: Icon(Icons.keyboard_return_rounded), label: Text('Ya regresé de comer')),
               if (mealReturned) Text('Regreso de comida registrado', style: TextStyle(color: StiloColors.accent)),
               SizedBox(height: 12),
-              OutlinedButton.icon(key: ValueKey('attendance-exit'), onPressed: ready && !left ? () => _register('salida') : null, icon: Icon(Icons.logout_rounded), label: Text(left ? 'Salida registrada' : 'Registrar salida')),
+              OutlinedButton.icon(key: ValueKey('attendance-exit'), onPressed: ready && !left ? () => _register('salida') : null, icon: Icon(Icons.logout_rounded), label: Text(left ? 'Salida registrada' : 'Terminar jornada')),
+              const SizedBox(height: 16),
+              const Divider(),
+              const Text('Pausas y salidas', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
+              const Text('Baño, encargos y otras salidas. Se guardan aparte de tu entrada, comida y salida final.'),
+              const SizedBox(height: 8),
+              if (openPause != null) ...[
+                Text('En pausa: ${openPause.label}', style: const TextStyle(fontWeight: FontWeight.w700)),
+                FilledButton.icon(key: const ValueKey('attendance-pause-return'), onPressed: ready && supportsPauses ? () => _recordPause(direction: 'return', pauseId: openPause.id) : null, icon: const Icon(Icons.keyboard_return_rounded), label: const Text('Regresé de mi pausa')),
+              ] else if (!left) OutlinedButton.icon(key: const ValueKey('attendance-pause-out'), onPressed: ready && supportsPauses && (!mealStarted || mealReturned) ? _openPause : null, icon: const Icon(Icons.directions_walk_rounded), label: const Text('Registrar pausa o salida')),
+              if (!supportsPauses) const Text('Actualiza la jornada para consultar las pausas.'),
+              JornadaPauseHistory(pauses: pauses),
             ],
             if (_busy || snapshot.connectionState == ConnectionState.waiting) Padding(padding: EdgeInsets.symmetric(vertical: 10), child: LinearProgressIndicator()),
             if (record?['pendingSync'] == true) Padding(padding: EdgeInsets.only(top: 10), child: Text('Horario guardado. Se actualizará en nómina cuando Administración abra Asistencias.', style: TextStyle(color: StiloColors.text.withValues(alpha: .60), fontSize: 12))),
@@ -139,4 +183,31 @@ class _JornadaCompactaState extends State<JornadaCompacta> with WidgetsBindingOb
       },
     );
   }
+}
+
+class _PauseDialog extends StatefulWidget {
+  final Map<String, String>? initial;
+  const _PauseDialog({this.initial});
+  @override State<_PauseDialog> createState() => _PauseDialogState();
+}
+
+class _PauseDialogState extends State<_PauseDialog> {
+  late final _detail = TextEditingController(text: widget.initial?['detail'] ?? '');
+  late String _kind = widget.initial?['kind'] ?? 'bano';
+  String? _validation;
+  @override void dispose() { _detail.dispose(); super.dispose(); }
+  @override Widget build(BuildContext context) => AlertDialog(
+    title: const Text('Registrar pausa o salida'),
+    content: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      const Text('Elige para qué sales. Tu entrada, comida y salida final se conservan por separado.'),
+      const SizedBox(height: 12),
+      for (final type in jornadaPauseTypes.entries) ChoiceChip(label: Text(type.value), selected: _kind == type.key, onSelected: (_) => setState(() { _kind = type.key; _validation = null; })),
+      const SizedBox(height: 12),
+      TextField(controller: _detail, maxLength: 240, maxLines: 2, decoration: InputDecoration(labelText: _kind == 'otro' ? '¿Cuál es el motivo?' : 'Descripción opcional', errorText: _validation)),
+    ])),
+    actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')), FilledButton(onPressed: () {
+      if (_kind == 'otro' && _detail.text.trim().isEmpty) { setState(() => _validation = 'Escribe el motivo.'); return; }
+      Navigator.pop(context, {'kind': _kind, 'detail': _detail.text.trim()});
+    }, child: const Text('Guardar salida'))],
+  );
 }

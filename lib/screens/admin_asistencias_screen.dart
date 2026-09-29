@@ -1,6 +1,7 @@
 import '../widgets/inline_photo.dart';
 import '../presentation/appearance.dart';
 import '../widgets/payroll_recognitions.dart';
+import '../widgets/jornada_pause_history.dart';
 import '../services/recorded_streak.dart';
 import '../services/external_transfer.dart';
 import 'package:flutter/material.dart';
@@ -961,6 +962,7 @@ class _AdminAsistenciasScreenState extends State<AdminAsistenciasScreen> {
                                   ),
                                 ],
 
+                                JornadaPauseHistory(pauses: asistencia.pausas, expandable: true),
                                 // --- LÓGICA DE BONO MULTIPLES ---
                                 SizedBox(height: 12),
                                 Container(
@@ -1730,6 +1732,7 @@ class _AdminAsistenciasScreenState extends State<AdminAsistenciasScreen> {
                                               ),
                                             ],
 
+                                            JornadaPauseHistory(pauses: asistencia.pausas, expandable: true),
                                             // --- LÓGICA DE BONOS MÚLTIPLES ---
                                             if (tieneBono) ...[
                                               SizedBox(height: 12),
