@@ -177,3 +177,78 @@ test('manual mode never impersonates another account, backdates or reports a fai
   await assert.rejects(f.call('attendance-record',{movement:'entrada',manual:true}),{status:503});
   assert.equal((await f.call('attendance-state')).data.horaEntrada,undefined);
 });
+
+test('bathroom and other temporary departures persist separately and synchronize without changing payroll hours', async () => {
+  const f = fixture();
+  await f.move('entrada', { manual: true });
+  const out = (kind, requestId, detail = '') => f.call('attendance-pause', { direction: 'out', kind, requestId, detail });
+  const back = (pauseId, requestId) => f.call('attendance-pause', { direction: 'return', pauseId, requestId });
+  f.time('2026-09-28T17:00:00Z');
+  const first = await out('bano', 'request-bathroom-1');
+  const pause = first.data.pausasJornada[0];
+  assert.equal(pause.tipo, 'bano');
+  assert.equal(first.data.horaSalida, undefined);
+  assert.equal(first.data.salidaComidaReal, undefined);
+  await f.sync();
+  f.time('2026-09-28T17:08:00Z');
+  const returned = await back(pause.id, 'request-return-1');
+  assert.equal(returned.data.pausasJornada[0].regreso, '2026-09-28T17:08:00.000Z');
+  f.time('2026-09-28T18:00:00Z');
+  await out('bano', 'request-bathroom-1'); // Same request cannot create a second pause even after return.
+  assert.equal((await f.call('attendance-state')).data.pausasJornada.length, 1);
+  const second = await out('trabajo', 'request-errand-2', 'Recoger material');
+  f.time('2026-09-28T18:25:00Z');
+  await back(second.data.pausasJornada[1].id, 'request-return-2');
+  f.time('2026-09-28T20:00:00Z'); await f.move('salida_comida', {manual: true});
+  f.time('2026-09-28T20:40:00Z'); await f.move('regreso_comida', {manual: true});
+  f.time('2026-09-29T01:00:00Z'); await f.move('salida', {manual: true});
+  await f.sync();
+  const d = f.stored();
+  assert.equal(d.pausasJornada.length, 2);
+  assert.equal(d.pausasJornada[1].descripcion, 'Recoger material');
+  assert.equal(d.resumenJornada.minutosPausasRegistradas, 33);
+  assert.equal(d.resumenJornada.descuentaPausas, false);
+  assert.equal(d.resumenJornada.minutosEntreEntradaYSalida, 600);
+  assert.equal(d.resumenJornada.minutosComida, 40);
+  assert.equal(d.resumenJornada.minutosSinComida, 560);
+  const reopened = await f.call('attendance-history', {days: [day]});
+  assert.deepEqual(reopened.items[0].data.pausasJornada, d.pausasJornada);
+  assert.equal(reopened.items[0].pendingSync, false);
+});
+
+test('pauses reject invalid order, impersonation and failed writes; final exit never fabricates a pause return', async () => {
+  const f = fixture();
+  const out = {direction: 'out', kind: 'bano', requestId: 'request-isolated-1'};
+  await assert.rejects(f.call('attendance-pause', out), /Primero/);
+  await f.move('entrada', {manual: true});
+  await assert.rejects(f.call('attendance-pause', {...out, userId: 'other'}), {status:403});
+  await assert.rejects(f.call('attendance-pause', {...out, kind: 'otro'}), /Describe/);
+  await assert.rejects(f.call('attendance-pause', {...out, kind: 'unknown'}), /motivo/);
+  f.failWrite(true); await assert.rejects(f.call('attendance-pause', out), {status:503}); f.failWrite(false);
+  assert.equal((await f.call('attendance-state')).data.pausasJornada, undefined);
+  f.time('2026-09-28T19:00:00Z'); const saved = await f.call('attendance-pause', out);
+  await assert.rejects(f.call('attendance-pause', {...out, requestId: 'request-isolated-2'}), /pausa abierta/);
+  await assert.rejects(f.move('salida_comida', {manual:true}), /pausa sin regreso/);
+  f.time('2026-09-28T19:02:00Z'); await f.move('salida', {manual:true});
+  await f.sync(); assert.equal(f.stored().pausasJornada[0].regreso, null);
+  f.time('2026-09-28T19:05:00Z');
+  await f.call('attendance-pause', {direction:'return', pauseId:saved.data.pausasJornada[0].id, requestId:'request-final-return'});
+  await f.sync();
+  assert.equal(f.stored().horaSalida, '2026-09-28T19:02:00.000Z');
+  assert.equal(f.stored().pausasJornada[0].regreso, '2026-09-28T19:05:00.000Z');
+});
+
+test('concurrent duplicate pause receipts give one departure and one return with original times', async () => {
+  const f = fixture(); await f.move('entrada', {manual:true});
+  f.time('2026-09-28T17:00:00Z');
+  const out = {direction:'out',kind:'personal',requestId:'concurrent-departure'};
+  const results = await Promise.all(Array.from({length:4},()=>f.call('attendance-pause',out)));
+  assert.equal(new Set(results.map(r=>r.data.pausasJornada[0].id)).size,1);
+  const pauseId = results[0].data.pausasJornada[0].id;
+  f.time('2026-09-28T17:15:00Z');
+  await Promise.all(Array.from({length:4},()=>f.call('attendance-pause',{direction:'return',pauseId,requestId:'concurrent-return'})));
+  await f.sync();
+  assert.equal(f.stored().pausasJornada.length,1);
+  assert.equal(f.stored().resumenJornada.minutosPausasRegistradas,15);
+  assert.equal((await f.call('attendance-state')).pendingSync,false);
+});

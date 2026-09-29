@@ -24,6 +24,19 @@ class AttendanceHistoryService {
       if (field == 'horaEntrada') merged['estatus'] = ledger['estatusJustificacion'] == 'aprobada' ? 'justificado' : receipt['estatus'];
       if (field == 'salidaComidaReal' || field == 'regresoComidaReal') merged['estatusComida'] = receipt['estatusComida'];
     }
+    final knownPauses = <String, Map<String,dynamic>>{
+      for (final p in ledger['pausasJornada'] as List? ?? []) (p as Map)['id'] as String: Map<String,dynamic>.from(p),
+    };
+    for (final p in receipt['pausasJornada'] as List? ?? []) {
+      final incomingPause = Map<String,dynamic>.from(p as Map);
+      final id = incomingPause['id'] as String;
+      final old = knownPauses[id];
+      if (old == null) { knownPauses[id] = incomingPause; }
+      else if (old['regresoId'] == null && old['regreso'] == null && incomingPause['regresoId'] != null) {
+        knownPauses[id] = {...old, 'regreso': incomingPause['regreso'], 'regresoId': incomingPause['regresoId']};
+      }
+    }
+    if (knownPauses.isNotEmpty) merged['pausasJornada'] = knownPauses.values.toList();
     return merged;
   }
 

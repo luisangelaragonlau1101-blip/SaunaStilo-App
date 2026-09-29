@@ -1,5 +1,6 @@
 import '../presentation/appearance.dart';
 import '../widgets/payroll_recognitions.dart';
+import '../widgets/jornada_pause_history.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/user_model.dart';
@@ -39,6 +40,7 @@ class _PayrollRecordsState extends State<PayrollRecordsScreen> {
         Text('${DateFormat('dd/MM/yyyy').format(day(row))} · ${row.estatus.replaceAll('_', ' ')}', style: TextStyle(fontWeight: FontWeight.bold)),
         Text('Entrada ${hour(row.horaEntrada)} · Salida ${hour(row.horaSalida)}'),
         Text('Comida ${hour(row.salidaComidaReal)} · Regreso ${hour(row.regresoComidaReal)}'),
+        JornadaPauseHistory(pauses: row.pausas, expandable: true),
         for (final bonus in row.listaBonos ?? <Map<String,dynamic>>[]) Text('Bono +${money(bonus['monto'] as num? ?? 0)} · ${bonus['motivo'] ?? ''}'),
         for (final fine in row.listaMultas ?? <Map<String,dynamic>>[]) Text('Descuento −${money(fine['monto'] as num? ?? 0)} · ${fine['motivo'] ?? ''}'),
         if (row.observacionesAdmin.isNotEmpty) Text('Administración: ${row.observacionesAdmin}'),

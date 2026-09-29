@@ -13,6 +13,34 @@ export const MOVEMENTS = Object.freeze({
   regreso_comida: 'regresoComidaReal',
   salida: 'horaSalida',
 });
+export const PAUSE_TYPES = Object.freeze(['bano', 'trabajo', 'personal', 'otro']);
+
+// Pauses are an independent, append-only log. They never replace payroll's
+// entry, meal or final-exit fields, and never create an automatic deduction.
+function projectPauses(base, events, uid, day) {
+  const pauses = (base.pausasJornada || []).map((p) => ({ ...p }));
+  const applied = new Set(base.pausasEventosIntegrados || []);
+  const requests = new Set(pauses.map((p) => p.solicitudId));
+  let open = pauses.find((p) => !p.regreso && !p.regresoId);
+  for (const e of [...events].sort((a, b) => a.at.localeCompare(b.at) || a.id.localeCompare(b.id))) {
+    if (e.uid !== uid || e.day !== day || ms(e.at) === null || applied.has(e.id)) continue;
+    if (e.movement === 'pausa_salida') {
+      applied.add(e.id);
+      if (requests.has(e.requestId) || open || !PAUSE_TYPES.includes(e.kind)) continue;
+      open = { id: e.id, tipo: e.kind, descripcion: e.detail, salida: e.at, regreso: null, solicitudId: e.requestId };
+      pauses.push(open);
+      requests.add(e.requestId);
+    } else if (e.movement === 'pausa_regreso') {
+      applied.add(e.id);
+      const pause = pauses.find((p) => p.id === e.pauseId);
+      if (!pause || pause.regresoId || ms(e.at) < ms(pause.salida)) continue;
+      pause.regreso = e.at;
+      pause.regresoId = e.id;
+      if (open?.id === pause.id) open = null;
+    }
+  }
+  return { pausasJornada: pauses, pausasEventosIntegrados: [...applied] };
+}
 export const ZONES = [
   [19.26247565075755, -98.89430986717343, 35],
   [19.26236781757325, -98.89404650777578, 20],
@@ -154,6 +182,11 @@ function summary(d) {
     version: 1,
     minutosEntreEntradaYSalida: gross,
     minutosComida: meal,
+    minutosPausasRegistradas: (d.pausasJornada || []).reduce((total, p) =>
+      total + (ms(p.regreso) !== null && ms(p.salida) !== null
+        ? Math.max(0, Math.floor((ms(p.regreso) - ms(p.salida)) / 60000)) : 0), 0),
+    pausasSinRegreso: (d.pausasJornada || []).filter((p) => !p.regreso).length,
+    descuentaPausas: false,
     minutosSinComida:
       issues.length === 0 && gross !== null && meal !== null
         ? gross - meal
@@ -227,6 +260,13 @@ export function projectDay(base, events, uid, day) {
     JSON.stringify(imported) !== JSON.stringify(base.movimientosServidor || {})
   )
     patch.movimientosServidor = imported;
+  const pauses = projectPauses(base, events, uid, day);
+  if (pauses.pausasEventosIntegrados.length) {
+    for (const field of ['pausasJornada', 'pausasEventosIntegrados']) {
+      if (JSON.stringify(pauses[field]) !== JSON.stringify(base[field] || [])) patch[field] = pauses[field];
+    }
+    Object.assign(data, pauses);
+  }
   if (Object.keys(data).length) {
     const totals = summary(data);
     if (
@@ -358,10 +398,12 @@ export function createAttendanceService({
   }
   const view = (s, uid, day) => ({
     supportsManual: true,
+    supportsPauses: true,
     asistenciaId: `${uid}_${day}`,
     day,
     data: s.data,
     pendingSync: Object.keys(s.patch).length > 0,
+    receiptRevision: s.events.map((e) => e.id).sort().join(':'),
   });
   async function commit(base, patch, token) {
     if (!Object.keys(patch).length) return;
@@ -419,6 +461,16 @@ export function createAttendanceService({
     await commit(s.base, s.patch, token);
     return Object.keys(s.patch).length > 0;
   }
+  async function appendReceipt(s, uid, day, receipt) {
+    check(s.events.length < 80, 'Demasiados movimientos para este día. Consulta a Administración.', 429);
+    if (!s.events.length) {
+      const [indexId] = await db.add(indexTable(day), [{ uid, day }]);
+      check(indexId, 'No se confirmó el registro. Vuelve a consultar tu jornada.', 503);
+    }
+    const [id] = await db.add(table(uid, day), [{ uid, day, ...receipt }]);
+    check(id, 'No se confirmó el guardado. Consulta tu jornada antes de reintentar.', 503);
+    return id;
+  }
   return async function attendance(action, b, u, { token } = {}) {
     check(
       u && (WORKERS.has(u.role) || u.role === 'admin'),
@@ -439,6 +491,51 @@ export function createAttendanceService({
       for (const selected of days)
         items.push(view(await state(uid, selected, token), uid, selected));
       return { items };
+    }
+    if (action === 'attendance-pause') {
+      check(uid === u.uid, 'Cada integrante registra sus propias pausas.', 403);
+      check(day === dayKey(clock()), 'Cambió el día. Actualiza tu jornada.', 409);
+      check(b.direction === 'out' || b.direction === 'return', 'Movimiento de pausa inválido.');
+      check(typeof b.requestId === 'string' && /^[a-zA-Z0-9_-]{12,100}$/.test(b.requestId), 'Identificador de solicitud inválido.');
+      const s = await state(uid, day, token), d = s.data;
+      const pauses = d.pausasJornada || [];
+      const prior = s.events.find((e) => e.requestId === b.requestId);
+      if (prior) {
+        check(prior.movement === (b.direction === 'out' ? 'pausa_salida' : 'pausa_regreso') &&
+          (b.direction === 'out' ? prior.kind === b.kind && prior.detail === String(b.detail || '').trim() : prior.pauseId === b.pauseId),
+        'La solicitud ya pertenece a otro movimiento.', 409);
+        check(b.direction === 'out'
+          ? pauses.some((p) => p.solicitudId === b.requestId)
+          : pauses.some((p) => p.id === b.pauseId && p.regreso),
+        'Otro movimiento se confirmó primero. Actualiza tu jornada.', 409);
+        return { ...view(s, uid, day), exito: true, yaRegistrada: true, mensaje: 'Se conserva el registro original.' };
+      }
+      const at = clock().toISOString();
+      check(dayKey(new Date(at)) === day, 'Cambió el día. Actualiza tu jornada.', 409);
+      let fields;
+      if (b.direction === 'out') {
+        check(ms(d.horaEntrada) !== null && ms(d.horaEntrada) <= ms(at) && !d.horaSalida, 'Primero registra tu entrada en una jornada abierta.', 409);
+        check(!d.salidaComidaReal || d.regresoComidaReal, 'Registra primero tu regreso de comida.', 409);
+        check(!pauses.some((p) => !p.regreso), 'Ya tienes una pausa abierta. Registra tu regreso.', 409);
+        check(PAUSE_TYPES.includes(b.kind), 'Selecciona el motivo de la pausa.');
+        const detail = String(b.detail || '').trim();
+        check(detail.length <= 240 && (b.kind !== 'otro' || detail.length > 0), 'Describe el motivo en hasta 240 caracteres.');
+        fields = { movement: 'pausa_salida', kind: b.kind, detail };
+      } else {
+        const pause = pauses.find((p) => p.id === b.pauseId);
+        check(pause && ms(pause.salida) !== null, 'No se encontró esa salida en tu jornada.', 409);
+        if (pause.regreso) return { ...view(s, uid, day), exito: true, yaRegistrada: true, mensaje: 'El regreso ya estaba guardado.' };
+        check(!pause.regresoId && ms(at) >= ms(pause.salida), 'La pausa fue revisada por Administración.', 409);
+        fields = { movement: 'pausa_regreso', pauseId: pause.id };
+      }
+      const id = await appendReceipt(s, uid, day, { ...fields, requestId: b.requestId, at, actorId: u.uid, manual: true });
+      const saved = await state(uid, day, token);
+      const savedPauses = saved.data.pausasJornada || [];
+      const confirmed = b.direction === 'out'
+        ? savedPauses.some((p) => p.id === id || p.solicitudId === b.requestId)
+        : savedPauses.some((p) => p.id === b.pauseId && p.regreso);
+      check(confirmed, 'La jornada cambió durante el registro. Actualiza para ver el movimiento confirmado.', 409);
+      return { ...view(saved, uid, day), exito: true, mensaje: b.direction === 'out' ? 'Pausa guardada. Registra tu regreso cuando vuelvas.' : 'Regreso de la pausa guardado.' };
     }
     if (action === 'attendance-sync-page') {
       check(
@@ -562,8 +659,8 @@ export function createAttendanceService({
       );
       if (movement === 'solicitar_comida' || movement === 'salida_comida')
         check(
-          !d.salidaComidaReal && !d.regresoComidaReal,
-          'La comida ya tiene movimientos.',
+          !d.salidaComidaReal && !d.regresoComidaReal && !(d.pausasJornada || []).some((p) => !p.regreso),
+          'La comida ya tiene movimientos o hay una pausa sin regreso.',
           409,
         );
       if (movement === 'regreso_comida')

@@ -1,6 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'attendance_gateway_service.dart';
-import 'attendance_zones.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:intl/intl.dart'; 
 import 'package:firebase_auth/firebase_auth.dart';
@@ -13,12 +12,8 @@ class AsistenciaService {
   final AttendanceGatewayService gateway;
   AsistenciaService({AttendanceGatewayService? gateway}) : gateway = gateway ?? AttendanceGatewayService();
 
-  Future<Map<String, dynamic>> registrarMovimiento(String accion, {bool manual = false}) async {
-    if (manual) return gateway.record(accion, manual: true);
-    if (accion == 'solicitar_comida') return _actualizarAsistenciaBackend(accion: accion);
-    final location = await validarUbicacionesMultiples(zonasAsistenciaSauna);
-    if (location['valido'] != true) throw StateError(location['error']?.toString() ?? 'Debes estar en una zona autorizada.');
-    return _actualizarAsistenciaBackend(accion: accion, latitud: (location['lat'] as num).toDouble(), longitud: (location['lon'] as num).toDouble());
+  Future<Map<String, dynamic>> registrarMovimiento(String accion, {bool manual = true}) async {
+    return gateway.record(accion, manual: true);
   }
 
   // 1. Verificar permisos y obtener la ubicación actual del dispositivo

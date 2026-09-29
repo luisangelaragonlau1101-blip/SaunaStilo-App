@@ -9,7 +9,6 @@ import '../models/proyecto_model.dart';
 import '../models/actividad_model.dart'; 
 import '../models/asistencia_model.dart'; 
 import '../services/proyecto_service.dart'; 
-import '../services/asistencia_service.dart';
 
 import 'login_screen.dart';
 import 'inventario_admin_screen.dart';
@@ -1133,51 +1132,11 @@ class _OperativoDashboardState extends State<OperativoDashboard> {
   static const Color colorAmarillo = Color(0xFFFFDE21);
   static const Color colorCyan = Color(0xFF00E5FF);
 
-  final List<Map<String, dynamic>> _zonasEmpresa = [
-    {'nombre': 'Sauna Stilo', 'lat': 19.26240453030914, 'lon': -98.89425236731768, 'radio': 40.0},
-    {'nombre': 'Sauna Stilo', 'lat': 19.26247565075755, 'lon': -98.89430986717343, 'radio': 35.0},
-    {'nombre': 'Sauna Stilo', 'lat': 19.262358639389277, 'lon': -98.89418849721551, 'radio': 35.0},
-    {'nombre': 'Sauna Stilo', 'lat': 19.262416139245033, 'lon': -98.89430073089898, 'radio': 35.0},
-    {'nombre': 'Sauna Stilo', 'lat': 19.2624186957255, 'lon': -98.89407106675208, 'radio': 35.0},
-    {'nombre': 'Sauna Stilo', 'lat': 19.26236781757325, 'lon': -98.89404650777578, 'radio': 35.0},
-    {'nombre': 'Sauna Stilo', 'lat': 19.2622796818614, 'lon': -98.89399453997612, 'radio': 45.0}, 
-    {'nombre': 'Sauna Stilo', 'lat': 19.262236850336194, 'lon': -98.89410702511668, 'radio': 35.0},
-    {'nombre': 'Sauna Stilo', 'lat': 19.262222978286445, 'lon': -98.89388540759683, 'radio': 35.0},
-    {'nombre': 'Sauna Stilo', 'lat': 19.26225763745606, 'lon': -98.89398305676877, 'radio': 35.0},
-    {'nombre': 'Sauna Stilo', 'lat': 19.26225529052317, 'lon': -98.89396402984858, 'radio': 35.0},
-    {'nombre': 'Sauna Stilo', 'lat': 19.262342839501798, 'lon': -98.89420425519347, 'radio': 35.0},
-    {'nombre': 'Sauna Stilo', 'lat': 19.262421336025, 'lon': -98.89423744753003, 'radio': 35.0},
-  ];
+
 
   @override
   void initState() {
     super.initState();
-    _registrarAsistenciaAutomatica();
-  }
-
-  Future<void> _registrarAsistenciaAutomatica() async {
-    try {
-      final AsistenciaService asistenciaService = AsistenciaService();
-      DocumentSnapshot userDoc = await FirebaseFirestore.instance.collection('usuarios').doc(widget.usuario.id).get();
-      
-      String horaEntrada = '08:00';
-      int tolerancia = 15;
-
-      if (userDoc.exists && userDoc.data() != null) {
-        Map<String, dynamic> data = userDoc.data() as Map<String, dynamic>;
-        horaEntrada = data['horaEntrada'] ?? '08:00';
-        tolerancia = data['toleranciaMinutos'] ?? 15;
-      }
-
-      await asistenciaService.registrarEntradaAutomatica(
-        trabajadorId: widget.usuario.id,
-        zonasPermitidas: _zonasEmpresa,
-        horaEntradaConfig: horaEntrada,
-        toleranciaMinutos: tolerancia,
-      );
-    } catch (e) {
-      debugPrint("Error validando entrada automática: $e");
-    }
   }
 
   Future<void> _actualizarProgreso() async {
@@ -1863,51 +1822,11 @@ class _AlmacenistaDashboardState extends State<AlmacenistaDashboard> {
   static const Color colorMorado = Color(0xFF8B5CF6);
   static const Color colorCyan = Color(0xFF00E5FF);
 
-  final List<Map<String, dynamic>> _zonasEmpresa = [
-    {'nombre': 'Sauna Stilo', 'lat': 19.26240453030914, 'lon': -98.89425236731768, 'radio': 40.0},
-    {'nombre': 'Sauna Stilo', 'lat': 19.26247565075755, 'lon': -98.89430986717343, 'radio': 35.0},
-    {'nombre': 'Sauna Stilo', 'lat': 19.262358639389277, 'lon': -98.89418849721551, 'radio': 35.0},
-    {'nombre': 'Sauna Stilo', 'lat': 19.262416139245033, 'lon': -98.89430073089898, 'radio': 35.0},
-    {'nombre': 'Sauna Stilo', 'lat': 19.2624186957255, 'lon': -98.89407106675208, 'radio': 35.0},
-    {'nombre': 'Sauna Stilo', 'lat': 19.26236781757325, 'lon': -98.89404650777578, 'radio': 35.0},
-    {'nombre': 'Sauna Stilo', 'lat': 19.2622796818614, 'lon': -98.89399453997612, 'radio': 45.0}, 
-    {'nombre': 'Sauna Stilo', 'lat': 19.262236850336194, 'lon': -98.89410702511668, 'radio': 35.0},
-    {'nombre': 'Sauna Stilo', 'lat': 19.262222978286445, 'lon': -98.89388540759683, 'radio': 35.0},
-    {'nombre': 'Sauna Stilo', 'lat': 19.26225763745606, 'lon': -98.89398305676877, 'radio': 35.0},
-    {'nombre': 'Sauna Stilo', 'lat': 19.26225529052317, 'lon': -98.89396402984858, 'radio': 35.0},
-    {'nombre': 'Sauna Stilo', 'lat': 19.262342839501798, 'lon': -98.89420425519347, 'radio': 35.0},
-    {'nombre': 'Sauna Stilo', 'lat': 19.262421336025, 'lon': -98.89423744753003, 'radio': 35.0},
-  ];
+
 
   @override
   void initState() {
     super.initState();
-    _registrarAsistenciaAutomatica();
-  }
-
-  Future<void> _registrarAsistenciaAutomatica() async {
-    try {
-      final AsistenciaService asistenciaService = AsistenciaService();
-      DocumentSnapshot userDoc = await FirebaseFirestore.instance.collection('usuarios').doc(widget.usuario.id).get();
-      
-      String horaEntrada = '08:00';
-      int tolerancia = 15;
-
-      if (userDoc.exists && userDoc.data() != null) {
-        Map<String, dynamic> data = userDoc.data() as Map<String, dynamic>;
-        horaEntrada = data['horaEntrada'] ?? '08:00';
-        tolerancia = data['toleranciaMinutos'] ?? 15;
-      }
-
-      await asistenciaService.registrarEntradaAutomatica(
-        trabajadorId: widget.usuario.id,
-        zonasPermitidas: _zonasEmpresa,
-        horaEntradaConfig: horaEntrada,
-        toleranciaMinutos: tolerancia,
-      );
-    } catch (e) {
-      debugPrint("Error validando entrada automática almacenista: $e");
-    }
   }
 
   Future<void> _actualizarPantalla() async {
