@@ -215,8 +215,20 @@ class _DailyTaskDetailState extends State<DailyTaskDetail> {
   }
   Future<void> _openEvidence(Map evidence) async {
     final url = Uri.tryParse(evidence['url']?.toString() ?? '');
-    if (url == null || url.scheme != 'https') { setState(() => _error = 'Actualiza la tarea para abrir la evidencia.'); return; }
-    if (evidence['contentType'].toString().startsWith('image/')) {
+    final contentType = (evidence['contentType'] ?? evidence['tipoMime'] ?? '').toString();
+    if (url == null) { setState(() => _error = 'Actualiza la tarea para abrir la evidencia.'); return; }
+    if (contentType.startsWith('image/') && url.scheme == 'data') {
+      try {
+        final comma = url.toString().indexOf(',');
+        final bytes = comma < 0 ? null : base64Decode(url.toString().substring(comma + 1));
+        if (bytes != null) {
+          await showDialog<void>(context: context, builder: (c) => Dialog(child: Column(mainAxisSize: MainAxisSize.min, children: [Flexible(child: InteractiveViewer(child: Image.memory(bytes, errorBuilder: (_, error, stack) => const Padding(padding: EdgeInsets.all(24), child: Text('No pudimos abrir la foto.'))))), TextButton(onPressed: () => Navigator.pop(c), child: const Text('Cerrar'))])));
+          return;
+        }
+      } catch (_) { /* fall through to the normal update message */ }
+    }
+    if (url.scheme != 'https') { setState(() => _error = 'Actualiza la tarea para abrir la evidencia.'); return; }
+    if (contentType.startsWith('image/')) {
       await showDialog<void>(context: context, builder: (c) => Dialog(child: Column(mainAxisSize: MainAxisSize.min, children: [Flexible(child: InteractiveViewer(child: Image.network(url.toString(), errorBuilder: (_, error, stack) => const Padding(padding: EdgeInsets.all(24), child: Text('El enlace expiró. Actualiza la tarea.'))))), TextButton(onPressed: () => Navigator.pop(c), child: const Text('Cerrar'))])));
     } else if (!await launchUrl(url, mode: LaunchMode.externalApplication) && mounted) { setState(() => _error = 'No se pudo abrir el archivo. Actualiza la tarea e intenta otra vez.'); }
   }
