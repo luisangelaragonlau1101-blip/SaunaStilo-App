@@ -1,3 +1,5 @@
+import 'package:firebase_auth/firebase_auth.dart';
+import '../widgets/task_action_bar.dart';
 import '../presentation/appearance.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -211,7 +213,7 @@ class ActividadesProyectoScreen extends StatelessWidget {
                 ),
                 SizedBox(height: 6),
                 Text(
-                  'Asigna tareas a cada trabajador y revisa sus avances. Para terminar una tarea deberán adjuntar evidencia obligatoria.',
+                  'Asigna tareas a cada trabajador y revisa sus avances. El responsable o Administración puede entregar el trabajo; después Administración aprueba y finaliza.',
                   style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .60), fontSize: 12, height: 1.4),
                 ),
               ],
@@ -276,7 +278,7 @@ class ActividadesProyectoScreen extends StatelessWidget {
               context: context,
               isScrollControlled: true,
               backgroundColor: Colors.transparent,
-              builder: (context) => ModalDetalleActividad(actividad: actividad),
+              builder: (context) => ModalDetalleActividad(actividad: actividad, admin: rolUsuario == 'admin'),
             );
           },
           onLongPress: () {
@@ -287,6 +289,8 @@ class ActividadesProyectoScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                TaskActionBar(status: actividad.estadoVisible, admin: rolUsuario == 'admin', responsible: actividad.asignadoATrabajadorId == FirebaseAuth.instance.currentUser?.uid, onComplete: () => showModalBottomSheet<void>(context: context, isScrollControlled: true, builder: (_) => ModalDetalleActividad(actividad: actividad, admin: rolUsuario == 'admin')), onApprove: () => showModalBottomSheet<void>(context: context, isScrollControlled: true, builder: (_) => ModalDetalleActividad(actividad: actividad, admin: rolUsuario == 'admin'))),
+                const SizedBox(height: 12),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   crossAxisAlignment: CrossAxisAlignment.start,

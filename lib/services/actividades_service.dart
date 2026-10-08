@@ -160,8 +160,7 @@ class ActividadesService {
     final actividadData =
         actividadSnapshot.data() ?? const <String, dynamic>{};
     final profile = await _db.collection('usuarios').doc(trabajadorIdLimpio).get();
-    final adminOperation = profile.data()?['rol'] == 'admin' && profile.data()?['activo'] != false &&
-        ['instalacion', 'envio'].contains(actividadData['workKind']);
+    final adminOperation = profile.data()?['rol'] == 'admin' && profile.data()?['activo'] != false;
     _validarTrabajadorAsignado(actividadData, trabajadorIdLimpio, adminOperation);
     final avanceRef = operationId == null
         ? _avancesRef(actividadIdLimpio).doc()
@@ -262,8 +261,7 @@ class ActividadesService {
             snapshotActual.data() ?? const <String, dynamic>{};
         final actor = await transaction.get(_db.collection('usuarios').doc(trabajadorIdLimpio));
         if (!actor.exists || actor.data()?['activo'] == false) throw StateError('Tu cuenta no está activa.');
-        _validarTrabajadorAsignado(dataActual, trabajadorIdLimpio, actor.data()?['rol'] == 'admin' &&
-          ['instalacion', 'envio'].contains(dataActual['workKind']));
+        _validarTrabajadorAsignado(dataActual, trabajadorIdLimpio, actor.data()?['rol'] == 'admin');
 
         final estatusActual = _estatus(dataActual);
         if (['completado', 'en_revision'].contains(estatusActual)) {

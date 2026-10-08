@@ -121,3 +121,36 @@ test('assigned worker persists a bounded photo with description and closes a tas
  const proof=await assertSucceeds(getDoc(doc(db('admin'),'actividades','inline-evidence','evidencias','photo')));assert.match(proof.data().url,/^data:image\/png/);
  await assertFails(getDoc(doc(db('other'),'actividades','inline-evidence','evidencias','photo')));
 });
+
+test('project delivery uses the authorized group; only admin can atomically finalize with its audit message',async()=>{
+ const worker=db('worker'),admin=db('admin'),other=db('other');
+ const request={autorId:'worker',autorNombre:'worker',tipo:'entrega_proyecto',texto:'Proyecto terminado, por aprobar',fecha:serverTimestamp(),imagenes:[],likesPor:[]};
+ const delivery=doc(worker,'proyectos','p','conversacion','project-delivery');
+ await assertFails(runTransaction(worker,async tx=>{
+  await tx.get(doc(worker,'proyectos','p'));
+  tx.set(delivery,request);tx.update(doc(worker,'proyectos','p'),{estatus:'finalizado',aprobadoPor:'worker'});
+ }));
+ assert.equal((await getDoc(delivery)).exists(),false,'A rejected self-approval cannot leave a delivery behind');
+ await assertSucceeds(runTransaction(worker,async tx=>{await tx.get(doc(worker,'proyectos','p'));tx.set(delivery,request);}));
+ await assertFails(setDoc(doc(other,'proyectos','p','conversacion','outside-delivery'),{...request,autorId:'other'}));
+ await assertFails(updateDoc(doc(worker,'proyectos','p'),{estatus:'finalizado',aprobadoPor:'worker'}));
+ await assertSucceeds(runTransaction(admin,async tx=>{
+  await tx.get(doc(admin,'proyectos','p'));
+  tx.update(doc(admin,'proyectos','p'),{estatus:'finalizado',aprobadoEn:serverTimestamp(),aprobadoPor:'admin',revisionProyectoEn:serverTimestamp()});
+  tx.set(doc(admin,'proyectos','p','conversacion','project-approval'),{...request,autorId:'admin',tipo:'aprobacion_proyecto',texto:'Aprobado y finalizado'});
+ }));
+ assert.equal((await getDoc(doc(worker,'proyectos','p'))).data().estatus,'finalizado');
+ await assertSucceeds(getDoc(doc(worker,'proyectos','p','conversacion','project-approval')));
+});
+
+test('admin can deliver a task assigned to a worker while unrelated staff cannot',async()=>{
+ const admin=db('admin'),ref=doc(admin,'actividades','admin-delivery');
+ await setDoc(ref,task('admin'));
+ await assertSucceeds(runTransaction(admin,async tx=>{
+  await tx.get(ref);
+  tx.set(doc(admin,'actividades','admin-delivery','avances','admin-event'),{trabajadorId:'admin',comentario:'Trabajo confirmado por Administración',esCierre:true,fecha:serverTimestamp(),porcentaje:100,cantidadEvidencias:0});
+  tx.update(ref,{estatus:'en_revision',completadoEn:serverTimestamp(),porcentaje:100});
+ }));
+ await assertFails(updateDoc(doc(db('other'),'actividades','admin-delivery'),{estatus:'en_revision',completadoEn:serverTimestamp()}));
+ await assertSucceeds(updateDoc(ref,{estatus:'completado',aprobadoEn:serverTimestamp(),porcentaje:100}));
+});

@@ -2,6 +2,8 @@ import '../presentation/appearance.dart';
 import 'crear_proyecto_admin_screen.dart';
 import 'editar_proyecto_admin_screen.dart';
 import '../widgets/project_progress_card.dart';
+import '../widgets/project_closure_panel.dart';
+import 'equipo_tareas_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/offline_workspace.dart';
 import 'package:flutter/material.dart';
@@ -40,8 +42,10 @@ class ProjectWorkspaceScreen extends StatelessWidget {
           Row(children: [Icon(Icons.workspaces_outline, color: StiloColors.accent), SizedBox(width: 10), Expanded(child: Text(project.titulo, style: TextStyle(fontWeight: FontWeight.w800, fontSize: 17)))]),
           SizedBox(height: 14),
           ProjectProgressCard(projectId: project.id),
+          ProjectClosurePanel(projectId: project.id),
           SizedBox(height: 12),
           Wrap(spacing: 10, runSpacing: 10, children: [
+            OutlinedButton.icon(icon: const Icon(Icons.assignment_outlined), label: const Text('Ver tareas y actividades'), onPressed: () => Navigator.push(context, MaterialPageRoute<void>(builder: (_) => ProjectActivitiesScreen(usuario: usuario, initialProjectId: project.id, initialProjectTitle: project.titulo)))),
             FilledButton.icon(icon: Icon(Icons.forum_outlined), label: Text('Grupo y evidencias'), onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => ProyectoChatScreen(proyecto: project)))),
             if (admin) OutlinedButton.icon(icon: Icon(Icons.manage_accounts_outlined), label: Text('Administrar integrantes'), onPressed: () => Navigator.push(context, MaterialPageRoute<void>(builder: (_) => EditarProyectoAdminScreen(proyecto: project)))),
             if (admin || usuario.rol == AppRoles.maestro) OutlinedButton.icon(icon: Icon(Icons.add_task_rounded), label: Text('Asignar actividad'), onPressed: () => showModalBottomSheet<void>(context: context, isScrollControlled: true, useSafeArea: true, builder: (_) => ModalAsignarActividad(proyectoId: project.id, rolUsuario: usuario.rol))),

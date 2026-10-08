@@ -2,6 +2,7 @@ import '../presentation/appearance.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import '../workflow/staff_policy.dart';
+import '../workflow/task_lifecycle.dart';
 
 class ProjectProgressCard extends StatelessWidget {
   final String projectId;
@@ -11,10 +12,10 @@ class ProjectProgressCard extends StatelessWidget {
     builder: (context, snapshot) {
       if (snapshot.hasError) return Padding(padding: EdgeInsets.all(10), child: Text('No se pudo calcular el avance. Revisa los permisos del proyecto.', style: TextStyle(color: Colors.orangeAccent, fontSize: 12)));
       if (!snapshot.hasData) return LinearProgressIndicator();
-      final tasks = snapshot.data!.docs, states = tasks.map((t) => t.data()['estatus']?.toString() ?? 'pendiente');
+      final tasks = snapshot.data!.docs, states = tasks.map((t) => taskStatus(t.data()['estatus'], approved: t.data()['aprobadoEn'] != null));
       final done = states.where((s) => s == 'completado').length, percent = projectCompletion(states);
       return Container(padding: EdgeInsets.all(14), decoration: BoxDecoration(color: StiloColors.surface, borderRadius: BorderRadius.circular(22)), child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        Row(children: [Icon(Icons.trending_up_rounded, color: StiloColors.accent), SizedBox(width: 8), Expanded(child: Text('$done de ${tasks.length} tareas completadas', style: TextStyle(fontWeight: FontWeight.w700))), Text('$percent%', style: TextStyle(fontSize: 22, color: StiloColors.accent, fontWeight: FontWeight.w900))]),
+        Row(children: [Icon(Icons.trending_up_rounded, color: StiloColors.accent), SizedBox(width: 8), Expanded(child: Text('$done de ${tasks.length} tareas aprobadas', style: TextStyle(fontWeight: FontWeight.w700))), Text('$percent%', style: TextStyle(fontSize: 22, color: StiloColors.accent, fontWeight: FontWeight.w900))]),
         SizedBox(height: 10), LinearProgressIndicator(value: percent / 100, borderRadius: BorderRadius.circular(10)),
         SizedBox(height: 7), Text(snapshot.data!.metadata.hasPendingWrites ? 'Avance local: pendiente de confirmación del servidor.' : snapshot.data!.metadata.isFromCache ? 'Último avance guardado; sin actualización del servidor.' : tasks.isEmpty ? 'Asigna tareas para comenzar a medir el proyecto.' : 'Calculado con las tareas del proyecto. El trabajo extra no altera este porcentaje.', style: TextStyle(color: StiloColors.text.withValues(alpha: .60), fontSize: 11)),
       ]));

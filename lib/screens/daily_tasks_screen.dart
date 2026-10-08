@@ -13,6 +13,7 @@ import '../services/attendance_gateway_service.dart';
 import '../services/company_learning_service.dart';
 import '../services/inventory_photo_codec.dart';
 import '../widgets/work_status.dart';
+import '../widgets/task_action_bar.dart';
 import 'modal_asignar_actividades.dart';
 
 String _operation() => '${DateTime.now().microsecondsSinceEpoch}-${Random.secure().nextInt(1 << 32)}';
@@ -96,7 +97,7 @@ class _DailyTasksScreenState extends State<DailyTasksScreen> with WidgetsBinding
         if (_busy) const Padding(padding: EdgeInsets.symmetric(vertical: 12), child: LinearProgressIndicator()),
         if (_error != null) Card(child: Padding(padding: const EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)), TextButton.icon(onPressed: _busy ? null : _load, icon: const Icon(Icons.refresh), label: const Text('Volver a intentar'))]))),
         if (!_busy && _error == null && items.isEmpty) const Padding(padding: EdgeInsets.all(24), child: Text('Todo despejado en esta vista. Puedes cambiar de fecha o filtro.')),
-        for (final task in items) WorkTaskCard(task: task, onTap: () async {
+        for (final task in items) WorkTaskCard(task: task, user: widget.user, onTap: () async {
           await Navigator.push(context, MaterialPageRoute<void>(builder: (_) => DailyTaskDetail(user: widget.user, task: task, service: _service)));
           if (mounted) await _load();
         }),
@@ -108,7 +109,8 @@ class _DailyTasksScreenState extends State<DailyTasksScreen> with WidgetsBinding
 class WorkTaskCard extends StatelessWidget {
   final Map<String, dynamic> task;
   final VoidCallback onTap;
-  const WorkTaskCard({super.key, required this.task, required this.onTap});
+  final UserModel? user;
+  const WorkTaskCard({super.key, required this.task, required this.onTap, this.user});
   @override Widget build(BuildContext context) => Card(clipBehavior: Clip.antiAlias, child: InkWell(onTap: onTap,
     child: Padding(padding: const EdgeInsets.all(18), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Row(children: [Expanded(child: Text(workKindLabel(task['workKind']), style: TextStyle(fontSize: 12, color: StiloColors.text.withValues(alpha: .6)))), WorkStatus(task['status'])]),
@@ -116,6 +118,8 @@ class WorkTaskCard extends StatelessWidget {
       const SizedBox(height: 6), Text('${task['userName']} · ${task['evidenceCount'] ?? 0} adjuntos', style: TextStyle(color: StiloColors.text.withValues(alpha: .7))),
       if (task['day'] != null) Padding(padding: const EdgeInsets.only(top: 8), child: Text(task['day'] == AttendanceGatewayService.dayKey(AttendanceGatewayService.today) ? 'Asignada para hoy' : 'Asignada: ${task['day'].toString().replaceFirstMapped(RegExp(r'^(\d{4})(\d{2})(\d{2})$'), (m) => '${m[3]}/${m[2]}/${m[1]}')}', style: TextStyle(fontSize: 12, color: StiloColors.muted))),
       const SizedBox(height: 14), Row(children: [Expanded(child: LinearProgressIndicator(value: (((task['percentage'] as num?) ?? 0).clamp(0, 100).toDouble() / 100), minHeight: 5, borderRadius: BorderRadius.circular(6))), const SizedBox(width: 12), Text('${task['percentage'] ?? 0} %'), const SizedBox(width: 8), const Icon(Icons.arrow_forward_rounded, size: 18)]),
+      const SizedBox(height: 12),
+      TaskActionBar(status: (task['status'] ?? 'pendiente').toString(), admin: user?.rol == 'admin', responsible: user?.id == task['userId'], onComplete: onTap, onApprove: onTap),
     ]))));
 }
 
@@ -138,7 +142,6 @@ class _DailyTaskDetailState extends State<DailyTaskDetail> {
   double _percentage = 0;
   bool get _own => widget.user.id == _task['userId'];
   bool get _reviewer => widget.user.rol == 'admin';
-  bool get _operational => ['instalacion', 'envio'].contains(_task['workKind']);
   bool get _closed => ['completado', 'en_revision'].contains(_task['status']);
   Map<String, dynamic> get _reference => {'day': _task['day'], 'taskId': _task['taskId']};
   @override void initState() { super.initState(); unawaited(_load()); }
@@ -238,28 +241,26 @@ class _DailyTaskDetailState extends State<DailyTaskDetail> {
   @override void dispose() { _comment.dispose(); super.dispose(); }
   @override Widget build(BuildContext context) {
     final enabled = _ready && !_busy;
-    final editable = enabled && !_closed && (_own || _operational && widget.user.rol == 'admin');
+    final editable = enabled && !_closed && (_own || _reviewer);
     final review = _reviewer && _task['status'] == 'en_revision';
     return Scaffold(appBar: AppBar(title: Text(workKindLabel(_task['workKind'])), actions: [IconButton(tooltip: 'Actualizar tarea', onPressed: _busy ? null : _load, icon: const Icon(Icons.refresh))]),
       body: ListView(padding: const EdgeInsets.fromLTRB(20, 12, 20, 110), children: [
         Align(alignment: Alignment.centerLeft, child: WorkStatus(_task['status'])), const SizedBox(height: 16),
         Text(_task['title'] as String, style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w800)),
+        const SizedBox(height: 12),
+        TaskActionBar(status: (_task['status'] ?? 'pendiente').toString(), admin: _reviewer, responsible: _own, enabled: enabled, onComplete: _deliver, onApprove: () => _review(true)),
         const SizedBox(height: 10), Text(_task['details'] as String? ?? '', style: const TextStyle(height: 1.5)),
         const SizedBox(height: 12), Text('Responsable: ${_task['userName']}\nAsignó: ${_task['createdByName']}', style: TextStyle(color: StiloColors.text.withValues(alpha: .70), height: 1.6)),
         const SizedBox(height: 14), LinearProgressIndicator(value: (((_task['percentage'] as num?) ?? 0).clamp(0, 100).toDouble() / 100), minHeight: 7, borderRadius: BorderRadius.circular(6)),
         const SizedBox(height: 7), Text('${_task['percentage'] ?? 0} % de avance'),
         if (_task['status'] == 'en_revision') const Padding(padding: EdgeInsets.symmetric(vertical: 12), child: Text('Trabajo entregado. Falta la aprobación para finalizar.')),
         if ((_task['reviewComment'] ?? '').toString().isNotEmpty) Card(child: Padding(padding: const EdgeInsets.all(16), child: Text('Revisión: ${_task['reviewComment']}'))),
-        if (_own && editable) ...[
-          const SizedBox(height: 12),
-          FilledButton.icon(onPressed: _deliver, icon: const Icon(Icons.task_alt), label: const Text('Marcar como terminada')),
-        ],
         if (_busy) const Padding(padding: EdgeInsets.symmetric(vertical: 12), child: LinearProgressIndicator()),
         if (_error != null) Padding(padding: const EdgeInsets.symmetric(vertical: 12), child: Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error))),
         if (_noticeWarning != null) Card(child: Column(children: [Padding(padding: const EdgeInsets.all(12), child: Text(_noticeWarning!)), TextButton(onPressed: !enabled || _retryAction == null ? null : () => _send(_retryAction!, _retryData!), child: const Text('Reintentar aviso'))])),
         const SizedBox(height: 18), const Text('Evidencias y fotos', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
         for (final evidence in _task['evidence'] as List? ?? []) ListTile(contentPadding: EdgeInsets.zero, leading: const Icon(Icons.attachment), title: Text(evidence['name'] as String), subtitle: const Text('Guardada en la tarea'), trailing: const Icon(Icons.open_in_new), onTap: () => _openEvidence(evidence as Map)),
-        if (!_closed && (_own || _operational && widget.user.rol == 'admin')) ...[
+        if (!_closed && (_own || _reviewer)) ...[
           const SizedBox(height: 12),
           Wrap(spacing: 8, children: [OutlinedButton.icon(onPressed: editable ? _pick : null, icon: const Icon(Icons.add_photo_alternate_outlined), label: const Text('Adjuntar foto o PDF')), OutlinedButton.icon(onPressed: editable ? () => _pick(camera: true) : null, icon: const Icon(Icons.camera_alt_outlined), label: const Text('Tomar foto'))]),
           if (_pendingBytes != null) ListTile(title: Text(_pendingName!), subtitle: const Text('Se subirá al guardar o entregar'), trailing: IconButton(tooltip: 'Quitar adjunto', onPressed: _busy ? null : () => setState(() { _pendingBytes = null; _pendingName = null; }), icon: const Icon(Icons.close))),
@@ -277,7 +278,6 @@ class _DailyTaskDetailState extends State<DailyTaskDetail> {
         if (review) ...[
           const SizedBox(height: 18), const Text('Revisar entrega', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700)),
           const SizedBox(height: 12), TextField(controller: _comment, enabled: enabled, maxLength: 2000, minLines: 2, maxLines: 4, decoration: const InputDecoration(labelText: 'Observación de la revisión')),
-          FilledButton.icon(onPressed: enabled ? () => _review(true) : null, icon: const Icon(Icons.verified_outlined), label: const Text('Aprobar y finalizar')),
           OutlinedButton.icon(onPressed: enabled ? () => _review(false) : null, icon: const Icon(Icons.edit_note), label: const Text('Solicitar cambios')),
         ],
         const SizedBox(height: 24), const Text('Historial de avances', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),

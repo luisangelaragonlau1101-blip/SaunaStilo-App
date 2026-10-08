@@ -1,3 +1,4 @@
+import '../widgets/project_closure_panel.dart';
 import '../presentation/appearance.dart';
 import '../services/external_transfer.dart';
 import '../widgets/shared_media_card.dart';
@@ -100,6 +101,7 @@ class _ProyectoChatScreenState extends State<ProyectoChatScreen> {
               : Column(
                   children: [
                     _cabecera(),
+          ProjectClosurePanel(projectId: widget.proyecto.id),
                     Expanded(child: _mensajes()),
                     if (_imagenes.isNotEmpty) _previewImagenes(),
                     _compositor(),

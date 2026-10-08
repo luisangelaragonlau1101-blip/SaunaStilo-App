@@ -1,4 +1,5 @@
 import '../widgets/work_status.dart';
+import '../widgets/task_action_bar.dart';
 import '../presentation/appearance.dart';
 export 'work_workspace_screen.dart' show EquipoTareasScreen;
 import 'project_workspace_screen.dart';
@@ -21,13 +22,14 @@ import 'admin_modal_detalle_actividad.dart' as admin;
 class ProjectActivitiesScreen extends StatefulWidget {
   final UserModel usuario;
   final bool embedded;
-  const ProjectActivitiesScreen({super.key, required this.usuario, this.embedded = false});
+  final String? initialProjectId, initialProjectTitle;
+  const ProjectActivitiesScreen({super.key, required this.usuario, this.embedded = false, this.initialProjectId, this.initialProjectTitle});
   @override
   State<ProjectActivitiesScreen> createState() => _ProjectActivitiesScreenState();
 }
 class _ProjectActivitiesScreenState extends State<ProjectActivitiesScreen> {
-  String? _proyectoId;
-  String _proyectoTitulo = 'Mis tareas';
+  late String? _proyectoId = widget.initialProjectId;
+  late String _proyectoTitulo = widget.initialProjectTitle ?? 'Mis tareas';
   bool _soloPendientes = true;
   bool get _admin => widget.usuario.rol == AppRoles.admin;
   bool get _puedeAsignar => canAssignWork(widget.usuario.rol);
@@ -84,11 +86,13 @@ class _ProjectActivitiesScreenState extends State<ProjectActivitiesScreen> {
           if (tareas.isEmpty) return Center(child: Text(snapshot.data!.metadata.isFromCache ? 'Sin tareas guardadas en este dispositivo. Conecta para consultar el servidor.' : 'No hay tareas en esta vista.'));
           return Column(children: [OfflineDataBadge(cached: snapshot.data!.metadata.isFromCache, pending: snapshot.data!.metadata.hasPendingWrites), Expanded(child: ListView.builder(padding: EdgeInsets.fromLTRB(12, 0, 12, 24), itemCount: tareas.length, itemBuilder: (context, i) {
             final t = tareas[i];
-            return Card(child: ListTile(contentPadding: EdgeInsets.all(16),
+            return Card(child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [ListTile(contentPadding: EdgeInsets.all(16),
               leading: Icon(t.aprobada ? Icons.task_alt_rounded : Icons.assignment_outlined, color: StiloColors.accent),
               title: Text(t.titulo, style: TextStyle(fontWeight: FontWeight.w700)),
               subtitle: Text('${t.proyectoId.isEmpty ? 'General' : 'Proyecto'} · ${workStatusLabel(t.estadoVisible)} · ${t.totalEvidencias} evidencias\n${DateFormat('dd/MM · HH:mm').format(t.fechaTermino)}'),
-              trailing: Icon(Icons.chevron_right_rounded), onTap: () => _abrir(t)));
+              trailing: Icon(Icons.chevron_right_rounded), onTap: () => _abrir(t)),
+              Padding(padding: const EdgeInsets.fromLTRB(16, 0, 16, 16), child: TaskActionBar(status: t.estadoVisible, admin: _admin, responsible: t.asignadoATrabajadorId == widget.usuario.id, onComplete: () => _abrir(t), onApprove: () => _abrir(t))),
+            ]));
           }))]);
         })),
       ]));

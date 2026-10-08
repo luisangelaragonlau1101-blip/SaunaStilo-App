@@ -47,13 +47,13 @@ class _TodayTasksState extends State<TodayTasksCard> with WidgetsBindingObserver
       if (_busy && _tasks.isEmpty) const LinearProgressIndicator(),
       if (_error != null) Padding(padding: const EdgeInsets.symmetric(vertical: 12), child: Text(_error!)),
       if (!_busy && _error == null && pending.isEmpty) const Card(child: Padding(padding: EdgeInsets.all(18), child: Text('No tienes pendientes del día. Aquí aparecerán tus asignaciones y tareas extras.'))),
-      for (final task in pending.take(3)) WorkTaskCard(task: task, onTap: () async {
+      for (final task in pending.take(3)) WorkTaskCard(task: task, user: widget.user, onTap: () async {
         await Navigator.push(context, MaterialPageRoute<void>(builder: (_) => DailyTaskDetail(user: widget.user, task: task, service: _api)));
         if (mounted) await _load();
       }),
       if (reviews.isNotEmpty) ...[
         const SizedBox(height: 12), Text('${reviews.length} entregas por aprobar', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
-        for (final task in reviews.take(3)) WorkTaskCard(task: task, onTap: () async {
+        for (final task in reviews.take(3)) WorkTaskCard(task: task, user: widget.user, onTap: () async {
           await Navigator.push(context, MaterialPageRoute<void>(builder: (_) => DailyTaskDetail(user: widget.user, task: task, service: _api)));
           if (mounted) await _load();
         }),

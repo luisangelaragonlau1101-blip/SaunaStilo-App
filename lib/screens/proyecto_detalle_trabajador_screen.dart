@@ -1,3 +1,4 @@
+import '../widgets/project_closure_panel.dart';
 import '../presentation/appearance.dart';
 import '../services/external_transfer.dart';
 import 'dart:io';
@@ -639,6 +640,7 @@ class _ProyectoDetalleTrabajadorScreenState extends State<ProyectoDetalleTrabaja
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildStatusHeader(estatusActual),
+                ProjectClosurePanel(projectId: widget.proyecto.id),
                 SizedBox(height: 12),
                 _buildDiagnosticoYAvancesCard(),
                 SizedBox(height: 24),

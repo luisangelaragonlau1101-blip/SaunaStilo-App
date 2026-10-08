@@ -17,8 +17,8 @@
 ## Validación realizada
 
 - `node --test tests/*.test.cjs tools/online-smart34/*.test.mjs`: 124 aprobadas.
-- `flutter test --no-pub --concurrency=4`: 100 aprobadas.
-- Emulador aislado de Firestore, `tools/general-task-security.test.cjs` y `tools/operations-security.test.cjs`: 16 aprobadas. El trabajador entrega sin adjuntos, no puede autoaprobarse y no puede reabrir una tarea aprobada.
+- `flutter test --no-pub --concurrency=4`: 103 aprobadas.
+- Emulador aislado de Firestore, `tools/general-task-security.test.cjs` y `tools/operations-security.test.cjs`: 18 aprobadas. El trabajador entrega sin adjuntos, no puede autoaprobarse y no puede reabrir una tarea aprobada.
 - `flutter analyze --no-pub lib test --no-fatal-infos --no-fatal-warnings`: sin errores; permanecen avisos e información de lint del repositorio.
 - `flutter build web --release --no-pub --base-href /SaunaStilo-App/ --pwa-strategy=none`: compilación JavaScript aprobada. La comprobación opcional de WebAssembly señala incompatibilidades existentes de `flutter_tts`.
 - `node tools/prepare-offline.cjs`: recursos públicos offline preparados.
@@ -31,3 +31,13 @@ El flujo `build-web.yml` publica GitHub Pages desde `main`, con base `/SaunaStil
 Las reglas de Firestore actualizadas requieren una cuenta autorizada para publicarse. Mientras se conserva el esquema anterior, un rechazo del campo resumen `porcentaje` vuelve a intentar la misma transacción sin ese campo: el porcentaje permanece en el avance, junto con la entrega, y las pantallas lo consultan desde el historial. Se mantienen las comprobaciones de cuenta, responsable y estado; un rechazo restante se muestra como error. La prueba aislada verifica que la transacción rechazada no deje una entrega parcial ni conceda acceso a otros trabajadores.
 
 El servicio existente `sendSaunaStiloNotification` y los programadores de entrada, comida y salida deben estar desplegados para entregar avisos en segundo plano. Cada dispositivo debe autorizar las notificaciones en **Notificaciones y sonido**; el nuevo acceso desde Proyectos y tareas facilita hacerlo. No se han enviado avisos al personal ni cambiado permisos en teléfonos durante estas pruebas. La recepción real, las cuentas de producción y las respuestas de IA/voz de servicios externos siguen necesitando validación autorizada después de publicar.
+
+
+## Controles visibles de entrega y cierre
+
+- Las tarjetas de actividades, tareas del día y tareas extras muestran la acción correspondiente. El detalle presenta la acción antes de las evidencias y del historial.
+- Administración también puede marcar como terminada una tarea asignada a otra persona. La entrega sigue pasando a revisión y se aprueba por separado; se registra quién realizó la acción.
+- Los proyectos tienen controles de entrega y aprobación en su tarjeta, sus pantallas de detalle y su grupo. Sus integrantes entregan el proyecto con una confirmación; solo Administración actualiza el estado oficial a `finalizado`.
+- La entrega del proyecto se registra como un mensaje en su conversación existente. La aprobación escribe el estado oficial y su mensaje de auditoría en una transacción. Este flujo utiliza los permisos de proyecto y conversación existentes, sin requerir otra publicación de reglas.
+- Finalizar un proyecto conserva los estados individuales de sus tareas. El porcentaje de tareas aprobadas distingue una entrega pendiente de una aprobación explícita.
+- Las pruebas incluyen controles visibles en móvil, entrega de una tarea por Administración y permisos aislados de entrega/aprobación de proyectos. Los avisos conservan la advertencia si su guardado no se confirma; la recepción push requiere validación en el dispositivo.

@@ -1,3 +1,5 @@
+import 'package:firebase_auth/firebase_auth.dart';
+import '../widgets/task_action_bar.dart';
 import '../presentation/appearance.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -202,6 +204,8 @@ class ActividadesTrabajadorScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                TaskActionBar(status: actividad.estadoVisible, admin: false, responsible: actividad.asignadoATrabajadorId == FirebaseAuth.instance.currentUser?.uid, onComplete: () => showModalBottomSheet<void>(context: context, isScrollControlled: true, builder: (_) => ModalDetalleActividad(actividad: actividad)), onApprove: () => showModalBottomSheet<void>(context: context, isScrollControlled: true, builder: (_) => ModalDetalleActividad(actividad: actividad))),
+                const SizedBox(height: 12),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   crossAxisAlignment: CrossAxisAlignment.start,

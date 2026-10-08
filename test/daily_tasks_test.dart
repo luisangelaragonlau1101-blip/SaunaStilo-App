@@ -44,7 +44,7 @@ void main() {
     final api = DailyFake();
     await t.pumpWidget(MaterialApp(home: DailyTaskDetail(user: person('maestro'), task: api.task, service: api)));
     await t.pumpAndSettle();
-    expect(find.text('foto.jpg'), findsOneWidget); expect(find.text('Adjuntar foto o PDF'), findsNothing); expect(find.text('Entregar tarea terminada'), findsNothing);
+    expect(find.text('foto.jpg'), findsOneWidget); expect(find.text('Adjuntar foto o PDF'), findsNothing); expect(find.text('Marcar como terminada'), findsNothing);
   });
   testWidgets('recipient can submit without attachments and admin can approve', (t) async {
     final api = DailyFake();
@@ -64,6 +64,21 @@ void main() {
     await t.tap(approve); await t.pumpAndSettle();
     expect(api.task['status'], 'completado');
     expect(find.text('Aprobada y finalizada'), findsOneWidget);
+    expect(t.takeException(), isNull);
+  });
+
+  testWidgets('admin can deliver an assigned task on behalf of its worker from the top of the detail', (t) async {
+    final api = DailyFake();
+    api.task['evidence'] = []; api.task['evidenceCount'] = 0;
+    await t.pumpWidget(MaterialApp(home: DailyTaskDetail(user: person('admin'), task: api.task, service: api)));
+    await t.pumpAndSettle();
+    expect(find.text('Marcar como terminada').hitTestable(), findsOneWidget);
+    await t.tap(find.text('Marcar como terminada')); await t.pumpAndSettle();
+    await t.tap(find.text('Sí, entregar')); await t.pumpAndSettle();
+    expect(api.task['status'], 'en_revision');
+    expect(find.text('Aprobar y finalizar').hitTestable(), findsOneWidget);
+    await t.tap(find.text('Aprobar y finalizar')); await t.pumpAndSettle();
+    expect(api.task['status'], 'completado');
     expect(t.takeException(), isNull);
   });
 

@@ -14,6 +14,7 @@ import '../services/inventory_photo_codec.dart';
 import 'inline_photo.dart';
 import 'protected_media_viewer.dart';
 import 'work_status.dart';
+import 'task_action_bar.dart';
 
 class ActivityDetailSheet extends StatefulWidget {
   final ActividadModel activity;
@@ -136,12 +137,14 @@ class _ActivityDetailState extends State<ActivityDetailSheet> {
         final task = snapshot.hasData && snapshot.data!.exists ? ActividadModel.fromJson(snapshot.data!.data()!, snapshot.data!.id) : widget.activity;
         final own = FirebaseAuth.instance.currentUser?.uid == task.asignadoATrabajadorId;
         final ready = snapshot.hasData && snapshot.data!.exists && !snapshot.hasError;
-        final editing = own && !task.porAprobar && !task.aprobada;
+        final editing = (own || widget.admin) && !task.porAprobar && !task.aprobada;
         return Column(children: [
           Padding(padding: const EdgeInsets.fromLTRB(20, 8, 8, 0), child: Row(children: [const Expanded(child: Text('Actividad del proyecto', style: TextStyle(fontWeight: FontWeight.w700))), IconButton(tooltip: 'Cerrar actividad', onPressed: _busy ? null : () => Navigator.pop(context), icon: const Icon(Icons.close))])),
           Expanded(child: ListView(padding: EdgeInsets.fromLTRB(20, 8, 20, MediaQuery.viewInsetsOf(context).bottom + 100), children: [
             Align(alignment: Alignment.centerLeft, child: WorkStatus(task.estadoVisible)), const SizedBox(height: 14),
             Text(task.titulo, style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w800)), const SizedBox(height: 10),
+            TaskActionBar(status: task.estadoVisible, admin: widget.admin, responsible: own, enabled: ready && !_busy, onComplete: () => _save(task, submit: true), onApprove: () => _review(task, true)),
+            const SizedBox(height: 12),
             Text(task.descripcion, style: const TextStyle(height: 1.5)), const SizedBox(height: 12),
             Text('Entrega: ${DateFormat('dd/MM/yyyy · HH:mm').format(task.fechaTermino)}', style: TextStyle(color: StiloColors.text.withValues(alpha: .65))),
             if (!ready) Padding(padding: const EdgeInsets.symmetric(vertical: 12), child: Text(snapshot.hasError ? 'No pudimos consultar la actividad. Comprueba tu conexión.' : 'Conectando con el registro del servidor…')),
@@ -169,12 +172,10 @@ class _ActivityDetailState extends State<ActivityDetailSheet> {
               Text('Avance: ${(_percentage ?? _progress(task).toDouble()).round()} %'),
               Slider(value: (_percentage ?? _progress(task).toDouble()).clamp(0, 100).toDouble(), divisions: 20, max: 100, label: '${(_percentage ?? _progress(task).toDouble()).round()} %', onChanged: _busy || !ready ? null : (v) => setState(() => _percentage = v)),
               OutlinedButton.icon(onPressed: _busy || !ready ? null : () => _save(task), icon: const Icon(Icons.save_outlined), label: const Text('Guardar avance')),
-              FilledButton.icon(onPressed: _busy || !ready ? null : () => _save(task, submit: true), icon: const Icon(Icons.task_alt), label: const Text('Marcar como terminada')),
             ],
             if (widget.admin && task.porAprobar) ...[
               const SizedBox(height: 18), const Text('Revisar entrega', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700)),
               const SizedBox(height: 12), TextField(controller: _comment, enabled: !_busy && ready, maxLength: 2000, minLines: 2, maxLines: 4, decoration: const InputDecoration(labelText: 'Observación o cambios necesarios')),
-              FilledButton.icon(onPressed: _busy || !ready ? null : () => _review(task, true), icon: const Icon(Icons.verified_outlined), label: const Text('Aprobar y finalizar')),
               OutlinedButton.icon(onPressed: _busy || !ready ? null : () => _review(task, false), icon: const Icon(Icons.edit_note), label: const Text('Solicitar cambios')),
             ],
             if (widget.admin && !task.porAprobar && !editing) ...[
