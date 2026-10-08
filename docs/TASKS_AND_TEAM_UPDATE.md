@@ -18,14 +18,16 @@
 
 - `node --test tests/*.test.cjs tools/online-smart34/*.test.mjs`: 124 aprobadas.
 - `flutter test --no-pub --concurrency=4`: 100 aprobadas.
-- Emulador aislado de Firestore, `tools/general-task-security.test.cjs` y `tools/operations-security.test.cjs`: 15 aprobadas. El trabajador entrega sin adjuntos, no puede autoaprobarse y no puede reabrir una tarea aprobada.
+- Emulador aislado de Firestore, `tools/general-task-security.test.cjs` y `tools/operations-security.test.cjs`: 16 aprobadas. El trabajador entrega sin adjuntos, no puede autoaprobarse y no puede reabrir una tarea aprobada.
 - `flutter analyze --no-pub lib test --no-fatal-infos --no-fatal-warnings`: sin errores; permanecen avisos e información de lint del repositorio.
-- `flutter build web --release --no-pub --base-href / --pwa-strategy=none`: compilación JavaScript aprobada. La comprobación opcional de WebAssembly señala incompatibilidades existentes de `flutter_tts`.
+- `flutter build web --release --no-pub --base-href /SaunaStilo-App/ --pwa-strategy=none`: compilación JavaScript aprobada. La comprobación opcional de WebAssembly señala incompatibilidades existentes de `flutter_tts`.
 - `node tools/prepare-offline.cjs`: recursos públicos offline preparados.
 - Arranque del artefacto local con Chromium en 390 × 844 y 1440 × 960: HTTP 200, formulario de acceso visible y sin errores JavaScript. Los recursos externos de Firebase se cargaron mediante la ruta HTTPS con verificación TLS del entorno.
 
-## Publicación pendiente
+## Publicación
 
-Esta validación corresponde al código local, no a un despliegue nuevo del sitio de Vercel. Publicar la web requiere usar el flujo de alojamiento existente con `build/web` y base `/`; también deben publicarse las reglas de Firestore actualizadas mediante una cuenta autorizada.
+El flujo `build-web.yml` publica GitHub Pages desde `main`, con base `/SaunaStilo-App/`. `vercel/vercel.json` dirige el dominio de Vercel a ese alojamiento. La versión pública se comprueba en `version.json`.
+
+Las reglas de Firestore actualizadas requieren una cuenta autorizada para publicarse. Mientras se conserva el esquema anterior, un rechazo del campo resumen `porcentaje` vuelve a intentar la misma transacción sin ese campo: el porcentaje permanece en el avance, junto con la entrega, y las pantallas lo consultan desde el historial. Se mantienen las comprobaciones de cuenta, responsable y estado; un rechazo restante se muestra como error. La prueba aislada verifica que la transacción rechazada no deje una entrega parcial ni conceda acceso a otros trabajadores.
 
 El servicio existente `sendSaunaStiloNotification` y los programadores de entrada, comida y salida deben estar desplegados para entregar avisos en segundo plano. Cada dispositivo debe autorizar las notificaciones en **Notificaciones y sonido**; el nuevo acceso desde Proyectos y tareas facilita hacerlo. No se han enviado avisos al personal ni cambiado permisos en teléfonos durante estas pruebas. La recepción real, las cuentas de producción y las respuestas de IA/voz de servicios externos siguen necesitando validación autorizada después de publicar.

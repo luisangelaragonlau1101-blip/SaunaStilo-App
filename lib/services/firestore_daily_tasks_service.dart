@@ -132,23 +132,16 @@ class FirestoreDailyTasksService {
     final evidence = detail
         ? await _evidence(snapshot.id)
         : const <EvidenciaActividad>[];
-    final progress = detail || data['porcentaje'] is! num ? await _progress(snapshot.id) : const <AvanceActividad>[];
-    final latest = progress.isEmpty ? null : progress.first;
+    final progress = await _progress(snapshot.id);
     var percentage = (data['porcentaje'] is num)
         ? (data['porcentaje'] as num).toInt().clamp(0, 100).toInt() : 0;
-    if (latest != null && data['porcentaje'] is! num) {
-      final raw = await db
-          .collection('actividades')
-          .doc(snapshot.id)
-          .collection('avances')
-          .doc(latest.id)
-          .get();
-      final value = raw.data()?['porcentaje'];
-      if (value is num) percentage = value.toInt().clamp(0, 100).toInt();
+    for (final item in progress) {
+      if (item.porcentaje != null) {
+        percentage = item.porcentaje!.clamp(0, 100).toInt();
+        break;
+      }
     }
-    if (percentage == 0 && (status == 'en_revision' || status == 'completado')) {
-      percentage = 100;
-    }
+    if (status == 'en_revision' || status == 'completado') percentage = 100;
     final assignedId = (data['asignadoATrabajadorId'] ?? '').toString();
     final assignedName = await _displayName(assignedId);
     final creatorId = (data['creadoPor'] ?? '').toString();

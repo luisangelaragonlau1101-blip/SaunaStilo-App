@@ -38,3 +38,28 @@ test('worker submits without attachments, cannot self-approve; admin approves an
  await assertSucceeds(updateDoc(doc(admin,'actividades','review-flow'),{estatus:'completado',aprobadoEn:serverTimestamp(),porcentaje:100}));
  await assertFails(updateDoc(ref,{estatus:'pendiente'}));
 });
+
+
+test('legacy root schema preserves atomic delivery and history percentage without granting other workers access',async()=>{
+ const rules=fs.readFileSync('firestore.rules','utf8').replace("'cantidadEvidencias',\n            'porcentaje'", "'cantidadEvidencias'");
+ const legacy=await initializeTestEnvironment({projectId:'demo-sauna-legacy-task-percentage',firestore:{rules}});
+ try {
+  await legacy.withSecurityRulesDisabled(async c=>{
+   for(const id of ['worker','other'])await setDoc(doc(c.firestore(),'usuarios',id),{rol:'trabajador',activo:true});
+   await setDoc(doc(c.firestore(),'actividades','legacy-delivery'),{...data(),estatus:'en_progreso',porcentaje:20});
+  });
+  const worker=legacy.authenticatedContext('worker').firestore();
+  const ref=doc(worker,'actividades','legacy-delivery');
+  const event=doc(worker,'actividades','legacy-delivery','avances','delivery');
+  const deliver=(db,rootPercentage)=>runTransaction(db,async tx=>{
+   await tx.get(doc(db,'actividades','legacy-delivery'));
+   tx.set(doc(db,'actividades','legacy-delivery','avances','delivery'),{trabajadorId:'worker',comentario:'Terminado',esCierre:true,porcentaje:100,fecha:serverTimestamp(),cantidadEvidencias:0});
+   tx.update(doc(db,'actividades','legacy-delivery'),{estatus:'en_revision',completadoEn:serverTimestamp(),ultimoAvance:serverTimestamp(),...(rootPercentage?{porcentaje:100}:{})});
+  });
+  await assertFails(deliver(worker,true));
+  if((await getDoc(ref)).data().estatus!=='en_progreso'||(await getDoc(event)).exists())throw Error('Rejected transaction wrote partial delivery');
+  await assertFails(deliver(legacy.authenticatedContext('other').firestore(),false));
+  await assertSucceeds(deliver(worker,false));
+  if((await getDoc(ref)).data().estatus!=='en_revision'||(await getDoc(event)).data().porcentaje!==100)throw Error('Canonical history lost delivery or percentage');
+ } finally {await legacy.cleanup();}
+});

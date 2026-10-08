@@ -252,7 +252,8 @@ class ActividadesService {
       // Relee la actividad al confirmar. Así una reasignación, eliminación u
       // otro avance concurrente no permite que un estado viejo gane la carrera.
       // El avance final y el cambio a completado se guardan atómicamente.
-      await _db.runTransaction((transaction) async {
+      Future<void> commitProgress({required bool rootPercentage}) =>
+          _db.runTransaction((transaction) async {
         final snapshotActual = await transaction.get(actividadRef);
         if (!snapshotActual.exists) {
           throw StateError('La actividad ya no existe.');
@@ -293,7 +294,8 @@ class ActividadesService {
 
         final actualizaciones = <String, dynamic>{
           'ultimoAvance': FieldValue.serverTimestamp(),
-          if (porcentaje != null || esCierre) 'porcentaje': esCierre ? 100 : porcentaje,
+          if (rootPercentage && (porcentaje != null || esCierre))
+            'porcentaje': esCierre ? 100 : porcentaje,
         };
         if (comentarioLimpio.isNotEmpty) {
           actualizaciones['comentariosTrabajador'] = comentarioLimpio;
@@ -311,6 +313,18 @@ class ActividadesService {
         }
         transaction.update(actividadRef, actualizaciones);
       });
+      try {
+        await commitProgress(rootPercentage: true);
+      } on FirebaseException catch (error) {
+        if (error.code != 'permission-denied' ||
+            (porcentaje == null && !esCierre)) {
+          rethrow;
+        }
+        // Las reglas anteriores no admiten el resumen en la actividad.
+        // Conservamos el porcentaje en el avance y repetimos la transacción
+        // con las mismas comprobaciones de cuenta, responsable y estado.
+        await commitProgress(rootPercentage: false);
+      }
     } catch (e) {
       await _eliminarDocumentosEvidencia(documentosEvidenciaEscritos);
       await _eliminarBlobsSubidos(evidenciasSubidas);
