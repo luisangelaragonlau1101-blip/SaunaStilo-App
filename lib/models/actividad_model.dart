@@ -59,6 +59,7 @@ class ActividadModel {
   List<String> evidenciaFotos;
   List<EventoActividad> historialEventos;
   int evidenciasCount;
+  int porcentaje;
   DateTime? ultimoAvance;
   bool requiereEvidencia;
 
@@ -79,6 +80,7 @@ class ActividadModel {
     List<String>? evidenciaFotos,
     List<EventoActividad>? historialEventos,
     int evidenciasCount = 0,
+    this.porcentaje = 0,
     this.ultimoAvance,
     this.requiereEvidencia = true,
   }) : fechaAsignada = fechaAsignada ?? fechaInicio,
@@ -145,6 +147,7 @@ class ActividadModel {
       historialEventos: historialEventos,
       evidenciasCount: contadorNuevo > 0 ? contadorNuevo : contadorAnterior,
       ultimoAvance: _fechaDesdeFirestore(json['ultimoAvance']),
+      porcentaje: _enteroSeguro(json['porcentaje']).clamp(0, 100).toInt(),
       requiereEvidencia: json['requiereEvidencia'] is bool
           ? json['requiereEvidencia'] as bool
           : true,

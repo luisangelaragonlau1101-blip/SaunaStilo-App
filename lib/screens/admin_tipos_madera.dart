@@ -1,3 +1,4 @@
+import '../widgets/section_intro.dart';
 import '../presentation/appearance.dart';
 import '../services/external_transfer.dart';
 import 'dart:io';
@@ -62,6 +63,7 @@ class _CatalogoSaunasScreenState extends State<CatalogoSaunasScreen> {
       ),
       body: Column(
         children: [
+          const SectionIntro(title: 'Materiales de la empresa', subtitle: 'Organiza el catálogo de maderas y sus características.', icon: Icons.forest_outlined),
           // --- BARRA DE BÚSQUEDA ---
           Padding(
             padding: EdgeInsets.fromLTRB(16, 8, 16, 16),

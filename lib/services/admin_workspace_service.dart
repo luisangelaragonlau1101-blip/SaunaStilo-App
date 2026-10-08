@@ -16,7 +16,7 @@ class AdminWorkspaceService {
   Future<void> savePersonnel(String personId, Map<String, dynamic> fields) async {
     final uid = auth.currentUser?.uid;
     if (uid == null) throw StateError('Inicia sesión.');
-    const allowed = {'puesto','area','contrato','ingreso','notas','induccion','equipoEntregado','documentosRevisados'};
+    const allowed = {'puesto','area','contrato','ingreso','notas','induccion','equipoEntregado','documentosRevisados','practicante','carrera','institucion','tutor'};
     if (!fields.keys.every(allowed.contains) || fields.values.whereType<String>().any((v) => v.length > 2000)) throw ArgumentError('Revisa los datos del expediente.');
     await db.runTransaction((tx) async {
       final actor = await tx.get(db.collection('usuarios').doc(uid));

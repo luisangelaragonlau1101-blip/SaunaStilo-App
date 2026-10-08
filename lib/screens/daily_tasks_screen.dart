@@ -12,7 +12,6 @@ import '../models/user_model.dart';
 import '../services/attendance_gateway_service.dart';
 import '../services/company_learning_service.dart';
 import '../services/inventory_photo_codec.dart';
-import '../workflow/staff_policy.dart';
 import '../widgets/work_status.dart';
 import 'modal_asignar_actividades.dart';
 
@@ -50,13 +49,13 @@ class _DailyTasksScreenState extends State<DailyTasksScreen> with WidgetsBinding
     final key = _key;
     setState(() { _busy = true; _error = null; });
     try {
-      final response = await _service.call('daily-list', {'day': key});
+      final response = await _service.call('daily-list', {'day': key, 'includePending': !widget.operations && key == AttendanceGatewayService.dayKey(AttendanceGatewayService.today)});
       if (mounted && key == _key) setState(() => _items = (response['items'] as List).map((v) => Map<String, dynamic>.from(v as Map)).toList());
     } catch (error) { if (mounted) setState(() => _error = CompanyLearningService.message(error)); }
     finally { if (mounted) { setState(() => _busy = false); if (key != _key) unawaited(_load()); } }
   }
   Future<void> _create() async {
-    if (!canAssignWork(widget.user.rol)) return;
+    if (widget.user.rol != 'admin') return;
     await showModalBottomSheet<String>(context: context, isScrollControlled: true, backgroundColor: Colors.transparent,
       builder: (_) => ModalAsignarActividad(proyectoId: '', rolUsuario: widget.user.rol, initialDay: _day,
         workKind: widget.operations ? 'instalacion' : widget.kind, operations: widget.operations));
@@ -90,7 +89,7 @@ class _DailyTasksScreenState extends State<DailyTasksScreen> with WidgetsBinding
           IconButton(tooltip: widget.operations ? 'Mes siguiente' : 'Día siguiente', onPressed: _busy ? null : () { setState(() => _day = widget.operations ? DateTime(_day.year, _day.month + 1) : _day.add(const Duration(days: 1))); _load(); }, icon: const Icon(Icons.chevron_right)),
         ]),
         if (widget.operations) const Padding(padding: EdgeInsets.all(8), child: Text('Historial por mes de asignación. Los avances y revisiones permanecen en su mes original.')),
-        if (canAssignWork(widget.user.rol)) FilledButton.icon(onPressed: _create, icon: const Icon(Icons.add_task), label: Text(widget.operations ? 'Asignar instalación o envío' : 'Asignar tarea')),
+        if (widget.user.rol == 'admin') FilledButton.icon(onPressed: _create, icon: const Icon(Icons.add_task), label: Text(widget.operations ? 'Asignar instalación o envío' : 'Asignar tarea')),
         const SizedBox(height: 12),
         Wrap(spacing: 7, runSpacing: 7, children: [for (final entry in {'abiertas':'Abiertas', 'revision':'Por aprobar', 'finalizadas':'Finalizadas', 'todas':'Todas'}.entries)
           ChoiceChip(label: Text(entry.value), selected: _filter == entry.key, onSelected: (_) => setState(() => _filter = entry.key))]),
@@ -115,6 +114,7 @@ class WorkTaskCard extends StatelessWidget {
       Row(children: [Expanded(child: Text(workKindLabel(task['workKind']), style: TextStyle(fontSize: 12, color: StiloColors.text.withValues(alpha: .6)))), WorkStatus(task['status'])]),
       const SizedBox(height: 12), Text(task['title'] as String, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
       const SizedBox(height: 6), Text('${task['userName']} · ${task['evidenceCount'] ?? 0} adjuntos', style: TextStyle(color: StiloColors.text.withValues(alpha: .7))),
+      if (task['day'] != null) Padding(padding: const EdgeInsets.only(top: 8), child: Text(task['day'] == AttendanceGatewayService.dayKey(AttendanceGatewayService.today) ? 'Asignada para hoy' : 'Asignada: ${task['day'].toString().replaceFirstMapped(RegExp(r'^(\d{4})(\d{2})(\d{2})$'), (m) => '${m[3]}/${m[2]}/${m[1]}')}', style: TextStyle(fontSize: 12, color: StiloColors.muted))),
       const SizedBox(height: 14), Row(children: [Expanded(child: LinearProgressIndicator(value: (((task['percentage'] as num?) ?? 0).clamp(0, 100).toDouble() / 100), minHeight: 5, borderRadius: BorderRadius.circular(6))), const SizedBox(width: 12), Text('${task['percentage'] ?? 0} %'), const SizedBox(width: 8), const Icon(Icons.arrow_forward_rounded, size: 18)]),
     ]))));
 }
@@ -137,7 +137,7 @@ class _DailyTaskDetailState extends State<DailyTaskDetail> {
   Uint8List? _pendingBytes;
   double _percentage = 0;
   bool get _own => widget.user.id == _task['userId'];
-  bool get _reviewer => widget.user.rol == 'admin' || widget.user.rol == 'maestro' && widget.user.id == _task['createdBy'];
+  bool get _reviewer => widget.user.rol == 'admin';
   bool get _operational => ['instalacion', 'envio'].contains(_task['workKind']);
   bool get _closed => ['completado', 'en_revision'].contains(_task['status']);
   Map<String, dynamic> get _reference => {'day': _task['day'], 'taskId': _task['taskId']};
@@ -203,9 +203,12 @@ class _DailyTaskDetailState extends State<DailyTaskDetail> {
   }
   Future<void> _deliver() async {
     if (_busy || !_ready) return;
-    if (_pendingBytes == null && (_task['evidenceCount'] as num? ?? 0) == 0 && _comment.text.trim().length < 5) {
-      setState(() => _error = 'Adjunta una foto o escribe qué terminaste.'); return;
-    }
+    final confirmed = await showDialog<bool>(context: context, builder: (c) => AlertDialog(
+      title: const Text('¿Terminaste esta tarea?'),
+      content: const Text('Se enviará a Administración para su aprobación. Puedes adjuntar evidencias o una descripción, pero no son obligatorias para entregar.'),
+      actions: [TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Seguir trabajando')),
+        FilledButton(onPressed: () => Navigator.pop(c, true), child: const Text('Sí, entregar'))]));
+    if (confirmed != true || !mounted) return;
     if (!await _upload() || !mounted) return;
     if (await _send('daily-complete', {'comment': _comment.text.trim()}) && mounted) _comment.clear();
   }
@@ -269,7 +272,7 @@ class _DailyTaskDetailState extends State<DailyTaskDetail> {
             if (!await _upload() || !mounted) return;
             if (await _send('daily-progress', {'comment': comment, 'percentage': percentage}) && mounted) _comment.clear();
           } : null, icon: const Icon(Icons.save_outlined), label: const Text('Guardar avance')),
-          const Text('Entrega con una foto, un archivo o una descripción. Después se revisa y aprueba.', style: TextStyle(fontSize: 12)),
+          const Text('Adjuntos y descripción opcionales. Al terminar, Administración revisa y aprueba.', style: TextStyle(fontSize: 12)),
         ],
         if (review) ...[
           const SizedBox(height: 18), const Text('Revisar entrega', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700)),

@@ -57,8 +57,8 @@ class _ModalAsignarActividadState extends State<ModalAsignarActividad> {
         if (!project.exists || (!admin && (widget.rolUsuario != 'maestro' || !members.contains(_uid)))) {
           throw StateError('Administración debe asignarte como integrante de este proyecto.');
         }
-      } else if (!admin && widget.rolUsuario != 'maestro') {
-        throw StateError('Solo administradores y maestros asignan tareas del día.');
+      } else if (!admin) {
+        throw StateError('Solo Administración asigna tareas sin proyecto.');
       }
       final people = await db.collection('usuarios').get().timeout(Duration(seconds: 15));
       final entries = people.docs.where((d) => d.data()['activo'] != false &&
@@ -101,7 +101,7 @@ class _ModalAsignarActividadState extends State<ModalAsignarActividad> {
       final daily = old == null && widget.proyectoId.isEmpty;
       if (daily) {
         final response = await CompanyLearningService().call('daily-create', {
-          'day': widget.operations ? DateFormat('yyyyMM').format(_day) : AttendanceGatewayService.dayKey(_day),
+          'day': AttendanceGatewayService.dayKey(_day),
           'workKind': _workKind, 'operationId': _id, 'title': task.titulo,
           'details': task.descripcion, 'userId': _target,
           'dueAt': DateTime.utc(_deadline.year, _deadline.month, _deadline.day, _deadline.hour + 6, _deadline.minute).toIso8601String(),

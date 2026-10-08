@@ -1,3 +1,4 @@
+import '../widgets/section_intro.dart';
 import '../presentation/appearance.dart';
 import '../services/external_transfer.dart';
 import 'package:flutter/material.dart';
@@ -109,6 +110,7 @@ class _IncubadoraIdeasScreenState extends State<IncubadoraIdeasScreen> {
       ),
       body: Column(
         children: [
+          const SectionIntro(title: 'Ideas que avanzan', subtitle: 'De la propuesta al prototipo y al lanzamiento.', icon: Icons.lightbulb_outline_rounded),
           // 1. BUSCADOR PRO
           Padding(
             padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),

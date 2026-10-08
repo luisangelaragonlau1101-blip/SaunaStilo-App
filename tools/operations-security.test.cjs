@@ -116,7 +116,7 @@ test('assigned worker persists a bounded photo with description and closes a tas
  await env.withSecurityRulesDisabled(c=>setDoc(doc(c.firestore(),'actividades','inline-evidence'),task('admin')));
  const batch=writeBatch(database);
  batch.set(doc(database,'actividades','inline-evidence','evidencias','photo'),{url:'data:image/png;base64,iVBORw0KGgo=',usuarioId:'worker',nombre:'foto.png',tipoMime:'image/png',creadoEn:serverTimestamp()});
- batch.update(doc(database,'actividades','inline-evidence'),{estatus:'completado',comentariosTrabajador:'Actividad terminada con evidencia',evidenciasCount:1,cantidadEvidencias:1,completadoEn:serverTimestamp()});
+ batch.update(doc(database,'actividades','inline-evidence'),{estatus:'en_revision',comentariosTrabajador:'Actividad terminada con evidencia',evidenciasCount:1,cantidadEvidencias:1,completadoEn:serverTimestamp()});
  await assertSucceeds(batch.commit());
  const proof=await assertSucceeds(getDoc(doc(db('admin'),'actividades','inline-evidence','evidencias','photo')));assert.match(proof.data().url,/^data:image\/png/);
  await assertFails(getDoc(doc(db('other'),'actividades','inline-evidence','evidencias','photo')));

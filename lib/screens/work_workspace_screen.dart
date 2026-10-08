@@ -1,4 +1,5 @@
 import 'extra_work_screen.dart';
+import 'notification_health_screen.dart';
 import 'package:flutter/material.dart';
 import '../models/user_model.dart';
 import 'daily_tasks_screen.dart';
@@ -14,7 +15,7 @@ class EquipoTareasScreen extends StatefulWidget {
 class _WorkState extends State<EquipoTareasScreen> {
   late int section = widget.initialSection;
   @override Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Proyectos y tareas'), actions: [IconButton(tooltip: 'Reportar trabajo extra ya realizado', onPressed: () => Navigator.push(context, MaterialPageRoute<void>(builder: (_) => ExtraWorkScreen(user: widget.usuario))), icon: const Icon(Icons.add_task_outlined))]),
+    appBar: AppBar(title: const Text('Proyectos y tareas'), actions: [IconButton(tooltip: 'Activar notificaciones de trabajo', onPressed: () => Navigator.push(context, MaterialPageRoute<void>(builder: (_) => NotificationHealthScreen(user: widget.usuario))), icon: const Icon(Icons.notifications_active_outlined)), IconButton(tooltip: 'Reportar trabajo extra ya realizado', onPressed: () => Navigator.push(context, MaterialPageRoute<void>(builder: (_) => ExtraWorkScreen(user: widget.usuario))), icon: const Icon(Icons.add_task_outlined))]),
     body: Column(children: [
       SingleChildScrollView(scrollDirection: Axis.horizontal, padding: const EdgeInsets.fromLTRB(16, 4, 16, 12), child: Row(children: [
         for (final entry in {0:'Del día', 1:'Extras', 2:'Actividades', 3:'Proyectos', 4:'Instalaciones y envíos'}.entries)

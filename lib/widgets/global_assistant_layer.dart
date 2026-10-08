@@ -29,7 +29,7 @@ class _GlobalAssistantLayerState extends State<GlobalAssistantLayer> {
           ])));
     } finally { if (mounted) setState(() => _open = false); }
   }
-  @override Widget build(BuildContext context) => Stack(children: [
+  @override Widget build(BuildContext context) => Overlay.wrap(child: Stack(children: [
     widget.child,
     if (widget.userId != null && !_open && MediaQuery.viewInsetsOf(context).bottom == 0)
       Positioned(left: _left ? 16 : null, right: _left ? null : 16,
@@ -43,5 +43,5 @@ class _GlobalAssistantLayerState extends State<GlobalAssistantLayer> {
             backgroundColor: StiloColors.surface, foregroundColor: StiloColors.accent,
             onPressed: _show, child: const Icon(Icons.auto_awesome_rounded)))),
       ),
-  ]);
+  ]));
 }

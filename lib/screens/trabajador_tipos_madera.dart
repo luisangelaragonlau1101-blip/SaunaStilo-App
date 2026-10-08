@@ -1,3 +1,4 @@
+import '../widgets/section_intro.dart';
 import '../presentation/appearance.dart';
 import '../services/external_transfer.dart';
 import 'package:flutter/material.dart';
@@ -58,6 +59,7 @@ class _CatalogoSaunasTrabajadorScreenState extends State<CatalogoSaunasTrabajado
       ),
       body: Column(
         children: [
+          const SectionIntro(title: 'Biblioteca de maderas', subtitle: 'Consulta materiales y encuentra la opción para cada trabajo.', icon: Icons.forest_outlined),
           // --- BARRA DE BÚSQUEDA ---
           Padding(
             padding: EdgeInsets.fromLTRB(16, 8, 16, 16),

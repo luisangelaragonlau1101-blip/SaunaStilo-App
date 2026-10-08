@@ -78,6 +78,7 @@ class AvanceActividad {
   final DateTime fecha;
   final bool esCierre;
   final int cantidadEvidencias;
+  final int? porcentaje;
 
   const AvanceActividad({
     required this.id,
@@ -86,6 +87,7 @@ class AvanceActividad {
     required this.fecha,
     required this.esCierre,
     required this.cantidadEvidencias,
+    this.porcentaje,
   });
 
   factory AvanceActividad.fromDocument(
@@ -99,6 +101,7 @@ class AvanceActividad {
       fecha: _fechaDocumento(data['fecha']),
       esCierre: data['esCierre'] is bool ? data['esCierre'] as bool : false,
       cantidadEvidencias: _enteroDocumento(data['cantidadEvidencias']),
+      porcentaje: data['porcentaje'] is num ? (data['porcentaje'] as num).toInt().clamp(0, 100).toInt() : null,
     );
   }
 
@@ -109,6 +112,7 @@ class AvanceActividad {
       'fecha': fecha,
       'esCierre': esCierre,
       'cantidadEvidencias': cantidadEvidencias,
+      if (porcentaje != null) 'porcentaje': porcentaje,
     };
   }
 }

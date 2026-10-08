@@ -28,6 +28,7 @@ class _ActivityDetailState extends State<ActivityDetailSheet> {
   late final _evidenceStream = _service.obtenerEvidenciasActividad(widget.activity.id);
   late final _historyStream = _service.obtenerAvancesActividad(widget.activity.id);
   bool _busy = false;
+  double? _percentage;
   String? _error;
   String? _operation, _operationPayload;
   @override void dispose() { _comment.dispose(); super.dispose(); }
@@ -64,10 +65,17 @@ class _ActivityDetailState extends State<ActivityDetailSheet> {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return;
     final comment = _comment.text.trim();
-    if (_files.isEmpty && comment.isEmpty && !(submit && task.totalEvidencias > 0)) {
+    if (!submit && _files.isEmpty && comment.isEmpty) {
       setState(() => _error = 'Adjunta una foto o describe lo que hiciste.'); return;
     }
-    final payload = '$submit:$comment:${_files.map((e) => '${e.nombre}:${e.tamanioBytes}').join('|')}';
+    if (submit) {
+      final confirmed = await showDialog<bool>(context: context, builder: (c) => AlertDialog(
+        title: const Text('¿Terminaste esta actividad?'), content: const Text('Se entregará para aprobación de Administración. Los adjuntos y la descripción son opcionales.'),
+        actions: [TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Seguir trabajando')),
+          FilledButton(onPressed: () => Navigator.pop(c, true), child: const Text('Sí, entregar'))]));
+      if (confirmed != true || !mounted) return;
+    }
+    final payload = '$submit:${_percentage ?? task.porcentaje}:$comment:${_files.map((e) => '${e.nombre}:${e.tamanioBytes}').join('|')}';
     if (_operationPayload != payload) {
       _operationPayload = payload;
       _operation = '${DateTime.now().microsecondsSinceEpoch}_${Random.secure().nextInt(1 << 32)}';
@@ -75,10 +83,10 @@ class _ActivityDetailState extends State<ActivityDetailSheet> {
     setState(() { _busy = true; _error = null; });
     try {
       final notified = await _service.registrarAvance(actividadId: task.id, trabajadorId: uid,
-        comentario: comment.isEmpty && submit ? 'Trabajo terminado; evidencias adjuntas.' : comment,
-        archivos: List.of(_files), esCierre: submit, operationId: _operation);
+        comentario: comment,
+        archivos: List.of(_files), esCierre: submit, operationId: _operation, porcentaje: (_percentage ?? task.porcentaje.toDouble()).round());
       if (!mounted) return;
-      setState(() { _files.clear(); _comment.clear(); _operation = null; _operationPayload = null; });
+      setState(() { _files.clear(); _comment.clear(); _percentage = null; _operation = null; _operationPayload = null; });
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(notified
         ? submit ? 'Entrega guardada. Ya se puede aprobar.' : 'Avance y aviso guardados.'
         : 'Trabajo guardado. El aviso no se confirmó; la entrega sigue disponible para revisión.')));
@@ -126,6 +134,8 @@ class _ActivityDetailState extends State<ActivityDetailSheet> {
             if (_busy) const Padding(padding: EdgeInsets.symmetric(vertical: 12), child: LinearProgressIndicator()),
             if (_error != null) Padding(padding: const EdgeInsets.symmetric(vertical: 12), child: Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error))),
             if (task.observacionesAdmin.isNotEmpty) Card(child: Padding(padding: const EdgeInsets.all(16), child: Text('Observación de Administración\n${task.observacionesAdmin}'))),
+            const SizedBox(height: 12), LinearProgressIndicator(value: (task.porAprobar || task.aprobada ? 100 : task.porcentaje) / 100, minHeight: 7, borderRadius: BorderRadius.circular(8)),
+            const SizedBox(height: 6), Text('${task.porAprobar || task.aprobada ? 100 : task.porcentaje} % de avance'),
             if (task.porAprobar) const Padding(padding: EdgeInsets.symmetric(vertical: 14), child: Text('Trabajo entregado. Administración puede aprobarlo o solicitar cambios.')),
             const SizedBox(height: 18), const Text('Fotos y evidencias', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
             StreamBuilder<List<EvidenciaActividad>>(stream: _evidenceStream, builder: (context, evidence) {
@@ -142,6 +152,8 @@ class _ActivityDetailState extends State<ActivityDetailSheet> {
               Wrap(spacing: 8, children: [OutlinedButton.icon(onPressed: _busy || !ready ? null : _pick, icon: const Icon(Icons.add_photo_alternate_outlined), label: const Text('Adjuntar fotos')), OutlinedButton.icon(onPressed: _busy || !ready ? null : () => _pick(camera: true), icon: const Icon(Icons.camera_alt_outlined), label: const Text('Tomar foto'))]),
               for (final file in _files) ListTile(title: Text(file.nombre), subtitle: const Text('Se guardará con tu avance o entrega'), trailing: IconButton(tooltip: 'Quitar adjunto', onPressed: _busy ? null : () => setState(() => _files.remove(file)), icon: const Icon(Icons.close))),
               const SizedBox(height: 12), TextField(controller: _comment, enabled: !_busy && ready, maxLength: 2000, minLines: 2, maxLines: 5, decoration: const InputDecoration(labelText: '¿Qué hiciste?', hintText: 'Describe el avance o el trabajo terminado')),
+              Text('Avance: ${(_percentage ?? task.porcentaje.toDouble()).round()} %'),
+              Slider(value: (_percentage ?? task.porcentaje.toDouble()).clamp(0, 100).toDouble(), divisions: 20, max: 100, label: '${(_percentage ?? task.porcentaje.toDouble()).round()} %', onChanged: _busy || !ready ? null : (v) => setState(() => _percentage = v)),
               OutlinedButton.icon(onPressed: _busy || !ready ? null : () => _save(task), icon: const Icon(Icons.save_outlined), label: const Text('Guardar avance')),
               FilledButton.icon(onPressed: _busy || !ready ? null : () => _save(task, submit: true), icon: const Icon(Icons.task_alt), label: const Text('Marcar como terminada')),
             ],

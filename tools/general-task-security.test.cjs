@@ -24,3 +24,17 @@ test('master cannot use blank project to assign to an unrestricted employee',asy
  await assertFails(setDoc(doc(env.authenticatedContext('master').firestore(),'actividades','general-forged'),{...data(),creadoPor:'master'}));
  await assertFails(setDoc(doc(env.authenticatedContext('worker').firestore(),'actividades','general-self'),{...data(),creadoPor:'worker'}));
 });
+
+test('worker submits without attachments, cannot self-approve; admin approves and worker cannot reopen',async()=>{
+ const admin=env.authenticatedContext('admin').firestore();
+ await setDoc(doc(admin,'actividades','review-flow'),data());
+ const worker=env.authenticatedContext('worker').firestore();
+ const ref=doc(worker,'actividades','review-flow');
+ await assertSucceeds(updateDoc(ref,{estatus:'en_progreso',porcentaje:35}));
+ await assertFails(updateDoc(ref,{porcentaje:101}));
+ await assertFails(updateDoc(ref,{estatus:'completado',aprobadoEn:serverTimestamp()}));
+ await assertSucceeds(updateDoc(ref,{estatus:'en_revision',porcentaje:100,completadoEn:serverTimestamp()}));
+ await assertFails(updateDoc(ref,{estatus:'en_progreso'}));
+ await assertSucceeds(updateDoc(doc(admin,'actividades','review-flow'),{estatus:'completado',aprobadoEn:serverTimestamp(),porcentaje:100}));
+ await assertFails(updateDoc(ref,{estatus:'pendiente'}));
+});

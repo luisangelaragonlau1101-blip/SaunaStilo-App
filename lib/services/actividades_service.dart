@@ -133,6 +133,7 @@ class ActividadesService {
     required List<ArchivoEvidenciaPendiente> archivos,
     bool esCierre = false,
     String? operationId,
+    int? porcentaje,
   }) async {
     final actividadIdLimpio = actividadId.trim();
     final trabajadorIdLimpio = trabajadorId.trim();
@@ -145,7 +146,8 @@ class ActividadesService {
       throw ArgumentError('El trabajador es obligatorio.');
     }
     _validarSesionAutenticada(trabajadorIdLimpio);
-    if (comentarioLimpio.isEmpty && archivos.isEmpty) {
+    if (porcentaje != null && (porcentaje < 0 || porcentaje > 100)) throw ArgumentError('El avance debe estar entre 0 y 100 %.');
+    if (comentarioLimpio.isEmpty && archivos.isEmpty && !esCierre) {
       throw ArgumentError(
         'Escribe un avance o adjunta por lo menos una evidencia.',
       );
@@ -157,7 +159,10 @@ class ActividadesService {
     }
     final actividadData =
         actividadSnapshot.data() ?? const <String, dynamic>{};
-    _validarTrabajadorAsignado(actividadData, trabajadorIdLimpio);
+    final profile = await _db.collection('usuarios').doc(trabajadorIdLimpio).get();
+    final adminOperation = profile.data()?['rol'] == 'admin' && profile.data()?['activo'] != false &&
+        ['instalacion', 'envio'].contains(actividadData['workKind']);
+    _validarTrabajadorAsignado(actividadData, trabajadorIdLimpio, adminOperation);
     final avanceRef = operationId == null
         ? _avancesRef(actividadIdLimpio).doc()
         : _avancesRef(actividadIdLimpio).doc(operationId);
@@ -254,7 +259,10 @@ class ActividadesService {
         }
         final dataActual =
             snapshotActual.data() ?? const <String, dynamic>{};
-        _validarTrabajadorAsignado(dataActual, trabajadorIdLimpio);
+        final actor = await transaction.get(_db.collection('usuarios').doc(trabajadorIdLimpio));
+        if (!actor.exists || actor.data()?['activo'] == false) throw StateError('Tu cuenta no está activa.');
+        _validarTrabajadorAsignado(dataActual, trabajadorIdLimpio, actor.data()?['rol'] == 'admin' &&
+          ['instalacion', 'envio'].contains(dataActual['workKind']));
 
         final estatusActual = _estatus(dataActual);
         if (['completado', 'en_revision'].contains(estatusActual)) {
@@ -273,22 +281,19 @@ class ActividadesService {
 
         final totalEvidencias =
             _contadorEvidencias(dataActual) + evidenciasSubidas.length;
-        if (esCierre && totalEvidencias <= 0 && comentarioLimpio.length < 5) {
-          throw StateError(
-            'Adjunta una foto o describe el trabajo terminado.',
-          );
-        }
 
         transaction.set(avanceRef, {
-          'comentario': comentarioLimpio,
+          'comentario': comentarioLimpio.isEmpty && esCierre ? 'Trabajo terminado; entregado para aprobación.' : comentarioLimpio,
           'trabajadorId': trabajadorIdLimpio,
           'fecha': FieldValue.serverTimestamp(),
           'esCierre': esCierre,
           'cantidadEvidencias': evidenciasSubidas.length,
+          if (porcentaje != null || esCierre) 'porcentaje': esCierre ? 100 : porcentaje,
         });
 
         final actualizaciones = <String, dynamic>{
           'ultimoAvance': FieldValue.serverTimestamp(),
+          if (porcentaje != null || esCierre) 'porcentaje': esCierre ? 100 : porcentaje,
         };
         if (comentarioLimpio.isNotEmpty) {
           actualizaciones['comentariosTrabajador'] = comentarioLimpio;
@@ -322,12 +327,12 @@ class ActividadesService {
         campos: {'actividadId': id, 'proyectoId': data['proyectoId'] ?? ''});
 
   Future<bool> revisarActividad({required String actividadId, required bool aprobar,
-    required String comentario, required DateTime? entregaEsperada}) async {
+    required String comentario, required DateTime? entregaEsperada, String? operationId}) async {
     final uid = (_auth ?? FirebaseAuth.instance).currentUser?.uid;
     if (uid == null) throw StateError('Inicia sesión.');
     if (!aprobar && comentario.trim().isEmpty) throw StateError('Explica qué debe corregirse.');
     final ref = _actividadesRef.doc(actividadId);
-    final event = _avancesRef(actividadId).doc();
+    final event = _avancesRef(actividadId).doc(operationId);
     Map<String, dynamic> data = {};
     await _db.runTransaction((tx) async {
       final profile = await tx.get(_db.collection('usuarios').doc(uid));
@@ -335,14 +340,20 @@ class ActividadesService {
       if (profile.data()?['rol'] != 'admin' || profile.data()?['activo'] == false) throw StateError('Solo Administración aprueba estas actividades.');
       if (!snapshot.exists) throw StateError('La actividad ya no existe.');
       data = snapshot.data()!;
+      final previous = await tx.get(event);
+      if (previous.exists) {
+        if (previous.data()?['trabajadorId'] != uid || previous.data()?['decision'] != aprobar) throw StateError('La revisión ya se guardó con otros datos.');
+        return;
+      }
       if (!['en_revision', 'completado'].contains(_estatus(data)) || data['aprobadoEn'] != null) throw StateError('Esta actividad no tiene una entrega pendiente de aprobación.');
       final actual = data['completadoEn'];
       if ((actual is Timestamp ? actual.toDate() : null) != entregaEsperada) throw StateError('La entrega cambió. Actualiza antes de revisarla.');
       tx.update(ref, {'estatus': aprobar ? 'completado' : 'cambios_solicitados',
         'observacionesAdmin': comentario.trim(), 'revisadoPor': uid, 'revisadoEn': FieldValue.serverTimestamp(),
-        'aprobadoEn': aprobar ? FieldValue.serverTimestamp() : null});
+        'aprobadoEn': aprobar ? FieldValue.serverTimestamp() : null,
+        if (aprobar) 'porcentaje': 100});
       tx.set(event, {'comentario': '${aprobar ? 'Aprobada y finalizada' : 'Cambios solicitados'}${comentario.trim().isEmpty ? '' : ': ${comentario.trim()}'}',
-        'trabajadorId': uid, 'fecha': FieldValue.serverTimestamp(), 'esCierre': false, 'cantidadEvidencias': 0});
+        'trabajadorId': uid, 'fecha': FieldValue.serverTimestamp(), 'esCierre': false, 'cantidadEvidencias': 0, 'decision': aprobar});
     });
     return NotificacionesService(firestore: _db).enviarEvento(id: 'revision_${event.id}',
       titulo: aprobar ? 'Actividad aprobada' : 'Actividad: cambios solicitados',
@@ -532,12 +543,12 @@ class ActividadesService {
 
   static void _validarTrabajadorAsignado(
     Map<String, dynamic> data,
-    String trabajadorId,
+    String trabajadorId, [bool adminOperation = false]
   ) {
     final asignado = data['asignadoATrabajadorId'] is String
         ? (data['asignadoATrabajadorId'] as String).trim()
         : '';
-    if (trabajadorId.isEmpty || asignado != trabajadorId) {
+    if (trabajadorId.isEmpty || asignado != trabajadorId && !adminOperation) {
       throw StateError(
         'Esta actividad no está asignada al trabajador autenticado.',
       );

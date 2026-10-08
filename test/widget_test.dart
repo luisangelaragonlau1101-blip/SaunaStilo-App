@@ -1,30 +1,36 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
-import 'package:saunastylo/main.dart';
+import 'package:saunastilo/widgets/global_assistant_layer.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
-
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
-
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
-
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+  testWidgets('assistant bubble remains available on pushed pages and offers audio', (t) async {
+    final navigator = GlobalKey<NavigatorState>();
+    await t.pumpWidget(MaterialApp(navigatorKey: navigator,
+      builder: (_, child) => GlobalAssistantLayer(navigatorKey: navigator,
+        userId: 'worker', child: child!),
+      home: Scaffold(body: Builder(builder: (context) => TextButton(
+        onPressed: () => Navigator.push(context, MaterialPageRoute<void>(
+          builder: (_) => const Scaffold(body: Text('Otra página')))),
+        child: const Text('Abrir otra página'))))));
+    await t.pumpAndSettle();
+    await t.tap(find.text('Abrir otra página')); await t.pumpAndSettle();
+    expect(find.text('Otra página'), findsOneWidget);
+    final bubble = find.byType(FloatingActionButton);
+    expect(bubble, findsOneWidget);
+    await t.drag(bubble, const Offset(-300, -60)); await t.pumpAndSettle();
+    await t.tap(bubble); await t.pumpAndSettle();
+    expect(find.text('Online Smart'), findsOneWidget);
+    expect(find.byTooltip('Grabar audio'), findsOneWidget);
+    expect(find.byTooltip('Enviar pregunta'), findsOneWidget);
+    await t.tap(find.byTooltip('Cerrar asistente')); await t.pumpAndSettle();
+    expect(find.byType(FloatingActionButton), findsOneWidget);
+    expect(t.takeException(), isNull);
+  });
+  testWidgets('assistant is hidden before login', (t) async {
+    final navigator = GlobalKey<NavigatorState>();
+    await t.pumpWidget(MaterialApp(navigatorKey: navigator,
+      builder: (_, child) => GlobalAssistantLayer(navigatorKey: navigator, child: child!),
+      home: const Scaffold(body: Text('Iniciar sesión'))));
+    expect(find.byType(FloatingActionButton), findsNothing);
   });
 }

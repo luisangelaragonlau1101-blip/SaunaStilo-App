@@ -502,6 +502,16 @@ service cloud.firestore {
         && d.fechaTermino is timestamp && d.fechaTermino > resource.data.fechaInicio;
     }
 
+    function validWorkerActivityUpdate() {
+      let before = resource.data.get('estatus', 'pendiente');
+      let after = request.resource.data.get('estatus', 'pendiente');
+      let pct = request.resource.data.get('porcentaje', 0);
+      return before in ['pendiente', 'en_progreso', 'en_proceso', 'progreso', 'cambios_solicitados']
+        && after in ['pendiente', 'en_progreso', 'en_proceso', 'progreso', 'cambios_solicitados', 'en_revision']
+        && (after != 'en_revision' || request.resource.data.completadoEn == request.time)
+        && pct is int && pct >= 0 && pct <= 100;
+    }
+
     match /actividades/{activityId} {
       // Allows transactional creation, not reads of another project's existing task.
       allow get: if signedIn() && (isAdmin() || role() == 'maestro')
@@ -522,8 +532,10 @@ service cloud.firestore {
             'ultimoAvance',
             'comentariosTrabajador',
             'evidenciasCount',
-            'cantidadEvidencias'
-          ]));
+            'cantidadEvidencias',
+            'porcentaje'
+          ])
+          && validWorkerActivityUpdate());
 
       match /evidencias/{evidenceId} {
         allow read, write: if signedIn() && assignedToActivity(activityId);

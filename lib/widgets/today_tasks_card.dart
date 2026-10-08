@@ -31,17 +31,19 @@ class _TodayTasksState extends State<TodayTasksCard> with WidgetsBindingObserver
     if (_busy) return;
     setState(() { _busy = true; _error = null; });
     try {
-      final result = await _api.call('daily-list', {'day': AttendanceGatewayService.dayKey(AttendanceGatewayService.today)});
-      if (mounted) setState(() => _tasks = (result['items'] as List).map((v) => Map<String, dynamic>.from(v as Map)).where((t) => t['userId'] == widget.user.id).toList());
+      final result = await _api.call('daily-list', {'day': AttendanceGatewayService.dayKey(AttendanceGatewayService.today), 'includePending': true});
+      if (mounted) setState(() => _tasks = (result['items'] as List).map((v) => Map<String, dynamic>.from(v as Map)).toList());
     } catch (error) { if (mounted) setState(() => _error = CompanyLearningService.message(error)); }
     finally { if (mounted) setState(() => _busy = false); }
   }
   @override Widget build(BuildContext context) {
-    final pending = _tasks.where((t) => t['status'] != 'completado').toList();
+    final mine = _tasks.where((t) => t['userId'] == widget.user.id).toList();
+    final pending = mine.where((t) => t['status'] != 'completado').toList();
+    final reviews = widget.user.rol == 'admin' ? _tasks.where((t) => t['status'] == 'en_revision' && t['userId'] != widget.user.id).toList() : <Map<String, dynamic>>[];
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       Row(children: [const Expanded(child: Text('Tus tareas del día', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800))),
         IconButton(tooltip: 'Actualizar tus tareas', onPressed: _busy ? null : _load, icon: const Icon(Icons.refresh_rounded))]),
-      Text('${_tasks.length - pending.length} de ${_tasks.length} aprobadas hoy', style: TextStyle(color: StiloColors.text.withValues(alpha: .65))),
+      Text('${mine.length - pending.length} de ${mine.length} aprobadas · incluye pendientes anteriores', style: TextStyle(color: StiloColors.text.withValues(alpha: .65))),
       if (_busy && _tasks.isEmpty) const LinearProgressIndicator(),
       if (_error != null) Padding(padding: const EdgeInsets.symmetric(vertical: 12), child: Text(_error!)),
       if (!_busy && _error == null && pending.isEmpty) const Card(child: Padding(padding: EdgeInsets.all(18), child: Text('No tienes pendientes del día. Aquí aparecerán tus asignaciones y tareas extras.'))),
@@ -49,6 +51,13 @@ class _TodayTasksState extends State<TodayTasksCard> with WidgetsBindingObserver
         await Navigator.push(context, MaterialPageRoute<void>(builder: (_) => DailyTaskDetail(user: widget.user, task: task, service: _api)));
         if (mounted) await _load();
       }),
+      if (reviews.isNotEmpty) ...[
+        const SizedBox(height: 12), Text('${reviews.length} entregas por aprobar', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+        for (final task in reviews.take(3)) WorkTaskCard(task: task, onTap: () async {
+          await Navigator.push(context, MaterialPageRoute<void>(builder: (_) => DailyTaskDetail(user: widget.user, task: task, service: _api)));
+          if (mounted) await _load();
+        }),
+      ],
       TextButton.icon(onPressed: () async {
         await Navigator.push(context, MaterialPageRoute<void>(builder: (_) => EquipoTareasScreen(usuario: widget.user)));
         if (mounted) await _load();

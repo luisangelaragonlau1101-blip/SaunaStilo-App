@@ -79,22 +79,12 @@ class CompanyLearningService {
   ]) async {
     final user = _auth.currentUser;
     if (user == null) throw StateError('Inicia sesión en Sauna Stilo.');
-    final token = await user.getIdToken();
-    if (token == null || token.isEmpty) {
-      throw StateError(
-        'No se pudo validar tu sesión. Inicia sesión nuevamente.',
-      );
-    }
-
     if (action.startsWith('daily-')) {
-      try {
-        return await FirestoreDailyTasksService(firebaseAuth: _auth).run(action, data);
-      } catch (error) {
-        // Existing AppDeploy tasks remain a compatibility path if a device
-        // cannot read Firestore (for example, while Firebase reconnects).
-        if (error is! FirebaseException) rethrow;
-      }
+      // A write must never silently switch to another database after an error.
+      return FirestoreDailyTasksService(firebaseAuth: _auth).run(action, data);
     }
+    final token = await user.getIdToken();
+    if (token == null || token.isEmpty) throw StateError('No se pudo validar tu sesión. Inicia sesión nuevamente.');
 
     if (action.startsWith('attendance-')) {
       try {
@@ -168,7 +158,9 @@ class CompanyLearningService {
     return Map<String, dynamic>.from(decoded);
   }
 
-  static String message(Object error) => error is StateError
-      ? error.message.toString()
-      : 'No se confirmó la operación. Revisa tu conexión y vuelve a intentar.';
+  static String message(Object error) {
+    if (error is StateError) return error.message.toString();
+    if (error is FirebaseException && error.code == 'permission-denied') return 'No tienes permiso para esta acción. Administración debe verificar las reglas publicadas y tu asignación.';
+    return 'No se confirmó la operación. Revisa tu conexión y vuelve a intentar.';
+  }
 }

@@ -4,7 +4,10 @@ import '../models/proyecto_model.dart';
 import '../models/user_model.dart';
 import '../screens/mensajes_equipo_screen.dart';
 import '../screens/proyecto_chat_screen.dart';
-import '../screens/equipo_tareas_screen.dart';
+import '../screens/work_workspace_screen.dart';
+import '../screens/daily_tasks_screen.dart';
+import '../screens/admin_asistencias_screen.dart';
+import 'company_learning_service.dart';
 import '../screens/jornada_screen.dart';
 import '../screens/prestamos_equipo_screen.dart';
 import '../screens/admin_solicitudes_herramientas_screen.dart';
@@ -35,7 +38,13 @@ class NotificationRouter {
       } else if (data['tipo'] == 'almacen' || data['tipo'] == 'solicitud_herramienta') {
         destination = [AppRoles.admin, AppRoles.almacenista].contains(user.rol) ? const AdminSolicitudesHerramientasScreen() : ControlHerramientasScreen(usuarioId: user.id, usuarioNombre: user.nombre);
       } else if (data['tipo'] == 'tarea') {
-        destination = EquipoTareasScreen(usuario: user);
+        final activityId = (data['actividadId'] ?? '').toString();
+        if (activityId.isEmpty) {
+          destination = EquipoTareasScreen(usuario: user);
+        } else {
+          final result = await CompanyLearningService().call('daily-read', {'taskId': activityId});
+          destination = DailyTaskDetail(user: user, task: Map<String, dynamic>.from(result['task'] as Map));
+        }
       } else if (projectId.isNotEmpty) {
         final project = await db.collection('proyectos').doc(projectId).get();
         if (!project.exists) throw StateError('El proyecto ya no existe.');
@@ -43,7 +52,7 @@ class NotificationRouter {
         if (user.rol != AppRoles.admin && !model.encargados.contains(user.id)) throw StateError('No perteneces a este proyecto.');
         destination = ProyectoChatScreen(proyecto: model);
       } else if ((data['tipo']?.toString() ?? '').startsWith('asistencia_')) {
-        destination = JornadaScreen(usuario: user);
+        destination = user.rol == AppRoles.admin ? AdminAsistenciasScreen(nombreAdmin: user.nombre) : JornadaScreen(usuario: user);
       }
       if (!context.mounted) return;
       await Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => destination));

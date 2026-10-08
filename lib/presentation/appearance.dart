@@ -10,6 +10,7 @@ class StiloPalette {
 }
 const stiloPalettes = [
   StiloPalette('stilo', 'Stilo original', Color(0xFFB7FF2A), Color(0xFF050506)),
+  StiloPalette('vino', 'Vino ejecutivo', Color(0xFFECA6B7), Color(0xFF10090D)),
   StiloPalette('rosa', 'Rosa', Color(0xFFFF81B5), Color(0xFF21101B)),
   StiloPalette('rojo', 'Rojo', Color(0xFFFF8291), Color(0xFF250E14)),
   StiloPalette('oscuro', 'Oscuro', Color(0xFFB8C5D9), Color(0xFF0C1016)),
