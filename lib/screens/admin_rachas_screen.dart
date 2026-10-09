@@ -217,7 +217,7 @@ class _AdminRachasScreenState extends State<AdminRachasScreen> {
                 padding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                 decoration: BoxDecoration(
                   color: colorSuperficie,
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(30),
                   border: Border.all(
                     color: index == 0 ? badgeColor.withOpacity(0.5) : StiloColors.text.withOpacity(0.05),
                     width: index == 0 ? 1.5 : 1,

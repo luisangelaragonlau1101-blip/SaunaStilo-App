@@ -1,4 +1,6 @@
 import '../workflow/company_structure.dart';
+import '../presentation/appearance.dart';
+import '../widgets/soft_workspace.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -24,8 +26,8 @@ class _HumanResourcesState extends State<HumanResourcesScreen> {
     if (widget.user.rol != AppRoles.admin) return const Scaffold(body: Center(child: Text('Este espacio es exclusivo de Administración.')));
     void open(Widget page) => Navigator.push(context, MaterialPageRoute<void>(builder: (_) => page));
     return Scaffold(appBar: AppBar(title: const Text('Recursos Humanos')), body: ListView(padding: const EdgeInsets.all(20), children: [
-      const Text('Personas y seguimiento', style: TextStyle(fontSize: 26, fontWeight: FontWeight.w800)),
-      const SizedBox(height: 8), const Text('Expedientes privados, incorporación, horarios, asistencia y nómina.'),
+      if (AppearanceController.instance.modern) const StiloSectionHero(eyebrow: 'STILO · PERSONAS', title: 'Un equipo que crece.', subtitle: 'Expedientes privados, incorporación, horarios, asistencia y nómina.', icon: Icons.groups_rounded)
+      else ...[const Text('Personas y seguimiento', style: TextStyle(fontSize: 26, fontWeight: FontWeight.w800)), const SizedBox(height: 8), const Text('Expedientes privados, incorporación, horarios, asistencia y nómina.')],
       const SizedBox(height: 16), Wrap(spacing: 8, runSpacing: 8, children: [
         FilledButton.tonalIcon(onPressed: () => open(UsuariosCrudScreen()), icon: const Icon(Icons.person_add_alt), label: const Text('Altas y cuentas')),
         FilledButton.tonalIcon(onPressed: () => open(AdminAsistenciasScreen(nombreAdmin: widget.user.nombre)), icon: const Icon(Icons.receipt_long), label: const Text('Asistencia y nómina')),

@@ -101,7 +101,7 @@ class _AdminAsistenciasScreenState extends State<AdminAsistenciasScreen> {
             content: Text("$titulo actualizada correctamente", style: GoogleFonts.inter()),
             backgroundColor: Colors.green.shade700,
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           ),
         );
       }
@@ -119,7 +119,7 @@ class _AdminAsistenciasScreenState extends State<AdminAsistenciasScreen> {
             content: Text("Comida aprobada a las $horaFormateada", style: GoogleFonts.inter()),
             backgroundColor: Colors.green.shade700,
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           ),
         );
       }
@@ -155,7 +155,7 @@ class _AdminAsistenciasScreenState extends State<AdminAsistenciasScreen> {
         builder: (context, setStateDialog) {
           return AlertDialog(
             backgroundColor: cardDark,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: BorderSide(color: StiloColors.text.withOpacity(0.05))),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30), side: BorderSide(color: StiloColors.text.withOpacity(0.05))),
             title: Row(
               children: [
                 Icon(icono, color: colorFondo),
@@ -180,7 +180,7 @@ class _AdminAsistenciasScreenState extends State<AdminAsistenciasScreen> {
                         return Container(
                           margin: EdgeInsets.only(bottom: 8),
                           padding: EdgeInsets.all(12),
-                          decoration: BoxDecoration(color: StiloColors.text.withOpacity(0.05), borderRadius: BorderRadius.circular(20)),
+                          decoration: BoxDecoration(color: StiloColors.text.withOpacity(0.05), borderRadius: BorderRadius.circular(30)),
                           child: Row(
                             children: [
                               Expanded(
@@ -246,7 +246,7 @@ class _AdminAsistenciasScreenState extends State<AdminAsistenciasScreen> {
                           backgroundColor: colorFondo.withOpacity(0.2),
                           foregroundColor: colorFondo,
                           elevation: 0,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20))
                         ),
                         onPressed: () {
                           double m = double.tryParse(montoController.text) ?? 0.0;
@@ -275,7 +275,7 @@ class _AdminAsistenciasScreenState extends State<AdminAsistenciasScreen> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: colorFondo.withOpacity(0.8),
                   foregroundColor: StiloColors.text,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                 ),
                 onPressed: () async {
                   String accion = esBono ? "Bonos modificados" : "Multas modificadas";
@@ -294,7 +294,7 @@ class _AdminAsistenciasScreenState extends State<AdminAsistenciasScreen> {
                           content: Text("Registros actualizados", style: GoogleFonts.inter()),
                           backgroundColor: colorFondo.withOpacity(0.8),
                           behavior: SnackBarBehavior.floating,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                         ),
                       );
                     }
@@ -321,7 +321,7 @@ class _AdminAsistenciasScreenState extends State<AdminAsistenciasScreen> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: cardDark,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: BorderSide(color: StiloColors.text.withOpacity(0.05))),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30), side: BorderSide(color: StiloColors.text.withOpacity(0.05))),
         title: Row(
           children: [
             Icon(aprobar ? Icons.check_circle_rounded : Icons.cancel_rounded, color: aprobar ? Colors.greenAccent : Colors.redAccent),
@@ -339,7 +339,7 @@ class _AdminAsistenciasScreenState extends State<AdminAsistenciasScreen> {
             style: ElevatedButton.styleFrom(
               backgroundColor: aprobar ? Colors.green.shade600 : Colors.red.shade600,
               foregroundColor: StiloColors.text,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
             ),
             onPressed: () => Navigator.pop(context, true),
             child: Text(aprobar ? "Sí, Aprobar" : "Sí, Rechazar", style: GoogleFonts.inter(fontWeight: FontWeight.bold))
@@ -366,7 +366,7 @@ class _AdminAsistenciasScreenState extends State<AdminAsistenciasScreen> {
               content: Text(aprobar ? "¡Incapacidad aprobada y guardada!" : "Justificación rechazada", style: GoogleFonts.inter()),
               backgroundColor: aprobar ? Colors.green.shade700 : textMuted,
               behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
             )
           );
         }
@@ -431,7 +431,7 @@ class _AdminAsistenciasScreenState extends State<AdminAsistenciasScreen> {
                         labelStyle: GoogleFonts.inter(color: textMuted),
                         filled: true,
                         fillColor: StiloColors.text.withOpacity(0.05),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: BorderSide.none),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide.none),
                       ),
                       items: trabajadores.map((u) => DropdownMenuItem(value: u.id, child: Text(u.nombre))).toList(),
                       onChanged: (val) => setStateModal(() => trabajadorSeleccionado = val!),
@@ -468,7 +468,7 @@ class _AdminAsistenciasScreenState extends State<AdminAsistenciasScreen> {
                         labelStyle: GoogleFonts.inter(color: textMuted),
                         filled: true,
                         fillColor: StiloColors.text.withOpacity(0.05),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: BorderSide.none),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide.none),
                       ),
                     ),
                     SizedBox(height: 24),
@@ -476,7 +476,7 @@ class _AdminAsistenciasScreenState extends State<AdminAsistenciasScreen> {
                       width: double.infinity,
                       height: 50,
                       child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20))),
+                        style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30))),
                         onPressed: rangoFechas == null ? null : () async {
                           final batch = FirebaseFirestore.instance.batch();
                           DateTime current = rangoFechas!.start;
@@ -544,12 +544,12 @@ class _AdminAsistenciasScreenState extends State<AdminAsistenciasScreen> {
         color: Colors.transparent,
         child: InkWell(
           onTap: () => _editarHoraGeneral(context, asistencia, campoFirestore, titulo, hora),
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(30),
           child: Container(
             padding: EdgeInsets.symmetric(vertical: 10, horizontal: 8),
             decoration: BoxDecoration(
               color: StiloColors.text.withOpacity(0.03),
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(30),
               border: Border.all(color: StiloColors.text.withOpacity(0.05)),
             ),
             child: Row(
@@ -676,7 +676,7 @@ class _AdminAsistenciasScreenState extends State<AdminAsistenciasScreen> {
                 );
                 if (picked != null) setState(() => _fechaSeleccionada = picked);
               },
-              borderRadius: BorderRadius.circular(24),
+              borderRadius: BorderRadius.circular(34),
               child: Container(
                 padding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                 decoration: BoxDecoration(
@@ -685,7 +685,7 @@ class _AdminAsistenciasScreenState extends State<AdminAsistenciasScreen> {
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
-                  borderRadius: BorderRadius.circular(24),
+                  borderRadius: BorderRadius.circular(34),
                   border: Border.all(color: StiloColors.text.withOpacity(0.05)),
                 ),
                 child: Row(
@@ -781,7 +781,7 @@ class _AdminAsistenciasScreenState extends State<AdminAsistenciasScreen> {
                             padding: EdgeInsets.all(20),
                             decoration: BoxDecoration(
                               color: cardDark,
-                              borderRadius: BorderRadius.circular(20),
+                              borderRadius: BorderRadius.circular(30),
                               boxShadow: [
                                 BoxShadow(color: StiloColors.background.withOpacity(0.2), blurRadius: 10, offset: Offset(0, 4))
                               ],
@@ -817,7 +817,7 @@ class _AdminAsistenciasScreenState extends State<AdminAsistenciasScreen> {
                                       padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                                       decoration: BoxDecoration(
                                         color: asistencia.estatus == 'a_tiempo' ? Colors.green.withOpacity(0.15) : (asistencia.estatus == 'incapacidad_pagada' ? Colors.blueAccent.withOpacity(0.15) : Colors.orange.withOpacity(0.15)),
-                                        borderRadius: BorderRadius.circular(20),
+                                        borderRadius: BorderRadius.circular(30),
                                         border: Border.all(color: asistencia.estatus == 'a_tiempo' ? Colors.green.withOpacity(0.3) : (asistencia.estatus == 'incapacidad_pagada' ? Colors.blueAccent.withOpacity(0.3) : Colors.orange.withOpacity(0.3))),
                                       ),
                                       child: Row(
@@ -856,7 +856,7 @@ class _AdminAsistenciasScreenState extends State<AdminAsistenciasScreen> {
                                       color: asistencia.estatus == 'incapacidad_pagada'
                                           ? Colors.blueAccent.withOpacity(0.05)
                                           : Colors.redAccent.withOpacity(0.05),
-                                      borderRadius: BorderRadius.circular(24),
+                                      borderRadius: BorderRadius.circular(34),
                                       border: Border.all(
                                         color: asistencia.estatus == 'incapacidad_pagada'
                                             ? Colors.blueAccent.withOpacity(0.3)
@@ -904,7 +904,7 @@ class _AdminAsistenciasScreenState extends State<AdminAsistenciasScreen> {
                                                 backgroundColor: (asistencia.estatus == 'incapacidad_pagada' ? Colors.blueAccent : Colors.redAccent).withOpacity(0.2),
                                                 foregroundColor: asistencia.estatus == 'incapacidad_pagada' ? Colors.blueAccent : Colors.redAccent,
                                                 elevation: 0,
-                                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                                               ),
                                               onPressed: () => _mostrarEvidenciaDialog(context, asistencia.evidenciaJustificacionUrl!),
                                               icon: Icon(Icons.image_rounded, size: 16),
@@ -924,7 +924,7 @@ class _AdminAsistenciasScreenState extends State<AdminAsistenciasScreen> {
                                                     backgroundColor: Colors.green.withOpacity(0.15),
                                                     foregroundColor: Colors.greenAccent,
                                                     elevation: 0,
-                                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                                                   ),
                                                   onPressed: () => _gestionarJustificacionDia(context, asistencia, true),
                                                   icon: Icon(Icons.check_circle_rounded, size: 16),
@@ -938,7 +938,7 @@ class _AdminAsistenciasScreenState extends State<AdminAsistenciasScreen> {
                                                     backgroundColor: StiloColors.text.withOpacity(0.05),
                                                     foregroundColor: StiloColors.text.withValues(alpha: .70),
                                                     elevation: 0,
-                                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                                                   ),
                                                   onPressed: () => _gestionarJustificacionDia(context, asistencia, false),
                                                   icon: Icon(Icons.cancel_rounded, size: 16),
@@ -969,7 +969,7 @@ class _AdminAsistenciasScreenState extends State<AdminAsistenciasScreen> {
                                   padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                                   decoration: BoxDecoration(
                                     color: tieneBono ? Colors.greenAccent.withOpacity(0.1) : Colors.transparent,
-                                    borderRadius: BorderRadius.circular(20),
+                                    borderRadius: BorderRadius.circular(30),
                                     border: Border.all(color: tieneBono ? Colors.greenAccent.withOpacity(0.5) : StiloColors.text.withValues(alpha: .10)),
                                   ),
                                   child: Row(
@@ -1018,7 +1018,7 @@ class _AdminAsistenciasScreenState extends State<AdminAsistenciasScreen> {
                                   padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                                   decoration: BoxDecoration(
                                     color: tieneMulta ? Colors.redAccent.withOpacity(0.1) : Colors.transparent,
-                                    borderRadius: BorderRadius.circular(20),
+                                    borderRadius: BorderRadius.circular(30),
                                     border: Border.all(color: tieneMulta ? Colors.redAccent.withOpacity(0.5) : StiloColors.text.withValues(alpha: .10)),
                                   ),
                                   child: Row(
@@ -1068,7 +1068,7 @@ class _AdminAsistenciasScreenState extends State<AdminAsistenciasScreen> {
                                     padding: EdgeInsets.all(16),
                                     decoration: BoxDecoration(
                                       color: solicitudPendiente ? Colors.orangeAccent.withOpacity(0.05) : StiloColors.text.withOpacity(0.02),
-                                      borderRadius: BorderRadius.circular(24),
+                                      borderRadius: BorderRadius.circular(34),
                                       border: Border.all(color: solicitudPendiente ? Colors.orangeAccent.withOpacity(0.5) : StiloColors.text.withOpacity(0.05)),
                                     ),
                                     child: Column(
@@ -1122,7 +1122,7 @@ class _AdminAsistenciasScreenState extends State<AdminAsistenciasScreen> {
                                               style: ElevatedButton.styleFrom(
                                                 backgroundColor: Colors.green.shade600,
                                                 foregroundColor: StiloColors.text,
-                                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                                                 elevation: 0,
                                               ),
                                             ),
@@ -1142,7 +1142,7 @@ class _AdminAsistenciasScreenState extends State<AdminAsistenciasScreen> {
                                         context: context,
                                         builder: (context) => AlertDialog(
                                           backgroundColor: cardDark,
-                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: BorderSide(color: StiloColors.text.withOpacity(0.05))),
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30), side: BorderSide(color: StiloColors.text.withOpacity(0.05))),
                                           title: Row(
                                             children: [
                                               Icon(Icons.history_edu_rounded, color: primaryPurple),
@@ -1212,7 +1212,7 @@ class _AdminAsistenciasScreenState extends State<AdminAsistenciasScreen> {
           alignment: Alignment.topRight,
           children: [
             ClipRRect(
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(30),
               child: InteractiveViewer(
                 child: Image.network(
                   imageUrl,
@@ -1228,7 +1228,7 @@ class _AdminAsistenciasScreenState extends State<AdminAsistenciasScreen> {
                   errorBuilder: (context, error, stackTrace) => Container(
                     height: 200,
                     padding: EdgeInsets.all(20),
-                    decoration: BoxDecoration(color: cardDark, borderRadius: BorderRadius.circular(20)),
+                    decoration: BoxDecoration(color: cardDark, borderRadius: BorderRadius.circular(30)),
                     child: Center(child: Text("Imagen no disponible", style: GoogleFonts.inter(color: textMuted))),
                   ),
                 ),
@@ -1331,7 +1331,7 @@ class _AdminAsistenciasScreenState extends State<AdminAsistenciasScreen> {
                 return Column(
                   children: [
                     SizedBox(height: 12),
-                    Container(width: 50, height: 6, decoration: BoxDecoration(color: StiloColors.text.withValues(alpha: .24), borderRadius: BorderRadius.circular(10))),
+                    Container(width: 50, height: 6, decoration: BoxDecoration(color: StiloColors.text.withValues(alpha: .24), borderRadius: BorderRadius.circular(20))),
                     SizedBox(height: 24),
 
                     Padding(
@@ -1490,7 +1490,7 @@ class _AdminAsistenciasScreenState extends State<AdminAsistenciasScreen> {
                                       begin: Alignment.topLeft,
                                       end: Alignment.bottomRight,
                                     ),
-                                    borderRadius: BorderRadius.circular(24),
+                                    borderRadius: BorderRadius.circular(34),
                                     border: Border.all(color: primaryPurple.withOpacity(0.3)),
                                   ),
                                   child: Column(
@@ -1514,7 +1514,7 @@ class _AdminAsistenciasScreenState extends State<AdminAsistenciasScreen> {
                                               padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                                               decoration: BoxDecoration(
                                                 color: Colors.redAccent.withOpacity(0.15),
-                                                borderRadius: BorderRadius.circular(20),
+                                                borderRadius: BorderRadius.circular(30),
                                                 border: Border.all(color: Colors.redAccent.withOpacity(0.3)),
                                               ),
                                               child: Text(
@@ -1604,7 +1604,7 @@ class _AdminAsistenciasScreenState extends State<AdminAsistenciasScreen> {
                                         padding: EdgeInsets.all(20),
                                         decoration: BoxDecoration(
                                           color: cardDark,
-                                          borderRadius: BorderRadius.circular(20),
+                                          borderRadius: BorderRadius.circular(30),
                                           border: Border.all(color: StiloColors.text.withOpacity(0.03)),
                                         ),
                                         child: Column(
@@ -1623,7 +1623,7 @@ class _AdminAsistenciasScreenState extends State<AdminAsistenciasScreen> {
                                                   padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                                                   decoration: BoxDecoration(
                                                     color: asistencia.estatus == 'a_tiempo' ? Colors.green.withOpacity(0.15) : (asistencia.estatus == 'incapacidad_pagada' ? Colors.blueAccent.withOpacity(0.15) : Colors.orange.withOpacity(0.15)),
-                                                    borderRadius: BorderRadius.circular(20),
+                                                    borderRadius: BorderRadius.circular(30),
                                                     border: Border.all(color: asistencia.estatus == 'a_tiempo' ? Colors.green.withOpacity(0.3) : (asistencia.estatus == 'incapacidad_pagada' ? Colors.blueAccent.withOpacity(0.3) : Colors.orange.withOpacity(0.3))),
                                                   ),
                                                   child: Row(
@@ -1662,7 +1662,7 @@ class _AdminAsistenciasScreenState extends State<AdminAsistenciasScreen> {
                                                   color: asistencia.estatus == 'incapacidad_pagada'
                                                       ? Colors.blueAccent.withOpacity(0.05)
                                                       : Colors.redAccent.withOpacity(0.05),
-                                                  borderRadius: BorderRadius.circular(24),
+                                                  borderRadius: BorderRadius.circular(34),
                                                   border: Border.all(
                                                     color: asistencia.estatus == 'incapacidad_pagada'
                                                         ? Colors.blueAccent.withOpacity(0.3)
@@ -1710,7 +1710,7 @@ class _AdminAsistenciasScreenState extends State<AdminAsistenciasScreen> {
                                                             backgroundColor: (asistencia.estatus == 'incapacidad_pagada' ? Colors.blueAccent : Colors.redAccent).withOpacity(0.2),
                                                             foregroundColor: asistencia.estatus == 'incapacidad_pagada' ? Colors.blueAccent : Colors.redAccent,
                                                             elevation: 0,
-                                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                                                           ),
                                                           onPressed: () => _mostrarEvidenciaDialog(context, asistencia.evidenciaJustificacionUrl!),
                                                           icon: Icon(Icons.image_rounded, size: 16),
@@ -1740,7 +1740,7 @@ class _AdminAsistenciasScreenState extends State<AdminAsistenciasScreen> {
                                                 padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                                                 decoration: BoxDecoration(
                                                   color: Colors.greenAccent.withOpacity(0.1),
-                                                  borderRadius: BorderRadius.circular(20),
+                                                  borderRadius: BorderRadius.circular(30),
                                                   border: Border.all(color: Colors.greenAccent.withOpacity(0.5)),
                                                 ),
                                                 child: Row(
@@ -1777,7 +1777,7 @@ class _AdminAsistenciasScreenState extends State<AdminAsistenciasScreen> {
                                                 padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                                                 decoration: BoxDecoration(
                                                   color: Colors.redAccent.withOpacity(0.1),
-                                                  borderRadius: BorderRadius.circular(20),
+                                                  borderRadius: BorderRadius.circular(30),
                                                   border: Border.all(color: Colors.redAccent.withOpacity(0.5)),
                                                 ),
                                                 child: Row(
@@ -1814,7 +1814,7 @@ class _AdminAsistenciasScreenState extends State<AdminAsistenciasScreen> {
                                                 padding: EdgeInsets.all(16),
                                                 decoration: BoxDecoration(
                                                   color: solicitudPendiente ? Colors.orangeAccent.withOpacity(0.05) : StiloColors.text.withOpacity(0.02),
-                                                  borderRadius: BorderRadius.circular(24),
+                                                  borderRadius: BorderRadius.circular(34),
                                                   border: Border.all(color: solicitudPendiente ? Colors.orangeAccent.withOpacity(0.5) : StiloColors.text.withOpacity(0.05)),
                                                 ),
                                                 child: Column(
@@ -1870,7 +1870,7 @@ class _AdminAsistenciasScreenState extends State<AdminAsistenciasScreen> {
                                                     context: context,
                                                     builder: (context) => AlertDialog(
                                                       backgroundColor: cardDark,
-                                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: BorderSide(color: StiloColors.text.withOpacity(0.05))),
+                                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30), side: BorderSide(color: StiloColors.text.withOpacity(0.05))),
                                                       title: Row(
                                                         children: [
                                                           Icon(Icons.history_edu_rounded, color: primaryPurple),
@@ -1963,7 +1963,7 @@ class _AdminAsistenciasScreenState extends State<AdminAsistenciasScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Container(width: 50, height: 6, decoration: BoxDecoration(color: StiloColors.text.withValues(alpha: .24), borderRadius: BorderRadius.circular(10))),
+                  Container(width: 50, height: 6, decoration: BoxDecoration(color: StiloColors.text.withValues(alpha: .24), borderRadius: BorderRadius.circular(20))),
                   SizedBox(height: 24),
                   Row(
                     children: [
@@ -1983,7 +1983,7 @@ class _AdminAsistenciasScreenState extends State<AdminAsistenciasScreen> {
                       labelStyle: GoogleFonts.inter(color: textMuted),
                       filled: true,
                       fillColor: StiloColors.text.withOpacity(0.05),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: BorderSide.none),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide.none),
                     ),
                     items: [
                       DropdownMenuItem(value: 'semanal', child: Text("Semanal")),
@@ -2005,7 +2005,7 @@ class _AdminAsistenciasScreenState extends State<AdminAsistenciasScreen> {
                     },
                     child: Container(
                       padding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                      decoration: BoxDecoration(color: StiloColors.text.withOpacity(0.05), borderRadius: BorderRadius.circular(20)),
+                      decoration: BoxDecoration(color: StiloColors.text.withOpacity(0.05), borderRadius: BorderRadius.circular(30)),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -2035,7 +2035,7 @@ class _AdminAsistenciasScreenState extends State<AdminAsistenciasScreen> {
                           labelStyle: GoogleFonts.inter(color: textMuted),
                           filled: true,
                           fillColor: StiloColors.text.withOpacity(0.05),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: BorderSide.none),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide.none),
                         ),
                         items: [
                           DropdownMenuItem(value: 'todos', child: Text("Todos los trabajadores")),
@@ -2051,7 +2051,7 @@ class _AdminAsistenciasScreenState extends State<AdminAsistenciasScreen> {
                     child: ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: primaryPurple,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                       ),
                       onPressed: () {
                         Navigator.pop(context);

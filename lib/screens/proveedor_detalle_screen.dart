@@ -232,7 +232,7 @@ class _ProveedorDetalleScreenState extends State<ProveedorDetalleScreen> {
       padding: EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: StiloColors.surface,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(30),
         border: Border.all(color: StiloColors.text.withValues(alpha: .12))
       ),
       child: Column(
@@ -293,13 +293,13 @@ class _ProveedorDetalleScreenState extends State<ProveedorDetalleScreen> {
       margin: EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: StiloColors.surface,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(22),
         border: Border.all(color: StiloColors.text.withValues(alpha: .12))
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(22),
           // 2. AHORA AL TOCAR SE ABREN LOS DETALLES
           onTap: () => _abrirDetallePedido(item),
           child: Padding(

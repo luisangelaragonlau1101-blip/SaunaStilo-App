@@ -10,14 +10,14 @@ class SectionIntro extends StatelessWidget {
     margin: const EdgeInsets.fromLTRB(16, 8, 16, 16),
     padding: const EdgeInsets.all(20),
     decoration: BoxDecoration(
-      color: StiloColors.surface, borderRadius: BorderRadius.circular(24),
+      color: StiloColors.surface, borderRadius: BorderRadius.circular(34),
       border: Border.all(color: StiloColors.border),
       boxShadow: [BoxShadow(color: const Color(0xFF8E1538).withValues(alpha: .16),
         blurRadius: 24, offset: const Offset(0, 8))]),
     child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
       DecoratedBox(decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.secondary.withValues(alpha: .15),
-        borderRadius: BorderRadius.circular(14)),
+        borderRadius: BorderRadius.circular(24)),
         child: Padding(padding: const EdgeInsets.all(12), child: Icon(icon, color: StiloColors.accent))),
       const SizedBox(width: 14), Expanded(child: Column(
         crossAxisAlignment: CrossAxisAlignment.start, children: [

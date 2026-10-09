@@ -23,7 +23,7 @@ class _GestionarSolicitudesSalidaScreenState extends State<GestionarSolicitudesS
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: StiloColors.surface,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
         title: Row(
           children: [
             Icon(Icons.local_shipping_outlined, color: Color(0xFF06B6D4)),
@@ -164,7 +164,7 @@ class _GestionarSolicitudesSalidaScreenState extends State<GestionarSolicitudesS
                 color: StiloColors.surface,
                 margin: EdgeInsets.only(bottom: 16),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(26),
                   side: BorderSide(color: statusColor.withOpacity(0.3))
                 ),
                 child: Padding(
@@ -212,7 +212,7 @@ class _GestionarSolicitudesSalidaScreenState extends State<GestionarSolicitudesS
                               style: OutlinedButton.styleFrom(
                                 foregroundColor: StiloColors.text,
                                 side: BorderSide(color: StiloColors.text.withValues(alpha: .24)),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
                                 padding: EdgeInsets.symmetric(vertical: 12),
                               ),
                               icon: Icon(Icons.visibility_outlined, size: 18),
@@ -228,7 +228,7 @@ class _GestionarSolicitudesSalidaScreenState extends State<GestionarSolicitudesS
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Color(0xFF06B6D4),
                                   foregroundColor: StiloColors.background,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
                                   padding: EdgeInsets.symmetric(vertical: 12),
                                 ),
                                 icon: Icon(Icons.local_shipping_outlined, size: 18),
@@ -245,7 +245,7 @@ class _GestionarSolicitudesSalidaScreenState extends State<GestionarSolicitudesS
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.greenAccent,
                                   foregroundColor: StiloColors.background,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
                                   padding: EdgeInsets.symmetric(vertical: 12),
                                 ),
                                 icon: Icon(Icons.fact_check_outlined, size: 18),
@@ -290,7 +290,7 @@ class _GestionarSolicitudesSalidaScreenState extends State<GestionarSolicitudesS
                 Center(
                   child: Container(
                     width: 40, height: 4, margin: EdgeInsets.only(bottom: 24),
-                    decoration: BoxDecoration(color: StiloColors.text.withOpacity(0.2), borderRadius: BorderRadius.circular(10)),
+                    decoration: BoxDecoration(color: StiloColors.text.withOpacity(0.2), borderRadius: BorderRadius.circular(20)),
                   ),
                 ),
                 Text("Contenido del Kit", style: GoogleFonts.outfit(color: StiloColors.text, fontSize: 24, fontWeight: FontWeight.bold)),
@@ -311,7 +311,7 @@ class _GestionarSolicitudesSalidaScreenState extends State<GestionarSolicitudesS
                         padding: EdgeInsets.all(12),
                         decoration: BoxDecoration(
                           color: StiloColors.surface,
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(22),
                           border: Border.all(color: StiloColors.text.withOpacity(0.05)),
                         ),
                         child: Row(
@@ -484,7 +484,7 @@ class _ChecklistDevolucionModalState extends State<ChecklistDevolucionModal> {
         padding: EdgeInsets.only(top: 12, left: 20, right: 20, bottom: MediaQuery.of(context).viewInsets.bottom + 20),
         child: Column(
           children: [
-            Container(width: 40, height: 4, margin: EdgeInsets.only(bottom: 24), decoration: BoxDecoration(color: StiloColors.text.withOpacity(0.2), borderRadius: BorderRadius.circular(10))),
+            Container(width: 40, height: 4, margin: EdgeInsets.only(bottom: 24), decoration: BoxDecoration(color: StiloColors.text.withOpacity(0.2), borderRadius: BorderRadius.circular(20))),
 
             Expanded(
               child: SingleChildScrollView(
@@ -518,7 +518,7 @@ class _ChecklistDevolucionModalState extends State<ChecklistDevolucionModal> {
                           padding: EdgeInsets.all(16),
                           decoration: BoxDecoration(
                             color: StiloColors.surface,
-                            borderRadius: BorderRadius.circular(16),
+                            borderRadius: BorderRadius.circular(26),
                             border: Border.all(color: estaBueno ? StiloColors.text.withOpacity(0.05) : Colors.redAccent.withOpacity(0.3)),
                           ),
                           child: Column(
@@ -546,12 +546,12 @@ class _ChecklistDevolucionModalState extends State<ChecklistDevolucionModal> {
                                           _notasPorHerramienta[index]?.clear();
                                         });
                                       },
-                                      borderRadius: BorderRadius.circular(12),
+                                      borderRadius: BorderRadius.circular(22),
                                       child: Container(
                                         padding: EdgeInsets.symmetric(vertical: 12),
                                         decoration: BoxDecoration(
                                           color: estaBueno ? Colors.greenAccent.withOpacity(0.15) : Colors.transparent,
-                                          borderRadius: BorderRadius.circular(12),
+                                          borderRadius: BorderRadius.circular(22),
                                           border: Border.all(
                                             color: estaBueno ? Colors.greenAccent : StiloColors.text.withValues(alpha: .24),
                                             width: estaBueno ? 2 : 1,
@@ -583,12 +583,12 @@ class _ChecklistDevolucionModalState extends State<ChecklistDevolucionModal> {
                                   Expanded(
                                     child: InkWell(
                                       onTap: () => setState(() => _evaluacion[index] = false),
-                                      borderRadius: BorderRadius.circular(12),
+                                      borderRadius: BorderRadius.circular(22),
                                       child: Container(
                                         padding: EdgeInsets.symmetric(vertical: 12),
                                         decoration: BoxDecoration(
                                           color: !estaBueno ? Colors.redAccent.withOpacity(0.15) : Colors.transparent,
-                                          borderRadius: BorderRadius.circular(12),
+                                          borderRadius: BorderRadius.circular(22),
                                           border: Border.all(
                                             color: !estaBueno ? Colors.redAccent : StiloColors.text.withValues(alpha: .24),
                                             width: !estaBueno ? 2 : 1,
@@ -625,7 +625,7 @@ class _ChecklistDevolucionModalState extends State<ChecklistDevolucionModal> {
                                   padding: EdgeInsets.all(12),
                                   decoration: BoxDecoration(
                                     color: Colors.redAccent.withOpacity(0.05),
-                                    borderRadius: BorderRadius.circular(12),
+                                    borderRadius: BorderRadius.circular(22),
                                     border: Border.all(color: Colors.redAccent.withOpacity(0.2)),
                                   ),
                                   child: Column(
@@ -664,7 +664,7 @@ class _ChecklistDevolucionModalState extends State<ChecklistDevolucionModal> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.greenAccent,
                   foregroundColor: StiloColors.background,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
                 ),
                 icon: _procesando ? SizedBox.shrink() : Icon(Icons.inventory_rounded),
                 label: _procesando

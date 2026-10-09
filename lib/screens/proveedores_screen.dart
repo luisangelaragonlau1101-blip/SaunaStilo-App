@@ -100,11 +100,11 @@ class _ProveedoresScreenState extends State<ProveedoresScreen> {
                 fillColor: StiloColors.surface,
                 contentPadding: EdgeInsets.symmetric(vertical: 0),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(26),
                   borderSide: BorderSide.none,
                 ),
                 focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(26),
                   borderSide: BorderSide(color: Color(0xFF3B82F6), width: 1),
                 ),
               ),
@@ -177,11 +177,11 @@ class _ProveedoresScreenState extends State<ProveedoresScreen> {
                       elevation: 0,
                       margin: EdgeInsets.only(bottom: 12),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(26),
                         side: BorderSide(color: StiloColors.text.withValues(alpha: .12), width: 1),
                       ),
                       child: InkWell(
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(26),
                         onTap: () {
                           _searchFocusNode.unfocus(); // Ocultamos teclado al navegar
                           Navigator.push(
@@ -200,7 +200,7 @@ class _ProveedoresScreenState extends State<ProveedoresScreen> {
                                 padding: EdgeInsets.all(12),
                                 decoration: BoxDecoration(
                                   color: Color(0xFF3B82F6).withOpacity(0.15),
-                                  borderRadius: BorderRadius.circular(14),
+                                  borderRadius: BorderRadius.circular(24),
                                 ),
                                 child: Icon(Icons.business, color: Color(0xFF3B82F6), size: 28),
                               ),
@@ -463,7 +463,7 @@ class _FormularioProveedorModalState extends State<_FormularioProveedorModal> {
                   backgroundColor: StiloColors.text,
                   foregroundColor: StiloColors.background,
                   padding: EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
                 ),
                 onPressed: _guardando ? null : _guardarFormulario,
                 child: _guardando
@@ -499,11 +499,11 @@ class _FormularioProveedorModalState extends State<_FormularioProveedorModal> {
         filled: true,
         fillColor: StiloColors.surface,
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(22),
           borderSide: BorderSide(color: StiloColors.text.withValues(alpha: .12)),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(22),
           borderSide: BorderSide(color: Color(0xFF3B82F6)),
         ),
       ),

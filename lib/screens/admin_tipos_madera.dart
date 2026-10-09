@@ -151,7 +151,7 @@ class _CatalogoSaunasScreenState extends State<CatalogoSaunasScreen> {
                       elevation: 0,
                       margin: EdgeInsets.only(bottom: 12),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(26),
                         side: BorderSide(color: StiloColors.text.withValues(alpha: .12), width: 1),
                       ),
                       child: Padding(
@@ -165,10 +165,10 @@ class _CatalogoSaunasScreenState extends State<CatalogoSaunasScreen> {
                               height: 60,
                               decoration: BoxDecoration(
                                 color: StiloColors.accent.withOpacity(0.15),
-                                borderRadius: BorderRadius.circular(14),
+                                borderRadius: BorderRadius.circular(24),
                               ),
                               child: ClipRRect(
-                                borderRadius: BorderRadius.circular(14),
+                                borderRadius: BorderRadius.circular(24),
                                 child: sauna.imagenUrl.isNotEmpty
                                     ? Image.network(
                                         sauna.imagenUrl,
@@ -417,14 +417,14 @@ class _FormularioMaderaModalState extends State<_FormularioMaderaModal> {
                     height: 120,
                     decoration: BoxDecoration(
                       color: StiloColors.surface,
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(30),
                       border: Border.all(
                         color: _mostrarErrorImagen ? Colors.redAccent : StiloColors.accent.withOpacity(0.5),
                         width: 2
                       ),
                     ),
                     child: ClipRRect(
-                      borderRadius: BorderRadius.circular(18),
+                      borderRadius: BorderRadius.circular(28),
                       child: _construirImagenPreview(),
                     ),
                   ),
@@ -472,7 +472,7 @@ class _FormularioMaderaModalState extends State<_FormularioMaderaModal> {
                   backgroundColor: StiloColors.text,
                   foregroundColor: StiloColors.background,
                   padding: EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
                 ),
                 onPressed: _guardando ? null : _guardarFormulario,
                 child: _guardando
@@ -554,11 +554,11 @@ class _FormularioMaderaModalState extends State<_FormularioMaderaModal> {
         filled: true,
         fillColor: StiloColors.surface,
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(22),
           borderSide: BorderSide(color: StiloColors.text.withValues(alpha: .12)),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(22),
           borderSide: BorderSide(color: StiloColors.accent),
         ),
       ),

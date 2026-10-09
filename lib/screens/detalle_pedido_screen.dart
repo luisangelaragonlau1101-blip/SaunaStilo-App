@@ -63,7 +63,7 @@ class DetallePedidoScreen extends StatelessWidget {
               padding: EdgeInsets.all(20),
               decoration: BoxDecoration(
                 color: StiloColors.surface,
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(26),
                 border: Border.all(color: StiloColors.text.withValues(alpha: .12)),
               ),
               child: Column(
@@ -99,7 +99,7 @@ class DetallePedidoScreen extends StatelessWidget {
               padding: EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: StiloColors.surface,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(22),
                 border: Border.all(color: StiloColors.text.withValues(alpha: .12)),
               ),
               child: Column(
@@ -132,7 +132,7 @@ class DetallePedidoScreen extends StatelessWidget {
               padding: EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: StiloColors.surface,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(22),
                 border: Border.all(color: StiloColors.text.withValues(alpha: .12)),
               ),
               child: Column(
@@ -172,7 +172,7 @@ class DetallePedidoScreen extends StatelessWidget {
                 padding: EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: StiloColors.surface,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(22),
                   border: Border.all(color: StiloColors.text.withValues(alpha: .12)),
                 ),
                 child: Text(

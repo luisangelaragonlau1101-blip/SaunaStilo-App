@@ -212,9 +212,9 @@ class _ProyectosAdminScreenState extends State<ProyectosAdminScreen> {
                       return Card(
                         color: StiloColors.surface,
                         margin: EdgeInsets.only(bottom: 12),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: StiloColors.text.withValues(alpha: .12))),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26), side: BorderSide(color: StiloColors.text.withValues(alpha: .12))),
                         child: InkWell(
-                          borderRadius: BorderRadius.circular(16),
+                          borderRadius: BorderRadius.circular(26),
                           onTap: () {
                             _searchFocusNode.unfocus();
                             Navigator.push(context, MaterialPageRoute(builder: (context) => ProyectoDetalleAdminScreen(proyecto: proyecto)));
@@ -237,7 +237,7 @@ class _ProyectosAdminScreenState extends State<ProyectosAdminScreen> {
                                   children: [
                                     Container(
                                       padding: EdgeInsets.all(12),
-                                      decoration: BoxDecoration(color: statusColor.withOpacity(0.1), borderRadius: BorderRadius.circular(14)),
+                                      decoration: BoxDecoration(color: statusColor.withOpacity(0.1), borderRadius: BorderRadius.circular(24)),
                                       child: Icon(Icons.construction, color: statusColor, size: 24),
                                     ),
                                     SizedBox(width: 16),
@@ -258,7 +258,7 @@ class _ProyectosAdminScreenState extends State<ProyectosAdminScreen> {
                                                   padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                                   decoration: BoxDecoration(
                                                     color: Colors.amber.withOpacity(0.15),
-                                                    borderRadius: BorderRadius.circular(10),
+                                                    borderRadius: BorderRadius.circular(20),
                                                     border: Border.all(color: Colors.amber.withOpacity(0.5))
                                                   ),
                                                   child: Row(
@@ -403,7 +403,7 @@ class _ProyectosAdminScreenState extends State<ProyectosAdminScreen> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: StiloColors.surface,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
         title: Text('¿Eliminar Proyecto?', style: GoogleFonts.inter(color: StiloColors.text, fontWeight: FontWeight.bold)),
         content: Text(
           'Esta acción borrará el proyecto "${proyecto.titulo}" permanentemente de la base de datos.',
@@ -479,7 +479,7 @@ class _ProyectosAdminScreenState extends State<ProyectosAdminScreen> {
                 )),
                 SizedBox(height: 32),
                 SizedBox(width: double.infinity, child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(backgroundColor: StiloColors.accent, padding: EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                  style: ElevatedButton.styleFrom(backgroundColor: StiloColors.accent, padding: EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22))),
                   onPressed: () { Navigator.pop(context); _generarDescargarReporte(mesSeleccionado, anioSeleccionado); },
                   child: Text('EXPORTAR DOCUMENTOS', style: TextStyle(color: StiloColors.text, fontWeight: FontWeight.bold)),
                 ))
@@ -493,7 +493,7 @@ class _ProyectosAdminScreenState extends State<ProyectosAdminScreen> {
 
   Widget _buildDropdownContainer({required Widget child}) => Container(
     padding: EdgeInsets.symmetric(horizontal: 16),
-    decoration: BoxDecoration(color: StiloColors.surface, borderRadius: BorderRadius.circular(12)),
+    decoration: BoxDecoration(color: StiloColors.surface, borderRadius: BorderRadius.circular(22)),
     child: child,
   );
 
@@ -656,7 +656,7 @@ class _ProyectosAdminScreenState extends State<ProyectosAdminScreen> {
       side: BorderSide(
         color: isSelected ? Colors.transparent : statusColor.withOpacity(0.5),
       ),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
       onSelected: (selected) {
         if (selected) {
           setState(() {

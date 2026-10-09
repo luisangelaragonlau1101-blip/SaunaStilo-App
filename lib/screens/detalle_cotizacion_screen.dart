@@ -248,7 +248,7 @@ class _DetalleCotizacionScreenState extends State<DetalleCotizacionScreen> {
                   padding: EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: StiloColors.surface,
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(22),
                     border: Border.all(color: StiloColors.text.withValues(alpha: .12)),
                   ),
                   child: Column(
@@ -355,7 +355,7 @@ class _DetalleCotizacionScreenState extends State<DetalleCotizacionScreen> {
                       margin: EdgeInsets.only(bottom: 10),
                       decoration: BoxDecoration(
                         color: StiloColors.surface,
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(22),
                         border: Border.all(color: nota.completada ? Colors.greenAccent.withOpacity(0.2) : StiloColors.text.withValues(alpha: .12)),
                       ),
                       child: CheckboxListTile(
@@ -405,8 +405,8 @@ class _DetalleCotizacionScreenState extends State<DetalleCotizacionScreen> {
                           hintStyle: TextStyle(color: StiloColors.text.withValues(alpha: .38), fontSize: 13),
                           filled: true,
                           fillColor: StiloColors.surface,
-                          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
-                          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Color(0xFFF59E0B))),
+                          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: BorderSide.none),
+                          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: BorderSide(color: Color(0xFFF59E0B))),
                         ),
                       ),
                     ),
@@ -425,7 +425,7 @@ class _DetalleCotizacionScreenState extends State<DetalleCotizacionScreen> {
                     width: double.infinity,
                     height: 55,
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(22),
                       gradient: LinearGradient(colors: [Color(0xFF10B981), Color(0xFF059669)]),
                     ),
                     child: ElevatedButton.icon(
@@ -440,7 +440,7 @@ class _DetalleCotizacionScreenState extends State<DetalleCotizacionScreen> {
                     padding: EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       color: Colors.green.withOpacity(0.05),
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(22),
                       border: Border.all(color: Colors.green.withOpacity(0.2)),
                     ),
                     child: Row(
@@ -481,7 +481,7 @@ class _DetalleCotizacionScreenState extends State<DetalleCotizacionScreen> {
           padding: EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: StiloColors.surface,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(22),
             border: Border.all(color: StiloColors.text.withValues(alpha: .12)),
           ),
           child: child,

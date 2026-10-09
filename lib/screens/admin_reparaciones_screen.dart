@@ -223,7 +223,7 @@ Future<void> _marcarComoReparado(BuildContext context, String insumoId) async {
                 margin: EdgeInsets.only(bottom: 16),
                 decoration: BoxDecoration(
                   color: colorTarjeta,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(22),
                   border: Border.all(color: Colors.orangeAccent.withOpacity(0.2), width: 1),
                   boxShadow: [
                     BoxShadow(

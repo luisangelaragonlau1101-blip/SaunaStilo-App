@@ -104,8 +104,8 @@ class _ClienteDetalleScreenState extends State<ClienteDetalleScreen> {
           decoration: InputDecoration(
             labelText: "Monto Total (\$)",
             labelStyle: TextStyle(color: StiloColors.text.withValues(alpha: .54)),
-            enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: StiloColors.text.withValues(alpha: .24)), borderRadius: BorderRadius.circular(10)),
-            focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: Color(0xFFFFDE21)), borderRadius: BorderRadius.circular(10)),
+            enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: StiloColors.text.withValues(alpha: .24)), borderRadius: BorderRadius.circular(20)),
+            focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: Color(0xFFFFDE21)), borderRadius: BorderRadius.circular(20)),
           ),
         ),
         actions: [
@@ -194,7 +194,7 @@ class _ClienteDetalleScreenState extends State<ClienteDetalleScreen> {
       child: Container(
         margin: EdgeInsets.only(bottom: 12),
         padding: EdgeInsets.all(16),
-        decoration: BoxDecoration(color: StiloColors.surface, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.greenAccent.withOpacity(0.3))),
+        decoration: BoxDecoration(color: StiloColors.surface, borderRadius: BorderRadius.circular(22), border: Border.all(color: Colors.greenAccent.withOpacity(0.3))),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -225,7 +225,7 @@ class _ClienteDetalleScreenState extends State<ClienteDetalleScreen> {
     return Container(
       margin: EdgeInsets.only(bottom: 12),
       padding: EdgeInsets.all(16),
-      decoration: BoxDecoration(color: StiloColors.surface, borderRadius: BorderRadius.circular(12), border: Border.all(color: StiloColors.text.withValues(alpha: .12))),
+      decoration: BoxDecoration(color: StiloColors.surface, borderRadius: BorderRadius.circular(22), border: Border.all(color: StiloColors.text.withValues(alpha: .12))),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -300,7 +300,7 @@ class _ClienteDetalleScreenState extends State<ClienteDetalleScreen> {
     return Container(
       margin: EdgeInsets.all(16),
       padding: EdgeInsets.all(24),
-      decoration: BoxDecoration(color: StiloColors.surface, borderRadius: BorderRadius.circular(20), border: Border.all(color: StiloColors.text.withValues(alpha: .12))),
+      decoration: BoxDecoration(color: StiloColors.surface, borderRadius: BorderRadius.circular(30), border: Border.all(color: StiloColors.text.withValues(alpha: .12))),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

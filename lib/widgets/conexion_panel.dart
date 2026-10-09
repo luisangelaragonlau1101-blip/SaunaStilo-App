@@ -30,7 +30,7 @@ class _ConexionPanelState extends State<ConexionPanel> {
     padding: EdgeInsets.all(20),
     decoration: BoxDecoration(
       gradient: LinearGradient(colors: [StiloColors.surface, StiloColors.surface]),
-      borderRadius: BorderRadius.circular(24),
+      borderRadius: BorderRadius.circular(34),
       border: Border.all(color: StiloColors.surface),
     ),
     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [

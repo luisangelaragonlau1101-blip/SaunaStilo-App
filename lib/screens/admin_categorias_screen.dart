@@ -55,7 +55,7 @@ class _AdminCategoriasScreenState extends State<AdminCategoriasScreen> {
       builder: (context) => AlertDialog(
         backgroundColor: colorTarjeta,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(30),
           side: BorderSide(color: colorRosaVibrante, width: 2),
         ),
         title: Row(
@@ -90,8 +90,8 @@ class _AdminCategoriasScreenState extends State<AdminCategoriasScreen> {
               decoration: InputDecoration(
                 labelText: 'Nombre',
                 labelStyle: TextStyle(color: StiloColors.text.withValues(alpha: .70), fontSize: 14),
-                enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: StiloColors.text.withValues(alpha: .24)), borderRadius: BorderRadius.circular(10)),
-                focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: colorRosaVibrante), borderRadius: BorderRadius.circular(10)),
+                enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: StiloColors.text.withValues(alpha: .24)), borderRadius: BorderRadius.circular(20)),
+                focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: colorRosaVibrante), borderRadius: BorderRadius.circular(20)),
               ),
             ),
           ],
@@ -101,7 +101,7 @@ class _AdminCategoriasScreenState extends State<AdminCategoriasScreen> {
             style: ElevatedButton.styleFrom(
               backgroundColor: colorAzul,
               minimumSize: Size(double.infinity, 45),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
             ),
             onPressed: () async {
               String nombreNuevo = textController.text.trim();
@@ -167,7 +167,7 @@ class _AdminCategoriasScreenState extends State<AdminCategoriasScreen> {
         SnackBar(
           backgroundColor: colorTarjeta,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10), side: BorderSide(color: Colors.redAccent, width: 1)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: BorderSide(color: Colors.redAccent, width: 1)),
           content: Row(
             children: [
               Icon(Icons.warning_amber_rounded, color: Colors.redAccent),
@@ -241,7 +241,7 @@ class _AdminCategoriasScreenState extends State<AdminCategoriasScreen> {
                 margin: EdgeInsets.only(bottom: 14),
                 decoration: BoxDecoration(
                   color: colorTarjeta,
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(24),
                   border: Border.all(color: StiloColors.text.withValues(alpha: .10), width: 1),
                 ),
                 child: Theme(
@@ -463,7 +463,7 @@ class _AdminCategoriasScreenState extends State<AdminCategoriasScreen> {
                       style: OutlinedButton.styleFrom(
                         foregroundColor: colorAzul,
                         side: BorderSide(color: colorAzul.withOpacity(0.5)),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                         minimumSize: Size(double.infinity, 40)
                       ),
                       onPressed: () => _mostrarFormularioElemento(

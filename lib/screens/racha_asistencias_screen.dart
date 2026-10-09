@@ -289,7 +289,7 @@ class _RachaAsistenciasScreenState extends State<RachaAsistenciasScreen> with Si
                 padding: EdgeInsets.all(20),
                 decoration: BoxDecoration(
                   color: colorSuperficie,
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(26),
                   border: Border.all(color: StiloColors.text.withOpacity(0.05)),
                 ),
                 child: Row(
@@ -374,7 +374,7 @@ class _RachaAsistenciasScreenState extends State<RachaAsistenciasScreen> with Si
                 width: 110,
                 decoration: BoxDecoration(
                   color: colorFondo,
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(30),
                   border: Border.all(
                     color: desbloqueada ? insignia['color'].withOpacity(0.5) : StiloColors.text.withOpacity(0.05),
                     width: desbloqueada ? 1.5 : 1,
@@ -431,7 +431,7 @@ class _RachaAsistenciasScreenState extends State<RachaAsistenciasScreen> with Si
       padding: EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: colorSuperficie,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(34),
         border: Border.all(color: StiloColors.text.withOpacity(0.05)),
       ),
       child: Column(
@@ -630,7 +630,7 @@ class _RachaAsistenciasScreenState extends State<RachaAsistenciasScreen> with Si
               padding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
               decoration: BoxDecoration(
                 color: colorSuperficie,
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(30),
                 border: Border.all(
                   color: index == 0 ? badgeColor.withOpacity(0.5) : StiloColors.text.withOpacity(0.05),
                   width: index == 0 ? 1.5 : 1,

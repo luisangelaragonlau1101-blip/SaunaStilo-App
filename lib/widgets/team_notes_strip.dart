@@ -41,7 +41,7 @@ class _TeamNotesStripState extends State<TeamNotesStrip> {
       else SizedBox(height: 108, child: ListView.separated(scrollDirection: Axis.horizontal,
         padding: EdgeInsets.fromLTRB(18, 4, 18, 8), itemCount: docs.length + 1,
         separatorBuilder: (_, __) => SizedBox(width: 10), itemBuilder: (context, i) {
-          if (i == 0) return SizedBox(width: 98, child: Material(color: Colors.transparent, child: InkWell(borderRadius: BorderRadius.circular(24), onTap: () => _edit(own), child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+          if (i == 0) return SizedBox(width: 98, child: Material(color: Colors.transparent, child: InkWell(borderRadius: BorderRadius.circular(34), onTap: () => _edit(own), child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
             StiloOrbitIcon(icon: Icons.add_rounded, color: StiloColors.accent, size: 46), SizedBox(height: 7),
             Text(own == null ? 'Tu nota o canción' : 'Editar mi nota', style: TextStyle(fontSize: 10, color: StiloColors.text.withValues(alpha: .70))),
           ]))));

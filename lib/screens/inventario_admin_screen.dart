@@ -295,7 +295,7 @@ class _InventarioAdminScreenState extends State<InventarioAdminScreen> {
       checkmarkColor: colorFondo,
       showCheckmark: false,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(30),
         side: BorderSide(
           color: seleccionado ? color : StiloColors.text.withValues(alpha: .10),
           width: 1,
@@ -564,7 +564,7 @@ class _InventarioAdminScreenState extends State<InventarioAdminScreen> {
                             margin: EdgeInsets.only(bottom: 16),
                             decoration: BoxDecoration(
                               color: colorTarjeta,
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(22),
                               boxShadow: [
                                 BoxShadow(
                                   color: StiloColors.background.withOpacity(0.2),
@@ -583,8 +583,8 @@ class _InventarioAdminScreenState extends State<InventarioAdminScreen> {
                                     decoration: BoxDecoration(
                                       color: _obtenerColorBarra(insumo.categoria),
                                       borderRadius: BorderRadius.only(
-                                        topLeft: Radius.circular(12),
-                                        bottomLeft: Radius.circular(12),
+                                        topLeft: Radius.circular(22),
+                                        bottomLeft: Radius.circular(22),
                                       ),
                                     ),
                                   ),
@@ -598,7 +598,7 @@ class _InventarioAdminScreenState extends State<InventarioAdminScreen> {
                                         child: Hero(
                                           tag: insumo.id, // Vinculamos la animación con el ID único del insumo
                                           child: ClipRRect(
-                                            borderRadius: BorderRadius.circular(8),
+                                            borderRadius: BorderRadius.circular(20),
                                             child: InventoryPhoto(
                                               imageUrl: insumo.imagenUrl!,
                                               width: 65,
@@ -626,7 +626,7 @@ class _InventarioAdminScreenState extends State<InventarioAdminScreen> {
                                         width: 65, height: 65,
                                         decoration: BoxDecoration(
                                           color: StiloColors.text.withValues(alpha: .10),
-                                          borderRadius: BorderRadius.circular(8)
+                                          borderRadius: BorderRadius.circular(20)
                                         ),
                                         child: Icon(Icons.inventory_2_outlined, color: StiloColors.text.withValues(alpha: .54), size: 28),
                                       ),

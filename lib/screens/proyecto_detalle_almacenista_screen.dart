@@ -145,7 +145,7 @@ class _ProyectoDetalleAlmacenistaScreenState extends State<ProyectoDetalleAlmace
       builder: (context) {
         return AlertDialog(
           backgroundColor: StiloColors.surface,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: StiloColors.text.withValues(alpha: .10))),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26), side: BorderSide(color: StiloColors.text.withValues(alpha: .10))),
           title: Row(
             children: [
               Icon(Icons.handyman, color: Colors.cyanAccent),
@@ -301,7 +301,7 @@ class _ProyectoDetalleAlmacenistaScreenState extends State<ProyectoDetalleAlmace
 
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      decoration: BoxDecoration(color: statusColor.withOpacity(0.1), borderRadius: BorderRadius.circular(12), border: Border.all(color: statusColor.withOpacity(0.5))),
+      decoration: BoxDecoration(color: statusColor.withOpacity(0.1), borderRadius: BorderRadius.circular(22), border: Border.all(color: statusColor.withOpacity(0.5))),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -316,7 +316,7 @@ class _ProyectoDetalleAlmacenistaScreenState extends State<ProyectoDetalleAlmace
   Widget _buildInfoCard() {
     return Container(
       padding: EdgeInsets.all(20),
-      decoration: BoxDecoration(color: StiloColors.surface, borderRadius: BorderRadius.circular(20), border: Border.all(color: StiloColors.text.withValues(alpha: .10))),
+      decoration: BoxDecoration(color: StiloColors.surface, borderRadius: BorderRadius.circular(30), border: Border.all(color: StiloColors.text.withValues(alpha: .10))),
       child: Column(
         children: [
           FutureBuilder<String>(
@@ -394,7 +394,7 @@ class _ProyectoDetalleAlmacenistaScreenState extends State<ProyectoDetalleAlmace
         Container(
           width: double.infinity,
           padding: EdgeInsets.all(16),
-          decoration: BoxDecoration(color: StiloColors.surface, borderRadius: BorderRadius.circular(16)),
+          decoration: BoxDecoration(color: StiloColors.surface, borderRadius: BorderRadius.circular(26)),
           child: Text(
             widget.proyecto.descripcion.isEmpty ? "Sin descripción agregada para este proyecto." : widget.proyecto.descripcion,
             style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .70), fontSize: 15, height: 1.5)
@@ -516,7 +516,7 @@ class _ProyectoDetalleAlmacenistaScreenState extends State<ProyectoDetalleAlmace
                       padding: EdgeInsets.all(16),
                       decoration: BoxDecoration(
                         color: StiloColors.surface,
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(26),
                         border: Border.all(color: statusColor.withOpacity(0.3)),
                         boxShadow: [
                           if (estatus == 'pendiente')
@@ -531,7 +531,7 @@ class _ProyectoDetalleAlmacenistaScreenState extends State<ProyectoDetalleAlmace
                             children: [
                               Container(
                                 padding: EdgeInsets.all(10),
-                                decoration: BoxDecoration(color: statusColor.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
+                                decoration: BoxDecoration(color: statusColor.withOpacity(0.1), borderRadius: BorderRadius.circular(20)),
                                 child: Icon(Icons.inventory_2_rounded, color: statusColor, size: 24),
                               ),
                               SizedBox(width: 16),
@@ -596,7 +596,7 @@ class _ProyectoDetalleAlmacenistaScreenState extends State<ProyectoDetalleAlmace
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.orangeAccent,
                             foregroundColor: StiloColors.background,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
                           ),
                           icon: Icon(Icons.plumbing),
                           label: Text("EVALUAR DAÑOS EN OBRA", style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
@@ -615,7 +615,7 @@ class _ProyectoDetalleAlmacenistaScreenState extends State<ProyectoDetalleAlmace
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.amber,
                             foregroundColor: StiloColors.background,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
                           ),
                           icon: Icon(Icons.checklist_rtl),
                           label: Text("INSPECCIONAR Y RECIBIR KIT", style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
@@ -733,7 +733,7 @@ class _EvaluarDanosAlmacenModalState extends State<EvaluarDanosAlmacenModal> {
                 Center(
                   child: Container(
                     width: 40, height: 4, margin: EdgeInsets.only(bottom: 24),
-                    decoration: BoxDecoration(color: StiloColors.text.withOpacity(0.2), borderRadius: BorderRadius.circular(10)),
+                    decoration: BoxDecoration(color: StiloColors.text.withOpacity(0.2), borderRadius: BorderRadius.circular(20)),
                   ),
                 ),
                 Text("Evaluar Daños de Obra", style: GoogleFonts.outfit(color: StiloColors.text, fontSize: 24, fontWeight: FontWeight.bold)),
@@ -769,7 +769,7 @@ class _EvaluarDanosAlmacenModalState extends State<EvaluarDanosAlmacenModal> {
                           padding: EdgeInsets.all(16),
                           decoration: BoxDecoration(
                             color: StiloColors.surface,
-                            borderRadius: BorderRadius.circular(16),
+                            borderRadius: BorderRadius.circular(26),
                             border: Border.all(color: Colors.orangeAccent.withOpacity(0.3))
                           ),
                           child: Column(
@@ -1037,7 +1037,7 @@ class _VerificarRecepcionAlmacenModalState extends State<VerificarRecepcionAlmac
         padding: EdgeInsets.only(top: 12, left: 20, right: 20, bottom: MediaQuery.of(context).viewInsets.bottom + 20),
         child: Column(
           children: [
-            Container(width: 40, height: 4, margin: EdgeInsets.only(bottom: 24), decoration: BoxDecoration(color: StiloColors.text.withOpacity(0.2), borderRadius: BorderRadius.circular(10))),
+            Container(width: 40, height: 4, margin: EdgeInsets.only(bottom: 24), decoration: BoxDecoration(color: StiloColors.text.withOpacity(0.2), borderRadius: BorderRadius.circular(20))),
 
             Expanded(
               child: SingleChildScrollView(
@@ -1061,7 +1061,7 @@ class _VerificarRecepcionAlmacenModalState extends State<VerificarRecepcionAlmac
                           margin: EdgeInsets.only(bottom: 16),
                           decoration: BoxDecoration(
                             color: StiloColors.surface,
-                            borderRadius: BorderRadius.circular(20),
+                            borderRadius: BorderRadius.circular(30),
                             border: Border.all(color: item.tieneFalla ? Colors.orangeAccent.withOpacity(0.5) : StiloColors.text.withOpacity(0.05)),
                           ),
                           child: Column(
@@ -1089,7 +1089,7 @@ class _VerificarRecepcionAlmacenModalState extends State<VerificarRecepcionAlmac
                                 activeTrackColor: Colors.orangeAccent,
                                 inactiveThumbColor: StiloColors.text.withValues(alpha: .54),
                                 inactiveTrackColor: StiloColors.surface,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                                 onChanged: (bool value) {
                                   setState(() {
                                     item.tieneFalla = value;
@@ -1120,7 +1120,7 @@ class _VerificarRecepcionAlmacenModalState extends State<VerificarRecepcionAlmac
                                           hintStyle: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .54), fontSize: 13),
                                           filled: true,
                                           fillColor: StiloColors.surface,
-                                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(22), borderSide: BorderSide.none),
                                         ),
                                       ),
                                       SizedBox(height: 16),
@@ -1134,7 +1134,7 @@ class _VerificarRecepcionAlmacenModalState extends State<VerificarRecepcionAlmac
                                           height: 100,
                                           decoration: BoxDecoration(
                                             color: StiloColors.surface,
-                                            borderRadius: BorderRadius.circular(12),
+                                            borderRadius: BorderRadius.circular(22),
                                             border: Border.all(
                                               color: item.fotoRuta != null ? Colors.greenAccent.withOpacity(0.5) : StiloColors.text.withOpacity(0.1),
                                               width: 1.5,
@@ -1153,14 +1153,14 @@ class _VerificarRecepcionAlmacenModalState extends State<VerificarRecepcionAlmac
                                                   children: [
                                                     Positioned.fill(
                                                       child: ClipRRect(
-                                                        borderRadius: BorderRadius.circular(10),
+                                                        borderRadius: BorderRadius.circular(20),
                                                         child: Image.file(File(item.fotoRuta!), fit: BoxFit.cover, opacity: AlwaysStoppedAnimation(0.6)),
                                                       ),
                                                     ),
                                                     Center(
                                                       child: Container(
                                                         padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                                        decoration: BoxDecoration(color: StiloColors.background.withOpacity(0.7), borderRadius: BorderRadius.circular(16)),
+                                                        decoration: BoxDecoration(color: StiloColors.background.withOpacity(0.7), borderRadius: BorderRadius.circular(26)),
                                                         child: Row(
                                                           mainAxisSize: MainAxisSize.min,
                                                           children: [
@@ -1204,7 +1204,7 @@ class _VerificarRecepcionAlmacenModalState extends State<VerificarRecepcionAlmac
                 style: ElevatedButton.styleFrom(
                   backgroundColor: _itemsAVerificar.isEmpty ? Colors.blueAccent : Colors.amber,
                   foregroundColor: _itemsAVerificar.isEmpty ? StiloColors.text : StiloColors.background,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
                 ),
                 icon: _isProcessing ? SizedBox.shrink() : Icon(_itemsAVerificar.isEmpty ? Icons.check_circle : Icons.inventory_2),
                 onPressed: _isProcessing ? null : (_itemsAVerificar.isEmpty ? _cerrarKitDirecto : _confirmarIngreso),

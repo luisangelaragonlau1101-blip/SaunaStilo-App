@@ -115,7 +115,7 @@ void _registrarVenta() async {
                   padding: EdgeInsets.all(20),
                   decoration: BoxDecoration(
                     color: StiloColors.surface,
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(26),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -134,7 +134,7 @@ void _registrarVenta() async {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Color(0xFF10B981),
                     padding: EdgeInsets.symmetric(vertical: 20),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
                   ),
                   onPressed: _guardando ? null : _registrarVenta,
                   child: Text(_guardando ? "GUARDANDO..." : "FINALIZAR VENTA"),
@@ -271,7 +271,7 @@ void _registrarVenta() async {
     prefixIcon: Icon(icon, color: StiloColors.accent),
     filled: true,
     fillColor: StiloColors.surface,
-    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+    border: OutlineInputBorder(borderRadius: BorderRadius.circular(22), borderSide: BorderSide.none),
   );
 
   Widget _buildTextField(TextEditingController controller, String label, IconData icon, {TextInputType type = TextInputType.text}) => Container(

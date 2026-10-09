@@ -36,7 +36,7 @@ class _GuardState extends State<ScreenSecurityGuard>{
   @override
   void dispose(){_auth?.cancel();_profile?.cancel();super.dispose();}
   @override
-  Widget build(BuildContext context)=>Stack(children:[widget.child,if(_failed)Positioned(left:12,right:12,top:0,child:SafeArea(child:Material(color:StiloColors.surface,borderRadius:BorderRadius.circular(18),child:Padding(padding:EdgeInsets.all(12),child:Text('Protección de capturas no confirmada. Este APK necesita actualizarse.',textAlign:TextAlign.center,style:TextStyle(color:StiloColors.text,fontSize:12))))))]);
+  Widget build(BuildContext context)=>Stack(children:[widget.child,if(_failed)Positioned(left:12,right:12,top:0,child:SafeArea(child:Material(color:StiloColors.surface,borderRadius:BorderRadius.circular(28),child:Padding(padding:EdgeInsets.all(12),child:Text('Protección de capturas no confirmada. Este APK necesita actualizarse.',textAlign:TextAlign.center,style:TextStyle(color:StiloColors.text,fontSize:12))))))]);
 }
 
 class CapturePolicyControl extends StatelessWidget {

@@ -100,7 +100,7 @@ class _CrearNuevaLineaAdminScreenState extends State<CrearNuevaLineaAdminScreen>
             return AlertDialog(
               backgroundColor: colorTarjeta,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(24),
+                borderRadius: BorderRadius.circular(34),
                 side: BorderSide(color: StiloColors.text.withValues(alpha: .12), width: 1)
               ),
               title: Text(
@@ -113,7 +113,7 @@ class _CrearNuevaLineaAdminScreenState extends State<CrearNuevaLineaAdminScreen>
                   children: [
                     Container(
                       padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                      decoration: BoxDecoration(color: StiloColors.surface, borderRadius: BorderRadius.circular(14)),
+                      decoration: BoxDecoration(color: StiloColors.surface, borderRadius: BorderRadius.circular(24)),
                       child: TextField(contextMenuBuilder: privacyTextMenu,
                         controller: _tareaTituloController,
                         style: TextStyle(color: StiloColors.text),
@@ -128,7 +128,7 @@ class _CrearNuevaLineaAdminScreenState extends State<CrearNuevaLineaAdminScreen>
 
                     Container(
                       padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                      decoration: BoxDecoration(color: StiloColors.surface, borderRadius: BorderRadius.circular(14)),
+                      decoration: BoxDecoration(color: StiloColors.surface, borderRadius: BorderRadius.circular(24)),
                       child: StreamBuilder<QuerySnapshot>(
                         stream: FirebaseFirestore.instance.collection('usuarios').snapshots(),
                         builder: (context, snapshot) {
@@ -160,7 +160,7 @@ class _CrearNuevaLineaAdminScreenState extends State<CrearNuevaLineaAdminScreen>
                     SizedBox(height: 16),
 
                     Container(
-                      decoration: BoxDecoration(color: StiloColors.surface, borderRadius: BorderRadius.circular(14)),
+                      decoration: BoxDecoration(color: StiloColors.surface, borderRadius: BorderRadius.circular(24)),
                       child: ListTile(
                         leading: Icon(Icons.calendar_today_outlined, color: colorAmarillo, size: 20),
                         title: Text(
@@ -194,7 +194,7 @@ class _CrearNuevaLineaAdminScreenState extends State<CrearNuevaLineaAdminScreen>
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: colorMorado,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
                   ),
                   onPressed: () {
                     if (_tareaTituloController.text.trim().isEmpty || _trabajadorAsignadoId == null || _fechaLimiteTarea == null) {
@@ -245,7 +245,7 @@ class _CrearNuevaLineaAdminScreenState extends State<CrearNuevaLineaAdminScreen>
                     color: colorTarjeta,
                     elevation: 3,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
+                      borderRadius: BorderRadius.circular(24),
                       side: BorderSide(color: StiloColors.text.withValues(alpha: .12), width: 1),
                     ),
                     child: Padding(
@@ -266,7 +266,7 @@ class _CrearNuevaLineaAdminScreenState extends State<CrearNuevaLineaAdminScreen>
                           SizedBox(height: 16),
                           Container(
                             padding: EdgeInsets.symmetric(horizontal: 14),
-                            decoration: BoxDecoration(color: StiloColors.surface, borderRadius: BorderRadius.circular(12)),
+                            decoration: BoxDecoration(color: StiloColors.surface, borderRadius: BorderRadius.circular(22)),
                             child: TextFormField(contextMenuBuilder: privacyTextMenu,
                               controller: _tituloController,
                               style: TextStyle(color: StiloColors.text),
@@ -281,7 +281,7 @@ class _CrearNuevaLineaAdminScreenState extends State<CrearNuevaLineaAdminScreen>
                           SizedBox(height: 14),
                           Container(
                             padding: EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-                            decoration: BoxDecoration(color: StiloColors.surface, borderRadius: BorderRadius.circular(12)),
+                            decoration: BoxDecoration(color: StiloColors.surface, borderRadius: BorderRadius.circular(22)),
                             child: TextFormField(contextMenuBuilder: privacyTextMenu,
                               controller: _descripcionController,
                               maxLines: 3,
@@ -346,7 +346,7 @@ class _CrearNuevaLineaAdminScreenState extends State<CrearNuevaLineaAdminScreen>
                               elevation: 2,
                               margin: EdgeInsets.symmetric(vertical: 6.0),
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(22),
                                 side: BorderSide(color: StiloColors.text.withValues(alpha: .12), width: 1),
                               ),
                               child: Column(

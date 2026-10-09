@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../widgets/stilo_orbit.dart';
 
 class ModernWorkspaceFrame extends StatelessWidget {
   final Widget child;
@@ -53,7 +54,7 @@ class ModernWorkspaceFrame extends StatelessWidget {
                                   padding: const EdgeInsets.only(bottom: 8),
                                   child: Material(
                                     color: Colors.transparent,
-                                    borderRadius: BorderRadius.circular(16),
+                                    borderRadius: BorderRadius.circular(30),
                                     clipBehavior: Clip.antiAlias,
                                     child: ListTile(
                                       key: ValueKey('modern-tab-$i'),
@@ -62,12 +63,24 @@ class ModernWorkspaceFrame extends StatelessWidget {
                                           .withValues(alpha: .10),
                                       selectedColor: colors.primary,
                                       shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(16),
+                                        borderRadius: BorderRadius.circular(30),
                                       ),
-                                      leading: i == selectedIndex
-                                          ? destinations[i].selectedIcon ??
-                                                destinations[i].icon
-                                          : destinations[i].icon,
+                                      leading: StiloOrbitIcon(
+                                        icon:
+                                            ((i == selectedIndex
+                                                        ? destinations[i]
+                                                                  .selectedIcon ??
+                                                              destinations[i]
+                                                                  .icon
+                                                        : destinations[i].icon)
+                                                    as Icon)
+                                                .icon!,
+                                        color:
+                                            stiloAccents[i %
+                                                stiloAccents.length],
+                                        size: 40,
+                                        active: i == selectedIndex,
+                                      ),
                                       title: Text(
                                         destinations[i].label,
                                         style: TextStyle(
@@ -111,35 +124,10 @@ class ModernWorkspaceFrame extends StatelessWidget {
           ),
           bottomNavigationBar: desktop
               ? null
-              : SafeArea(
-                  top: false,
-                  child: Container(
-                    margin: const EdgeInsets.fromLTRB(12, 6, 12, 8),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(26),
-                      border: Border.all(color: colors.outlineVariant),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Color(0x248E1538),
-                          blurRadius: 24,
-                          offset: Offset(0, 6),
-                        ),
-                      ],
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(26),
-                      child: NavigationBar(
-                        height: 76,
-                        selectedIndex: selectedIndex,
-                        onDestinationSelected: onSelected,
-                        labelBehavior:
-                            NavigationDestinationLabelBehavior.onlyShowSelected,
-                        backgroundColor: colors.surfaceContainerLow,
-                        indicatorColor: colors.primary.withValues(alpha: .14),
-                        destinations: destinations,
-                      ),
-                    ),
-                  ),
+              : StiloDock(
+                  selectedIndex: selectedIndex,
+                  destinations: destinations,
+                  onSelected: onSelected,
                 ),
         );
       },
@@ -201,7 +189,7 @@ class WorkspaceTabs extends StatelessWidget {
         padding: const EdgeInsets.all(5),
         decoration: BoxDecoration(
           color: colors.surfaceContainerLow,
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(32),
           border: Border.all(color: colors.outlineVariant),
         ),
         child: Row(
@@ -222,7 +210,7 @@ class WorkspaceTabs extends StatelessWidget {
                           ? colors.primary
                           : Colors.transparent,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(13),
+                        borderRadius: BorderRadius.circular(30),
                       ),
                     ),
                     child: Text(

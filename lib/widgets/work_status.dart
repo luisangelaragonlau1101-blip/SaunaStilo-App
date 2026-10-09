@@ -21,7 +21,7 @@ class WorkStatus extends StatelessWidget {
   const WorkStatus(this.status, {super.key});
   @override Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
-    decoration: BoxDecoration(color: workStatusColor(status).withValues(alpha: .13), borderRadius: BorderRadius.circular(12)),
+    decoration: BoxDecoration(color: workStatusColor(status).withValues(alpha: .13), borderRadius: BorderRadius.circular(22)),
     child: Text(workStatusLabel(status), style: TextStyle(color: Theme.of(context).brightness == Brightness.light ? Theme.of(context).colorScheme.onSurface : workStatusColor(status), fontSize: 12, fontWeight: FontWeight.w700)),
   );
 }

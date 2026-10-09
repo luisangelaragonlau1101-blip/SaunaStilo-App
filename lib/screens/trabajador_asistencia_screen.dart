@@ -94,7 +94,7 @@ class _TrabajadorAsistenciaScreenState extends State<TrabajadorAsistenciaScreen>
               minScale: 0.5,
               maxScale: 4,
               child: ClipRRect(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(22),
                 child: Image.memory(_evidenciaBytes!, fit: BoxFit.contain),
               ),
             ),
@@ -169,7 +169,7 @@ class _TrabajadorAsistenciaScreenState extends State<TrabajadorAsistenciaScreen>
                   padding: EdgeInsets.all(20),
                   decoration: BoxDecoration(
                     color: StiloColors.surface,
-                    borderRadius: BorderRadius.circular(24),
+                    borderRadius: BorderRadius.circular(34),
                     border: Border.all(color: StiloColors.text.withOpacity(0.08), width: 1.5),
                   ),
                   child: Column(
@@ -188,7 +188,7 @@ class _TrabajadorAsistenciaScreenState extends State<TrabajadorAsistenciaScreen>
                                 : asistencia.estatusJustificacion == 'rechazada'
                                     ? Colors.redAccent.withOpacity(0.1)
                                     : Colors.orangeAccent.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(16),
+                            borderRadius: BorderRadius.circular(26),
                             border: Border.all(
                               color: asistencia.estatusJustificacion == 'aprobada'
                                   ? Colors.greenAccent.withOpacity(0.3)
@@ -247,7 +247,7 @@ class _TrabajadorAsistenciaScreenState extends State<TrabajadorAsistenciaScreen>
                                 Text("Evidencia enviada:", style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .70), fontSize: 12)),
                                 SizedBox(height: 6),
                                 ClipRRect(
-                                  borderRadius: BorderRadius.circular(10),
+                                  borderRadius: BorderRadius.circular(20),
                                   child: Image.network(
                                     asistencia.evidenciaJustificacionUrl!,
                                     height: 100,
@@ -270,7 +270,7 @@ class _TrabajadorAsistenciaScreenState extends State<TrabajadorAsistenciaScreen>
                             hintStyle: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .38)),
                             filled: true,
                             fillColor: StiloColors.background,
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(22), borderSide: BorderSide.none),
                           ),
                         ),
                         SizedBox(height: 16),
@@ -286,7 +286,7 @@ class _TrabajadorAsistenciaScreenState extends State<TrabajadorAsistenciaScreen>
                                   height: 120,
                                   width: double.infinity,
                                   decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(12),
+                                    borderRadius: BorderRadius.circular(22),
                                     border: Border.all(color: Colors.greenAccent.withOpacity(0.3), width: 2),
                                     image: DecorationImage(
                                       image: MemoryImage(_evidenciaBytes!),
@@ -319,7 +319,7 @@ class _TrabajadorAsistenciaScreenState extends State<TrabajadorAsistenciaScreen>
                               backgroundColor: StiloColors.text.withValues(alpha: .10),
                               foregroundColor: StiloColors.text,
                               minimumSize: Size(double.infinity, 50),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
                             ),
                             onPressed: _mostrarOpcionesEvidencia,
                             icon: Icon(Icons.add_a_photo_rounded, size: 20),
@@ -333,7 +333,7 @@ class _TrabajadorAsistenciaScreenState extends State<TrabajadorAsistenciaScreen>
                             backgroundColor: Colors.blueAccent,
                             foregroundColor: StiloColors.text,
                             minimumSize: Size(double.infinity, 50),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
                           ),
                           onPressed: _isEnviandoJustificacion ? null : () async {
                             if (_motivoFaltaController.text.isEmpty) {
@@ -442,7 +442,7 @@ class _TrabajadorAsistenciaScreenState extends State<TrabajadorAsistenciaScreen>
                   padding: EdgeInsets.symmetric(vertical: 10, horizontal: 8),
                   decoration: BoxDecoration(
                     color: StiloColors.text.withOpacity(0.03),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(22),
                     border: Border.all(color: StiloColors.text.withOpacity(0.05)),
                   ),
                   child: Row(
@@ -512,7 +512,7 @@ class _TrabajadorAsistenciaScreenState extends State<TrabajadorAsistenciaScreen>
                 return Column(
                   children: [
                     SizedBox(height: 12),
-                    Container(width: 50, height: 6, decoration: BoxDecoration(color: StiloColors.text.withValues(alpha: .24), borderRadius: BorderRadius.circular(10))),
+                    Container(width: 50, height: 6, decoration: BoxDecoration(color: StiloColors.text.withValues(alpha: .24), borderRadius: BorderRadius.circular(20))),
                     SizedBox(height: 24),
 
                     // --- CABECERA ---
@@ -660,7 +660,7 @@ class _TrabajadorAsistenciaScreenState extends State<TrabajadorAsistenciaScreen>
                                       begin: Alignment.topLeft,
                                       end: Alignment.bottomRight,
                                     ),
-                                    borderRadius: BorderRadius.circular(16),
+                                    borderRadius: BorderRadius.circular(26),
                                     border: Border.all(color: primaryPurple.withOpacity(0.3)),
                                   ),
                                   child: Column(
@@ -684,7 +684,7 @@ class _TrabajadorAsistenciaScreenState extends State<TrabajadorAsistenciaScreen>
                                               padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                                               decoration: BoxDecoration(
                                                 color: Colors.redAccent.withOpacity(0.15),
-                                                borderRadius: BorderRadius.circular(12),
+                                                borderRadius: BorderRadius.circular(22),
                                                 border: Border.all(color: Colors.redAccent.withOpacity(0.3)),
                                               ),
                                               child: Text(
@@ -770,7 +770,7 @@ class _TrabajadorAsistenciaScreenState extends State<TrabajadorAsistenciaScreen>
                                         padding: EdgeInsets.all(20),
                                         decoration: BoxDecoration(
                                           color: cardDark,
-                                          borderRadius: BorderRadius.circular(20),
+                                          borderRadius: BorderRadius.circular(30),
                                           border: Border.all(color: StiloColors.text.withOpacity(0.03)),
                                         ),
                                         child: Column(
@@ -790,7 +790,7 @@ class _TrabajadorAsistenciaScreenState extends State<TrabajadorAsistenciaScreen>
                                                   padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                                                   decoration: BoxDecoration(
                                                     color: asistencia.estatus == 'a_tiempo' ? Colors.green.withOpacity(0.15) : (asistencia.estatus == 'incapacidad_pagada' ? Colors.blueAccent.withOpacity(0.15) : Colors.orange.withOpacity(0.15)),
-                                                    borderRadius: BorderRadius.circular(20),
+                                                    borderRadius: BorderRadius.circular(30),
                                                     border: Border.all(color: asistencia.estatus == 'a_tiempo' ? Colors.green.withOpacity(0.3) : (asistencia.estatus == 'incapacidad_pagada' ? Colors.blueAccent.withOpacity(0.3) : Colors.orange.withOpacity(0.3))),
                                                   ),
                                                   child: Row(
@@ -829,7 +829,7 @@ class _TrabajadorAsistenciaScreenState extends State<TrabajadorAsistenciaScreen>
                                                   color: asistencia.estatus == 'incapacidad_pagada'
                                                       ? Colors.blueAccent.withOpacity(0.05)
                                                       : Colors.redAccent.withOpacity(0.05),
-                                                  borderRadius: BorderRadius.circular(16),
+                                                  borderRadius: BorderRadius.circular(26),
                                                   border: Border.all(
                                                     color: asistencia.estatus == 'incapacidad_pagada'
                                                         ? Colors.blueAccent.withOpacity(0.3)
@@ -881,7 +881,7 @@ class _TrabajadorAsistenciaScreenState extends State<TrabajadorAsistenciaScreen>
                                                         : asistencia.estatusJustificacion == 'rechazada'
                                                             ? Colors.redAccent.withOpacity(0.1)
                                                             : Colors.orangeAccent.withOpacity(0.1),
-                                                    borderRadius: BorderRadius.circular(12),
+                                                    borderRadius: BorderRadius.circular(22),
                                                     border: Border.all(
                                                       color: asistencia.estatusJustificacion == 'aprobada'
                                                           ? Colors.greenAccent.withOpacity(0.5)
@@ -938,7 +938,7 @@ class _TrabajadorAsistenciaScreenState extends State<TrabajadorAsistenciaScreen>
                                                 padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                                                 decoration: BoxDecoration(
                                                   color: Colors.greenAccent.withOpacity(0.1),
-                                                  borderRadius: BorderRadius.circular(12),
+                                                  borderRadius: BorderRadius.circular(22),
                                                   border: Border.all(color: Colors.greenAccent.withOpacity(0.5)),
                                                 ),
                                                 child: Row(
@@ -975,7 +975,7 @@ class _TrabajadorAsistenciaScreenState extends State<TrabajadorAsistenciaScreen>
                                                 padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                                                 decoration: BoxDecoration(
                                                   color: Colors.redAccent.withOpacity(0.1),
-                                                  borderRadius: BorderRadius.circular(12),
+                                                  borderRadius: BorderRadius.circular(22),
                                                   border: Border.all(color: Colors.redAccent.withOpacity(0.5)),
                                                 ),
                                                 child: Row(
@@ -1012,7 +1012,7 @@ class _TrabajadorAsistenciaScreenState extends State<TrabajadorAsistenciaScreen>
                                                 padding: EdgeInsets.all(16),
                                                 decoration: BoxDecoration(
                                                   color: solicitudPendiente ? Colors.orangeAccent.withOpacity(0.05) : StiloColors.text.withOpacity(0.02),
-                                                  borderRadius: BorderRadius.circular(16),
+                                                  borderRadius: BorderRadius.circular(26),
                                                   border: Border.all(color: solicitudPendiente ? Colors.orangeAccent.withOpacity(0.5) : StiloColors.text.withOpacity(0.05)),
                                                 ),
                                                 child: Column(
@@ -1068,7 +1068,7 @@ class _TrabajadorAsistenciaScreenState extends State<TrabajadorAsistenciaScreen>
                                                     context: context,
                                                     builder: (context) => AlertDialog(
                                                       backgroundColor: cardDark,
-                                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: BorderSide(color: StiloColors.text.withOpacity(0.05))),
+                                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30), side: BorderSide(color: StiloColors.text.withOpacity(0.05))),
                                                       title: Row(
                                                         children: [
                                                           Icon(Icons.history_edu_rounded, color: primaryPurple),

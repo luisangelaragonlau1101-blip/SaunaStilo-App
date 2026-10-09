@@ -152,7 +152,7 @@ class _ControlHerramientasScreenState extends State<ControlHerramientasScreen> {
               backgroundColor: colorTarjeta,
               padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(30),
                 side: BorderSide(
                   color: isSelected ? colorAcento : StiloColors.text.withOpacity(0.1),
                 ),
@@ -178,7 +178,7 @@ class _ControlHerramientasScreenState extends State<ControlHerramientasScreen> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(34),
         boxShadow: [
           BoxShadow(
             color: StiloColors.background.withOpacity(0.5),
@@ -197,7 +197,7 @@ class _ControlHerramientasScreenState extends State<ControlHerramientasScreen> {
                   padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
                     color: StiloColors.background.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(30),
                   ),
                   child: Text(
                     "PROYECTO ACTUAL",
@@ -217,12 +217,12 @@ class _ControlHerramientasScreenState extends State<ControlHerramientasScreen> {
           SizedBox(width: 16),
           InkWell(
             onTap: () => _mostrarModalSolicitudHerramienta(context),
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(26),
             child: Container(
               padding: EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: colorAcento,
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(26),
                 boxShadow: [
                   BoxShadow(
                     color: StiloColors.background.withOpacity(0.2),
@@ -301,7 +301,7 @@ class _ControlHerramientasScreenState extends State<ControlHerramientasScreen> {
       padding: EdgeInsets.symmetric(vertical: 48, horizontal: 24),
       decoration: BoxDecoration(
         color: colorTarjeta,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(34),
         border: Border.all(color: StiloColors.text.withOpacity(0.05)),
       ),
       child: Column(
@@ -334,7 +334,7 @@ class _ControlHerramientasScreenState extends State<ControlHerramientasScreen> {
             style: OutlinedButton.styleFrom(
               foregroundColor: colorAcento,
               side: BorderSide(color: colorAcento),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
               padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             ),
           )
@@ -378,7 +378,7 @@ class _ControlHerramientasScreenState extends State<ControlHerramientasScreen> {
       margin: EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: colorTarjeta,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(30),
         border: Border.all(color: StiloColors.text.withOpacity(0.05)),
         boxShadow: [
           BoxShadow(
@@ -391,7 +391,7 @@ class _ControlHerramientasScreenState extends State<ControlHerramientasScreen> {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(30),
           onTap: esPendiente ? () => _mostrarModalEditarSolicitud(context, sol) : null,
           onLongPress: esPendiente ? () => _confirmarEliminacion(context, sol.id) : null,
           child: Padding(
@@ -402,7 +402,7 @@ class _ControlHerramientasScreenState extends State<ControlHerramientasScreen> {
                   padding: EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: statusColor.withOpacity(0.15),
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(26),
                   ),
                   child: Icon(statusIcon, color: statusColor, size: 24),
                 ),
@@ -487,7 +487,7 @@ class _ControlHerramientasScreenState extends State<ControlHerramientasScreen> {
           backgroundColor: colorAcento,
           foregroundColor: StiloColors.background,
           padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
           elevation: 4,
         ),
         onPressed: () => _mostrarModalReporteDevolucion(context, sol),
@@ -504,7 +504,7 @@ class _ControlHerramientasScreenState extends State<ControlHerramientasScreen> {
       padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
         color: statusColor.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(30),
         border: Border.all(color: statusColor.withOpacity(0.3))
       ),
       child: Text(text, style: GoogleFonts.inter(color: statusColor, fontSize: 10, fontWeight: FontWeight.w700)),
@@ -546,7 +546,7 @@ class _ControlHerramientasScreenState extends State<ControlHerramientasScreen> {
                   Container(
                     width: 40, height: 4,
                     margin: EdgeInsets.only(bottom: 24),
-                    decoration: BoxDecoration(color: StiloColors.text.withOpacity(0.2), borderRadius: BorderRadius.circular(10)),
+                    decoration: BoxDecoration(color: StiloColors.text.withOpacity(0.2), borderRadius: BorderRadius.circular(20)),
                   ),
                   Align(
                     alignment: Alignment.centerLeft,
@@ -570,7 +570,7 @@ class _ControlHerramientasScreenState extends State<ControlHerramientasScreen> {
                       filled: true,
                       fillColor: colorTarjeta,
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(26),
                         borderSide: BorderSide.none,
                       ),
                       suffixIcon: searchQuery.isNotEmpty
@@ -637,13 +637,13 @@ class _ControlHerramientasScreenState extends State<ControlHerramientasScreen> {
 
                             return InkWell(
                               onTap: () => setModalState(() => insumoSeleccionado = insumo),
-                              borderRadius: BorderRadius.circular(16),
+                              borderRadius: BorderRadius.circular(26),
                               child: AnimatedContainer(
                                 duration: Duration(milliseconds: 200),
                                 padding: EdgeInsets.all(12),
                                 decoration: BoxDecoration(
                                   color: isSelected ? colorAcento.withOpacity(0.1) : colorTarjeta,
-                                  borderRadius: BorderRadius.circular(16),
+                                  borderRadius: BorderRadius.circular(26),
                                   border: Border.all(
                                     color: isSelected ? colorAcento : StiloColors.text.withOpacity(0.05),
                                     width: isSelected ? 1.5 : 1
@@ -656,11 +656,11 @@ class _ControlHerramientasScreenState extends State<ControlHerramientasScreen> {
                                       height: 50,
                                       decoration: BoxDecoration(
                                         color: isSelected ? colorAcento.withOpacity(0.2) : colorFondo,
-                                        borderRadius: BorderRadius.circular(12),
+                                        borderRadius: BorderRadius.circular(22),
                                       ),
                                       child: imageUrl != null && imageUrl.isNotEmpty
                                           ? ClipRRect(
-                                              borderRadius: BorderRadius.circular(12),
+                                              borderRadius: BorderRadius.circular(22),
                                               child: InventoryPhoto(
                                                 imageUrl: imageUrl,
                                                 fit: BoxFit.cover,
@@ -721,7 +721,7 @@ class _ControlHerramientasScreenState extends State<ControlHerramientasScreen> {
                       padding: EdgeInsets.all(20),
                       decoration: BoxDecoration(
                         color: colorTarjeta,
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(30),
                         border: Border.all(color: StiloColors.text.withOpacity(0.05)),
                       ),
                       child: Column(
@@ -733,7 +733,7 @@ class _ControlHerramientasScreenState extends State<ControlHerramientasScreen> {
                               Container(
                                 decoration: BoxDecoration(
                                   color: colorFondo,
-                                  borderRadius: BorderRadius.circular(12),
+                                  borderRadius: BorderRadius.circular(22),
                                   border: Border.all(color: StiloColors.text.withOpacity(0.1))
                                 ),
                                 child: Row(
@@ -785,7 +785,7 @@ class _ControlHerramientasScreenState extends State<ControlHerramientasScreen> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: colorAcento,
                         foregroundColor: StiloColors.background,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
                         elevation: insumoSeleccionado == null ? 0 : 8,
                         shadowColor: colorAcento.withOpacity(0.5),
                         disabledBackgroundColor: colorTarjeta,
@@ -867,7 +867,7 @@ class _ControlHerramientasScreenState extends State<ControlHerramientasScreen> {
                     Center(
                       child: Container(
                         width: 40, height: 4, margin: EdgeInsets.only(bottom: 24),
-                        decoration: BoxDecoration(color: StiloColors.text.withOpacity(0.2), borderRadius: BorderRadius.circular(10)),
+                        decoration: BoxDecoration(color: StiloColors.text.withOpacity(0.2), borderRadius: BorderRadius.circular(20)),
                       ),
                     ),
                     Text("Editar Solicitud", style: GoogleFonts.outfit(color: colorTextoPrimario, fontSize: 24, fontWeight: FontWeight.bold)),
@@ -879,7 +879,7 @@ class _ControlHerramientasScreenState extends State<ControlHerramientasScreen> {
                       padding: EdgeInsets.all(20),
                       decoration: BoxDecoration(
                         color: colorTarjeta,
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(30),
                         border: Border.all(color: StiloColors.text.withOpacity(0.05)),
                       ),
                       child: Column(
@@ -891,7 +891,7 @@ class _ControlHerramientasScreenState extends State<ControlHerramientasScreen> {
                               Container(
                                 decoration: BoxDecoration(
                                   color: colorFondo,
-                                  borderRadius: BorderRadius.circular(12),
+                                  borderRadius: BorderRadius.circular(22),
                                   border: Border.all(color: StiloColors.text.withOpacity(0.1))
                                 ),
                                 child: Row(
@@ -947,7 +947,7 @@ class _ControlHerramientasScreenState extends State<ControlHerramientasScreen> {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: colorAcento,
                           foregroundColor: StiloColors.background,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
                           elevation: 8,
                           shadowColor: colorAcento.withOpacity(0.5),
                         ),
@@ -961,7 +961,7 @@ class _ControlHerramientasScreenState extends State<ControlHerramientasScreen> {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 behavior: SnackBarBehavior.floating,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
                                 backgroundColor: colorVerde,
                                 margin: EdgeInsets.all(16),
                                 content: Row(
@@ -993,7 +993,7 @@ class _ControlHerramientasScreenState extends State<ControlHerramientasScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: colorTarjeta,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(34)),
         title: Row(
           children: [
             Container(
@@ -1017,7 +1017,7 @@ class _ControlHerramientasScreenState extends State<ControlHerramientasScreen> {
               backgroundColor: colorRojo,
               foregroundColor: StiloColors.text,
               elevation: 0,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
             ),
             onPressed: () async {
               await FirebaseFirestore.instance.collection('solicitudes_herramientas').doc(solicitudId).update({'estatus':'cancelada','canceladoPor':FirebaseAuth.instance.currentUser!.uid,'fechaCancelacion':FieldValue.serverTimestamp()});
@@ -1026,7 +1026,7 @@ class _ControlHerramientasScreenState extends State<ControlHerramientasScreen> {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
                     backgroundColor: colorRojo,
                     margin: EdgeInsets.all(16),
                     content: Row(
@@ -1130,7 +1130,7 @@ class _ReporteDevolucionModalState extends State<ReporteDevolucionModal> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
             backgroundColor: colorVerde,
             margin: EdgeInsets.all(16),
             content: Row(
@@ -1173,7 +1173,7 @@ class _ReporteDevolucionModalState extends State<ReporteDevolucionModal> {
             Container(
               width: 40, height: 4,
               margin: EdgeInsets.only(bottom: 24),
-              decoration: BoxDecoration(color: StiloColors.text.withOpacity(0.2), borderRadius: BorderRadius.circular(10)),
+              decoration: BoxDecoration(color: StiloColors.text.withOpacity(0.2), borderRadius: BorderRadius.circular(20)),
             ),
 
             Expanded(
@@ -1193,7 +1193,7 @@ class _ReporteDevolucionModalState extends State<ReporteDevolucionModal> {
                     Container(
                       decoration: BoxDecoration(
                         color: colorTarjeta,
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(30),
                         border: Border.all(color: _tieneFalla ? colorNaranja.withOpacity(0.5) : StiloColors.text.withOpacity(0.05)),
                       ),
                       child: SwitchListTile(
@@ -1204,7 +1204,7 @@ class _ReporteDevolucionModalState extends State<ReporteDevolucionModal> {
                         activeTrackColor: colorNaranja,
                         inactiveThumbColor: colorTextoSecundario,
                         inactiveTrackColor: colorFondo,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                         onChanged: (bool value) => setState(() => _tieneFalla = value),
                       ),
                     ),
@@ -1223,9 +1223,9 @@ class _ReporteDevolucionModalState extends State<ReporteDevolucionModal> {
                         hintStyle: GoogleFonts.inter(color: colorTextoSecundario, fontSize: 14),
                         filled: true,
                         fillColor: colorTarjeta,
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(26), borderSide: BorderSide.none),
                         focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(16),
+                          borderRadius: BorderRadius.circular(26),
                           borderSide: BorderSide(color: colorNaranja.withOpacity(0.5))
                         ),
                       ),
@@ -1241,7 +1241,7 @@ class _ReporteDevolucionModalState extends State<ReporteDevolucionModal> {
                         height: 140,
                         decoration: BoxDecoration(
                           color: colorTarjeta,
-                          borderRadius: BorderRadius.circular(16),
+                          borderRadius: BorderRadius.circular(26),
                           border: Border.all(
                             color: _imagenLocalRuta != null ? colorVerde.withOpacity(0.5) : StiloColors.text.withOpacity(0.1),
                             width: 1.5,
@@ -1264,7 +1264,7 @@ class _ReporteDevolucionModalState extends State<ReporteDevolucionModal> {
                                 children: [
                                   Positioned.fill(
                                     child: ClipRRect(
-                                      borderRadius: BorderRadius.circular(14),
+                                      borderRadius: BorderRadius.circular(24),
                                       child: Image.memory(
                                         _imagenBytes!,
                                         width: double.infinity,
@@ -1278,7 +1278,7 @@ class _ReporteDevolucionModalState extends State<ReporteDevolucionModal> {
                                       padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                                       decoration: BoxDecoration(
                                         color: StiloColors.background.withOpacity(0.6),
-                                        borderRadius: BorderRadius.circular(20),
+                                        borderRadius: BorderRadius.circular(30),
                                       ),
                                       child: Row(
                                         mainAxisSize: MainAxisSize.min,
@@ -1315,7 +1315,7 @@ class _ReporteDevolucionModalState extends State<ReporteDevolucionModal> {
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: colorAcento,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
                   elevation: 8,
                   shadowColor: colorAcento.withOpacity(0.5),
                 ),

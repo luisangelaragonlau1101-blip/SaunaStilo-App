@@ -427,7 +427,7 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
                     builder: (_, preview) => Stack(
                       children: [
                         ClipRRect(
-                          borderRadius: BorderRadius.circular(18),
+                          borderRadius: BorderRadius.circular(28),
                           child: AspectRatio(
                             aspectRatio: 4 / 5,
                             child: preview.data ??
@@ -455,7 +455,7 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
                 Container(
                   decoration: BoxDecoration(
                     border: Border.all(color: _linea),
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(26),
                   ),
                   child: Row(
                     children: [
@@ -1041,7 +1041,7 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
                 Container(
                   decoration: BoxDecoration(
                     border: Border.all(color: _linea),
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(26),
                   ),
                   child: Column(
                     children: [
@@ -1448,7 +1448,7 @@ class _BlogInternoScreenState extends State<BlogInternoScreen> {
                               vertical: 11,
                             ),
                             border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(24),
+                              borderRadius: BorderRadius.circular(34),
                               borderSide: BorderSide.none,
                             ),
                           ),
@@ -2086,7 +2086,7 @@ class _GaleriaPostState extends State<_GaleriaPost> {
                     EdgeInsets.symmetric(horizontal: 9, vertical: 5),
                 decoration: BoxDecoration(
                   color: StiloColors.background.withOpacity(.72),
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(24),
                 ),
                 child: Text(
                   '${_pagina + 1}/${widget.imagenes.length}',

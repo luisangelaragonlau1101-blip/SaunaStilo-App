@@ -106,7 +106,7 @@ class ReconocimientosScreen extends StatelessWidget {
     return Container(
       padding: EdgeInsets.all(22),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(34),
         gradient: LinearGradient(
           colors: [Color(0xFFFFC400), Color(0xFFFF6D00)],
           begin: Alignment.topLeft,
@@ -157,7 +157,7 @@ class ReconocimientosScreen extends StatelessWidget {
       padding: EdgeInsets.all(26),
       decoration: BoxDecoration(
         color: StiloColors.surface,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(30),
       ),
       child: Text(
         'Completa tus primeras tareas con evidencia para desbloquear insignias.',
@@ -230,7 +230,7 @@ class _TarjetaTrabajador extends StatelessWidget {
       padding: EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: StiloColors.surface,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(30),
         border: Border.all(
           color: posicion == 1
               ? Color(0xFFFFDE21).withOpacity(.5)
@@ -290,7 +290,7 @@ class _TarjetaTrabajador extends StatelessWidget {
                       padding: EdgeInsets.symmetric(horizontal: 10, vertical: 7),
                       decoration: BoxDecoration(
                         color: insignia.color.withOpacity(.14),
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(22),
                         border: Border.all(color: insignia.color.withOpacity(.35)),
                       ),
                       child: Row(

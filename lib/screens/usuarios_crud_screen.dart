@@ -59,7 +59,7 @@ class _UsuariosCrudScreenState extends State<UsuariosCrudScreen> {
           builder: (context, setStateDialog) {
             return AlertDialog(
               backgroundColor: colorTarjeta,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
               title: Text(esEdicion ? 'Editar Usuario' : 'Nuevo Usuario',
                   style: GoogleFonts.montserrat(color: StiloColors.text, fontWeight: FontWeight.bold)),
               content: SingleChildScrollView(
@@ -458,7 +458,7 @@ class _UsuariosCrudScreenState extends State<UsuariosCrudScreen> {
             maxScale: 4.0,
             clipBehavior: Clip.none,
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(26),
               child: Image.network(
                 urlImagen,
                 fit: BoxFit.contain,
@@ -508,7 +508,7 @@ class _UsuariosCrudScreenState extends State<UsuariosCrudScreen> {
               return Container(
                 margin: EdgeInsets.only(bottom: 12, left: 16, right: 16),
                 padding: EdgeInsets.all(16), // Agregamos padding interno a la tarjeta
-                decoration: BoxDecoration(color: colorTarjeta, borderRadius: BorderRadius.circular(16)),
+                decoration: BoxDecoration(color: colorTarjeta, borderRadius: BorderRadius.circular(26)),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [

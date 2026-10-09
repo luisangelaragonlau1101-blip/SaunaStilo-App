@@ -126,7 +126,7 @@ class _SeguimientoCotizacionesScreenState extends State<SeguimientoCotizacionesS
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(backgroundColor: StiloColors.accent, padding: EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                    style: ElevatedButton.styleFrom(backgroundColor: StiloColors.accent, padding: EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22))),
                     onPressed: () {
                       Navigator.pop(context);
                       _generarDescargarReporte(estatusSeleccionado);
@@ -144,7 +144,7 @@ class _SeguimientoCotizacionesScreenState extends State<SeguimientoCotizacionesS
 
   Widget _buildDropdownContainer({required Widget child}) => Container(
     padding: EdgeInsets.symmetric(horizontal: 16),
-    decoration: BoxDecoration(color: StiloColors.surface, borderRadius: BorderRadius.circular(12)),
+    decoration: BoxDecoration(color: StiloColors.surface, borderRadius: BorderRadius.circular(22)),
     child: child,
   );
 
@@ -197,7 +197,7 @@ class _SeguimientoCotizacionesScreenState extends State<SeguimientoCotizacionesS
                   padding: pw.EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   decoration: pw.BoxDecoration(
                     color: _getPdfStatusColor(estatus),
-                    borderRadius: pw.BorderRadius.circular(20),
+                    borderRadius: pw.BorderRadius.circular(30),
                   ),
                   child: pw.Text(
                     'ESTATUS: ${estatus.toUpperCase()}',
@@ -546,7 +546,7 @@ class _SeguimientoCotizacionesScreenState extends State<SeguimientoCotizacionesS
                       elevation: 3,
                       margin: EdgeInsets.symmetric(vertical: 8.0),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(22),
                         side: BorderSide(color: StiloColors.text.withValues(alpha: .12), width: 1),
                       ),
                       child: Column(

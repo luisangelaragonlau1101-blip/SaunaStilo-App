@@ -203,7 +203,7 @@ Future<void> _marcarParaDevolucion(String solicitudId, Map<String, dynamic> data
                 padding: EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: colorFondo,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(22),
                   border: Border.all(color: StiloColors.text.withValues(alpha: .10)),
                 ),
                 child: SingleChildScrollView(
@@ -300,7 +300,7 @@ Future<void> _marcarParaDevolucion(String solicitudId, Map<String, dynamic> data
                 Center(
                   child: Container(
                     width: 40, height: 4, margin: EdgeInsets.only(bottom: 24),
-                    decoration: BoxDecoration(color: StiloColors.text.withOpacity(0.2), borderRadius: BorderRadius.circular(10)),
+                    decoration: BoxDecoration(color: StiloColors.text.withOpacity(0.2), borderRadius: BorderRadius.circular(20)),
                   ),
                 ),
                 Text("Estatus de tus Reportes", style: GoogleFonts.outfit(color: colorTextoPrimario, fontSize: 24, fontWeight: FontWeight.bold)),
@@ -342,7 +342,7 @@ Future<void> _marcarParaDevolucion(String solicitudId, Map<String, dynamic> data
                         padding: EdgeInsets.all(16),
                         decoration: BoxDecoration(
                           color: colorTarjeta,
-                          borderRadius: BorderRadius.circular(16),
+                          borderRadius: BorderRadius.circular(26),
                           border: Border.all(color: colorEst.withOpacity(0.3))
                         ),
                         child: Column(
@@ -423,7 +423,7 @@ Future<void> _marcarParaDevolucion(String solicitudId, Map<String, dynamic> data
               padding: EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: colorFondo,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(22),
                 border: Border.all(color: StiloColors.text.withValues(alpha: .10)),
               ),
               child: SingleChildScrollView(
@@ -558,7 +558,7 @@ Future<void> _marcarParaDevolucion(String solicitudId, Map<String, dynamic> data
                   width: double.infinity,
                   height: 56,
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(26),
                     color: colorNaranja,
                     boxShadow: [
                       BoxShadow(color: colorNaranja.withOpacity(0.3), blurRadius: 10, offset: Offset(0, 4))
@@ -568,7 +568,7 @@ Future<void> _marcarParaDevolucion(String solicitudId, Map<String, dynamic> data
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.transparent,
                       shadowColor: Colors.transparent,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
                     ),
                     icon: Icon(Icons.local_shipping_rounded, color: StiloColors.background),
                     label: Text("SOLICITAR HERRAMIENTAS DE SALIDA", style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 13, color: StiloColors.background, letterSpacing: 0.8)),
@@ -608,7 +608,7 @@ Future<void> _marcarParaDevolucion(String solicitudId, Map<String, dynamic> data
 
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      decoration: BoxDecoration(color: statusColor.withOpacity(0.1), borderRadius: BorderRadius.circular(12), border: Border.all(color: statusColor.withOpacity(0.5))),
+      decoration: BoxDecoration(color: statusColor.withOpacity(0.1), borderRadius: BorderRadius.circular(22), border: Border.all(color: statusColor.withOpacity(0.5))),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -625,13 +625,13 @@ Future<void> _marcarParaDevolucion(String solicitudId, Map<String, dynamic> data
       color: Colors.transparent,
       child: InkWell(
         onTap: () => _abrirDiagnosticoYTareas(estatusActual),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(26),
         child: Ink(
           width: double.infinity,
           padding: EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: colorAcento.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(26),
             border: Border.all(color: colorAcento.withOpacity(0.45)),
           ),
           child: Row(
@@ -670,7 +670,7 @@ Future<void> _marcarParaDevolucion(String solicitudId, Map<String, dynamic> data
   Widget _buildInfoCard() {
     return Container(
       padding: EdgeInsets.all(20),
-      decoration: BoxDecoration(color: colorTarjeta, borderRadius: BorderRadius.circular(20), border: Border.all(color: StiloColors.text.withValues(alpha: .10))),
+      decoration: BoxDecoration(color: colorTarjeta, borderRadius: BorderRadius.circular(30), border: Border.all(color: StiloColors.text.withValues(alpha: .10))),
       child: Column(
         children: [
           FutureBuilder<String>(
@@ -748,7 +748,7 @@ Future<void> _marcarParaDevolucion(String solicitudId, Map<String, dynamic> data
         Container(
           width: double.infinity,
           padding: EdgeInsets.all(16),
-          decoration: BoxDecoration(color: colorTarjeta, borderRadius: BorderRadius.circular(16)),
+          decoration: BoxDecoration(color: colorTarjeta, borderRadius: BorderRadius.circular(26)),
           child: Text(
             widget.proyecto.descripcion.isEmpty ? "Sin descripción agregada para este proyecto." : widget.proyecto.descripcion,
             style: GoogleFonts.inter(color: colorTextoSecundario, fontSize: 15, height: 1.5)
@@ -774,12 +774,12 @@ Future<void> _marcarParaDevolucion(String solicitudId, Map<String, dynamic> data
             ),
           );
         },
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(26),
         child: Container(
           padding: EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: colorTarjeta,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(26),
             border: Border.all(color: StiloColors.text.withValues(alpha: .10)),
           ),
           child: Row(
@@ -937,13 +937,13 @@ bool quedanCosasPorDevolver = totalAprobadoATaller < totalRetornables;
                     child: Material(
                       color: Colors.transparent,
                       child: InkWell(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(22),
                         onTap: () => _mostrarDetalleKit(context, data, estatusText, statusColor, fechaStr, reportes),
                         child: Container(
                           padding: EdgeInsets.all(12),
                           decoration: BoxDecoration(
                             color: colorTarjeta,
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(22),
                             border: Border.all(color: statusColor.withOpacity(0.3)),
                           ),
                           child: Row(
@@ -991,7 +991,7 @@ bool quedanCosasPorDevolver = totalAprobadoATaller < totalRetornables;
                           style: ElevatedButton.styleFrom(
                             backgroundColor: colorVerde,
                             foregroundColor: StiloColors.background,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
                           ),
                           icon: Icon(Icons.qr_code_scanner_rounded),
                           label: Text("RECIBIR Y EVALUAR KIT", style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
@@ -1010,7 +1010,7 @@ bool quedanCosasPorDevolver = totalAprobadoATaller < totalRetornables;
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.blueAccent,
                             foregroundColor: StiloColors.text,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
                           ),
                           icon: Icon(Icons.assignment_return_rounded),
                           label: Text("DEVOLVER KIT AL ALMACÉN", style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
@@ -1030,7 +1030,7 @@ bool quedanCosasPorDevolver = totalAprobadoATaller < totalRetornables;
                           style: ElevatedButton.styleFrom(
                             backgroundColor: colorAcento,
                             foregroundColor: StiloColors.background,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
                           ),
                           icon: Icon(Icons.add_shopping_cart_rounded),
                           label: Text("VOLVER A SOLICITAR REPARADAS", style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
@@ -1051,7 +1051,7 @@ bool quedanCosasPorDevolver = totalAprobadoATaller < totalRetornables;
                             backgroundColor: colorFondo,
                             foregroundColor: colorNaranja,
                             side: BorderSide(color: colorNaranja.withOpacity(0.5)),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
                           ),
                           icon: Icon(Icons.warning_amber_rounded),
                           label: Text("VER ESTATUS DE DAÑOS", style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
@@ -1091,7 +1091,7 @@ void _mostrarDetalleKit(BuildContext context, Map<String, dynamic> data, String 
                 Center(
                   child: Container(
                     width: 40, height: 4, margin: EdgeInsets.only(bottom: 24),
-                    decoration: BoxDecoration(color: StiloColors.text.withOpacity(0.2), borderRadius: BorderRadius.circular(10)),
+                    decoration: BoxDecoration(color: StiloColors.text.withOpacity(0.2), borderRadius: BorderRadius.circular(20)),
                   ),
                 ),
                 Text("Contenido del Kit", style: GoogleFonts.outfit(color: colorTextoPrimario, fontSize: 24, fontWeight: FontWeight.bold)),
@@ -1148,7 +1148,7 @@ void _mostrarDetalleKit(BuildContext context, Map<String, dynamic> data, String 
                         padding: EdgeInsets.all(12),
                         decoration: BoxDecoration(
                           color: colorTarjeta,
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(22),
                           border: Border.all(color: StiloColors.text.withOpacity(0.05)),
                         ),
                         child: Row(
@@ -1322,7 +1322,7 @@ class _RecepcionKitModalState extends State<RecepcionKitModal> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
             backgroundColor: huboDanos ? colorNaranja : colorVerde,
             margin: EdgeInsets.all(16),
             content: Row(
@@ -1359,7 +1359,7 @@ class _RecepcionKitModalState extends State<RecepcionKitModal> {
         padding: EdgeInsets.only(top: 12, left: 20, right: 20, bottom: MediaQuery.of(context).viewInsets.bottom + 20),
         child: Column(
           children: [
-            Container(width: 40, height: 4, margin: EdgeInsets.only(bottom: 24), decoration: BoxDecoration(color: StiloColors.text.withOpacity(0.2), borderRadius: BorderRadius.circular(10))),
+            Container(width: 40, height: 4, margin: EdgeInsets.only(bottom: 24), decoration: BoxDecoration(color: StiloColors.text.withOpacity(0.2), borderRadius: BorderRadius.circular(20))),
 
             Expanded(
               child: SingleChildScrollView(
@@ -1377,7 +1377,7 @@ class _RecepcionKitModalState extends State<RecepcionKitModal> {
                         margin: EdgeInsets.only(bottom: 16),
                         decoration: BoxDecoration(
                           color: colorTarjeta,
-                          borderRadius: BorderRadius.circular(20),
+                          borderRadius: BorderRadius.circular(30),
                           border: Border.all(color: item.tieneFalla ? colorNaranja.withOpacity(0.5) : StiloColors.text.withOpacity(0.05)),
                         ),
                         child: Column(
@@ -1406,7 +1406,7 @@ class _RecepcionKitModalState extends State<RecepcionKitModal> {
                               activeTrackColor: colorNaranja,
                               inactiveThumbColor: colorTextoSecundario,
                               inactiveTrackColor: colorFondo,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                               onChanged: (bool value) {
                                 setState(() {
                                   item.tieneFalla = value;
@@ -1438,7 +1438,7 @@ class _RecepcionKitModalState extends State<RecepcionKitModal> {
                                         hintStyle: GoogleFonts.inter(color: colorTextoSecundario, fontSize: 13),
                                         filled: true,
                                         fillColor: colorFondo,
-                                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(22), borderSide: BorderSide.none),
                                       ),
                                     ),
                                     SizedBox(height: 16),
@@ -1452,7 +1452,7 @@ class _RecepcionKitModalState extends State<RecepcionKitModal> {
                                         height: 100,
                                         decoration: BoxDecoration(
                                           color: colorFondo,
-                                          borderRadius: BorderRadius.circular(12),
+                                          borderRadius: BorderRadius.circular(22),
                                           border: Border.all(
                                             color: item.fotoRuta != null ? colorVerde.withOpacity(0.5) : StiloColors.text.withOpacity(0.1),
                                             width: 1.5,
@@ -1471,14 +1471,14 @@ class _RecepcionKitModalState extends State<RecepcionKitModal> {
                                                 children: [
                                                   Positioned.fill(
                                                     child: ClipRRect(
-                                                      borderRadius: BorderRadius.circular(10),
+                                                      borderRadius: BorderRadius.circular(20),
                                                       child: Image.file(File(item.fotoRuta!), fit: BoxFit.cover, opacity: AlwaysStoppedAnimation(0.6)),
                                                     ),
                                                   ),
                                                   Center(
                                                     child: Container(
                                                       padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                                      decoration: BoxDecoration(color: StiloColors.background.withOpacity(0.7), borderRadius: BorderRadius.circular(16)),
+                                                      decoration: BoxDecoration(color: StiloColors.background.withOpacity(0.7), borderRadius: BorderRadius.circular(26)),
                                                       child: Row(
                                                         mainAxisSize: MainAxisSize.min,
                                                         children: [
@@ -1521,7 +1521,7 @@ class _RecepcionKitModalState extends State<RecepcionKitModal> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: colorVerde,
                   foregroundColor: StiloColors.background,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
                 ),
                 icon: _subiendoDatos ? SizedBox.shrink() : Icon(Icons.check_circle_rounded),
                 onPressed: _subiendoDatos ? null : _procesarRecepcion,

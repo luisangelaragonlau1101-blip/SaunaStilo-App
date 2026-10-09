@@ -288,15 +288,15 @@ class _FuturisticDashboardScreenState
           filled: true,
           fillColor: _panel,
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(30),
             borderSide: BorderSide.none,
           ),
           enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(30),
             borderSide: const BorderSide(color: Colors.white10),
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(30),
             borderSide: const BorderSide(color: _cyan, width: 1.2),
           ),
         ),
@@ -522,7 +522,7 @@ class _FuturisticDashboardScreenState
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: _panel,
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(30),
                 border: Border.all(color: Colors.white10),
               ),
               child: Text(
@@ -642,13 +642,13 @@ class _FuturisticDashboardScreenState
       itemBuilder: (_, index) {
         final action = actions[index];
         return InkWell(
-          borderRadius: BorderRadius.circular(22),
+          borderRadius: BorderRadius.circular(32),
           onTap: () => _openBuilder(action.builder),
           child: Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
               color: _panel,
-              borderRadius: BorderRadius.circular(22),
+              borderRadius: BorderRadius.circular(32),
               border: Border.all(color: action.color.withOpacity(.18)),
             ),
             child: Column(
@@ -697,7 +697,7 @@ class _FuturisticDashboardScreenState
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 7),
         decoration: BoxDecoration(
           color: const Color(0xF20D1116),
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(34),
           border: Border.all(color: Colors.white12),
         ),
         child: Row(
@@ -813,7 +813,7 @@ class _Metric extends StatelessWidget {
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: const Color(0xFF111012),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(30),
         border: Border.all(color: color.withOpacity(.17)),
       ),
       child: Column(

@@ -97,7 +97,7 @@ class _AsistenteIaLegadoScreenState extends State<AsistenteIaLegadoScreen> {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(24),
                 gradient: LinearGradient(colors: [_cyan, _violet]),
               ),
               child: Icon(Icons.auto_awesome_rounded, color: StiloColors.background),
@@ -195,7 +195,7 @@ class _AsistenteIaLegadoScreenState extends State<AsistenteIaLegadoScreen> {
       padding: EdgeInsets.symmetric(horizontal: 14, vertical: 11),
       decoration: BoxDecoration(
         color: StiloColors.surface,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(28),
         border: Border.all(color: _cyan.withOpacity(.16)),
       ),
       child: Row(
@@ -352,7 +352,7 @@ class _AsistenteIaLegadoScreenState extends State<AsistenteIaLegadoScreen> {
                   itemCount: message.imageUrls.length,
                   separatorBuilder: (_, __) => SizedBox(width: 7),
                   itemBuilder: (_, imageIndex) => ClipRRect(
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: BorderRadius.circular(24),
                     child: Image.network(
                       message.imageUrls[imageIndex],
                       width: 128,
@@ -446,7 +446,7 @@ class _AsistenteIaLegadoScreenState extends State<AsistenteIaLegadoScreen> {
                   itemBuilder: (_, index) => Stack(
                     children: [
                       ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(22),
                         child: FutureBuilder<Widget>(
                           future: _preview(_pendingImages[index]),
                           builder: (_, snapshot) => SizedBox(
@@ -505,7 +505,7 @@ class _AsistenteIaLegadoScreenState extends State<AsistenteIaLegadoScreen> {
                       filled: true,
                       fillColor: _panel,
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(18),
+                        borderRadius: BorderRadius.circular(28),
                         borderSide: BorderSide.none,
                       ),
                     ),

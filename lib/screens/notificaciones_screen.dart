@@ -63,15 +63,15 @@ class NotificacionesScreen extends StatelessWidget {
                     if (!leida) await service.marcarLeida(aviso.id, usuario.id);
                     if (context.mounted) await NotificationRouter.open(context, usuario, aviso.id);
                   },
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(30),
                   child: Container(
                     padding: EdgeInsets.all(18),
                     decoration: BoxDecoration(
-                      color: _tarjeta, borderRadius: BorderRadius.circular(20),
+                      color: _tarjeta, borderRadius: BorderRadius.circular(30),
                       border: Border.all(color: leida ? StiloColors.text.withValues(alpha: .10) : _color(aviso.tipo).withOpacity(.7)),
                     ),
                     child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Container(width: 46, height: 46, decoration: BoxDecoration(color: _color(aviso.tipo).withOpacity(.14), borderRadius: BorderRadius.circular(14)), child: Icon(_icono(aviso.tipo), color: _color(aviso.tipo))),
+                      Container(width: 46, height: 46, decoration: BoxDecoration(color: _color(aviso.tipo).withOpacity(.14), borderRadius: BorderRadius.circular(24)), child: Icon(_icono(aviso.tipo), color: _color(aviso.tipo))),
                       SizedBox(width: 14),
                       Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                         Row(children: [
@@ -99,13 +99,13 @@ class NotificacionesScreen extends StatelessWidget {
       padding: EdgeInsets.fromLTRB(18, 10, 18, 4),
       child: Material(
         color: StiloColors.surface,
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(32),
         child: InkWell(
-          borderRadius: BorderRadius.circular(22),
+          borderRadius: BorderRadius.circular(32),
           onTap: () => _confirmarAvisoGeneral(context, service),
           child: Container(
             padding: EdgeInsets.all(16),
-            decoration: BoxDecoration(borderRadius: BorderRadius.circular(22), border: Border.all(color: _urgente.withOpacity(.65))),
+            decoration: BoxDecoration(borderRadius: BorderRadius.circular(32), border: Border.all(color: _urgente.withOpacity(.65))),
             child: Row(children: [
               Container(width: 50, height: 50, decoration: BoxDecoration(color: _urgente.withOpacity(.15), shape: BoxShape.circle), child: Icon(Icons.notifications_active_rounded, color: _urgente, size: 28)),
               SizedBox(width: 13),

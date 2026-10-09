@@ -76,7 +76,7 @@ class _CrearSolicitudSalidaScreenState extends State<CrearSolicitudSalidaScreen>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             backgroundColor: Color(0xFF4CAF50),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
             behavior: SnackBarBehavior.floating,
             content: Row(
               children: [
@@ -170,7 +170,7 @@ class _CrearSolicitudSalidaScreenState extends State<CrearSolicitudSalidaScreen>
                     return Card(
                       color: StiloColors.surface,
                       margin: EdgeInsets.only(bottom: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: StiloColors.text.withValues(alpha: .10))),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26), side: BorderSide(color: StiloColors.text.withValues(alpha: .10))),
                       child: ListTile(
                         contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                         leading: CircleAvatar(
@@ -235,7 +235,7 @@ class _CrearSolicitudSalidaScreenState extends State<CrearSolicitudSalidaScreen>
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Color(0xFFFF9800),
                     foregroundColor: StiloColors.background,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
                   ),
                   onPressed: _enviando ? null : _enviarSolicitudAlmacen,
                   child: _enviando
@@ -296,7 +296,7 @@ class _CrearSolicitudSalidaScreenState extends State<CrearSolicitudSalidaScreen>
                 children: [
                   Container(
                     width: 40, height: 4, margin: EdgeInsets.only(bottom: 20),
-                    decoration: BoxDecoration(color: StiloColors.text.withOpacity(0.2), borderRadius: BorderRadius.circular(10)),
+                    decoration: BoxDecoration(color: StiloColors.text.withOpacity(0.2), borderRadius: BorderRadius.circular(20)),
                   ),
                   Align(
                     alignment: Alignment.centerLeft,
@@ -315,7 +315,7 @@ class _CrearSolicitudSalidaScreenState extends State<CrearSolicitudSalidaScreen>
                       prefixIcon: Icon(Icons.search_rounded, color: StiloColors.text.withValues(alpha: .54)),
                       filled: true,
                       fillColor: StiloColors.surface,
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(26), borderSide: BorderSide.none),
                     ),
                   ),
                   SizedBox(height: 16),
@@ -364,7 +364,7 @@ class _CrearSolicitudSalidaScreenState extends State<CrearSolicitudSalidaScreen>
                               padding: EdgeInsets.all(12),
                               decoration: BoxDecoration(
                                 color: isSelected ? Color(0xFF06B6D4).withOpacity(0.1) : StiloColors.surface,
-                                borderRadius: BorderRadius.circular(16),
+                                borderRadius: BorderRadius.circular(26),
                                 border: Border.all(color: isSelected ? Color(0xFF06B6D4).withOpacity(0.5) : StiloColors.text.withOpacity(0.05)),
                               ),
                               child: Column(
@@ -455,7 +455,7 @@ class _CrearSolicitudSalidaScreenState extends State<CrearSolicitudSalidaScreen>
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Color(0xFF06B6D4),
                         foregroundColor: StiloColors.background,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
                       ),
                       onPressed: totalSeleccionados == 0 ? null : () {
                         final agregados = selecciones.values.where((item) => item['cantidad'] > 0).toList();

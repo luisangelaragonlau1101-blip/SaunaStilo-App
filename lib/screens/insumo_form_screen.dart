@@ -223,8 +223,8 @@ Future<void> _escanearCodigoFormulario() async {
                   decoration: InputDecoration(
                     labelText: 'Código de Barras (Opcional)',
                     labelStyle: TextStyle(color: StiloColors.text.withValues(alpha: .70), fontSize: 14),
-                    enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: StiloColors.text.withValues(alpha: .24)), borderRadius: BorderRadius.circular(20)),
-                    focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: colorRosaVibrante), borderRadius: BorderRadius.circular(20)),
+                    enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: StiloColors.text.withValues(alpha: .24)), borderRadius: BorderRadius.circular(30)),
+                    focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: colorRosaVibrante), borderRadius: BorderRadius.circular(30)),
                     suffixIcon: IconButton(
                       icon: Icon(Icons.qr_code_scanner, color: colorAcento),
                       tooltip: 'Escanear Código',
@@ -387,7 +387,7 @@ Future<void> _escanearCodigoFormulario() async {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: colorAzul,
                     padding: EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                   ),
                   onPressed: _isSaving ? null : _guardarInsumo, // Se desactiva si está guardando
                   child: _isSaving
@@ -410,8 +410,8 @@ Future<void> _escanearCodigoFormulario() async {
     return InputDecoration(
       labelText: label,
       labelStyle: TextStyle(color: StiloColors.text.withValues(alpha: .70), fontSize: 14),
-      enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: StiloColors.text.withValues(alpha: .24)), borderRadius: BorderRadius.circular(20)),
-      focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: colorRosaVibrante), borderRadius: BorderRadius.circular(20)),
+      enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: StiloColors.text.withValues(alpha: .24)), borderRadius: BorderRadius.circular(30)),
+      focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: colorRosaVibrante), borderRadius: BorderRadius.circular(30)),
     );
   }
 

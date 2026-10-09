@@ -43,7 +43,7 @@ class _PerfilesEquipoScreenState extends State<PerfilesEquipoScreen> {
                 filled: true,
                 fillColor: StiloColors.surface,
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(18),
+                  borderRadius: BorderRadius.circular(28),
                   borderSide: BorderSide.none,
                 ),
               ),
@@ -79,7 +79,7 @@ class _PerfilesEquipoScreenState extends State<PerfilesEquipoScreen> {
                     final foto = data['fotoUrl']?.toString() ?? '';
                     return ListTile(
                       tileColor: StiloColors.surface,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
                       contentPadding: EdgeInsets.symmetric(horizontal: 15, vertical: 8),
                       leading: CircleAvatar(
                         radius: 25,

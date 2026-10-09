@@ -136,7 +136,7 @@ class _JornadaCompactaState extends State<JornadaCompacta> with WidgetsBindingOb
         final supportsPauses = record?['supportsPauses'] == true;
         return Container(
           padding: EdgeInsets.all(18),
-          decoration: BoxDecoration(color: StiloColors.surface, borderRadius: BorderRadius.circular(24), border: Border.all(color: StiloColors.surface)),
+          decoration: BoxDecoration(color: StiloColors.surface, borderRadius: BorderRadius.circular(34), border: Border.all(color: StiloColors.surface)),
           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
             Row(children: [Icon(Icons.fingerprint_rounded, color: StiloColors.accent), SizedBox(width: 9),
               Expanded(child: Text('Mi jornada', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800))),

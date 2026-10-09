@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import '../presentation/appearance.dart';
+import '../widgets/soft_workspace.dart';
+import '../widgets/stilo_orbit.dart';
 import '../models/user_model.dart';
 import 'inventario_admin_screen.dart';
 import 'inventario_trabajador_screen.dart';
@@ -15,8 +18,9 @@ class WarehouseWorkspaceScreen extends StatelessWidget {
     final manager = user.rol == AppRoles.admin || user.rol == AppRoles.almacenista;
     void open(Widget page) => Navigator.push(context, MaterialPageRoute<void>(builder: (_) => page));
     return Scaffold(appBar: AppBar(title: const Text('Almacén')), body: ListView(padding: const EdgeInsets.all(20), children: [
-      Text(manager ? 'Todo el almacén, en un lugar.' : 'Lo que necesitas para trabajar.', style: const TextStyle(fontSize: 25, fontWeight: FontWeight.w800)),
-      const SizedBox(height: 10), const Text('Productos, fotografías, solicitudes y herramientas. Cada movimiento conserva su seguimiento.'), const SizedBox(height: 20),
+      if (AppearanceController.instance.modern) StiloSectionHero(eyebrow: 'STILO · ALMACÉN', title: manager ? 'Todo en su lugar.' : 'Listo para trabajar.', subtitle: 'Productos, fotografías y herramientas. Consulta cada movimiento y encuentra lo que necesitas.', icon: Icons.warehouse_rounded, accent: stiloAccents[4])
+      else ...[Text(manager ? 'Todo el almacén, en un lugar.' : 'Lo que necesitas para trabajar.', style: const TextStyle(fontSize: 25, fontWeight: FontWeight.w800)), const SizedBox(height: 10), const Text('Productos, fotografías, solicitudes y herramientas. Cada movimiento conserva su seguimiento.')],
+      const SizedBox(height: 24), const Text('¿Qué necesitas hacer?', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)), const SizedBox(height: 10),
       _option(context, Icons.inventory_2_outlined, 'Productos y existencias', manager ? 'Registrar productos, fotos y entradas' : 'Consultar productos disponibles', () => open(manager ? const InventarioAdminScreen() : const InventarioTrabajadorScreen())),
       _option(context, Icons.outbox_outlined, 'Mis solicitudes', 'Solicitar herramienta y revisar su devolución', () => open(ControlHerramientasScreen(usuarioId: user.id, usuarioNombre: user.nombre))),
       if (manager) _option(context, Icons.rule_folder_outlined, 'Entregas y devoluciones', 'Autorizar salidas, recibir y consultar movimientos', () => open(const AdminSolicitudesHerramientasScreen())),
@@ -24,5 +28,8 @@ class WarehouseWorkspaceScreen extends StatelessWidget {
       _option(context, Icons.home_repair_service_outlined, manager ? 'Cajitas del equipo' : 'Mi cajita', 'Herramientas asignadas y su estado', () => open(manager ? const AdminCajitasScreen() : TrabajadorCajitaHerramientasScreen(trabajadorId: user.id))),
     ]));
   }
-  Widget _option(BuildContext context, IconData icon, String title, String subtitle, VoidCallback action) => Card(child: ListTile(contentPadding: const EdgeInsets.all(18), leading: Icon(icon, color: Theme.of(context).colorScheme.primary), title: Text(title, style: const TextStyle(fontWeight: FontWeight.w700)), subtitle: Text(subtitle), trailing: const Icon(Icons.chevron_right), onTap: action));
+  Widget _option(BuildContext context, IconData icon, String title, String subtitle, VoidCallback action) {
+    if (AppearanceController.instance.modern) return StiloActionRow(icon: icon, title: title, subtitle: subtitle, accent: stiloAccents[switch (icon) { Icons.inventory_2_outlined => 0, Icons.outbox_outlined => 1, Icons.rule_folder_outlined => 2, Icons.handyman_outlined => 3, _ => 4 }], onTap: action);
+    return Card(child: ListTile(contentPadding: const EdgeInsets.all(18), leading: Icon(icon, color: Theme.of(context).colorScheme.primary), title: Text(title, style: const TextStyle(fontWeight: FontWeight.w700)), subtitle: Text(subtitle), trailing: const Icon(Icons.chevron_right), onTap: action));
+  }
 }

@@ -110,7 +110,7 @@ class _PersonalDayState extends State<PersonalDayScreen> with WidgetsBindingObse
       Wrap(spacing:8,runSpacing:8,children:[for(var i=0;i<4;i++)ChoiceChip(key:ValueKey('personal-tab-$i'),label:Text(['Mi plan','Compras','Eventos','Historial'][i]),selected:_tab==i,onSelected:(_)=>setState(()=>_tab=i))]),
       SizedBox(height:18),
       if(_loading||_busy)LinearProgressIndicator(),
-      if(_error!=null)Container(margin:EdgeInsets.symmetric(vertical:12),padding:EdgeInsets.all(16),decoration:BoxDecoration(color:StiloColors.surface,borderRadius:BorderRadius.circular(22)),child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[Text(_error!,style:TextStyle(color:Colors.orangeAccent)),Text('Lo que siga visible puede ser anterior. No se confirmó un cambio sin conexión.',style:TextStyle(color:StiloColors.text.withValues(alpha: .60),fontSize:12)),TextButton(onPressed:_busy?null:_load,child:Text('Reintentar y actualizar'))])),
+      if(_error!=null)Container(margin:EdgeInsets.symmetric(vertical:12),padding:EdgeInsets.all(16),decoration:BoxDecoration(color:StiloColors.surface,borderRadius:BorderRadius.circular(32)),child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[Text(_error!,style:TextStyle(color:Colors.orangeAccent)),Text('Lo que siga visible puede ser anterior. No se confirmó un cambio sin conexión.',style:TextStyle(color:StiloColors.text.withValues(alpha: .60),fontSize:12)),TextButton(onPressed:_busy?null:_load,child:Text('Reintentar y actualizar'))])),
       if(_data!=null&&_error==null)...[
         if(_tab==0)...[
           PersonalCompletionBanner(items:items),
@@ -167,7 +167,7 @@ class PersonalCompletionBanner extends StatelessWidget {
  const PersonalCompletionBanner({super.key,required this.items});
  @override Widget build(BuildContext context){
     Theme.of(context);final done=items.where((i)=>i['done']==true).length,all=items.isNotEmpty&&done==items.length;
-  return Container(margin:EdgeInsets.only(bottom:16),padding:EdgeInsets.all(17),decoration:BoxDecoration(color:StiloColors.surface,borderRadius:BorderRadius.circular(25)),child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[Text(all?'¡Pendientes del día completados! ✨':'Tu avance: $done de ${items.length}',style:TextStyle(fontWeight:FontWeight.w800,color:StiloColors.accent)),SizedBox(height:9),LinearProgressIndicator(value:items.isEmpty?0:done/items.length,borderRadius:BorderRadius.circular(10)),if(all)Padding(padding:EdgeInsets.only(top:9),child:Text('Cuando termine tu horario, confirma tu salida en Mi jornada.',style:TextStyle(color:StiloColors.text.withValues(alpha: .70),fontSize:12)))]));
+  return Container(margin:EdgeInsets.only(bottom:16),padding:EdgeInsets.all(17),decoration:BoxDecoration(color:StiloColors.surface,borderRadius:BorderRadius.circular(25)),child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[Text(all?'¡Pendientes del día completados! ✨':'Tu avance: $done de ${items.length}',style:TextStyle(fontWeight:FontWeight.w800,color:StiloColors.accent)),SizedBox(height:9),LinearProgressIndicator(value:items.isEmpty?0:done/items.length,borderRadius:BorderRadius.circular(20)),if(all)Padding(padding:EdgeInsets.only(top:9),child:Text('Cuando termine tu horario, confirma tu salida en Mi jornada.',style:TextStyle(color:StiloColors.text.withValues(alpha: .70),fontSize:12)))]));
  }
 }
 class _PersonalAssistantService extends CompanyLearningService {

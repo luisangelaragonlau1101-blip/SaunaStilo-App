@@ -5,6 +5,9 @@ import '../models/user_model.dart';
 import '../services/admin_workspace_service.dart';
 import '../services/app_action_catalog.dart';
 import 'human_resources_screen.dart';
+import '../presentation/appearance.dart';
+import '../widgets/soft_workspace.dart';
+import '../widgets/stilo_orbit.dart';
 
 class BusinessWorkspaceScreen extends StatelessWidget {
   final UserModel user;
@@ -14,14 +17,19 @@ class BusinessWorkspaceScreen extends StatelessWidget {
     void open(Widget page) => Navigator.push(context, MaterialPageRoute<void>(builder: (_) => page));
     final actions = AppActionCatalog.forUser(user);
     return Scaffold(appBar: AppBar(title: const Text('Gestión de la empresa')), body: ListView(padding: const EdgeInsets.all(20), children: [
-      const Text('Administración', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800)),
-      const SizedBox(height: 8), const Text('Personas, ventas, abastecimiento y control interno en un solo espacio.'), const SizedBox(height: 20),
-      Card(child: ListTile(contentPadding: const EdgeInsets.all(20), leading: Icon(Icons.badge_outlined, color: Theme.of(context).colorScheme.primary), title: const Text('Recursos Humanos'), subtitle: const Text('Expedientes, altas, horarios, nómina e incorporación'), trailing: const Icon(Icons.chevron_right), onTap: () => open(HumanResourcesScreen(user: user)))),
-      Card(child: ListTile(contentPadding: const EdgeInsets.all(20), leading: Icon(Icons.account_balance_wallet_outlined, color: Theme.of(context).colorScheme.primary), title: const Text('Control financiero interno'), subtitle: const Text('Registrar ingresos y egresos; revisar el saldo registrado'), trailing: const Icon(Icons.chevron_right), onTap: () => open(BusinessLedgerScreen(user: user)))),
-      for (final id in ['clientes','ventas','cotizaciones','proveedores','bandeja_admin','plan_personal','conocimiento_ia','alerta_general','voz']) ...actions.where((a) => a.id == id).map((a) => Card(child: ListTile(contentPadding: const EdgeInsets.all(18), leading: Icon(a.icon, color: Theme.of(context).colorScheme.primary), title: Text(a.title), subtitle: Text(a.subtitle), trailing: const Icon(Icons.chevron_right), onTap: () => Navigator.push(context, MaterialPageRoute<void>(builder: a.builder))))),
+      if (AppearanceController.instance.modern) const StiloSectionHero(eyebrow: 'STILO · EMPRESA', title: 'Tu empresa, conectada.', subtitle: 'Personas, ventas, abastecimiento y control interno en un solo espacio.', icon: Icons.business_center_rounded)
+      else ...[const Text('Administración', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800)), const SizedBox(height: 8), const Text('Personas, ventas, abastecimiento y control interno en un solo espacio.')],
+      const SizedBox(height: 24),
+      _option(context, Icons.badge_outlined, 'Recursos Humanos', 'Expedientes, altas, horarios, nómina e incorporación', () => open(HumanResourcesScreen(user: user)), 1),
+      _option(context, Icons.account_balance_wallet_outlined, 'Control financiero interno', 'Registrar ingresos y egresos; revisar el saldo registrado', () => open(BusinessLedgerScreen(user: user)), 4),
+      for (final id in ['clientes','ventas','cotizaciones','proveedores','bandeja_admin','plan_personal','conocimiento_ia','alerta_general','voz']) ...actions.where((a) => a.id == id).map((a) => _option(context, a.icon, a.title, a.subtitle, () => Navigator.push(context, MaterialPageRoute<void>(builder: a.builder)), 2)),
       const SizedBox(height: 16), const Card(child: Padding(padding: EdgeInsets.all(18), child: Text('Alcance administrativo: estos registros son para el control interno de Sauna Stilo. No están conectados a Siigo Aspel y no emiten CFDI, timbran nómina ni generan contabilidad fiscal.'))),
     ]));
   }
+  Widget _option(BuildContext context, IconData icon, String title, String subtitle, VoidCallback onTap, int color) => AppearanceController.instance.modern
+    ? StiloActionRow(icon: icon, title: title, subtitle: subtitle, accent: stiloAccents[color], onTap: onTap)
+    : Card(child: ListTile(contentPadding: const EdgeInsets.all(18), leading: Icon(icon, color: Theme.of(context).colorScheme.primary), title: Text(title), subtitle: Text(subtitle), trailing: const Icon(Icons.chevron_right), onTap: onTap));
+
 }
 
 class BusinessLedgerScreen extends StatefulWidget {

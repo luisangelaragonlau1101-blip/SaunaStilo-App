@@ -241,7 +241,7 @@ class _InsumoDetalleScreenState extends State<InsumoDetalleScreen> {
       padding: EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: colorTarjeta,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(30),
         border: Border.all(color: StiloColors.text.withValues(alpha: .10)),
       ),
       child: Column(
@@ -255,7 +255,7 @@ class _InsumoDetalleScreenState extends State<InsumoDetalleScreen> {
                   child: Hero(
                     tag: widget.insumo.id,
                     child: ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(22),
                       child: InventoryPhoto(
                         imageUrl: widget.insumo.imagenUrl!,
                         width: 90,
@@ -269,7 +269,7 @@ class _InsumoDetalleScreenState extends State<InsumoDetalleScreen> {
                 Container(
                   width: 90,
                   height: 90,
-                  decoration: BoxDecoration(color: StiloColors.text.withValues(alpha: .10), borderRadius: BorderRadius.circular(12)),
+                  decoration: BoxDecoration(color: StiloColors.text.withValues(alpha: .10), borderRadius: BorderRadius.circular(22)),
                   child: Icon(Icons.inventory_2_outlined, color: StiloColors.text.withValues(alpha: .54), size: 36),
                 ),
               SizedBox(width: 16),
@@ -339,7 +339,7 @@ class _InsumoDetalleScreenState extends State<InsumoDetalleScreen> {
       return Container(
         width: double.infinity,
         padding: EdgeInsets.all(32),
-        decoration: BoxDecoration(color: colorTarjeta, borderRadius: BorderRadius.circular(16)),
+        decoration: BoxDecoration(color: colorTarjeta, borderRadius: BorderRadius.circular(26)),
         child: Column(
           children: [
             Icon(Icons.history_toggle_off, color: StiloColors.text.withValues(alpha: .24), size: 48),
@@ -365,7 +365,7 @@ class _InsumoDetalleScreenState extends State<InsumoDetalleScreen> {
           padding: EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: colorTarjeta,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(26),
             border: Border.all(color: StiloColors.text.withOpacity(0.05)),
           ),
           child: Row(

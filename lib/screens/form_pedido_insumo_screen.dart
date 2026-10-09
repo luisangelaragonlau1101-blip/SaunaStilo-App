@@ -160,7 +160,7 @@ class _FormPedidoInsumoScreenState extends State<FormPedidoInsumoScreen> {
                 padding: EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: Color(0xFF3B82F6).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(22),
                   border: Border.all(color: Color(0xFF3B82F6).withOpacity(0.3))
                 ),
                 child: Row(
@@ -202,15 +202,15 @@ class _FormPedidoInsumoScreenState extends State<FormPedidoInsumoScreen> {
                       filled: true,
                       fillColor: StiloColors.surface,
                       enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(22),
                         borderSide: BorderSide(color: StiloColors.text.withValues(alpha: .12)),
                       ),
                       focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(22),
                         borderSide: BorderSide(color: Color(0xFF3B82F6)),
                       ),
                       errorBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(22),
                         borderSide: BorderSide(color: Colors.redAccent),
                       ),
                     ),
@@ -266,7 +266,7 @@ class _FormPedidoInsumoScreenState extends State<FormPedidoInsumoScreen> {
                 padding: EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: StiloColors.surface,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(22),
                   border: Border.all(color: StiloColors.text.withValues(alpha: .12))
                 ),
                 child: Row(
@@ -281,12 +281,12 @@ class _FormPedidoInsumoScreenState extends State<FormPedidoInsumoScreen> {
               SizedBox(height: 16),
               InkWell(
                 onTap: () => _seleccionarFecha(context),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(22),
                 child: Container(
                   padding: EdgeInsets.symmetric(horizontal: 16, vertical: 18),
                   decoration: BoxDecoration(
                     color: StiloColors.surface,
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(22),
                     border: Border.all(color: StiloColors.text.withValues(alpha: .12))
                   ),
                   child: Row(
@@ -319,7 +319,7 @@ class _FormPedidoInsumoScreenState extends State<FormPedidoInsumoScreen> {
                   backgroundColor: Color(0xFF3B82F6),
                   foregroundColor: StiloColors.text,
                   padding: EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
                 ),
                 onPressed: _guardando ? null : _guardarPedido,
                 child: _guardando
@@ -357,15 +357,15 @@ class _FormPedidoInsumoScreenState extends State<FormPedidoInsumoScreen> {
         filled: true,
         fillColor: StiloColors.surface,
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(22),
           borderSide: BorderSide(color: StiloColors.text.withValues(alpha: .12)),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(22),
           borderSide: BorderSide(color: Color(0xFF3B82F6)),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(22),
           borderSide: BorderSide(color: Colors.redAccent),
         ),
       ),

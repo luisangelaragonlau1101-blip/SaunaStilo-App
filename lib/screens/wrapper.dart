@@ -68,7 +68,7 @@ void _mostrarImagenGrande(BuildContext context, String imageUrl) {
               minScale: 0.5,
               maxScale: 4.0,
               child: ClipRRect(
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(30),
                 child: Image.network(
                   imageUrl,
                   fit: BoxFit.contain,
@@ -201,7 +201,7 @@ class _ErrorScreen extends StatelessWidget {
                 backgroundColor: Colors.white10,
                 foregroundColor: Colors.white,
                 elevation: 0,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22))
               ),
               onPressed: () => AuthService().logout(),
               icon: const Icon(Icons.logout, size: 18),
@@ -512,7 +512,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                   padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(24),
+                    borderRadius: BorderRadius.circular(34),
                     gradient: const LinearGradient(
                       colors: [Color(0xFF8B5CF6), Color(0xFF6D28D9)],
                       begin: Alignment.topLeft,
@@ -614,7 +614,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                         padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
                           color: const Color(0xFF1E1E1E),
-                          borderRadius: BorderRadius.circular(24),
+                          borderRadius: BorderRadius.circular(34),
                           border: Border.all(color: Colors.white.withOpacity(0.08), width: 1.5),
                         ),
                         child: Column(
@@ -708,7 +708,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
         color: const Color(0xFF1E1E1E),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(24),
         border: Border.all(color: color.withOpacity(0.3), width: 1),
       ),
       child: Row(
@@ -783,7 +783,7 @@ class _ProyectoDuoCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 10),
                 ClipRRect(
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(20),
                   child: SizedBox(
                     height: 12,
                     child: LinearProgressIndicator(
@@ -829,7 +829,7 @@ class _ProyectoDuoCard extends StatelessWidget {
             return Column(
               children: [
                 const SizedBox(height: 12),
-                Container(width: 40, height: 5, decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(10))),
+                Container(width: 40, height: 5, decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(20))),
                 const SizedBox(height: 20),
                 
                 Padding(
@@ -895,7 +895,7 @@ class _ProyectoDuoCard extends StatelessWidget {
                                 padding: const EdgeInsets.all(14),
                                 decoration: BoxDecoration(
                                   color: const Color(0xFF121212), 
-                                  borderRadius: BorderRadius.circular(16),
+                                  borderRadius: BorderRadius.circular(26),
                                   border: Border.all(color: estaAtrasada ? Colors.redAccent.withOpacity(0.3) : Colors.white10),
                                 ),
                                 child: Column(
@@ -1019,13 +1019,13 @@ class _MenuCard extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap ?? () => Navigator.push(context, MaterialPageRoute(builder: (context) => destino!)),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(30),
         splashColor: color.withOpacity(0.1),
         highlightColor: color.withOpacity(0.05),
         child: Container(
           decoration: BoxDecoration(
             color: const Color(0xFF1E1E1E),
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(30),
             border: Border.all(color: Colors.white.withOpacity(0.05), width: 1),
             boxShadow: [
               BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 8, offset: const Offset(0, 4)),
@@ -1239,7 +1239,7 @@ class _OperativoDashboardState extends State<OperativoDashboard> {
                   margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                   padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(24),
+                    borderRadius: BorderRadius.circular(34),
                     gradient: const LinearGradient(
                       colors: [Color(0xFF00B0FF), Color(0xFF0081CB)],
                       begin: Alignment.topLeft,
@@ -1322,7 +1322,7 @@ class _OperativoDashboardState extends State<OperativoDashboard> {
                         padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
                           color: const Color(0xFF1E1E1E),
-                          borderRadius: BorderRadius.circular(24),
+                          borderRadius: BorderRadius.circular(34),
                           border: Border.all(color: Colors.white.withOpacity(0.08), width: 1.5),
                         ),
                         child: Column(
@@ -1339,7 +1339,7 @@ class _OperativoDashboardState extends State<OperativoDashboard> {
                                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                                   decoration: BoxDecoration(
                                     color: const Color(0xFF00B0FF).withOpacity(0.2),
-                                    borderRadius: BorderRadius.circular(10)
+                                    borderRadius: BorderRadius.circular(20)
                                   ),
                                   child: Text(
                                     "${actividades.length}",
@@ -1459,7 +1459,7 @@ class _OperativoDashboardState extends State<OperativoDashboard> {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
         color: const Color(0xFF1E1E1E),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(24),
         border: Border.all(color: color.withOpacity(0.3), width: 1),
       ),
       child: Row(
@@ -1547,7 +1547,7 @@ class _TareaTrabajadorCard extends StatelessWidget {
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: const Color(0xFF1E1E1E), 
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(30),
           border: Border.all(
             color: colorEstado.withOpacity(0.3), 
             width: 1.5
@@ -1610,7 +1610,7 @@ class _TareaTrabajadorCard extends StatelessWidget {
             ),
             const SizedBox(height: 6),
             ClipRRect(
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(20),
               child: SizedBox(
                 height: 8,
                 child: LinearProgressIndicator(
@@ -1762,7 +1762,7 @@ class _AvatarConRachaReal extends StatelessWidget {
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(30),
                       border: Border.all(color: const Color(0xFF0081CB), width: 2),
                       boxShadow: [
                         BoxShadow(
@@ -1958,7 +1958,7 @@ class _AlmacenistaDashboardState extends State<AlmacenistaDashboard> {
                   margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                   padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(24),
+                    borderRadius: BorderRadius.circular(34),
                     gradient: const LinearGradient(
                       colors: [Color(0xFFFF9800), Color(0xFFF57C00)],
                       begin: Alignment.topLeft,
@@ -2053,7 +2053,7 @@ class _AlmacenistaDashboardState extends State<AlmacenistaDashboard> {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
         color: const Color(0xFF1E1E1E),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(24),
         border: Border.all(color: color.withOpacity(0.3), width: 1),
       ),
       child: Row(

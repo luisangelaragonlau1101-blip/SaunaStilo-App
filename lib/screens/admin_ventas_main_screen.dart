@@ -152,8 +152,8 @@ class _VentasScreenState extends State<VentasScreen> {
           decoration: InputDecoration(
             labelText: "Monto Total (\$)",
             labelStyle: TextStyle(color: StiloColors.text.withValues(alpha: .54)),
-            enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: StiloColors.text.withValues(alpha: .24)), borderRadius: BorderRadius.circular(10)),
-            focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: Color(0xFFFFDE21)), borderRadius: BorderRadius.circular(10)),
+            enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: StiloColors.text.withValues(alpha: .24)), borderRadius: BorderRadius.circular(20)),
+            focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: Color(0xFFFFDE21)), borderRadius: BorderRadius.circular(20)),
           ),
         ),
         actions: [
@@ -305,7 +305,7 @@ class _VentasScreenState extends State<VentasScreen> {
       child: Container(
         margin: EdgeInsets.only(bottom: 12),
         padding: EdgeInsets.all(16),
-        decoration: BoxDecoration(color: StiloColors.surface, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.greenAccent.withOpacity(0.3))),
+        decoration: BoxDecoration(color: StiloColors.surface, borderRadius: BorderRadius.circular(22), border: Border.all(color: Colors.greenAccent.withOpacity(0.3))),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -338,7 +338,7 @@ class _VentasScreenState extends State<VentasScreen> {
     return Container(
       margin: EdgeInsets.only(bottom: 12),
       padding: EdgeInsets.all(16),
-      decoration: BoxDecoration(color: StiloColors.surface, borderRadius: BorderRadius.circular(12), border: Border.all(color: StiloColors.text.withValues(alpha: .12))),
+      decoration: BoxDecoration(color: StiloColors.surface, borderRadius: BorderRadius.circular(22), border: Border.all(color: StiloColors.text.withValues(alpha: .12))),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -455,7 +455,7 @@ class _VentasScreenState extends State<VentasScreen> {
                 )),
                 SizedBox(height: 32),
                 SizedBox(width: double.infinity, child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(backgroundColor: Color(0xFFFB975F), padding: EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                  style: ElevatedButton.styleFrom(backgroundColor: Color(0xFFFB975F), padding: EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22))),
                   onPressed: () { Navigator.pop(context); _generarDescargarReporte(mesSeleccionado, anioSeleccionado); },
                   child: Text('EXPORTAR DOCUMENTOS', style: TextStyle(color: StiloColors.background, fontWeight: FontWeight.bold)),
                 ))
@@ -469,7 +469,7 @@ class _VentasScreenState extends State<VentasScreen> {
 
   Widget _buildDropdownContainer({required Widget child}) => Container(
     padding: EdgeInsets.symmetric(horizontal: 16),
-    decoration: BoxDecoration(color: StiloColors.surface, borderRadius: BorderRadius.circular(12)),
+    decoration: BoxDecoration(color: StiloColors.surface, borderRadius: BorderRadius.circular(22)),
     child: child,
   );
 

@@ -51,7 +51,7 @@ void mostrarModalHorario(BuildContext context, String trabajadorId, String nombr
                 fillColor: StiloColors.background,
                 hintText: "Ej. 08:00",
                 hintStyle: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .24)),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(22), borderSide: BorderSide.none),
                 prefixIcon: Icon(Icons.login_rounded, color: Color(0xFF00B0FF)),
               ),
             ),
@@ -69,7 +69,7 @@ void mostrarModalHorario(BuildContext context, String trabajadorId, String nombr
                 fillColor: StiloColors.background,
                 hintText: "Ej. 18:00",
                 hintStyle: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .24)),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(22), borderSide: BorderSide.none),
                 prefixIcon: Icon(Icons.logout_rounded, color: Colors.redAccent),
               ),
             ),
@@ -87,7 +87,7 @@ void mostrarModalHorario(BuildContext context, String trabajadorId, String nombr
                 fillColor: StiloColors.background,
                 hintText: "Ej. 15",
                 hintStyle: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .24)),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(22), borderSide: BorderSide.none),
                 prefixIcon: Icon(Icons.timer_rounded, color: Color(0xFFFF9800)),
               ),
             ),
@@ -100,7 +100,7 @@ void mostrarModalHorario(BuildContext context, String trabajadorId, String nombr
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Color(0xFF00B0FF),
                   padding: EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
                 ),
                 onPressed: () async {
                   int tolerancia = int.tryParse(toleranciaController.text) ?? 15;

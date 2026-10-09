@@ -62,7 +62,7 @@ class _RoundBoardState extends State<RoundBoardScreen>{
  void _act(VoidCallback action){try{setState(action);_persist();}on StateError catch(_) {}}
  @override Widget build(BuildContext context)=>Scaffold(backgroundColor:Colors.black,appBar:AppBar(title:Text(roundPacks.firstWhere((p)=>p.id==g.pack).title)),body:SafeArea(child:Center(child:ConstrainedBox(constraints:const BoxConstraints(maxWidth:650),child:ListView(padding:const EdgeInsets.all(20),children:[
   Wrap(spacing:8,runSpacing:8,children:[for(int n=0;n<g.names.length;n++)Chip(avatar:Icon(Icons.person_rounded,size:16,color:stiloAccents[n]),label:Text('${g.names[n]} · ${g.scores[n]}'))]),
-  const SizedBox(height:16),LinearProgressIndicator(value:g.index/g.questions.length,minHeight:7,borderRadius:BorderRadius.circular(10)),const SizedBox(height:20),
+  const SizedBox(height:16),LinearProgressIndicator(value:g.index/g.questions.length,minHeight:7,borderRadius:BorderRadius.circular(20)),const SizedBox(height:20),
   if(g.finished)...[
    const Center(child:StiloOrbitIcon(icon:Icons.emoji_events_rounded,color:Color(0xFFB7FF2A),size:80,active:true)),const SizedBox(height:18),
    Text(g.winners.length>1?'¡Empate de campeones!':'¡Ganó ${g.names[g.winners.single]}!',textAlign:TextAlign.center,style:const TextStyle(fontSize:28,fontWeight:FontWeight.w900)),

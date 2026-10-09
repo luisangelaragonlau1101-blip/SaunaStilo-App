@@ -111,7 +111,7 @@ final esDevolucion = solicitud['tipo'] == 'devolucion';
                         padding: EdgeInsets.all(12),
                         decoration: BoxDecoration(
                           color: colorTarjeta,
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(22),
                           border: Border.all(color: colorAcento.withOpacity(0.3)),
                           boxShadow: [
                             BoxShadow(
@@ -198,7 +198,7 @@ final esDevolucion = solicitud['tipo'] == 'devolucion';
                 int solicitudesPendientes = badgeSnapshot.hasData ? badgeSnapshot.data!.docs.length : 0;
                 return InkWell(
                   onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => ControlHerramientasScreen())),
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(26),
                   child: Container(
                     padding: EdgeInsets.all(20),
                     decoration: BoxDecoration(
@@ -207,7 +207,7 @@ final esDevolucion = solicitud['tipo'] == 'devolucion';
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(26),
                       border: Border.all(color: StiloColors.text.withOpacity(0.05)),
                       boxShadow: [
                         BoxShadow(
@@ -320,7 +320,7 @@ final nombrePropietario = h.propietarioOriginalNombre ?? 'Un compañero';
                       margin: EdgeInsets.only(bottom: 12),
                       decoration: BoxDecoration(
                         color: colorTarjeta,
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(26),
                         // Destacamos con borde naranja si es prestada
                         border: Border.all(color: esPrestada ? colorNaranja.withOpacity(0.3) : StiloColors.text.withOpacity(0.05)),
                         boxShadow: [
@@ -337,7 +337,7 @@ final nombrePropietario = h.propietarioOriginalNombre ?? 'Un compañero';
                           padding: EdgeInsets.all(10),
                           decoration: BoxDecoration(
                             color: enTransito ? colorNaranja.withOpacity(0.2) : colorAcento.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(22),
                           ),
                           child: Icon(
                             enTransito ? Icons.local_shipping : Icons.build,
@@ -537,7 +537,7 @@ final nombrePropietario = h.propietarioOriginalNombre ?? 'Un compañero';
                             padding: EdgeInsets.all(14),
                             decoration: BoxDecoration(
                               color: colorTarjeta,
-                              borderRadius: BorderRadius.circular(14),
+                              borderRadius: BorderRadius.circular(24),
                               border: Border.all(color: StiloColors.text.withValues(alpha: .10)),
                             ),
                             child: Row(
@@ -733,7 +733,7 @@ final nombrePropietario = h.propietarioOriginalNombre ?? 'Un compañero';
                                   SnackBar(
                                     behavior: SnackBarBehavior.floating,
                                     backgroundColor: colorNaranja,
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                                     margin: EdgeInsets.all(16),
                                     content: Row(
                                       children: [

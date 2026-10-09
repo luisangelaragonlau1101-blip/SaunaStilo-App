@@ -90,7 +90,7 @@ class _GuiaInteligenteScreenState extends State<GuiaInteligenteScreen> {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(24),
                 gradient: LinearGradient(colors: [_mint, _cyan]),
               ),
               child: Icon(Icons.explore_rounded, color: StiloColors.background),
@@ -163,7 +163,7 @@ class _GuiaInteligenteScreenState extends State<GuiaInteligenteScreen> {
       padding: EdgeInsets.symmetric(horizontal: 14, vertical: 11),
       decoration: BoxDecoration(
         color: StiloColors.surface,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(28),
         border: Border.all(color: _mint.withOpacity(.2)),
       ),
       child: Row(
@@ -263,7 +263,7 @@ class _GuiaInteligenteScreenState extends State<GuiaInteligenteScreen> {
         padding: EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: message.user ? StiloColors.surface : _panel,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(30),
           border: Border.all(
             color: message.user ? _mint.withOpacity(.18) : StiloColors.text.withValues(alpha: .10),
           ),
@@ -421,7 +421,7 @@ class _GuiaInteligenteScreenState extends State<GuiaInteligenteScreen> {
                       filled: true,
                       fillColor: _panel,
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(18),
+                        borderRadius: BorderRadius.circular(28),
                         borderSide: BorderSide.none,
                       ),
                     ),

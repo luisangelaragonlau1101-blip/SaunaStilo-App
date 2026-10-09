@@ -31,7 +31,7 @@ class ActividadesProyectoScreen extends StatelessWidget {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: StiloColors.surface,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
         title: Text(
           'Eliminar Actividad',
           style: GoogleFonts.inter(color: StiloColors.text, fontWeight: FontWeight.bold),
@@ -130,7 +130,7 @@ class ActividadesProyectoScreen extends StatelessWidget {
                   return Container(
                     width: double.infinity,
                     padding: EdgeInsets.all(16),
-                    decoration: BoxDecoration(color: StiloColors.surface, borderRadius: BorderRadius.circular(16)),
+                    decoration: BoxDecoration(color: StiloColors.surface, borderRadius: BorderRadius.circular(26)),
                     child: Text(
                       "Todavía no hay tareas asignadas para este proyecto.",
                       style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .38), fontSize: 14),
@@ -195,7 +195,7 @@ class ActividadesProyectoScreen extends StatelessWidget {
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: StiloColors.surface,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(26),
         border: Border.all(color: Color(0xFFFFDE21).withOpacity(0.35)),
       ),
       child: Row(
@@ -255,7 +255,7 @@ class ActividadesProyectoScreen extends StatelessWidget {
     return Container(
       margin: EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(30),
         gradient: LinearGradient(
           colors: gradientColors,
           begin: Alignment.topLeft,
@@ -272,7 +272,7 @@ class ActividadesProyectoScreen extends StatelessWidget {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(30),
           onTap: () {
             showModalBottomSheet(
               context: context,
@@ -338,7 +338,7 @@ class ActividadesProyectoScreen extends StatelessWidget {
                       padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                       decoration: BoxDecoration(
                         color: StiloColors.background.withValues(alpha: .38),
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(22),
                         border: Border.all(color: iconColor.withOpacity(0.5)),
                       ),
                       child: Text(
@@ -364,7 +364,7 @@ class ActividadesProyectoScreen extends StatelessWidget {
                         padding: EdgeInsets.symmetric(horizontal: 9, vertical: 4),
                         decoration: BoxDecoration(
                           color: Color(0xFFFFDE21),
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
                           'HOY',

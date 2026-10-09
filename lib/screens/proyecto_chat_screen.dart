@@ -116,7 +116,7 @@ class _ProyectoChatScreenState extends State<ProyectoChatScreen> {
       padding: EdgeInsets.all(14),
       decoration: BoxDecoration(
         gradient: LinearGradient(colors: [StiloColors.surface, StiloColors.surface]),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(30),
         border: Border.all(color: _acento.withOpacity(.25)),
       ),
       child: Row(
@@ -280,7 +280,7 @@ class _ProyectoChatScreenState extends State<ProyectoChatScreen> {
         itemBuilder: (_, index) => Stack(
           children: [
             ClipRRect(
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(20),
               child: FutureBuilder<Widget>(
                 future: _preview(_imagenes[index]),
                 builder: (_, snapshot) => SizedBox(
@@ -333,7 +333,7 @@ class _ProyectoChatScreenState extends State<ProyectoChatScreen> {
                   hintText: 'Escribe un avance del proyecto',
                   filled: true,
                   fillColor: StiloColors.text.withOpacity(.05),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: BorderSide.none),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide.none),
                 ),
               ),
             ),

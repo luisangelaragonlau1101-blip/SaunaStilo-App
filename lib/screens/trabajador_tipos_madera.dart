@@ -147,7 +147,7 @@ class _CatalogoSaunasTrabajadorScreenState extends State<CatalogoSaunasTrabajado
                       elevation: 0,
                       margin: EdgeInsets.only(bottom: 12),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(26),
                         side: BorderSide(color: StiloColors.text.withValues(alpha: .12), width: 1),
                       ),
                       child: Padding(
@@ -161,10 +161,10 @@ class _CatalogoSaunasTrabajadorScreenState extends State<CatalogoSaunasTrabajado
                               height: 60,
                               decoration: BoxDecoration(
                                 color: StiloColors.accent.withOpacity(0.15),
-                                borderRadius: BorderRadius.circular(14),
+                                borderRadius: BorderRadius.circular(24),
                               ),
                               child: ClipRRect(
-                                borderRadius: BorderRadius.circular(14),
+                                borderRadius: BorderRadius.circular(24),
                                 child: sauna.imagenUrl.isNotEmpty
                                     ? Image.network(
                                         sauna.imagenUrl,

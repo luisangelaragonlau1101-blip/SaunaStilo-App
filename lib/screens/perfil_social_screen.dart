@@ -319,7 +319,7 @@ class PerfilSocialScreen extends StatelessWidget {
         padding: EdgeInsets.symmetric(vertical: 14, horizontal: 5),
         decoration: BoxDecoration(
           color: StiloColors.surface,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(26),
           border: Border.all(color: StiloColors.text.withValues(alpha: .10)),
         ),
         child: Column(
@@ -467,7 +467,7 @@ class PerfilSocialScreen extends StatelessWidget {
                 children: [
                   if (evidenciaUrl.isNotEmpty)
                     ClipRRect(
-                      borderRadius: BorderRadius.circular(24),
+                      borderRadius: BorderRadius.circular(34),
                       child: Image.network(
                         evidenciaUrl,
                         width: 48,
@@ -651,13 +651,13 @@ class PerfilSocialScreen extends StatelessWidget {
       padding: EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: StiloColors.surface,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(28),
       ),
       child: Row(
         children: [
           if (imagenes.isNotEmpty)
             ClipRRect(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(22),
               child: Image.network(
                 imagenes.first,
                 width: 62,

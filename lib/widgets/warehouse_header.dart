@@ -1,6 +1,7 @@
 import '../presentation/appearance.dart';
 import 'package:flutter/material.dart';
 import 'stilo_orbit.dart';
+import 'soft_workspace.dart';
 
 /// Consistent warehouse identity without replacing the company logo or data.
 class WarehouseHeader extends StatelessWidget {
@@ -8,7 +9,7 @@ class WarehouseHeader extends StatelessWidget {
   final bool compact;
   const WarehouseHeader({super.key, required this.title, required this.subtitle, this.compact = false});
   @override
-  Widget build(BuildContext context) => Container(
+  Widget build(BuildContext context) => AppearanceController.instance.modern ? StiloSectionHero(eyebrow: 'STILO · ALMACÉN', title: title, subtitle: subtitle, icon: Icons.warehouse_rounded, accent: stiloAccents[4], compact: compact) : Container(
     width: double.infinity, padding: EdgeInsets.all(compact ? 16 : 22),
     decoration: BoxDecoration(borderRadius: BorderRadius.circular(28),
       gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [StiloColors.surface, StiloColors.surface, StiloColors.background]),

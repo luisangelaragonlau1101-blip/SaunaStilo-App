@@ -137,7 +137,7 @@ class _ConversacionPrivadaScreenState extends State<ConversacionPrivadaScreen> {
     final audio = d['audioUrl']?.toString() ?? '';
     final raw = d['archivos'];
     final files = raw is List ? raw.whereType<Map>().toList() : <Map>[];
-    return Align(alignment: own ? Alignment.centerRight : Alignment.centerLeft, child: Container(constraints: BoxConstraints(maxWidth: 430), margin: EdgeInsets.only(bottom: 10), padding: EdgeInsets.all(14), decoration: BoxDecoration(color: own ? StiloColors.surface : StiloColors.surface, borderRadius: BorderRadius.circular(20), border: Border.all(color: own ? StiloColors.border : StiloColors.text.withValues(alpha: .12))), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+    return Align(alignment: own ? Alignment.centerRight : Alignment.centerLeft, child: Container(constraints: BoxConstraints(maxWidth: 430), margin: EdgeInsets.only(bottom: 10), padding: EdgeInsets.all(14), decoration: BoxDecoration(color: own ? StiloColors.surface : StiloColors.surface, borderRadius: BorderRadius.circular(30), border: Border.all(color: own ? StiloColors.border : StiloColors.text.withValues(alpha: .12))), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       if (text.isNotEmpty) Text(text, style: TextStyle(fontSize: d['sticker'] == true ? 34 : 14, height: 1.4)),
       SharedMediaCard(text: text),
       for (final f in files) _attachment(f),
@@ -148,7 +148,7 @@ class _ConversacionPrivadaScreenState extends State<ConversacionPrivadaScreen> {
   }
   Widget _attachment(Map f) {
     final url = f['url']?.toString() ?? '';
-    if (f['tipo'] == 'imagen') return Padding(padding: EdgeInsets.only(top: 8), child: InkWell(onTap: () => _openUrl(url), child: ClipRRect(borderRadius: BorderRadius.circular(14), child: Image.network(url, width: 280, fit: BoxFit.cover, errorBuilder: (_, __, ___) => Text('No se pudo cargar la foto. Toca para abrirla.')))));
+    if (f['tipo'] == 'imagen') return Padding(padding: EdgeInsets.only(top: 8), child: InkWell(onTap: () => _openUrl(url), child: ClipRRect(borderRadius: BorderRadius.circular(24), child: Image.network(url, width: 280, fit: BoxFit.cover, errorBuilder: (_, __, ___) => Text('No se pudo cargar la foto. Toca para abrirla.')))));
     return Padding(padding: EdgeInsets.only(top: 8), child: OutlinedButton.icon(onPressed: () => _openUrl(url), icon: Icon(f['tipo'] == 'video' ? Icons.play_circle_outline : Icons.description_outlined), label: Text(f['nombre']?.toString() ?? 'Abrir archivo', overflow: TextOverflow.ellipsis)));
   }
   Future<void> _pickImages() async {

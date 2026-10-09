@@ -71,7 +71,7 @@ class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
       builder: (context) {
         return AlertDialog(
           backgroundColor: colorTarjeta,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
           title: Text('Editar Nombre', style: GoogleFonts.montserrat(color: StiloColors.text, fontWeight: FontWeight.bold)),
           content: TextField(contextMenuBuilder: privacyTextMenu,
             controller: _nombreController,
@@ -151,7 +151,7 @@ class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
           builder: (context, setStateDialog) {
             return AlertDialog(
               backgroundColor: colorTarjeta,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
               title: Text('Cambiar Contraseña', style: GoogleFonts.montserrat(color: StiloColors.text, fontWeight: FontWeight.bold)),
               content: TextField(contextMenuBuilder: privacyTextMenu,
                 controller: _passwordController,
@@ -264,7 +264,7 @@ class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
                       if (!widget.embedded) Container(
                         decoration: BoxDecoration(
                           color: colorTarjeta,
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(22),
                           border: Border.all(color: StiloColors.text.withOpacity(0.1)),
                         ),
                         child: IconButton(
@@ -366,7 +366,7 @@ class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
                               padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                               decoration: BoxDecoration(
                                 color: colorMorado.withOpacity(0.15),
-                                borderRadius: BorderRadius.circular(20),
+                                borderRadius: BorderRadius.circular(30),
                               ),
                               child: Text(
                                 usuarioActualizado.rol.toUpperCase(),
@@ -391,7 +391,7 @@ class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
                       Container(
                         decoration: BoxDecoration(
                           color: colorTarjeta,
-                          borderRadius: BorderRadius.circular(20),
+                          borderRadius: BorderRadius.circular(30),
                           border: Border.all(color: StiloColors.text.withOpacity(0.05)),
                         ),
                         child: Column(
@@ -431,7 +431,7 @@ class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
                       Container(
                         decoration: BoxDecoration(
                           color: colorTarjeta,
-                          borderRadius: BorderRadius.circular(20),
+                          borderRadius: BorderRadius.circular(30),
                           border: Border.all(color: StiloColors.text.withOpacity(0.05)),
                         ),
                         child: _buildFilaAjuste(
@@ -455,7 +455,7 @@ class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
                       Container(
                         decoration: BoxDecoration(
                           color: colorTarjeta,
-                          borderRadius: BorderRadius.circular(20),
+                          borderRadius: BorderRadius.circular(30),
                           border: Border.all(color: StiloColors.text.withOpacity(0.05)),
                         ),
                         child: _buildFilaAjuste(
@@ -479,7 +479,7 @@ class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
                         Container(
                           decoration: BoxDecoration(
                             color: colorTarjeta,
-                            borderRadius: BorderRadius.circular(20),
+                            borderRadius: BorderRadius.circular(30),
                             border: Border.all(color: StiloColors.text.withOpacity(0.05)),
                           ),
                           child: _buildFilaAjuste(
@@ -509,7 +509,7 @@ class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
                           padding: EdgeInsets.symmetric(vertical: 16),
                           decoration: BoxDecoration(
                             color: Colors.redAccent.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(16),
+                            borderRadius: BorderRadius.circular(26),
                             border: Border.all(color: Colors.redAccent.withOpacity(0.3)),
                           ),
                           alignment: Alignment.center,
@@ -548,7 +548,7 @@ class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
   }) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(20),
+      borderRadius: BorderRadius.circular(30),
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         decoration: BoxDecoration(

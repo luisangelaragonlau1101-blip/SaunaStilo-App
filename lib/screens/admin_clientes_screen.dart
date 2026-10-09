@@ -85,11 +85,11 @@ class _AdminClientesScreenState extends State<AdminClientesScreen> {
                 fillColor: StiloColors.surface,
                 contentPadding: EdgeInsets.symmetric(vertical: 0),
                 enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(22),
                   borderSide: BorderSide(color: StiloColors.text.withValues(alpha: .12), width: 1),
                 ),
                 focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(22),
                   borderSide: BorderSide(color: StiloColors.accent, width: 1),
                 ),
               ),
@@ -141,11 +141,11 @@ class _AdminClientesScreenState extends State<AdminClientesScreen> {
                       elevation: 0,
                       margin: EdgeInsets.only(bottom: 12),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(26),
                         side: BorderSide(color: StiloColors.text.withValues(alpha: .12), width: 1),
                       ),
                       child: InkWell(
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(26),
                         onTap: () {
                           // Al navegar, también es buena idea quitar el foco si el teclado sigue abierto
                           _searchFocusNode.unfocus();
@@ -164,7 +164,7 @@ class _AdminClientesScreenState extends State<AdminClientesScreen> {
                                 padding: EdgeInsets.all(12),
                                 decoration: BoxDecoration(
                                   color: StiloColors.accent.withOpacity(0.15),
-                                  borderRadius: BorderRadius.circular(14),
+                                  borderRadius: BorderRadius.circular(24),
                                 ),
                                 child: Icon(Icons.person_outline, color: StiloColors.accent, size: 28),
                               ),
@@ -378,7 +378,7 @@ class _FormularioClienteModalState extends State<_FormularioClienteModal> {
                   backgroundColor: StiloColors.text,
                   foregroundColor: StiloColors.background,
                   padding: EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
                 ),
                 onPressed: _guardando ? null : _guardarFormulario,
                 child: _guardando
@@ -414,11 +414,11 @@ class _FormularioClienteModalState extends State<_FormularioClienteModal> {
         filled: true,
         fillColor: StiloColors.surface,
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(22),
           borderSide: BorderSide(color: StiloColors.text.withValues(alpha: .12)),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(22),
           borderSide: BorderSide(color: StiloColors.accent),
         ),
       ),

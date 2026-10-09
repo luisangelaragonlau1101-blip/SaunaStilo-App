@@ -290,7 +290,7 @@ class _AvisosSonorosState extends State<AvisosSonoros> with WidgetsBindingObserv
           backgroundColor: StiloColors.surface,
           insetPadding: EdgeInsets.symmetric(horizontal: 18),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.circular(34),
             side: BorderSide(color: Color(0xFFFF3B30), width: 2),
           ),
           titlePadding: EdgeInsets.fromLTRB(24, 24, 24, 10),
@@ -359,7 +359,7 @@ class _AvisosSonorosState extends State<AvisosSonoros> with WidgetsBindingObserv
                   foregroundColor: StiloColors.text,
                   minimumSize: Size.fromHeight(54),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(26),
                   ),
                 ),
                 onPressed: () async {

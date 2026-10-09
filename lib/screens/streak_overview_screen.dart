@@ -44,7 +44,7 @@ class StreakOverviewScreen extends StatelessWidget{
       if(admin)StreamBuilder<DocumentSnapshot<Map<String,dynamic>>>(stream:FirebaseFirestore.instance.collection('usuarios').doc(uid).snapshots(),builder:(c,s)=>Text(s.data?.data()?['nombre']?.toString()??'Integrante',style:TextStyle(fontSize:18,fontWeight:FontWeight.w700))),
       Wrap(spacing:26,runSpacing:10,children:[_number('${result.current}','Última secuencia',StiloColors.accent),_number('${result.best}','Mejor racha',StiloColors.accent)]),
       SizedBox(height:12),Text('Próxima meta: ${result.nextMilestone} días · faltan ${result.nextMilestone-result.current}',style:TextStyle(color:StiloColors.text.withValues(alpha: .70))),
-      SizedBox(height:9),ClipRRect(borderRadius:BorderRadius.circular(16),child:LinearProgressIndicator(value:result.current/result.nextMilestone,minHeight:8)),
+      SizedBox(height:9),ClipRRect(borderRadius:BorderRadius.circular(26),child:LinearProgressIndicator(value:result.current/result.nextMilestone,minHeight:8)),
       SizedBox(height:12),Text(ordered.isEmpty?'Sin registros.':'Último registro: ${DateFormat('dd/MM/yyyy').format(ordered.last.fecha)} · ${ordered.last.estatus.replaceAll('_',' ')}',style:TextStyle(color:StiloColors.text.withValues(alpha: .54),fontSize:12)),
       ExpansionTile(tilePadding:EdgeInsets.zero,title:Text('Ver días que forman el cálculo'),children:[for(final a in ordered.reversed.take(30))ListTile(dense:true,leading:Icon(a.estatus=='a_tiempo'?Icons.check_circle_outline:Icons.event_note_outlined),title:Text(DateFormat('dd/MM/yyyy').format(a.fecha)),trailing:Text(a.estatus.replaceAll('_',' ')))])
     ])));

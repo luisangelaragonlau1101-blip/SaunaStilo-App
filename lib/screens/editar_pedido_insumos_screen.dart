@@ -142,7 +142,7 @@ class _EditarPedidoScreenState extends State<EditarPedidoScreen> {
                 padding: EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: StiloColors.surface,
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(26),
                   border: Border.all(color: StiloColors.text.withValues(alpha: .12))
                 ),
                 child: Column(
@@ -163,11 +163,11 @@ class _EditarPedidoScreenState extends State<EditarPedidoScreen> {
                         filled: true,
                         fillColor: StiloColors.surface,
                         enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(22),
                           borderSide: BorderSide(color: StiloColors.text.withValues(alpha: .12)),
                         ),
                         focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(22),
                           borderSide: BorderSide(color: Color(0xFF3B82F6)),
                         ),
                       ),
@@ -236,7 +236,7 @@ class _EditarPedidoScreenState extends State<EditarPedidoScreen> {
                 padding: EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: Color(0xFF3B82F6).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(22),
                   border: Border.all(color: Color(0xFF3B82F6).withOpacity(0.3))
                 ),
                 child: Row(
@@ -263,7 +263,7 @@ class _EditarPedidoScreenState extends State<EditarPedidoScreen> {
                   backgroundColor: Color(0xFF3B82F6),
                   foregroundColor: StiloColors.text,
                   padding: EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
                 ),
                 onPressed: _guardando ? null : _actualizarPedido,
                 child: _guardando
@@ -302,15 +302,15 @@ class _EditarPedidoScreenState extends State<EditarPedidoScreen> {
         filled: true,
         fillColor: StiloColors.surface,
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(22),
           borderSide: BorderSide(color: StiloColors.text.withValues(alpha: .12)),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(22),
           borderSide: BorderSide(color: Color(0xFF3B82F6)),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(22),
           borderSide: BorderSide(color: Colors.redAccent),
         ),
       ),

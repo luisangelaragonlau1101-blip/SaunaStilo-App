@@ -115,7 +115,7 @@ class _VozAdministracionScreenState extends State<VozAdministracionScreen> {
   );
   Widget _statusCard() {
     final active = _status?.enabled == true && _statusError == null;
-    return Container(padding: EdgeInsets.all(16), decoration: BoxDecoration(color: _panel, borderRadius: BorderRadius.circular(22), border: Border.all(color: StiloColors.text.withValues(alpha: .10))), child: Row(children: [
+    return Container(padding: EdgeInsets.all(16), decoration: BoxDecoration(color: _panel, borderRadius: BorderRadius.circular(32), border: Border.all(color: StiloColors.text.withValues(alpha: .10))), child: Row(children: [
       Container(width: 10, height: 10, decoration: BoxDecoration(color: active ? _mint : StiloColors.text.withValues(alpha: .24), shape: BoxShape.circle)),
       SizedBox(width: 10),
       Expanded(child: Text(_checkingStatus ? 'Consultando estado de la voz…' : _statusError ?? _status?.message ?? 'Servicio de voz pendiente de activación.', style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .70), fontSize: 11.5, height: 1.4))),
@@ -124,16 +124,16 @@ class _VozAdministracionScreenState extends State<VozAdministracionScreen> {
   }
   Widget _recordCard({required _VoiceSlot slot, required String step, required String title, required String detail, required String script, required Uint8List? bytes, required Color color}) {
     final recording = _recording == slot;
-    return Container(padding: EdgeInsets.all(18), decoration: BoxDecoration(color: _panel, borderRadius: BorderRadius.circular(24), border: Border.all(color: color.withOpacity(.22))), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+    return Container(padding: EdgeInsets.all(18), decoration: BoxDecoration(color: _panel, borderRadius: BorderRadius.circular(34), border: Border.all(color: color.withOpacity(.22))), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Text('$step · ${title.toUpperCase()}', style: GoogleFonts.inter(color: color, fontWeight: FontWeight.w900, letterSpacing: .8)),
       SizedBox(height: 7), Text(detail, style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .54), fontSize: 11.5, height: 1.45)),
       SizedBox(height: 12),
-      Container(width: double.infinity, padding: EdgeInsets.all(13), decoration: BoxDecoration(color: StiloColors.background.withValues(alpha: .26), borderRadius: BorderRadius.circular(16)), child: Text(script, style: GoogleFonts.inter(color: Color(0xC7FFFFFF), fontSize: 12.2, height: 1.45, fontStyle: FontStyle.italic))),
+      Container(width: double.infinity, padding: EdgeInsets.all(13), decoration: BoxDecoration(color: StiloColors.background.withValues(alpha: .26), borderRadius: BorderRadius.circular(26)), child: Text(script, style: GoogleFonts.inter(color: Color(0xC7FFFFFF), fontSize: 12.2, height: 1.45, fontStyle: FontStyle.italic))),
       SizedBox(height: 13),
       Row(children: [
         Expanded(child: FilledButton.icon(
           onPressed: _busy || (_recording != null && !recording) ? null : () => recording ? _stopRecording() : _startRecording(slot),
-          style: FilledButton.styleFrom(backgroundColor: recording ? Colors.redAccent : color, foregroundColor: StiloColors.background, minimumSize: Size(0, 48), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
+          style: FilledButton.styleFrom(backgroundColor: recording ? Colors.redAccent : color, foregroundColor: StiloColors.background, minimumSize: Size(0, 48), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26))),
           icon: Icon(recording ? Icons.stop_rounded : Icons.mic_rounded),
           label: Text(recording ? 'DETENER · ${10 - _seconds}s' : bytes == null ? 'GRABAR' : 'VOLVER A GRABAR', style: GoogleFonts.inter(fontWeight: FontWeight.w900)),
         )),
@@ -145,7 +145,7 @@ class _VozAdministracionScreenState extends State<VozAdministracionScreen> {
     final ready = _consentAudio != null && _referenceAudio != null;
     final configured = _status?.configured == true;
     final enabled = _status?.enabled == true;
-    return Container(padding: EdgeInsets.all(18), decoration: BoxDecoration(color: StiloColors.surface, borderRadius: BorderRadius.circular(24), border: Border.all(color: _mint.withOpacity(.24))), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+    return Container(padding: EdgeInsets.all(18), decoration: BoxDecoration(color: StiloColors.surface, borderRadius: BorderRadius.circular(34), border: Border.all(color: _mint.withOpacity(.24))), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Text('03 · ACTIVAR EN SAUNA STILO', style: GoogleFonts.inter(color: _mint, fontWeight: FontWeight.w900, letterSpacing: .8)),
       SizedBox(height: 8),
       Text(configured ? 'Ya existe una voz configurada. Puedes probarla, pausarla o reemplazarla por nuevas grabaciones.' : 'Cuando estén listas las dos grabaciones, el servidor solicitará la creación de tu voz personalizada. Requiere que Firebase esté publicado y Google autorice Instant Custom Voice.', style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .60), fontSize: 11.5, height: 1.45)),
@@ -162,7 +162,7 @@ class _VozAdministracionScreenState extends State<VozAdministracionScreen> {
       ]),
     ]));
   }
-  Widget _messageCard(String message) => Container(padding: EdgeInsets.all(14), decoration: BoxDecoration(color: StiloColors.surface, borderRadius: BorderRadius.circular(18), border: Border.all(color: _violet.withOpacity(.2))), child: Row(children: [
+  Widget _messageCard(String message) => Container(padding: EdgeInsets.all(14), decoration: BoxDecoration(color: StiloColors.surface, borderRadius: BorderRadius.circular(28), border: Border.all(color: _violet.withOpacity(.2))), child: Row(children: [
     Icon(Icons.info_outline_rounded, color: _violet), SizedBox(width: 9), Expanded(child: Text(message, style: GoogleFonts.inter(color: StiloColors.text.withValues(alpha: .70), fontSize: 11.5, height: 1.4))),
   ]));
 

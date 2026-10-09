@@ -165,7 +165,7 @@ class _PartyBoardState extends State<LocalPartyBoard> {
       Row(children: [Image.asset('assets/logo_saunastilo.png', width: 80, height: 44), const Spacer(), const Icon(Icons.wifi_off_rounded, size: 16, color: Colors.white60), const SizedBox(width: 7), const Flexible(child: Text('Mismo teléfono', style: TextStyle(color: Colors.white60, fontSize: 12)))]),
       const SizedBox(height: 14), Semantics(liveRegion: true, child: Text(_status, key: const ValueKey('party-status'), style: const TextStyle(color: Colors.white, fontSize: 25, fontWeight: FontWeight.w900))),
       const SizedBox(height: 14), Wrap(spacing: 8, runSpacing: 8, children: [for (var p = 0; p < _game.players; p++) Container(
-        padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 10), decoration: BoxDecoration(borderRadius: BorderRadius.circular(22),
+        padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 10), decoration: BoxDecoration(borderRadius: BorderRadius.circular(32),
           color: partyColors[p].withValues(alpha: p == _game.turn && !_game.finished ? .17 : .06), border: Border.all(color: partyColors[p].withValues(alpha: p == _game.turn ? .75 : .26))),
         child: Text('P${p + 1} · ${_game.names[p]}   ${_game.scores[p]}${_game.kind == PartyKind.race ? '/30' : ''}', style: TextStyle(color: partyColors[p], fontWeight: FontWeight.w700, fontSize: 12)))]),
       const SizedBox(height: 18),
@@ -209,7 +209,7 @@ class _PartyBoardState extends State<LocalPartyBoard> {
     return Positioned(left: horizontal ? 36 + col * gap : col * gap, top: horizontal ? row * gap : 36 + row * gap,
       width: horizontal ? gap - 28 : 44, height: horizontal ? 44 : gap - 28,
       child: Semantics(button: true, label: '${horizontal ? 'Horizontal' : 'Vertical'} ${i + 1}: ${owner < 0 ? 'libre' : 'jugador ${owner + 1}'}',
-        child: InkWell(key: ValueKey('territory-edge-$e'), borderRadius: BorderRadius.circular(16), onTap: owner >= 0 || _game.finished ? null : () => _act(() => _game.drawEdge(e)),
+        child: InkWell(key: ValueKey('territory-edge-$e'), borderRadius: BorderRadius.circular(26), onTap: owner >= 0 || _game.finished ? null : () => _act(() => _game.drawEdge(e)),
           child: Center(child: Container(width: horizontal ? gap - 28 : 7, height: horizontal ? 7 : gap - 28,
             decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(8), boxShadow: owner < 0 ? null : [BoxShadow(color: color.withValues(alpha: .24), blurRadius: 10)]))))));
   }

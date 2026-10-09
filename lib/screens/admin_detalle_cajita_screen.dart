@@ -156,7 +156,7 @@ class _AdminDetalleCajitaScreenState extends State<AdminDetalleCajitaScreen> {
                 return Column(
                   children: [
                     SizedBox(height: 12),
-                    Container(width: 40, height: 5, decoration: BoxDecoration(color: StiloColors.text.withValues(alpha: .24), borderRadius: BorderRadius.circular(10))),
+                    Container(width: 40, height: 5, decoration: BoxDecoration(color: StiloColors.text.withValues(alpha: .24), borderRadius: BorderRadius.circular(20))),
                     SizedBox(height: 16),
                     Text(
                       "INVENTARIO GENERAL",
@@ -181,7 +181,7 @@ class _AdminDetalleCajitaScreenState extends State<AdminDetalleCajitaScreen> {
                           fillColor: StiloColors.text.withValues(alpha: .10),
                           contentPadding: EdgeInsets.symmetric(vertical: 0),
                           border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(22),
                             borderSide: BorderSide.none,
                           ),
                         ),
@@ -295,7 +295,7 @@ final insumos = todosLosInsumos.where((doc) {
                   foregroundColor: colorNaranja,
                   elevation: 0,
                   side: BorderSide(color: colorNaranja.withOpacity(0.5)),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
                 ),
                 icon: _asignando
                   ? SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: colorNaranja, strokeWidth: 2))
@@ -364,7 +364,7 @@ final insumos = todosLosInsumos.where((doc) {
                       padding: EdgeInsets.all(16),
                       decoration: BoxDecoration(
                         color: colorTarjeta,
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(22),
                         border: Border.all(color: StiloColors.text.withOpacity(0.05)),
                       ),
                       child: Row(

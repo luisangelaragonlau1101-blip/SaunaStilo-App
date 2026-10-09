@@ -206,7 +206,7 @@ class _EditarProyectoAdminScreenState extends State<EditarProyectoAdminScreen> {
           builder: (context, setStateDialog) {
             return AlertDialog(
               backgroundColor: StiloColors.surface,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
               title: Text("Añadir Tipo de Madera", style: GoogleFonts.inter(color: StiloColors.text, fontWeight: FontWeight.bold, fontSize: 16)),
               content: TextField(contextMenuBuilder: privacyTextMenu,
                 controller: nuevoSaunaController,
@@ -216,8 +216,8 @@ class _EditarProyectoAdminScreenState extends State<EditarProyectoAdminScreen> {
                   hintStyle: TextStyle(color: StiloColors.text.withValues(alpha: .54)),
                   filled: true,
                   fillColor: StiloColors.surface,
-                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: StiloColors.accent)),
+                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(22), borderSide: BorderSide.none),
+                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(22), borderSide: BorderSide(color: StiloColors.accent)),
                 ),
               ),
               actions: [
@@ -357,7 +357,7 @@ class _EditarProyectoAdminScreenState extends State<EditarProyectoAdminScreen> {
 
               ListTile(
                 tileColor: StiloColors.surface,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
                 leading: Icon(Icons.calculate, color: Colors.orangeAccent),
                 title: Text("Saldo Restante", style: TextStyle(color: StiloColors.text.withValues(alpha: .54), fontSize: 13)),
                 trailing: Text(
@@ -462,7 +462,7 @@ class _EditarProyectoAdminScreenState extends State<EditarProyectoAdminScreen> {
                 width: double.infinity,
                 height: 60,
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(26),
                   gradient: LinearGradient(
                     colors: [StiloColors.accent, Color(0xFF6D28D9)],
                     begin: Alignment.topLeft,
@@ -476,7 +476,7 @@ class _EditarProyectoAdminScreenState extends State<EditarProyectoAdminScreen> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.transparent,
                     shadowColor: Colors.transparent,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
                   ),
                   onPressed: _isGuardando ? null : _actualizar,
                   child: _isGuardando
@@ -519,12 +519,12 @@ class _EditarProyectoAdminScreenState extends State<EditarProyectoAdminScreen> {
 
     return InkWell(
       onTap: () => _pickDateTime(tipoFecha),
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(22),
       child: Container(
         padding: EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: StiloColors.surface,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(22),
           border: Border.all(color: hasDate ? iconColor.withOpacity(0.4) : StiloColors.text.withValues(alpha: .10))
         ),
         child: Row(
@@ -592,10 +592,10 @@ class _EditarProyectoAdminScreenState extends State<EditarProyectoAdminScreen> {
       prefixIcon: Icon(icon, color: iconColor),
       filled: true,
       fillColor: StiloColors.surface,
-      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: iconColor, width: 2)),
-      errorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.redAccent)),
-      focusedErrorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.redAccent, width: 2)),
+      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(22), borderSide: BorderSide.none),
+      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(22), borderSide: BorderSide(color: iconColor, width: 2)),
+      errorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(22), borderSide: BorderSide(color: Colors.redAccent)),
+      focusedErrorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(22), borderSide: BorderSide(color: Colors.redAccent, width: 2)),
     );
   }
 

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/cupertino.dart' show CupertinoPageTransitionsBuilder;
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -72,11 +73,19 @@ ThemeData stiloTheme(StiloPalette palette) => _themeCache.putIfAbsent('${palette
   if (!AppearanceController.instance.modern) return base;
   return base.copyWith(
     textTheme: base.textTheme.apply(fontFamily: 'Inter', bodyColor: base.colorScheme.onSurface, displayColor: base.colorScheme.onSurface),
-    appBarTheme: base.appBarTheme.copyWith(centerTitle: false, titleTextStyle: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, letterSpacing: -.6, color: base.colorScheme.onSurface)),
-    chipTheme: base.chipTheme.copyWith(side: BorderSide(color: base.colorScheme.outlineVariant), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+    appBarTheme: base.appBarTheme.copyWith(centerTitle: false, titleTextStyle: TextStyle(fontFamily: 'Inter', fontSize: 22, fontWeight: FontWeight.w700, letterSpacing: -.6, color: base.colorScheme.onSurface)),
+    visualDensity: VisualDensity.standard,
+    cardTheme: base.cardTheme.copyWith(elevation: 0, margin: const EdgeInsets.symmetric(vertical: 6), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(34), side: BorderSide(color: base.colorScheme.outlineVariant.withValues(alpha: .55)))),
+    inputDecorationTheme: base.inputDecorationTheme.copyWith(contentPadding: const EdgeInsets.symmetric(horizontal: 22, vertical: 18), border: OutlineInputBorder(borderRadius: BorderRadius.circular(28), borderSide: BorderSide.none), enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(28), borderSide: BorderSide(color: base.colorScheme.outlineVariant.withValues(alpha: .55))), focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(28), borderSide: BorderSide(color: base.colorScheme.primary, width: 1.4))),
+    filledButtonTheme: FilledButtonThemeData(style: base.filledButtonTheme.style?.copyWith(shape: const WidgetStatePropertyAll(StadiumBorder()), padding: const WidgetStatePropertyAll(EdgeInsets.symmetric(horizontal: 22, vertical: 14)))),
+    outlinedButtonTheme: OutlinedButtonThemeData(style: base.outlinedButtonTheme.style?.copyWith(shape: const WidgetStatePropertyAll(StadiumBorder()), padding: const WidgetStatePropertyAll(EdgeInsets.symmetric(horizontal: 22, vertical: 14)))),
+    textButtonTheme: TextButtonThemeData(style: TextButton.styleFrom(shape: const StadiumBorder(), minimumSize: const Size(48, 48))),
+    floatingActionButtonTheme: base.floatingActionButtonTheme.copyWith(shape: const StadiumBorder(), elevation: 2, extendedPadding: const EdgeInsets.symmetric(horizontal: 24)),
+    chipTheme: base.chipTheme.copyWith(side: BorderSide(color: base.colorScheme.outlineVariant.withValues(alpha: .5)), shape: const StadiumBorder(), padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8)),
     listTileTheme: base.listTileTheme.copyWith(contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18))),
-    dialogTheme: DialogThemeData(backgroundColor: base.colorScheme.surfaceContainerLow, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28))),
-    bottomSheetTheme: BottomSheetThemeData(backgroundColor: base.colorScheme.surfaceContainerLow, showDragHandle: true, shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(28)))),
+    dialogTheme: DialogThemeData(backgroundColor: base.colorScheme.surfaceContainerLow, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(36))),
+    bottomSheetTheme: BottomSheetThemeData(backgroundColor: base.colorScheme.surfaceContainerLow, showDragHandle: true, shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(36)))),
+    pageTransitionsTheme: PageTransitionsTheme(builders: {for (final platform in TargetPlatform.values) platform: const CupertinoPageTransitionsBuilder()}),
   );
 });
 ThemeData _makeStiloTheme(StiloPalette palette) {

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:saunastilo/presentation/modern_workspace.dart';
+import 'package:saunastilo/widgets/stilo_orbit.dart';
 
 const destinations = [
   NavigationDestination(icon: Icon(Icons.home_outlined), label: 'Inicio'),
@@ -35,7 +36,7 @@ void main() {
         ),
       );
       await t.pumpWidget(app());
-      expect(find.byType(NavigationBar), findsOneWidget);
+      expect(find.byType(StiloDock), findsOneWidget);
       await t.enterText(find.byType(TextField), 'Trabajo sin perder');
       await t.tap(find.byIcon(Icons.assignment_outlined));
       await t.pump();
@@ -43,7 +44,7 @@ void main() {
       t.view.physicalSize = const Size(1440, 960);
       await t.pumpWidget(app());
       await t.pumpAndSettle();
-      expect(find.byType(NavigationBar), findsNothing);
+      expect(find.byType(StiloDock), findsNothing);
       expect(find.text('Trabajo sin perder'), findsOneWidget);
       await t.tap(find.byKey(const ValueKey('modern-tab-2')));
       expect(selected, 2);

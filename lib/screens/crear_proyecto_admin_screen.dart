@@ -164,7 +164,7 @@ class _CrearProyectoAdminScreenState extends State<CrearProyectoAdminScreen> {
           builder: (context, setStateDialog) {
             return AlertDialog(
               backgroundColor: StiloColors.surface,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
               title: Text("Añadir Tipo de Madera", style: GoogleFonts.inter(color: StiloColors.text, fontWeight: FontWeight.bold, fontSize: 16)),
               content: TextField(contextMenuBuilder: privacyTextMenu,
                 controller: nuevoSaunaController,
@@ -174,8 +174,8 @@ class _CrearProyectoAdminScreenState extends State<CrearProyectoAdminScreen> {
                   hintStyle: TextStyle(color: StiloColors.text.withValues(alpha: .54)),
                   filled: true,
                   fillColor: StiloColors.surface,
-                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: StiloColors.accent)),
+                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(22), borderSide: BorderSide.none),
+                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(22), borderSide: BorderSide(color: StiloColors.accent)),
                 ),
               ),
               actions: [
@@ -296,7 +296,7 @@ itemsSaunas.add(
 
               ListTile(
                 tileColor: StiloColors.surface,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
                 leading: Icon(Icons.calculate, color: Colors.orangeAccent),
                 title: Text("Saldo Restante", style: TextStyle(color: StiloColors.text.withValues(alpha: .54), fontSize: 13)),
                 trailing: Text(
@@ -382,7 +382,7 @@ itemsSaunas.add(
               Container(
                 width: double.infinity,
                 height: 60,
-                decoration: BoxDecoration(borderRadius: BorderRadius.circular(16), gradient: LinearGradient(colors: [StiloColors.accent, Color(0xFF6D28D9)])),
+                decoration: BoxDecoration(borderRadius: BorderRadius.circular(26), gradient: LinearGradient(colors: [StiloColors.accent, Color(0xFF6D28D9)])),
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(backgroundColor: Colors.transparent, shadowColor: Colors.transparent),
                   onPressed: _isGuardando ? null : _guardarProyecto,
@@ -427,7 +427,7 @@ Widget _buildDateTimeButton(String label, DateTime? date, String tipoFecha, Colo
         padding: EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: StiloColors.surface,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(22),
           border: Border.all(color: hasDate ? iconColor.withOpacity(0.4) : StiloColors.text.withValues(alpha: .10))
         ),
         child: Row(
@@ -482,7 +482,7 @@ Widget _buildDateTimeButton(String label, DateTime? date, String tipoFecha, Colo
   }
 
   InputDecoration _inputDecoration(String label, IconData icon, Color iconColor) {
-    return InputDecoration(labelText: label, labelStyle: TextStyle(color: StiloColors.text.withValues(alpha: .54)), prefixIcon: Icon(icon, color: iconColor), filled: true, fillColor: StiloColors.surface, enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none), focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: iconColor, width: 2)));
+    return InputDecoration(labelText: label, labelStyle: TextStyle(color: StiloColors.text.withValues(alpha: .54)), prefixIcon: Icon(icon, color: iconColor), filled: true, fillColor: StiloColors.surface, enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(22), borderSide: BorderSide.none), focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(22), borderSide: BorderSide(color: iconColor, width: 2)));
   }
 
   Widget _buildTextField(TextEditingController controller, String label, IconData icon, Color iconColor, {int maxLines = 1, bool esObligatorio = true}) {

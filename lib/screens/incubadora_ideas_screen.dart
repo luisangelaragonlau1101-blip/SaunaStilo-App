@@ -46,7 +46,7 @@ class _IncubadoraIdeasScreenState extends State<IncubadoraIdeasScreen> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: StiloColors.surface,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
         title: Text('¿Eliminar iniciativa?', style: TextStyle(color: StiloColors.text)),
         content: Text('Se borrará "${idea.titulo}" y todas sus tareas. Esta acción es permanente.',
             style: TextStyle(color: StiloColors.text.withValues(alpha: .70))),
@@ -190,10 +190,10 @@ class _IncubadoraIdeasScreenState extends State<IncubadoraIdeasScreen> {
                     return Card(
                       color: StiloColors.surface,
                       margin: EdgeInsets.only(bottom: 16),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: StiloColors.text.withValues(alpha: .10))),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26), side: BorderSide(color: StiloColors.text.withValues(alpha: .10))),
                       child: InkWell(
                         onTap: () => _cambiarEstatusRapido(idea),
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(26),
                         child: Padding(
                           padding: EdgeInsets.all(16.0),
                           child: Column(
@@ -226,7 +226,7 @@ class _IncubadoraIdeasScreenState extends State<IncubadoraIdeasScreen> {
                               ),
                               SizedBox(height: 8),
                               ClipRRect(
-                                borderRadius: BorderRadius.circular(10),
+                                borderRadius: BorderRadius.circular(20),
                                 child: LinearProgressIndicator(
                                   value: progreso,
                                   minHeight: 6,
@@ -283,7 +283,7 @@ class _IncubadoraIdeasScreenState extends State<IncubadoraIdeasScreen> {
         backgroundColor: StiloColors.surface,
         selectedColor: Color(0xFFDEFF9A), // Color lima suave del tema
         checkmarkColor: StiloColors.background,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: BorderSide(color: selected ? Colors.transparent : StiloColors.text.withValues(alpha: .12))),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30), side: BorderSide(color: selected ? Colors.transparent : StiloColors.text.withValues(alpha: .12))),
       ),
     );
   }

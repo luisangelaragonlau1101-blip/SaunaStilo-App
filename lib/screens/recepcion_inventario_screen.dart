@@ -384,7 +384,7 @@ class _RecepcionInventarioScreenState extends State<RecepcionInventarioScreen> {
                         fillColor: colorFondo,
                         contentPadding: EdgeInsets.symmetric(vertical: 0, horizontal: 16),
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: BorderRadius.circular(20),
                           borderSide: BorderSide.none,
                         ),
                       ),
@@ -400,7 +400,7 @@ class _RecepcionInventarioScreenState extends State<RecepcionInventarioScreen> {
                           margin: EdgeInsets.only(top: 8),
                           decoration: BoxDecoration(
                             color: colorTarjeta,
-                            borderRadius: BorderRadius.circular(10),
+                            borderRadius: BorderRadius.circular(20),
                             border: Border.all(color: colorAzul.withOpacity(0.5)),
                           ),
                           child: ListView.builder(
@@ -445,7 +445,7 @@ class _RecepcionInventarioScreenState extends State<RecepcionInventarioScreen> {
                             padding: EdgeInsets.all(12),
                             decoration: BoxDecoration(
                               color: colorTarjeta,
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(22),
                               border: Border.all(color: StiloColors.text.withValues(alpha: .10)),
                             ),
                             child: Row(
@@ -515,7 +515,7 @@ class _RecepcionInventarioScreenState extends State<RecepcionInventarioScreen> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: colorAzul,
                       minimumSize: Size(double.infinity, 55),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
                     ),
                     onPressed: _guardando ? null : _confirmarEntradaMasiva,
                     child: _guardando

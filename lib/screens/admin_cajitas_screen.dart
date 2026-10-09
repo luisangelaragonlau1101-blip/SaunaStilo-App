@@ -97,11 +97,11 @@ class AdminCajitasScreen extends StatelessWidget {
                           ),
                         );
                       },
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(30),
                       child: Container(
                         decoration: BoxDecoration(
                           color: colorTarjeta,
-                          borderRadius: BorderRadius.circular(20),
+                          borderRadius: BorderRadius.circular(30),
                           border: Border.all(color: StiloColors.text.withOpacity(0.05)),
                           boxShadow: [
                             BoxShadow(color: StiloColors.background.withOpacity(0.2), blurRadius: 8, offset: Offset(0, 4)),
@@ -142,7 +142,7 @@ class AdminCajitasScreen extends StatelessWidget {
                               padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                               decoration: BoxDecoration(
                                 color: StiloColors.text.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(10),
+                                borderRadius: BorderRadius.circular(20),
                               ),
                               child: Text(
                                 "Ver Cajita",

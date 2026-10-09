@@ -35,7 +35,7 @@ class ProjectWorkspaceScreen extends StatelessWidget {
       return ListView(padding: EdgeInsets.all(18), children: [
         if (admin) Padding(padding: EdgeInsets.only(bottom: 16), child: FilledButton.icon(onPressed: () => Navigator.push(context, MaterialPageRoute<void>(builder: (_) => CrearProyectoAdminScreen())), icon: Icon(Icons.group_add_outlined), label: Text('Crear proyecto y su grupo'))),
         OfflineDataBadge(cached: snapshot.data!.metadata.isFromCache),
-        Container(padding: EdgeInsets.all(18), decoration: BoxDecoration(color: StiloColors.surface, borderRadius: BorderRadius.circular(22), border: Border.all(color: StiloColors.border)), child: Text('Cada proyecto tiene su propio grupo. Aquí se reúnen sus fotografías, audios, comentarios y evidencias; no necesitas crear un chat duplicado.', style: TextStyle(color: StiloColors.text.withValues(alpha: .70), height: 1.4))),
+        Container(padding: EdgeInsets.all(18), decoration: BoxDecoration(color: StiloColors.surface, borderRadius: BorderRadius.circular(32), border: Border.all(color: StiloColors.border)), child: Text('Cada proyecto tiene su propio grupo. Aquí se reúnen sus fotografías, audios, comentarios y evidencias; no necesitas crear un chat duplicado.', style: TextStyle(color: StiloColors.text.withValues(alpha: .70), height: 1.4))),
         SizedBox(height: 16),
         if (projects.isEmpty) Padding(padding: EdgeInsets.all(24), child: Text('Aún no tienes proyectos asignados. Administración puede añadirte al equipo de un proyecto.')),
         for (final project in projects) Card(color: StiloColors.surface, margin: EdgeInsets.only(bottom: 14), child: Padding(padding: EdgeInsets.all(18), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [

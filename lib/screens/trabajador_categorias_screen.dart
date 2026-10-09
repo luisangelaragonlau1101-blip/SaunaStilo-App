@@ -146,7 +146,7 @@ class _TrabajadorCategoriasScreenState extends State<TrabajadorCategoriasScreen>
                       margin: EdgeInsets.only(bottom: 14),
                       decoration: BoxDecoration(
                         color: colorTarjeta,
-                        borderRadius: BorderRadius.circular(14),
+                        borderRadius: BorderRadius.circular(24),
                         border: Border.all(color: StiloColors.text.withValues(alpha: .10), width: 1),
                       ),
                       child: Theme(

@@ -168,9 +168,9 @@ class _ProyectosTrabajadorScreenState extends State<ProyectosTrabajadorScreen> {
                       return Card(
                         color: StiloColors.surface,
                         margin: EdgeInsets.only(bottom: 12),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: StiloColors.text.withValues(alpha: .12))),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26), side: BorderSide(color: StiloColors.text.withValues(alpha: .12))),
                         child: InkWell(
-                          borderRadius: BorderRadius.circular(16),
+                          borderRadius: BorderRadius.circular(26),
                           onTap: () {
                             _searchFocusNode.unfocus();
                             if (widget.esMaestro) {
@@ -191,7 +191,7 @@ class _ProyectosTrabajadorScreenState extends State<ProyectosTrabajadorScreen> {
                               children: [
                                 Container(
                                   padding: EdgeInsets.all(12),
-                                  decoration: BoxDecoration(color: statusColor.withOpacity(0.1), borderRadius: BorderRadius.circular(14)),
+                                  decoration: BoxDecoration(color: statusColor.withOpacity(0.1), borderRadius: BorderRadius.circular(24)),
                                   child: Icon(Icons.construction, color: statusColor, size: 24),
                                 ),
                                 SizedBox(width: 16),
@@ -264,7 +264,7 @@ class _ProyectosTrabajadorScreenState extends State<ProyectosTrabajadorScreen> {
       side: BorderSide(
         color: isSelected ? Colors.transparent : statusColor.withOpacity(0.5),
       ),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
       onSelected: (selected) {
         if (selected) {
           setState(() {

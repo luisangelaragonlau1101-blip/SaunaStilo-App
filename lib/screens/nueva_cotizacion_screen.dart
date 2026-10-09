@@ -138,7 +138,7 @@ class _NuevaCotizacionScreenState extends State<NuevaCotizacionScreen> {
           builder: (context, setStateDialog) {
             return AlertDialog(
               backgroundColor: StiloColors.surface,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
               title: Text("Añadir Tipo de Madera", style: GoogleFonts.inter(color: StiloColors.text, fontWeight: FontWeight.bold, fontSize: 16)),
               content: TextField(contextMenuBuilder: privacyTextMenu,
                 controller: nuevoSaunaController,
@@ -148,8 +148,8 @@ class _NuevaCotizacionScreenState extends State<NuevaCotizacionScreen> {
                   hintStyle: TextStyle(color: StiloColors.text.withValues(alpha: .54)),
                   filled: true,
                   fillColor: StiloColors.surface,
-                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: StiloColors.accent)),
+                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(22), borderSide: BorderSide.none),
+                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(22), borderSide: BorderSide(color: StiloColors.accent)),
                 ),
               ),
               actions: [
@@ -356,7 +356,7 @@ class _NuevaCotizacionScreenState extends State<NuevaCotizacionScreen> {
               Container(
                 decoration: BoxDecoration(
                   color: StiloColors.surface,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(22),
                 ),
                 child: SwitchListTile(
                   title: Text('¿Es cliente nuevo?', style: TextStyle(color: StiloColors.text, fontWeight: FontWeight.bold)),
@@ -433,7 +433,7 @@ class _NuevaCotizacionScreenState extends State<NuevaCotizacionScreen> {
                 width: double.infinity,
                 height: 60,
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(26),
                   gradient: LinearGradient(colors: [StiloColors.accent, Color(0xFF6D28D9)])
                 ),
                 child: ElevatedButton(
@@ -473,10 +473,10 @@ class _NuevaCotizacionScreenState extends State<NuevaCotizacionScreen> {
       prefixIcon: Icon(icon, color: iconColor),
       filled: true,
       fillColor: StiloColors.surface,
-      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: iconColor, width: 2)),
-      errorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.redAccent, width: 1)),
-      focusedErrorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.redAccent, width: 2)),
+      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(22), borderSide: BorderSide.none),
+      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(22), borderSide: BorderSide(color: iconColor, width: 2)),
+      errorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(22), borderSide: BorderSide(color: Colors.redAccent, width: 1)),
+      focusedErrorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(22), borderSide: BorderSide(color: Colors.redAccent, width: 2)),
     );
   }
 
