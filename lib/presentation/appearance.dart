@@ -24,14 +24,14 @@ class AppearanceController extends ChangeNotifier {
   static final instance = AppearanceController();
   String? _uid;
   String _palette = 'stilo';
-  bool celebrations = true, compact = false;
+  bool celebrations = true, compact = false, modern = true;
   int _generation = 0;
   Future<void>? _writes;
   String? get userId => _uid;
   StiloPalette get palette => stiloPalettes.firstWhere((p) => p.id == _palette, orElse: () => stiloPalettes.first);
   Future<void> bindUser(String? uid) async {
     final generation = ++_generation;
-    _uid = uid; _palette = 'stilo'; celebrations = true; compact = false;
+    _uid = uid; _palette = 'stilo'; celebrations = true; compact = false; modern = true;
     notifyListeners();
     if (uid == null) return;
     try {
@@ -40,23 +40,26 @@ class AppearanceController extends ChangeNotifier {
       _palette = prefs.getString('stilo.appearance.$uid.palette') ?? 'stilo';
       celebrations = prefs.getBool('stilo.appearance.$uid.celebrations') ?? true;
       compact = prefs.getBool('stilo.appearance.$uid.compact') ?? false;
+      modern = prefs.getBool('stilo.appearance.$uid.modern') ?? true;
       notifyListeners();
     } catch (_) { /* Defaults remain usable if device storage is unavailable. */ }
   }
-  Future<void> save({String? paletteId, bool? festive, bool? simple}) async {
+  Future<void> save({String? paletteId, bool? festive, bool? simple, bool? contemporary}) async {
     final uid = _uid;
     if (uid == null) throw StateError('Inicia sesión para guardar tu estilo.');
     if (paletteId != null && !stiloPalettes.any((p) => p.id == paletteId)) throw ArgumentError('Color desconocido.');
     final generation = _generation;
+    final nextModern = contemporary ?? modern;
     final nextPalette = paletteId ?? _palette, nextCelebrations = festive ?? celebrations, nextCompact = simple ?? compact;
     final operation = (_writes ?? Future<void>.value()).catchError((Object _) {}).then((_) async {
       final prefs = await SharedPreferences.getInstance();
       final saved = await prefs.setString('stilo.appearance.$uid.palette', nextPalette);
       final savedFestive = await prefs.setBool('stilo.appearance.$uid.celebrations', nextCelebrations);
       final savedCompact = await prefs.setBool('stilo.appearance.$uid.compact', nextCompact);
-      if (!saved || !savedFestive || !savedCompact) throw StateError('No se pudo guardar el estilo en este dispositivo.');
+      final savedModern = await prefs.setBool('stilo.appearance.$uid.modern', nextModern);
+      if (!saved || !savedFestive || !savedCompact || !savedModern) throw StateError('No se pudo guardar el estilo en este dispositivo.');
       if (generation != _generation) return;
-      _palette = nextPalette; celebrations = nextCelebrations; compact = nextCompact; notifyListeners();
+      _palette = nextPalette; celebrations = nextCelebrations; compact = nextCompact; modern = nextModern; notifyListeners();
     });
     _writes = operation;
     await operation;
@@ -64,7 +67,18 @@ class AppearanceController extends ChangeNotifier {
 }
 
 final _themeCache = <String, ThemeData>{};
-ThemeData stiloTheme(StiloPalette palette) => _themeCache.putIfAbsent(palette.id, () => _makeStiloTheme(palette));
+ThemeData stiloTheme(StiloPalette palette) => _themeCache.putIfAbsent('${palette.id}.${AppearanceController.instance.modern}', () {
+  final base = _makeStiloTheme(palette);
+  if (!AppearanceController.instance.modern) return base;
+  return base.copyWith(
+    textTheme: base.textTheme.apply(fontFamily: 'Inter', bodyColor: base.colorScheme.onSurface, displayColor: base.colorScheme.onSurface),
+    appBarTheme: base.appBarTheme.copyWith(centerTitle: false, titleTextStyle: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, letterSpacing: -.6, color: base.colorScheme.onSurface)),
+    chipTheme: base.chipTheme.copyWith(side: BorderSide(color: base.colorScheme.outlineVariant), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+    listTileTheme: base.listTileTheme.copyWith(contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18))),
+    dialogTheme: DialogThemeData(backgroundColor: base.colorScheme.surfaceContainerLow, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28))),
+    bottomSheetTheme: BottomSheetThemeData(backgroundColor: base.colorScheme.surfaceContainerLow, showDragHandle: true, shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(28)))),
+  );
+});
 ThemeData _makeStiloTheme(StiloPalette palette) {
   if (palette.id == 'stilo') return _originalStiloTheme();
   final scheme = ColorScheme.fromSeed(seedColor: palette.accent, brightness: palette.light ? Brightness.light : Brightness.dark).copyWith(primary: palette.accent);
@@ -129,9 +143,9 @@ class AppearanceScreen extends StatefulWidget {
 class _AppearanceState extends State<AppearanceScreen> {
   bool busy = false;
   String? error;
-  Future<void> change({String? palette, bool? festive, bool? simple}) async {
+  Future<void> change({String? palette, bool? festive, bool? simple, bool? contemporary}) async {
     setState(() {busy = true; error = null;});
-    try { await AppearanceController.instance.save(paletteId: palette, festive: festive, simple: simple); }
+    try { await AppearanceController.instance.save(paletteId: palette, festive: festive, simple: simple, contemporary: contemporary); }
     catch (_) { if (mounted) setState(() => error = 'No se guardó el cambio. Intenta otra vez.'); }
     finally { if (mounted) setState(() => busy = false); }
   }
@@ -149,6 +163,7 @@ class _AppearanceState extends State<AppearanceScreen> {
         const SizedBox(height: 10), const Text('Tu espacio, a tu manera.', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700)),
         const SizedBox(height: 14), const Text('Así se verán tus paneles y accesos principales.'),
       ]))),
+      SwitchListTile(title: const Text('Interfaz moderna'), subtitle: const Text('Navegación adaptable y nuevos accesos. Desactívala para volver a la interfaz original.'), value: settings.modern, onChanged: busy ? null : (v) => change(contemporary: v)),
       SwitchListTile(title: const Text('Inicio sencillo'), subtitle: const Text('Oculta el resumen adicional; conserva tus accesos y tu jornada.'), value: settings.compact, onChanged: busy ? null : (v) => change(simple: v)),
       SwitchListTile(title: const Text('Celebraciones'), subtitle: const Text('Detalles de temporada y una felicitación en tu cumpleaños.'), value: settings.celebrations, onChanged: busy ? null : (v) => change(festive: v)),
       if (busy) const LinearProgressIndicator(), if (error != null) Text(error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),

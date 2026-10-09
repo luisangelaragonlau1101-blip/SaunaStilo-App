@@ -38,14 +38,17 @@ class _PersonalHeaderState extends State<PersonalHeader> with WidgetsBindingObse
   @override Widget build(BuildContext context) {
     Theme.of(context);
     final colors = Theme.of(context).colorScheme;
+    final modern = AppearanceController.instance.modern;
     final celebration = AppearanceController.instance.celebrations ? celebrationFor(mexicoToday(), user.cumpleanos) : null;
-    return Container(padding: const EdgeInsets.all(20), decoration: BoxDecoration(borderRadius: BorderRadius.circular(28), gradient: LinearGradient(colors: [colors.primary.withValues(alpha: .16), colors.surfaceContainerLow]), border: Border.all(color: colors.outlineVariant)), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+    return Container(padding: const EdgeInsets.all(20), decoration: BoxDecoration(borderRadius: BorderRadius.circular(28), gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: modern ? [const Color(0xFF8E1538).withValues(alpha: .18), colors.surfaceContainerLow, colors.primary.withValues(alpha: .06)] : [colors.primary.withValues(alpha: .16), colors.surfaceContainerLow]), border: Border.all(color: colors.outlineVariant), boxShadow: modern ? const [BoxShadow(color: Color(0x188E1538), blurRadius: 30, offset: Offset(0, 12))] : null), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      if (modern) ...[Text('TU DÍA EN STILO', style: TextStyle(fontSize: 11, letterSpacing: 2, fontWeight: FontWeight.w700, color: colors.primary)), const SizedBox(height: 18)],
       Row(children: [InkWell(onTap: onProfile, borderRadius: BorderRadius.circular(50), child: Semantics(label: 'Foto de perfil de ${user.nombre}', button: onProfile != null, child: ClipOval(child: SizedBox(width: 60, height: 60, child: (user.fotoUrl ?? '').isNotEmpty ? InventoryPhoto(imageUrl: user.fotoUrl!, fit: BoxFit.cover, errorWidget: (_, __, ___) => Icon(Icons.person, color: colors.primary, size: 34)) : ColoredBox(color: colors.primaryContainer, child: Center(child: Text(user.nombre.isEmpty ? 'S' : user.nombre.characters.first, style: TextStyle(fontSize: 24, color: colors.onPrimaryContainer)))))))),
         const SizedBox(width: 14), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('Hola, ${user.nombre.trim().split(' ').first}', style: const TextStyle(fontSize: 25, fontWeight: FontWeight.w800)), const SizedBox(height: 4), Text(roleLabel(user), style: TextStyle(color: colors.onSurfaceVariant))])),
         IconButton(tooltip: 'Personalizar mi panel', onPressed: () => Navigator.push(context, MaterialPageRoute<void>(builder: (_) => const AppearanceScreen())), icon: Icon(Icons.palette_outlined, color: colors.primary)),
       ]),
       if (celebration != null) Padding(padding: const EdgeInsets.only(top: 16), child: Text(celebration, style: TextStyle(color: colors.primary, fontWeight: FontWeight.w700))),
-      const SizedBox(height: 18), Text('SAUNA STILO', style: TextStyle(fontSize: 22, letterSpacing: 3, fontWeight: FontWeight.w900, color: colors.onSurface.withValues(alpha: .18), shadows: [Shadow(color: colors.primary.withValues(alpha: .16), offset: const Offset(0, 3), blurRadius: 14)])),
+      if (modern) Padding(padding: const EdgeInsets.only(top: 18), child: Text('Construimos juntos. Avanzamos contigo.', style: TextStyle(fontSize: 13, color: colors.onSurfaceVariant))),
+      if (!modern) ...[const SizedBox(height: 18), Text('SAUNA STILO', style: TextStyle(fontSize: 22, letterSpacing: 3, fontWeight: FontWeight.w900, color: colors.onSurface.withValues(alpha: .18), shadows: [Shadow(color: colors.primary.withValues(alpha: .16), offset: const Offset(0, 3), blurRadius: 14)]))],
     ]));
   }
 }

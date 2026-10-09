@@ -26,11 +26,11 @@ void main() {
   test('appearance survives reload and never crosses accounts', () async {
     SharedPreferences.setMockInitialValues({});
     final prefs = AppearanceController();
-    await prefs.bindUser('one'); await prefs.save(paletteId: 'rosa', festive: false, simple: true);
-    await prefs.bindUser('two'); expect(prefs.palette.id, 'stilo'); expect(prefs.celebrations, true);
+    await prefs.bindUser('one'); await prefs.save(paletteId: 'rosa', festive: false, simple: true, contemporary: false);
+    await prefs.bindUser('two'); expect(prefs.palette.id, 'stilo'); expect(prefs.celebrations, true); expect(prefs.modern, true);
     await prefs.save(paletteId: 'blanco');
     final reload = AppearanceController(); await reload.bindUser('one');
-    expect(reload.palette.id, 'rosa'); expect(reload.celebrations, false); expect(reload.compact, true);
+    expect(reload.palette.id, 'rosa'); expect(reload.celebrations, false); expect(reload.compact, true); expect(reload.modern, false);
     await reload.bindUser(null); expect(reload.palette.id, 'stilo');
     prefs.dispose(); reload.dispose();
   });

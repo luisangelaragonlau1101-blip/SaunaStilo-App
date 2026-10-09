@@ -64,6 +64,15 @@ flutter_launcher_icons:
 # --- LOGO Y ASSETS ---
 flutter:
   uses-material-design: true
+  fonts:
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/Inter-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/Inter-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/Inter-ExtraBold.ttf
+          weight: 800
   assets:
     - assets/logo_saunastilo.png
     - assets/logo_saunastilo_icon.png

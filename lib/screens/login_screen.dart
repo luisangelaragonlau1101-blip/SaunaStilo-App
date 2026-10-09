@@ -96,14 +96,14 @@ class _LoginScreenState extends State<LoginScreen> {
                           child: Row(mainAxisSize: MainAxisSize.min, children: [
                             const Icon(Icons.hub_outlined, color: colorAcento, size: 16),
                             const SizedBox(width: 8),
-                            Text('INTERFAZ 3.0', style: GoogleFonts.inter(
+                            Text('STILO · TU ESPACIO', style: GoogleFonts.inter(
                               color: colorTextoPrimario, fontSize: 11,
                               fontWeight: FontWeight.w800, letterSpacing: 1.2,
                             )),
                           ]),
                         )),
                         const SizedBox(height: 20),
-                        Text('Tu equipo. Tu trabajo.\nUn nuevo espacio.',
+                        Text('Todo tu equipo.\nUn solo espacio.',
                           textAlign: TextAlign.center,
                           style: GoogleFonts.inter(color: colorTextoPrimario,
                             fontSize: 29, height: 1.12, fontWeight: FontWeight.w800,

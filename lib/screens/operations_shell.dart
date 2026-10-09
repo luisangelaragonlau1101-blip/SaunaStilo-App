@@ -1,3 +1,4 @@
+import '../presentation/modern_workspace.dart';
 import '../widgets/today_tasks_card.dart';
 import '../presentation/appearance.dart';
 import '../widgets/personal_header.dart';
@@ -45,6 +46,7 @@ class OperationsShell extends StatefulWidget {
 }
 class _OperationsShellState extends State<OperationsShell> {
   int _index = 0;
+  final _bodyKey = GlobalKey();
   final Map<int, Widget> _pages = {};
   @override
   void didUpdateWidget(covariant OperationsShell oldWidget) {
@@ -67,11 +69,11 @@ class _OperationsShellState extends State<OperationsShell> {
   Widget build(BuildContext context) {
     Theme.of(context);
     _page(_index);
-    return PersonalMessageOverlay(usuario: widget.usuario, child: Scaffold(
-      backgroundColor: StiloColors.background,
-      body: IndexedStack(index: _index, children: List<Widget>.generate(5, (i) => TickerMode(enabled: i == _index, child: _pages[i] ?? SizedBox.shrink()))),
-      bottomNavigationBar: StiloDock(selectedIndex: _index, destinations: operationsDestinations, onSelected: (i) => setState(() => _index = i)),
-    ));
+    final body = IndexedStack(key: _bodyKey, index: _index, children: List<Widget>.generate(5, (i) => TickerMode(enabled: i == _index, child: _pages[i] ?? SizedBox.shrink())));
+    return PersonalMessageOverlay(usuario: widget.usuario, child: AppearanceController.instance.modern
+      ? ModernWorkspaceFrame(selectedIndex: _index, destinations: operationsDestinations, onSelected: (i) => setState(() => _index = i), child: body)
+      : Scaffold(backgroundColor: StiloColors.background, body: body,
+          bottomNavigationBar: StiloDock(selectedIndex: _index, destinations: operationsDestinations, onSelected: (i) => setState(() => _index = i))));
   }
 }
 
@@ -106,8 +108,10 @@ class _OperationsHomeState extends State<_OperationsHome> {
       SizedBox(height: 15),
       PersonalHeader(user: widget.usuario, onProfile: () => widget.onTab(4)),
       SizedBox(height: 18),
+      if (AppearanceController.instance.modern) const WorkspaceSectionTitle(title: 'Tu espacio de trabajo', subtitle: 'Todo lo que necesitas, a un toque.'),
       MainHomeShortcuts(user: widget.usuario, onTab: widget.onTab),
       SizedBox(height: 16),
+      if (AppearanceController.instance.modern) const WorkspaceSectionTitle(title: 'Tu jornada', subtitle: 'Entrada, pausas y salida en un solo lugar.'),
       JornadaCompacta(usuario: widget.usuario),
       SizedBox(height: 18), TodayTasksCard(user: widget.usuario),
       SizedBox(height: 16),
