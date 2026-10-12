@@ -36,16 +36,21 @@ class _ProjectActivitiesScreenState extends State<ProjectActivitiesScreen> {
 
   Future<void> _crearTarea() async {
     if (!_puedeAsignar) return;
+    if (_proyectoId != null) {
+      await _asignarEnProyecto(_proyectoId!);
+      return;
+    }
     await _seleccionarProyecto(crear: true);
   }
+  Future<void> _asignarEnProyecto(String proyectoId) => showModalBottomSheet<void>(context: context, isScrollControlled: true,
+    backgroundColor: Colors.transparent, builder: (_) => ModalAsignarActividad(
+      proyectoId: proyectoId, rolUsuario: widget.usuario.rol));
   Future<void> _seleccionarProyecto({bool crear = false}) async {
     final proyecto = await elegirProyecto(context, widget.usuario,
       titulo: crear ? 'Proyecto para la nueva tarea' : 'Tareas de un proyecto');
     if (!mounted || proyecto == null) return;
     setState(() { _proyectoId = proyecto.id; _proyectoTitulo = proyecto.titulo; });
-    if (crear) await showModalBottomSheet<void>(context: context, isScrollControlled: true,
-      backgroundColor: Colors.transparent, builder: (_) => ModalAsignarActividad(
-        proyectoId: proyecto.id, rolUsuario: widget.usuario.rol));
+    if (crear) await _asignarEnProyecto(proyecto.id);
   }
   void _abrir(ActividadModel tarea) {
     if (_admin || tarea.asignadoATrabajadorId == widget.usuario.id) {

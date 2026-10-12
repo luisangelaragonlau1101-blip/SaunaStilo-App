@@ -391,10 +391,15 @@ service cloud.firestore {
     }
 
     match /proyectos/{projectId} {
-      allow read: if signedIn()
+      allow get: if signedIn()
         && (isAdmin()
           || (resource.data.encargados is list
             && request.auth.uid in resource.data.encargados));
+      // hasAny can be proved from the assigned-project array query. A separate
+      // "is list" guard rejects that query; membership via "in" accepts maps.
+      allow list: if signedIn()
+        && (isAdmin()
+          || resource.data.encargados.hasAny([request.auth.uid]));
       allow create, update, delete: if isAdmin();
 
       match /finanzas/{documentId} {

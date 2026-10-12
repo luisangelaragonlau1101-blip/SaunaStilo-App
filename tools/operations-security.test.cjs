@@ -12,6 +12,57 @@ test.before(async()=>{if(!process.env.FIRESTORE_EMULATOR_HOST)throw Error('Isola
  await setDoc(doc(c.firestore(),'actividades','unrelated'),{...task('other'),proyectoId:'outside',asignadoATrabajadorId:'other'});
  await setDoc(doc(c.firestore(),'insumos_inventario','hammer'),{cantidad_disponible:10,en_reparacion:0});
 });});test.after(async()=>env?.cleanup());
+test('project selection lists only assigned projects and keeps global and foreign queries private',async()=>{
+ for(const actor of ['master','worker','other']){
+  const own=await assertSucceeds(getDocs(query(collection(db(actor),'proyectos'),where('encargados','array-contains',actor))));
+  assert.deepEqual(own.docs.map(d=>d.id),actor==='other'?['outside']:['p']);
+  await assertFails(getDocs(collection(db(actor),'proyectos')));
+ }
+ const admin=await assertSucceeds(getDocs(collection(db('admin'),'proyectos')));
+ assert.deepEqual(admin.docs.map(d=>d.id).sort(),['outside','p']);
+ await assertFails(getDocs(query(collection(db('other'),'proyectos'),where('encargados','array-contains','master'))));
+ await assertFails(getDoc(doc(db('master'),'proyectos','outside')));
+ await assertFails(getDocs(query(collection(env.unauthenticatedContext().firestore(),'proyectos'),where('encargados','array-contains','master'))));
+});
+test('master selects their project and team then assigns transactionally without granting outsider or general-task access',async()=>{
+ const database=db('master');
+ const projects=await assertSucceeds(getDocs(query(collection(database,'proyectos'),where('encargados','array-contains','master'))));
+ const selected=projects.docs.find(d=>d.id==='p');assert.ok(selected);
+ const people=await assertSucceeds(getDocs(collection(database,'usuarios')));
+ const members=people.docs.filter(d=>d.data().activo!==false&&selected.data().encargados.includes(d.id)).map(d=>d.id).sort();
+ assert.deepEqual(members,['master','worker']);
+ const assign=(id,projectId,target)=>runTransaction(database,async tx=>{
+  const profile=await tx.get(doc(database,'usuarios','master'));
+  const assignee=await tx.get(doc(database,'usuarios',target));
+  const project=projectId?await tx.get(doc(database,'proyectos',projectId)):null;
+  const ref=doc(database,'actividades',id);const old=await tx.get(ref);
+  assert.equal(profile.data().rol,'maestro');assert.equal(assignee.data().activo,true);
+  if(projectId)assert.equal(project.exists(),true);
+  assert.equal(old.exists(),false);
+  tx.set(ref,{...task('master'),proyectoId:projectId,asignadoATrabajadorId:target});
+ });
+ await assertSucceeds(assign('selected-master-task',selected.id,'worker'));
+ const saved=await assertSucceeds(getDoc(doc(db('worker'),'actividades','selected-master-task')));
+ assert.equal(saved.data().creadoPor,'master');assert.equal(saved.data().proyectoId,'p');
+ await assertFails(assign('selected-forged-member','p','other'));
+ await assertFails(assign('selected-foreign-project','outside','other'));
+ await assertFails(assign('selected-blank-project','','worker'));
+ for(const id of ['selected-forged-member','selected-foreign-project','selected-blank-project'])assert.equal((await getDoc(doc(db('admin'),'actividades',id))).exists(),false);
+ await assertFails(updateDoc(doc(database,'proyectos','p'),{encargados:['master','worker','other']}));
+});
+test('project list membership cannot be forged through malformed map or string fields',async()=>{
+ const admin=db('admin'),master=db('master');
+ const map=doc(admin,'proyectos','malformed-map'),string=doc(admin,'proyectos','malformed-string');
+ try {
+  await setDoc(map,{titulo:'Formato inválido',encargados:{master:true}});
+  await setDoc(string,{titulo:'Formato histórico inválido',encargados:'master'});
+  for(const id of ['malformed-map','malformed-string'])await assertFails(getDoc(doc(master,'proyectos',id)));
+  await assertFails(getDocs(query(collection(master,'proyectos'),where('encargados.master','==',true))));
+  await assertFails(getDocs(query(collection(master,'proyectos'),where('encargados','==',{master:true}))));
+  await assertFails(getDocs(query(collection(master,'proyectos'),where('encargados','==','master'))));
+  await assertSucceeds(getDoc(map));await assertSucceeds(getDoc(string));
+ } finally {await deleteDoc(map);await deleteDoc(string);}
+});
 test('admin and assigned master create tasks transactionally without notice permissions',async()=>{
  for(const user of ['admin','master']){const database=db(user),r=doc(database,'actividades','new-'+user);await assertSucceeds(runTransaction(database,async tx=>{const old=await tx.get(r);assert.equal(old.exists(),false);tx.set(r,task(user));}));await assertSucceeds(getDoc(r));}
  await assertFails(getDoc(doc(db('master'),'actividades','unrelated')));

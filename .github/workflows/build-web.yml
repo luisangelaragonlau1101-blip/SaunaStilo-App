@@ -30,7 +30,7 @@ jobs:
       - name: Verify work roles and company planning controls
         run: |
           node --test tests/*.test.cjs tools/online-smart34/*.test.mjs
-          flutter test test/release_navigation_test.dart test/team_workflows_test.dart test/people_release_test.dart test/social_audio_test.dart test/operations_release_test.dart test/task_creation_test.dart test/party_games_test.dart test/academy_arcade_test.dart test/company34_test.dart test/personal35_test.dart test/staff36_test.dart test/daily_tasks_test.dart test/visible_work_actions_test.dart test/task_lifecycle_test.dart test/modern_workspace_test.dart test/personal_panels_test.dart test/warehouse_visual_test.dart
+          flutter test test/release_navigation_test.dart test/team_workflows_test.dart test/people_release_test.dart test/social_audio_test.dart test/operations_release_test.dart test/task_creation_test.dart test/party_games_test.dart test/academy_arcade_test.dart test/company34_test.dart test/personal35_test.dart test/staff36_test.dart test/daily_tasks_test.dart test/visible_work_actions_test.dart test/task_lifecycle_test.dart test/modern_workspace_test.dart test/personal_panels_test.dart test/warehouse_visual_test.dart test/project_picker_test.dart
       - uses: actions/configure-pages@v5
         with:
           enablement: true
