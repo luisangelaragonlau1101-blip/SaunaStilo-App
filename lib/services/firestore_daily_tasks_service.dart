@@ -74,6 +74,17 @@ class FirestoreDailyTasksService {
   String _status(Map<String, dynamic> data) =>
       taskStatus(data['estatus'], approved: data['aprobadoEn'] != null);
 
+  String? _timestampIso(dynamic value) {
+    final date = value is Timestamp
+        ? value.toDate()
+        : value is DateTime
+        ? value
+        : value is String
+        ? DateTime.tryParse(value)
+        : null;
+    return date?.toUtc().toIso8601String();
+  }
+
   Future<List<QueryDocumentSnapshot<Map<String, dynamic>>>> _visibleDocs(
     Map<String, dynamic> profile,
   ) async {
@@ -126,13 +137,17 @@ class FirestoreDailyTasksService {
   Future<Map<String, dynamic>> _task(
     DocumentSnapshot<Map<String, dynamic>> snapshot, {
     bool detail = false,
+    bool overview = false,
   }) async {
     final data = snapshot.data() ?? const <String, dynamic>{};
     final status = _status(data);
     final evidence = detail
         ? await _evidence(snapshot.id)
         : const <EvidenciaActividad>[];
-    final progress = await _progress(snapshot.id);
+    // Overview cards do not need to download closed tasks' entire histories.
+    // Their detail still reads all events and evidence when opened.
+    final progress = overview && ['en_revision', 'completado'].contains(status)
+        ? const <AvanceActividad>[] : await _progress(snapshot.id);
     var percentage = (data['porcentaje'] is num)
         ? (data['porcentaje'] as num).toInt().clamp(0, 100).toInt() : 0;
     for (final item in progress) {
@@ -181,13 +196,16 @@ class FirestoreDailyTasksService {
       'createdBy': creatorId,
       'createdByName': creatorName,
       'dueDay': _dayKey(data['fechaTermino'] ?? data['fechaAsignada']),
+      'assignedAt': _timestampIso(data['fechaAsignada'] ?? data['fechaInicio']),
+      'dueAt': _timestampIso(data['fechaTermino'] ?? data['fechaAsignada'] ?? data['fechaInicio']),
+      'approvedAt': _timestampIso(data['aprobadoEn']),
       'projectId': (data['proyectoId'] ?? '').toString(),
       'status': status,
       'percentage': percentage,
       'evidenceCount': count,
       'evidence': evidenceItems,
       'submissionId': submission?.id,
-      'submittedAt': submission?.fecha.toIso8601String(),
+      'submittedAt': submission?.fecha.toIso8601String() ?? _timestampIso(data['completadoEn']),
       'reviewComment': (data['observacionesAdmin'] ?? '').toString(),
       'history': progress
           .map((item) => {
@@ -353,7 +371,96 @@ class FirestoreDailyTasksService {
   }
 
   Future<Map<String, dynamic>> run(String action, Map<String, dynamic> body) async {
-    final profile = await _profile(_uid);
+    final uid = _uid;
+    final profile = await _profile(uid);
+    if (action == 'daily-admin-overview') {
+      // Verify the authenticated profile before any team-wide reads. Neither
+      // a caller-supplied role nor a selected worker changes this permission.
+      if (profile['rol'] != 'admin') {
+        throw StateError(
+          'Solo Administración consulta el avance de todo el equipo.',
+        );
+      }
+      if ((body['viewerId'] != null && body['viewerId'] != uid) ||
+          _uid != uid) {
+        throw StateError('La sesión cambió. Abre la pantalla con tu cuenta.');
+      }
+      final snapshots = await Future.wait([
+        db.collection('actividades').get(),
+        db.collection('usuarios').get(),
+        db.collection('proyectos').get(),
+        db.collection('rh_expedientes').get(),
+      ]);
+      final personnel = {
+        for (final doc in snapshots[3].docs) doc.id: doc.data(),
+      };
+      _names.clear();
+      final people = snapshots[1].docs.map((doc) {
+        final data = doc.data();
+        final name = (data['nombre'] ?? data['Nombre'] ?? 'Integrante')
+            .toString();
+        _names[doc.id] = name;
+        return <String, dynamic>{
+          'id': doc.id,
+          'name': name,
+          'role': (data['rol'] ?? 'trabajador').toString(),
+          'active': data['activo'] != false,
+          'department':
+              (personnel[doc.id]?['area'] ??
+                      data['departamento'] ??
+                      data['department'] ??
+                      data['area'] ??
+                      '')
+                  .toString(),
+        };
+      }).toList();
+      people.sort(
+        (a, b) => (a['name'] as String).compareTo(b['name'] as String),
+      );
+      final projects = snapshots[2].docs.map((doc) {
+        final data = doc.data();
+        return <String, dynamic>{
+          'id': doc.id,
+          'title': (data['titulo'] ?? 'Proyecto').toString(),
+          'status': (data['estatus'] ?? 'pendiente').toString(),
+        };
+      }).toList();
+      projects.sort(
+        (a, b) => (a['title'] as String).compareTo(b['title'] as String),
+      );
+      final items = <Map<String, dynamic>>[];
+      // The same activity may also appear in daily/project views. Its document
+      // ID remains the single source here, and progress includes legacy events
+      // whose percentage could not be copied into the activity summary.
+      final docs = snapshots[0].docs;
+      const batchSize = 8;
+      for (var start = 0; start < docs.length; start += batchSize) {
+        if (_uid != uid) {
+          throw StateError('La sesión cambió. Abre la pantalla con tu cuenta.');
+        }
+        final batch = await Future.wait(
+          docs.skip(start).take(batchSize).map((doc) => _task(doc, overview: true)),
+        );
+        for (final item in batch) {
+          if (item['assignedAt'] == null) item['day'] = null;
+          if (item['dueAt'] == null) item['dueDay'] = null;
+          if ((item['projectId'] as String).isNotEmpty && !['extra', 'instalacion', 'envio'].contains(item['workKind'])) {
+            item['workKind'] = 'proyecto';
+          }
+          items.add(item);
+        }
+      }
+      if (_uid != uid) {
+        throw StateError('La sesión cambió. Abre la pantalla con tu cuenta.');
+      }
+      return {
+        'viewerId': uid,
+        'cached': snapshots.any((snapshot) => snapshot.metadata.isFromCache || snapshot.metadata.hasPendingWrites),
+        'items': items,
+        'people': people,
+        'projects': projects,
+      };
+    }
     if (action == 'daily-create') return _create(body);
     if (action == 'daily-list') {
       final day = (body['day'] ?? '').toString();

@@ -1,4 +1,5 @@
 import '../screens/warehouse_workspace_screen.dart';
+import '../screens/admin_team_progress_screen.dart';
 import '../screens/business_workspace_screen.dart';
 import '../screens/human_resources_screen.dart';
 import '../screens/admin_inbox_screen.dart';
@@ -110,6 +111,7 @@ class AppActionCatalog {
     final master = user.rol == AppRoles.maestro;
 
     final actions = <AppAction>[
+      if (admin) AppAction(id: 'avances_equipo', title: 'Avances del equipo', subtitle: 'Todas las tareas, entregas, porcentajes y evidencias', icon: Icons.insights_rounded, color: _mint, primary: true, keywords: const ['cumplimiento','avance','finalizadas','aprobadas','pendientes','equipo'], builder: (_) => AdminTeamProgressScreen(user: user)),
       if (admin) AppAction(id: 'gestion', title: 'Gestión de la empresa', subtitle: 'Recursos Humanos, finanzas y administración', icon: Icons.business_center_outlined, color: _pink, keywords: const ['siigo', 'aspel', 'nomina', 'recursos humanos'], builder: (_) => BusinessWorkspaceScreen(user: user)),
       if (admin) AppAction(id: 'plan_personal', title: 'Organizar al personal', subtitle: 'Asignar comidas, compras, eventos y pendientes', icon: Icons.edit_calendar_rounded, color: _amber, keywords: const ['hogar','compras','eventos','comida','personal'], builder: (_) => PersonalPlanningAdminScreen(user: user)),
       if (user.usesPersonalPanel) AppAction(id: 'mi_dia', title: 'Mi día', subtitle: 'Mi plan, comidas, compras y eventos', icon: Icons.wb_sunny_rounded, color: _amber, keywords: const ['hogar','compras','eventos','comida'], builder: (_) => PersonalDayScreen(user: user)),

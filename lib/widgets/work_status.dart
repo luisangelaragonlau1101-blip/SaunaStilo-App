@@ -7,8 +7,8 @@ String workStatusLabel(String? status) => switch (status) {
   'completado' => 'Aprobada y finalizada',
   _ => 'Pendiente',
 };
-String workKindLabel(String? kind) => switch (kind) {
-  'extra' => 'Tarea extra', 'instalacion' => 'Instalación', 'envio' => 'Envío', _ => 'Tarea del día',
+String workKindLabel(String? kind, {bool project = false}) => switch (kind) {
+  'proyecto' => 'Actividad de proyecto', 'extra' => 'Tarea extra', 'instalacion' => 'Instalación', 'envio' => 'Envío', _ => project ? 'Actividad de proyecto' : 'Tarea del día',
 };
 Color workStatusColor(String? status) => switch (status) {
   'completado' => const Color(0xFF72CCA4),

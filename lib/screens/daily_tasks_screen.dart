@@ -113,7 +113,7 @@ class WorkTaskCard extends StatelessWidget {
   const WorkTaskCard({super.key, required this.task, required this.onTap, this.user});
   @override Widget build(BuildContext context) => Card(clipBehavior: Clip.antiAlias, child: InkWell(onTap: onTap,
     child: Padding(padding: const EdgeInsets.all(18), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Row(children: [Expanded(child: Text(workKindLabel(task['workKind']), style: TextStyle(fontSize: 12, color: StiloColors.text.withValues(alpha: .6)))), WorkStatus(task['status'])]),
+      Row(children: [Expanded(child: Text(workKindLabel(task['workKind'], project: (task['projectId'] ?? '').toString().isNotEmpty), style: TextStyle(fontSize: 12, color: StiloColors.text.withValues(alpha: .6)))), WorkStatus(task['status'])]),
       const SizedBox(height: 12), Text(task['title'] as String, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
       const SizedBox(height: 6), Text('${task['userName']} · ${task['evidenceCount'] ?? 0} adjuntos', style: TextStyle(color: StiloColors.text.withValues(alpha: .7))),
       if (task['day'] != null) Padding(padding: const EdgeInsets.only(top: 8), child: Text(task['day'] == AttendanceGatewayService.dayKey(AttendanceGatewayService.today) ? 'Asignada para hoy' : 'Asignada: ${task['day'].toString().replaceFirstMapped(RegExp(r'^(\d{4})(\d{2})(\d{2})$'), (m) => '${m[3]}/${m[2]}/${m[1]}')}', style: TextStyle(fontSize: 12, color: StiloColors.muted))),
@@ -243,7 +243,7 @@ class _DailyTaskDetailState extends State<DailyTaskDetail> {
     final enabled = _ready && !_busy;
     final editable = enabled && !_closed && (_own || _reviewer);
     final review = _reviewer && _task['status'] == 'en_revision';
-    return Scaffold(appBar: AppBar(title: Text(workKindLabel(_task['workKind'])), actions: [IconButton(tooltip: 'Actualizar tarea', onPressed: _busy ? null : _load, icon: const Icon(Icons.refresh))]),
+    return Scaffold(appBar: AppBar(title: Text(workKindLabel(_task['workKind'], project: (_task['projectId'] ?? '').toString().isNotEmpty)), actions: [IconButton(tooltip: 'Actualizar tarea', onPressed: _busy ? null : _load, icon: const Icon(Icons.refresh))]),
       body: ListView(padding: const EdgeInsets.fromLTRB(20, 12, 20, 110), children: [
         Align(alignment: Alignment.centerLeft, child: WorkStatus(_task['status'])), const SizedBox(height: 16),
         Text(_task['title'] as String, style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w800)),

@@ -4,6 +4,7 @@ import '../models/user_model.dart';
 import '../services/attendance_gateway_service.dart';
 import '../services/company_learning_service.dart';
 import '../screens/daily_tasks_screen.dart';
+import '../screens/admin_team_progress_screen.dart';
 import '../screens/work_workspace_screen.dart';
 import '../presentation/appearance.dart';
 
@@ -58,6 +59,10 @@ class _TodayTasksState extends State<TodayTasksCard> with WidgetsBindingObserver
           if (mounted) await _load();
         }),
       ],
+      if (widget.user.rol == AppRoles.admin) FilledButton.tonalIcon(onPressed: () async {
+        await Navigator.push(context, MaterialPageRoute<void>(builder: (_) => AdminTeamProgressScreen(user: widget.user, service: widget.service)));
+        if (mounted) await _load();
+      }, icon: const Icon(Icons.insights_rounded), label: const Text('Ver avances de todo el equipo')),
       TextButton.icon(onPressed: () async {
         await Navigator.push(context, MaterialPageRoute<void>(builder: (_) => EquipoTareasScreen(usuario: widget.user)));
         if (mounted) await _load();

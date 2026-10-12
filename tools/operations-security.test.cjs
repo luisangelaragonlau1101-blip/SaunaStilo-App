@@ -68,6 +68,30 @@ test('admin and assigned master create tasks transactionally without notice perm
  await assertFails(getDoc(doc(db('master'),'actividades','unrelated')));
  await assertFails(setDoc(doc(db('worker'),'actividades','forged'),task('worker')));
 });
+test('administration reads the entire task registry with progress and evidence while staff retain assigned access',async()=>{
+ const admin=db('admin');
+ await assertSucceeds(setDoc(doc(admin,'actividades','overview-project'),task('admin')));
+ await assertSucceeds(setDoc(doc(admin,'actividades','overview-extra'),{...task('admin'),proyectoId:'',workKind:'extra'}));
+ const progress=doc(admin,'actividades','overview-project','avances','legacy-progress');
+ const proof=doc(admin,'actividades','overview-project','evidencias','overview-photo');
+ await assertSucceeds(setDoc(progress,{trabajadorId:'worker',comentario:'Avance real',porcentaje:65,fecha:serverTimestamp(),esCierre:false,cantidadEvidencias:1}));
+ await assertSucceeds(setDoc(proof,{usuarioId:'worker',url:'data:image/png;base64,iVBORw0KGgo=',nombre:'avance.png',tipoMime:'image/png',creadoEn:serverTimestamp()}));
+ const registry=await assertSucceeds(getDocs(collection(admin,'actividades')));
+ for(const id of ['unrelated','overview-project','overview-extra'])assert.ok(registry.docs.some(d=>d.id===id));
+ const events=await assertSucceeds(getDocs(collection(admin,'actividades','overview-project','avances')));
+ assert.equal(events.docs.find(d=>d.id==='legacy-progress').data().porcentaje,65);
+ const files=await assertSucceeds(getDocs(collection(admin,'actividades','overview-project','evidencias')));
+ assert.equal(files.docs.find(d=>d.id==='overview-photo').data().nombre,'avance.png');
+ for(const actor of ['worker','master','warehouse','other'])await assertFails(getDocs(collection(db(actor),'actividades')));
+ await assertFails(getDocs(collection(env.unauthenticatedContext().firestore(),'actividades')));
+ const own=await assertSucceeds(getDocs(query(collection(db('worker'),'actividades'),where('asignadoATrabajadorId','==','worker'))));
+ assert.ok(own.docs.some(d=>d.id==='overview-project'));assert.ok(!own.docs.some(d=>d.id==='unrelated'));
+ await assertSucceeds(getDocs(query(collection(db('master'),'actividades'),where('proyectoId','==','p'))));
+ await assertSucceeds(getDocs(collection(db('worker'),'actividades','overview-project','avances')));
+ await assertSucceeds(getDocs(collection(db('worker'),'actividades','overview-project','evidencias')));
+ await assertFails(getDocs(collection(db('other'),'actividades','overview-project','avances')));
+ await assertFails(getDocs(collection(db('other'),'actividades','overview-project','evidencias')));
+});
 test('workers request but cannot self-approve, change another request or grant captures exemption',async()=>{
  const database=db('worker'),r=doc(database,'solicitudes_herramientas','request');await assertSucceeds(setDoc(r,request()));
  await assertFails(updateDoc(r,{estatus:'aprobada'}));
