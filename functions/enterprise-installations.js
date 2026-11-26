@@ -53,7 +53,8 @@ function signature(raw) {
     });
   });
   if (points < 5 || points > 4000) fail('Dibuja una firma completa.', 'invalid-argument');
-  return strokes;
+  // Firestore forbids nested arrays. Store strokes as maps of point maps.
+  return strokes.map(points => ({puntos:points.map(([x,y])=>({x,y}))}));
 }
 function normalizeLines(raw) {
   if (!Array.isArray(raw) || raw.length < 1 || raw.length > 40) fail('Selecciona entre 1 y 40 artículos.', 'invalid-argument');
@@ -125,11 +126,19 @@ async function runInstallationAction({db,uid,data,storage}) {
   const profile = await readActor(db,uid);
   const action = text(data.action,60);
   if (action === 'catalog') {
-    if (!manager(profile) && !coordinator(profile)) {
-      const assigned = data.orderId ? await db.collection(ORDERS).doc(key(data.orderId)).get() : null;
-      if (!assigned?.exists || !member(assigned.data(),uid,profile)) fail('Abre una orden asignada para consultar materiales.', 'permission-denied');
+    const assigned = data.orderId ? await db.collection(ORDERS).doc(key(data.orderId)).get() : null;
+    if (assigned) {
+      if (!assigned.exists) fail('La orden no está disponible.', 'not-found');
+      requireMember(assigned.data(),uid,profile);
     }
-    return catalog(db,uid,profile);
+    if (!manager(profile) && !coordinator(profile) && !assigned?.exists) fail('Abre una orden asignada para consultar materiales.', 'permission-denied');
+    const result = await catalog(db,uid,profile);
+    if (!manager(profile) && assigned?.exists) {
+      const ids = [...new Set(assigned.data().participantes || [])].slice(0,30);
+      const people = ids.length ? await db.getAll(...ids.map(id=>db.collection('usuarios').doc(id))) : [];
+      result.people = people.filter(p=>p.exists&&active(p.data())).map(p=>({id:p.id,nombre:text(p.data().nombre,160)||'Responsable',rol:p.data().rol}));
+    }
+    return result;
   }
   if (action === 'list') {
     let q = manager(profile) ? db.collection(ORDERS) : db.collection(ORDERS).where('participantes','array-contains',uid);
@@ -144,13 +153,12 @@ async function runInstallationAction({db,uid,data,storage}) {
     requireMember(snap.data(),uid,profile);
     if(action==='photo'){
       const photo=(snap.data().fotos||[]).find(p=>p.path===data.path);if(!photo)fail('La fotografía no pertenece a esta orden.', 'not-found');
-      const [url]=await storage.bucket().file(photo.path).getSignedUrl({action:'read',expires:Date.now()+5*60*1000});return {url};
+      return {path:photo.path};
     }
     if (action === 'document') {
       const phase = data.phase === 'devolucion' ? 'devolucion' : 'salida';
       const file = await ensureDocument(db,storage,id,phase);
-      const [url] = await storage.bucket().file(file.path).getSignedUrl({action:'read',expires:Date.now()+5*60*1000});
-      return {url,path:file.path,sha256:file.sha256};
+      return {path:file.path,sha256:file.sha256};
     }
     const events = await snap.ref.collection('eventos').orderBy('fecha','desc').limit(100).get();
     return {order:{id,...wire(snap.data())},events:events.docs.map(d=>({id:d.id,...wire(d.data())}))};
@@ -377,6 +385,7 @@ async function runInstallationAction({db,uid,data,storage}) {
         const editors=Array.isArray(data.editores)?[...new Set(data.editores.map(key))]:[];
         if(editors.length>10||editors.some(e=>!order.participantes.includes(e)))fail('Los editores deben ser responsables de esta orden.');
         changes.editores=editors;
+        for(const editor of editors) if(!(order.editores||[]).includes(editor)) notice(tx,db,operationId,editor,'Preparación de materiales','Administración te habilitó para editar el checklist de esta orden.',id,uid);
       } else fail('Acción no disponible.', 'invalid-argument');
       tx.update(orderRef,changes);
       tx.create(orderRef.collection('eventos').doc(operationId),{...event,...(data.observaciones?{observaciones:text(data.observaciones,2000)}:{}),estadoAnterior:order.estado,estadoNuevo:changes.estado||order.estado});
@@ -392,7 +401,25 @@ async function runInstallationAction({db,uid,data,storage}) {
 
 // Small server PDF writer: signatures are vector paths from the authenticated
 // saved strokes. No client-generated document can replace the signed snapshot.
-function createActaPdf(order, phase) {
+function jpegSize(bytes) {
+  if (!Buffer.isBuffer(bytes) || bytes[0]!==255 || bytes[1]!==216) return null;
+  let offset=2;
+  while(offset+8<bytes.length){
+    if(bytes[offset++]!==255) return null;
+    let marker=bytes[offset++];while(marker===255&&offset<bytes.length)marker=bytes[offset++];
+    if(marker===217||marker===218)return null;
+    if(marker===216||marker===1||(marker>=208&&marker<=215))continue;
+    if(offset+2>bytes.length)return null;
+    const length=bytes.readUInt16BE(offset);if(length<2||offset+length>bytes.length)return null;
+    if([192,193,194,195,197,198,199,201,202,203,205,206,207].includes(marker)){
+      const height=bytes.readUInt16BE(offset+3),width=bytes.readUInt16BE(offset+5),components=bytes[offset+7];
+      return width>0&&height>0&&width<=10000&&height<=10000&&[1,3].includes(components)?{width,height,components}:null;
+    }
+    offset+=length;
+  }
+  return null;
+}
+function createActaPdf(order, phase, imageFiles=[]) {
   const isReturn=phase==='devolucion',snapshot=isReturn?order.devolucion:order.salida;
   if(!snapshot)fail('No hay una versión autorizada para generar el acta.');
   const signatures=isReturn?order.firmasDevolucion:order.firmas;
@@ -415,12 +442,25 @@ function createActaPdf(order, phase) {
     if(y<170)next();line(`Firma ${side}: ${sign.nombre} | ${iso(sign.fecha)} | Usuario ${sign.usuarioId}`);
     const x0=45,y0=y-90,w=240,h=78;
     page+='0.1 0.1 0.1 RG 1 w\n';
-    for(const stroke of sign.trazos){stroke.forEach((p,i)=>{page+=`${(x0+p[0]*w).toFixed(2)} ${(y0+(1-p[1])*h).toFixed(2)} ${i?'l':'m'}\n`;});page+='S\n';}y-=115;
+    for(const stroke of sign.trazos){const points=Array.isArray(stroke)?stroke.map(p=>({x:p[0],y:p[1]})):stroke.puntos;points.forEach((p,i)=>{page+=`${(x0+p.x*w).toFixed(2)} ${(y0+(1-p.y)*h).toFixed(2)} ${i?'l':'m'}\n`;});page+='S\n';}y-=115;
   }
   next();
+  const photos=imageFiles.map(file=>({...file,size:jpegSize(file.bytes)})).filter(file=>file.size).slice(0,3);
+  photos.forEach((photo,index)=>{
+    line(`Fotografia: ${photo.nombre||index+1}`);
+    const scale=Math.min(510/photo.size.width,650/photo.size.height);
+    const w=photo.size.width*scale,h=photo.size.height*scale;
+    page+=`q ${w.toFixed(2)} 0 0 ${h.toFixed(2)} 42 ${(y-h).toFixed(2)} cm /Im${index} Do Q\n`;
+    next();
+  });
   const objects=['<< /Type /Catalog /Pages 2 0 R >>','', '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>'];
+  const imageRefs=photos.map(photo=>{
+    objects.push(`<< /Type /XObject /Subtype /Image /Width ${photo.size.width} /Height ${photo.size.height} /ColorSpace /${photo.size.components===1?'DeviceGray':'DeviceRGB'} /BitsPerComponent 8 /Filter /DCTDecode /Length ${photo.bytes.length} >>\nstream\n${photo.bytes.toString('latin1')}\nendstream`);
+    return objects.length;
+  });
+  const imageResources=imageRefs.length?` /XObject << ${imageRefs.map((id,index)=>`/Im${index} ${id} 0 R`).join(' ')} >>`:'';
   const kids=[];
-  for(const content of pages){const pageId=objects.length+1,contentId=pageId+1;kids.push(`${pageId} 0 R`);objects.push(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R >> >> /Contents ${contentId} 0 R >>`);objects.push(`<< /Length ${Buffer.byteLength(content,'latin1')} >>\nstream\n${content}endstream`);}
+  for(const content of pages){const pageId=objects.length+1,contentId=pageId+1;kids.push(`${pageId} 0 R`);objects.push(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R >> ${imageResources} >> /Contents ${contentId} 0 R >>`);objects.push(`<< /Length ${Buffer.byteLength(content,'latin1')} >>\nstream\n${content}endstream`);}
   objects[1]=`<< /Type /Pages /Kids [${kids.join(' ')}] /Count ${kids.length} >>`;
   let out='%PDF-1.4\n%\xFF\xFF\xFF\xFF\n';const offsets=[0];
   objects.forEach((o,i)=>{offsets.push(Buffer.byteLength(out,'latin1'));out+=`${i+1} 0 obj\n${o}\nendobj\n`;});
@@ -444,7 +484,18 @@ async function ensureDocument(db,storage,id,phase){
   const path=`instalaciones/${id}/documentos/${phase}-v${version}.pdf`;
   const field=phase==='devolucion'?'actaDevolucion':'actaSalida';
   if(order[field]?.path===path)return order[field];
-  const bytes=createActaPdf(order,phase),sha256=crypto.createHash('sha256').update(bytes).digest('hex');
+  const photos=[];
+  const snapshot=phase==='devolucion'?order.devolucion:order.salida;
+  for(const photo of (snapshot.fotos||[]).slice(0,3)){
+    if(typeof photo.path!=='string'||!photo.path.startsWith(`instalaciones/${id}/evidencias/`))continue;
+    try{
+      const file=storage.bucket().file(photo.path),[metadata]=await file.getMetadata();
+      if(Number(metadata.size)>3*1024*1024)continue;
+      const [bytes]=await file.download();
+      if(jpegSize(bytes))photos.push({bytes,nombre:photo.nombre});
+    }catch(_){ /* Original references remain listed if an image is unavailable. */ }
+  }
+  const bytes=createActaPdf(order,phase,photos),sha256=crypto.createHash('sha256').update(bytes).digest('hex');
   await immutableFile(storage,path,bytes,'application/pdf',{orderId:id,sha256,snapshotHash:phase==='devolucion'?order.devolucion.hash:order.salida.hash});
   const document={path,sha256,version:String(version),snapshotHash:phase==='devolucion'?order.devolucion.hash:order.salida.hash,creadoEn:Timestamp.now()};
   await db.runTransaction(async tx=>{const current=await tx.get(ref);if(!current.exists)return;const d=current.data();if(phase==='devolucion'&&d.estado==='cerrada'&&version!=='final')return;const expected=phase==='devolucion'?d.devolucion?.hash:d.salida?.hash;if(expected!==document.snapshotHash)return;tx.update(ref,{[field]:document});tx.set(ref.collection('eventos').doc(`pdf_${phase}_${version}`),{accion:'documento_generado',usuarioId:'sistema',fecha:stamp(),path,sha256,snapshotHash:document.snapshotHash});});

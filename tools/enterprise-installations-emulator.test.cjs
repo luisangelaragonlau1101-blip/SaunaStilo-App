@@ -1,0 +1,81 @@
+const test=require('node:test'),assert=require('node:assert/strict');
+const {createRequire}=require('node:module');
+const backendRequire=createRequire(require.resolve('../functions/package.json'));
+const {initializeApp,deleteApp}=backendRequire('firebase-admin/app');
+const {getFirestore}=backendRequire('firebase-admin/firestore');
+const {runInstallationAction}=require('../functions/enterprise-installations');
+let app,db;
+const invoke=(uid,action,operationId,fields={})=>runInstallationAction({db,uid,data:{action,operationId,...fields}});
+const strokes=[[[0,0],[0.1,0.2],[0.2,0.4],[0.7,0.4],[1,0.8]]];
+async function prepared(suffix){
+ const {orderId}=await invoke('admin','create','create_'+suffix,{proyectoId:'project',preparadorId:'worker',transportistaId:'tech',receptorTallerId:'admin',fechaSalida:'2026-12-01T18:00:00Z',fechaRegreso:'2026-12-10T18:00:00Z',lineas:[{sourceId:'drill',sourceType:'inventario',cantidad:1,tipo:'retornable'}]});
+ const o=(await db.collection('instalacion_ordenes').doc(orderId).get()).data();
+ await invoke('worker','finish-preparation','prepare_'+suffix,{orderId,expectedVersion:1,lineas:o.lineas.map(l=>({...l,preparada:1,preparadaConfirmada:true}))});
+ return orderId;
+}
+test.before(async()=>{
+ assert.ok(process.env.FIRESTORE_EMULATOR_HOST,'Isolated emulator required');
+ app=initializeApp({projectId:'demo-sauna-installations-integration'});db=getFirestore(app);
+ for(const [id,rol] of [['admin','admin'],['worker','trabajador'],['tech','trabajador'],['other','trabajador']])await db.collection('usuarios').doc(id).set({nombre:id,rol,activo:true});
+ await db.collection('proyectos').doc('project').set({titulo:'Instalación de prueba',encargados:['worker','tech']});
+ await db.collection('insumos_inventario').doc('drill').set({nombre:'Taladro',cantidad_disponible:1,en_reparacion:0});
+});
+test.after(async()=>{await deleteApp(app);});
+test('actual transactions reserve once, require own signatures and return stock exactly once',async()=>{
+ const orderId=await prepared('flow');
+ await assert.rejects(invoke('other','authorize-departure','forged_authorize',{orderId}));
+ await invoke('admin','authorize-departure','authorize_flow',{orderId});
+ await invoke('admin','authorize-departure','authorize_flow',{orderId});
+ assert.equal((await db.collection('insumos_inventario').doc('drill').get()).data().cantidad_disponible,0);
+ let o=(await db.collection('instalacion_ordenes').doc(orderId).get()).data();
+ await assert.rejects(invoke('other','sign-departure','wrong_signature',{orderId,side:'entrega',snapshotHash:o.salida.hash,signature:strokes}));
+ await invoke('worker','sign-departure','sign_delivery',{orderId,side:'entrega',snapshotHash:o.salida.hash,signature:strokes});
+ await invoke('tech','sign-departure','sign_received',{orderId,side:'recibe',snapshotHash:o.salida.hash,signature:strokes});
+ o=(await db.collection('instalacion_ordenes').doc(orderId).get()).data();assert.equal(o.estado,'en_instalacion');assert.equal(o.firmas.entrega.trazos[0].puntos.length,5);
+ const line={id:o.salida.lineas[0].id,devuelta:1,danada:0,utilizada:0,desperdicio:0,instalada:0};
+ await assert.rejects(invoke('tech','start-return','over_return',{orderId,lineas:[{...line,devuelta:2}]}));
+ await invoke('tech','start-return','return_flow',{orderId,lineas:[line]});
+ o=(await db.collection('instalacion_ordenes').doc(orderId).get()).data();
+ await invoke('tech','sign-return','sign_returning',{orderId,side:'devuelve',snapshotHash:o.devolucion.hash,signature:strokes});
+ await invoke('admin','sign-return','sign_workshop',{orderId,side:'recibe',snapshotHash:o.devolucion.hash,signature:strokes});
+ await invoke('admin','close-return','close_flow',{orderId});
+ await invoke('admin','close-return','close_flow',{orderId});
+ await assert.rejects(invoke('admin','close-return','close_again_new_id',{orderId}));
+ assert.equal((await db.collection('insumos_inventario').doc('drill').get()).data().cantidad_disponible,1);
+ assert.equal((await db.collection('instalacion_ordenes').doc(orderId).get()).data().estado,'cerrada');
+});
+test('two installations competing for the last tool cannot both reserve it',async()=>{
+ const first=await prepared('race_a'),second=await prepared('race_b');
+ const result=await Promise.allSettled([invoke('admin','authorize-departure','authorize_race_a',{orderId:first}),invoke('admin','authorize-departure','authorize_race_b',{orderId:second})]);
+ assert.equal(result.filter(r=>r.status==='fulfilled').length,1);
+ assert.equal(result.filter(r=>r.status==='rejected').length,1);
+ assert.equal((await db.collection('insumos_inventario').doc('drill').get()).data().cantidad_disponible,0);
+ const states=await Promise.all([first,second].map(async id=>(await db.collection('instalacion_ordenes').doc(id).get()).data().estado));
+ assert.deepEqual(states.sort(),['autorizada','lista']);
+});
+
+test('personal tool loans preserve their owner and never deduct shared stock a second time',async()=>{
+ await db.collection('cajitas_inventario').doc('personal-drill').set({nombre:'Taladro personal',estado:'asignado',trabajador_actual_id:'tech',insumoId:'drill'});
+ const before=(await db.collection('insumos_inventario').doc('drill').get()).data().cantidad_disponible;
+ const {orderId}=await invoke('admin','create','create_personal',{proyectoId:'project',preparadorId:'worker',transportistaId:'tech',receptorTallerId:'admin',fechaSalida:'2026-12-01T18:00:00Z',fechaRegreso:'2026-12-10T18:00:00Z',lineas:[{sourceId:'personal-drill',sourceType:'cajita',cantidad:1,tipo:'retornable'}]});
+ const catalog=await runInstallationAction({db,uid:'tech',data:{action:'catalog',orderId}});
+ assert.ok(catalog.people.some(p=>p.id==='worker'));assert.ok(!catalog.people.some(p=>p.id==='other'));
+ await assert.rejects(invoke('worker','set-editors','forged_editors',{orderId,editores:['other']}));
+ await invoke('admin','set-editors','authorized_editors',{orderId,editores:['worker','tech']});
+ let o=(await db.collection('instalacion_ordenes').doc(orderId).get()).data();
+ await invoke('tech','finish-preparation','prepare_personal',{orderId,expectedVersion:o.version,lineas:o.lineas.map(l=>({...l,preparada:1,preparadaConfirmada:true}))});
+ await invoke('admin','authorize-departure','authorize_personal',{orderId});
+ let box=(await db.collection('cajitas_inventario').doc('personal-drill').get()).data();
+ assert.equal(box.trabajador_actual_id,'tech');assert.equal(box.ordenInstalacionId,orderId);
+ o=(await db.collection('instalacion_ordenes').doc(orderId).get()).data();
+ await invoke('worker','sign-departure','sign_personal_delivery',{orderId,side:'entrega',snapshotHash:o.salida.hash,signature:strokes});
+ await invoke('tech','sign-departure','sign_personal_receive',{orderId,side:'recibe',snapshotHash:o.salida.hash,signature:strokes});
+ await invoke('tech','start-return','return_personal',{orderId,lineas:[{id:o.salida.lineas[0].id,devuelta:1,danada:0,utilizada:0,desperdicio:0,instalada:0}]});
+ o=(await db.collection('instalacion_ordenes').doc(orderId).get()).data();
+ await invoke('tech','sign-return','sign_personal_back',{orderId,side:'devuelve',snapshotHash:o.devolucion.hash,signature:strokes});
+ await invoke('admin','sign-return','sign_personal_workshop',{orderId,side:'recibe',snapshotHash:o.devolucion.hash,signature:strokes});
+ await invoke('admin','close-return','close_personal',{orderId});
+ box=(await db.collection('cajitas_inventario').doc('personal-drill').get()).data();
+ assert.equal(box.ordenInstalacionId,undefined);assert.equal(box.trabajador_actual_id,'tech');assert.equal(box.estado,'asignado');
+ assert.equal((await db.collection('insumos_inventario').doc('drill').get()).data().cantidad_disponible,before);
+});
