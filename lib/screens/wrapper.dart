@@ -1,3 +1,5 @@
+import '../widgets/authenticated_workspace_gate.dart';
+import '../services/startup_metrics.dart';
 import '../widgets/inline_photo.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -100,246 +102,70 @@ void _mostrarImagenGrande(BuildContext context, String imageUrl) {
 }
 
 
-class Wrapper extends StatelessWidget {
+class Wrapper extends StatefulWidget {
+  const Wrapper({super.key});
+  @override
+  State<Wrapper> createState() => _WrapperState();
+}
+
+class _WrapperState extends State<Wrapper> {
   final AuthService _authService = AuthService();
+  late Stream<User?> _auth = _authService.userStream;
+  Stream<WorkspaceAccess>? _access;
+  String? _boundId;
 
-  Wrapper({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF000000),
-      body: StreamBuilder<User?>(
-              stream: _authService.userStream,
-              builder: (context, authSnapshot) {
-                Widget currentScreen;
-
-                if (authSnapshot.connectionState == ConnectionState.waiting) {
-                  currentScreen = const _LoadingScreen(
-                    mensaje: "Conectando con SaunaStilo...", 
-                    key: ValueKey('loading_auth')
-                  );
-                } else if (!authSnapshot.hasData || authSnapshot.data == null) {
-                  currentScreen = LoginScreen(key: const ValueKey('login'));
-                } else {
-                  currentScreen = StreamBuilder<DocumentSnapshot>(
-                    stream: FirebaseFirestore.instance.collection('usuarios').doc(authSnapshot.data!.uid).snapshots(),
-                    builder: (context, userSnapshot) {
-                      if (userSnapshot.connectionState == ConnectionState.waiting) {
-                        return const _LoadingScreen(
-                          mensaje: "Preparando tu espacio...", 
-                          key: ValueKey('loading_db')
-                        );
-                      }
-                      
-                      if (userSnapshot.hasData && userSnapshot.data != null && userSnapshot.data!.exists) {
-                        final usuario = UserModel.fromFirestore(userSnapshot.data!);
-                        
-                        if (usuario.rol == 'admin') {
-                          return AvisosSonoros(
-                            usuario: usuario,
-                            child: ModernDashboardScreen(usuario: usuario, key: const ValueKey('admin_dash')),
-                          );
-                        } else if (usuario.rol == 'almacenista') {
-                          return AvisosSonoros(
-                            usuario: usuario,
-                            child: ModernDashboardScreen(usuario: usuario, key: const ValueKey('almacenista_dash')),
-                          );
-                        } else {
-                          return AvisosSonoros(
-                            usuario: usuario,
-                            child: ModernDashboardScreen(usuario: usuario, key: const ValueKey('operativo_dash')),
-                          );
-                        }
-                      }
-                      
-                      return const _ErrorScreen(
-                        mensaje: "Perfil no encontrado en la base de datos.", 
-                        key: ValueKey('error_screen')
-                      );
-                    },
-                  );
-                }
-
-                return AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 600),
-                  switchInCurve: Curves.easeOutCubic,
-                  switchOutCurve: Curves.easeInCubic,
-                  transitionBuilder: (Widget child, Animation<double> animation) {
-                    return FadeTransition(
-                      opacity: animation,
-                      child: child,
-                    );
-                  },
-                  child: currentScreen,
-                );
-              },
-            ),
-    );
+  Stream<WorkspaceAccess> _profile(String uid) {
+    if (_boundId != uid || _access == null) {
+      _boundId = uid;
+      _access = FirebaseFirestore.instance.collection('usuarios').doc(uid)
+          .snapshots(includeMetadataChanges: true).map((snapshot) {
+        final data = snapshot.data();
+        return WorkspaceAccess(
+          userId: uid,
+          user: snapshot.exists ? UserModel.fromFirestore(snapshot) : null,
+          active: data != null && data['activo'] != false,
+          cached: snapshot.metadata.isFromCache || snapshot.metadata.hasPendingWrites,
+        );
+      });
+    }
+    return _access!;
   }
-}
 
-
-class _ErrorScreen extends StatelessWidget {
-  final String mensaje;
-  const _ErrorScreen({Key? key, required this.mensaje}) : super(key: key);
+  void _retry() => setState(() { _access = null; _auth = _authService.userStream; });
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF121212),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.error_outline, color: Colors.redAccent, size: 60),
-            const SizedBox(height: 16),
-            Text(mensaje, style: GoogleFonts.inter(color: Colors.white, fontSize: 16)),
-            const SizedBox(height: 24),
-            ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white10,
-                foregroundColor: Colors.white,
-                elevation: 0,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22))
-              ),
-              onPressed: () => AuthService().logout(),
-              icon: const Icon(Icons.logout, size: 18),
-              label: Text("Cerrar sesión e intentar de nuevo", style: GoogleFonts.inter()),
-            )
-          ],
+  Widget build(BuildContext context) => StreamBuilder<User?>(
+    stream: _auth,
+    // Only Firebase's restored identity is reused; no role is read from prefs.
+    initialData: FirebaseAuth.instance.currentUser,
+    builder: (context, snapshot) {
+      final user = snapshot.data;
+      if (snapshot.hasError) {
+        _boundId = null;
+        _access = null;
+        return AccessProblem(message: 'No pudimos validar la sesión.',
+          onRetry: _retry, onLogout: () => _authService.logout());
+      }
+      if (user == null) {
+        _boundId = null;
+        _access = null;
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const WorkspaceLoadingScreen(session: false);
+        }
+        StartupMetrics.mark('auth-ready');
+        return LoginScreen(key: const ValueKey('login'));
+      }
+      StartupMetrics.mark('auth-ready');
+      return AuthenticatedWorkspaceGate(
+        key: ValueKey(user.uid), userId: user.uid, access: _profile(user.uid),
+        onRetry: _retry, onLogout: () => _authService.logout(),
+        workspace: (context, profile) => AvisosSonoros(
+          key: ValueKey('${profile.id}:${profile.rol}'), usuario: profile,
+          child: ModernDashboardScreen(usuario: profile),
         ),
-      ),
-    );
-  }
-}
-
-
-class _LoadingScreen extends StatefulWidget {
-  final String mensaje;
-  const _LoadingScreen({Key? key, required this.mensaje}) : super(key: key);
-
-  @override
-  State<_LoadingScreen> createState() => _LoadingScreenState();
-}
-
-class _LoadingScreenState extends State<_LoadingScreen> with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _scaleAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1200),
-    )..repeat(reverse: true);
-
-    _scaleAnimation = Tween<double>(begin: 0.96, end: 1.04).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF000000), 
-      body: Stack(
-        children: [
-          Positioned.fill(
-            child: Container(
-              decoration: const BoxDecoration(
-                gradient: RadialGradient(
-                  center: Alignment.center,
-                  radius: 1.2, 
-                  colors: [
-                    Color(0xFF1E1E1E), 
-                    Color(0xFF000000), 
-                  ],
-                  stops: [0.0, 0.7], 
-                ),
-              ),
-            ),
-          ),
-          Positioned.fill(
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: RadialGradient(
-                  center: const Alignment(0.0, 0.8), 
-                  radius: 0.9,
-                  colors: [
-                    const Color(0xFF2A1B38).withOpacity(0.4), 
-                    const Color(0xFF000000).withOpacity(0.0), 
-                  ],
-                  stops: const [0.0, 0.8],
-                ),
-              ),
-            ),
-          ),
-          Positioned.fill(
-            child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center, 
-                children: [
-                  ScaleTransition(
-                    scale: _scaleAnimation,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 40),
-                      child: ShaderMask(
-                        shaderCallback: (bounds) {
-                          return const LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [Colors.transparent, Colors.white, Colors.white, Colors.transparent],
-                            stops: [0.0, 0.15, 0.85, 1.0], 
-                          ).createShader(bounds);
-                        },
-                        blendMode: BlendMode.dstIn,
-                        child: ShaderMask(
-                          shaderCallback: (bounds) {
-                            return const LinearGradient(
-                              begin: Alignment.centerLeft,
-                              end: Alignment.centerRight,
-                              colors: [Colors.transparent, Colors.white, Colors.white, Colors.transparent],
-                              stops: [0.0, 0.1, 0.9, 1.0], 
-                            ).createShader(bounds);
-                          },
-                          blendMode: BlendMode.dstIn,
-                          child: Image.asset(
-                            'assets/logo_saunastilo.png',
-                            height: 140, 
-                            fit: BoxFit.contain,
-                            errorBuilder: (context, error, stackTrace) {
-                              return const Icon(Icons.hot_tub_rounded, color: Color(0xFF8B5CF6), size: 80);
-                            },
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 50),
-                  const CircularProgressIndicator(color: Colors.white, strokeWidth: 3),
-                  const SizedBox(height: 30),
-                  Text(
-                    widget.mensaje, 
-                    style: GoogleFonts.inter(color: Colors.white70, fontSize: 14, letterSpacing: 0.5),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+      );
+    },
+  );
 }
 
 
@@ -364,7 +190,6 @@ class _AdminDashboardState extends State<AdminDashboard> {
   static const Color colorCyan = Color(0xFF00E5FF); 
 
   Future<void> _actualizarPantalla() async {
-    await Future.delayed(const Duration(milliseconds: 700));
     setState(() {}); 
   }
 
@@ -1140,7 +965,6 @@ class _OperativoDashboardState extends State<OperativoDashboard> {
   }
 
   Future<void> _actualizarProgreso() async {
-    await Future.delayed(const Duration(milliseconds: 700));
     setState(() {});
   }
 
@@ -1830,7 +1654,6 @@ class _AlmacenistaDashboardState extends State<AlmacenistaDashboard> {
   }
 
   Future<void> _actualizarPantalla() async {
-    await Future.delayed(const Duration(milliseconds: 700));
     setState(() {});
   }
 
