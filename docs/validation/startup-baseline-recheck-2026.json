@@ -1,0 +1,189 @@
+{
+  "version": 1,
+  "recordedAt": "2026-11-26T05:58:35.317Z",
+  "label": "baseline-idle-recheck-2026",
+  "commit": "9b4d6ae36fa7332b600cfb8e9a05e7018bb8da28",
+  "conditions": {
+    "renderer": "Flutter release JavaScript / CanvasKit",
+    "browser": "Chromium headless",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "session": "Unauthenticated, no private company data accessed",
+    "cold": "New browser context, empty HTTP cache and local storage",
+    "warm": "New page in the same context after the cold navigation, HTTP/local caches retained",
+    "transport": "Local static mirror for public Firebase/font SDK URLs only, fetched and verified with curl TLS. URLs rewritten identically for both releases; browser caching remains enabled. No private API requests mirrored.",
+    "serviceWorkers": "blocked to compare startup independently of offline-worker installation",
+    "cpuThrottling": "none",
+    "networkThrottling": "none",
+    "interpretation": "Navigation to first Flutter frame and accessible login; authenticated home and native-device startup are not measured.",
+    "publicSdkMirror": "Prewarmed with an unmeasured navigation before all cold/warm samples"
+  },
+  "samples": [
+    {
+      "iteration": 1,
+      "mode": "cold",
+      "firstFrameMs": 938.3999999985099,
+      "loginReadyMs": 1807.7999999970198,
+      "marks": [],
+      "resources": 29,
+      "cache": {
+        "disk": 4,
+        "serviceWorker": 0,
+        "network": 26
+      },
+      "errors": [],
+      "http": 200
+    },
+    {
+      "iteration": 1,
+      "mode": "warm",
+      "firstFrameMs": 1102.5,
+      "loginReadyMs": 2023.300000000745,
+      "marks": [],
+      "resources": 29,
+      "cache": {
+        "disk": 28,
+        "serviceWorker": 0,
+        "network": 2
+      },
+      "errors": [],
+      "http": 200
+    },
+    {
+      "iteration": 2,
+      "mode": "cold",
+      "firstFrameMs": 958,
+      "loginReadyMs": 1829.5,
+      "marks": [],
+      "resources": 29,
+      "cache": {
+        "disk": 4,
+        "serviceWorker": 0,
+        "network": 26
+      },
+      "errors": [],
+      "http": 200
+    },
+    {
+      "iteration": 2,
+      "mode": "warm",
+      "firstFrameMs": 950.7000000029802,
+      "loginReadyMs": 1799.5,
+      "marks": [],
+      "resources": 29,
+      "cache": {
+        "disk": 28,
+        "serviceWorker": 0,
+        "network": 2
+      },
+      "errors": [],
+      "http": 200
+    },
+    {
+      "iteration": 3,
+      "mode": "cold",
+      "firstFrameMs": 965.8999999985099,
+      "loginReadyMs": 1912.5,
+      "marks": [],
+      "resources": 29,
+      "cache": {
+        "disk": 4,
+        "serviceWorker": 0,
+        "network": 26
+      },
+      "errors": [],
+      "http": 200
+    },
+    {
+      "iteration": 3,
+      "mode": "warm",
+      "firstFrameMs": 987.5999999977648,
+      "loginReadyMs": 1881.0999999977648,
+      "marks": [],
+      "resources": 29,
+      "cache": {
+        "disk": 28,
+        "serviceWorker": 0,
+        "network": 2
+      },
+      "errors": [],
+      "http": 200
+    },
+    {
+      "iteration": 4,
+      "mode": "cold",
+      "firstFrameMs": 936.6000000014901,
+      "loginReadyMs": 1865.2000000029802,
+      "marks": [],
+      "resources": 29,
+      "cache": {
+        "disk": 4,
+        "serviceWorker": 0,
+        "network": 26
+      },
+      "errors": [],
+      "http": 200
+    },
+    {
+      "iteration": 4,
+      "mode": "warm",
+      "firstFrameMs": 981.9000000022352,
+      "loginReadyMs": 1894.199999999255,
+      "marks": [],
+      "resources": 29,
+      "cache": {
+        "disk": 28,
+        "serviceWorker": 0,
+        "network": 2
+      },
+      "errors": [],
+      "http": 200
+    },
+    {
+      "iteration": 5,
+      "mode": "cold",
+      "firstFrameMs": 931.7999999970198,
+      "loginReadyMs": 1862.5,
+      "marks": [],
+      "resources": 29,
+      "cache": {
+        "disk": 4,
+        "serviceWorker": 0,
+        "network": 26
+      },
+      "errors": [],
+      "http": 200
+    },
+    {
+      "iteration": 5,
+      "mode": "warm",
+      "firstFrameMs": 943.1000000014901,
+      "loginReadyMs": 1839.699999999255,
+      "marks": [],
+      "resources": 29,
+      "cache": {
+        "disk": 28,
+        "serviceWorker": 0,
+        "network": 2
+      },
+      "errors": [],
+      "http": 200
+    }
+  ],
+  "browserVersion": "151.0.7922.173",
+  "summary": {
+    "cold": {
+      "count": 5,
+      "firstFrameMedianMs": 938.3999999985099,
+      "loginReadyMedianMs": 1862.5
+    },
+    "warm": {
+      "count": 5,
+      "firstFrameMedianMs": 981.9000000022352,
+      "loginReadyMedianMs": 1881.0999999977648
+    }
+  },
+  "status": "passed"
+}

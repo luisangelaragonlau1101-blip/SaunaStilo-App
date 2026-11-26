@@ -1,0 +1,66 @@
+{
+  "recordedAt": "2026-11-26T06:10:06.169549+00:00",
+  "branch": "codex/modernizacion-integral-2026",
+  "applicationCodeCommit": "9731a3b",
+  "securityCodeCommit": "2f80bc0e4687ccb60963b319f9a43327f7abf7bd",
+  "productionCommitUnchanged": "a392d5288b5a2de7f138a63f5cd1e40a6d684720",
+  "flutter": {
+    "command": "flutter test --no-pub",
+    "passed": 152,
+    "failed": 0
+  },
+  "node": {
+    "command": "node --test tests/*.test.cjs tools/online-smart34/*.test.mjs",
+    "passed": 136,
+    "failed": 0
+  },
+  "isolatedFirestoreStorage": {
+    "project": "demo-sauna-team",
+    "passed": 60,
+    "failed": 0,
+    "productionRecordsWritten": false
+  },
+  "analyzer": {
+    "command": "flutter analyze --no-pub lib test --no-fatal-infos --no-fatal-warnings",
+    "errors": 0,
+    "warnings": 78,
+    "infos": 999,
+    "issues": 1077
+  },
+  "webBuild": {
+    "command": "flutter build web --release --no-pub --base-href / --pwa-strategy=none",
+    "status": "passed",
+    "mainDartSha256": "08dbf0d316ea7e98a7f2a4ade2605e197a00276fcaa0a19afa3a8eebcb14f004",
+    "wasmCertified": false
+  },
+  "startup": {
+    "report": "startup-enterprise-final-2026.json",
+    "coldAndWarmSamples": 10,
+    "authenticatedHomeMeasured": false,
+    "physicalDeviceMeasured": false
+  },
+  "deployment": {
+    "enterprisePublished": false,
+    "firebaseAccess": {
+      "status": "error",
+      "error": "Failed to authenticate, have you run firebase login?"
+    },
+    "needsValidDeploymentIdentity": true
+  },
+  "physicalCameraMicrophonePushAndNativeBuildsVerified": false,
+  "browserLayouts": [
+    {
+      "name": "phone",
+      "http": 200,
+      "loginVisible": true,
+      "errors": []
+    },
+    {
+      "name": "desktop",
+      "http": 200,
+      "loginVisible": true,
+      "errors": []
+    }
+  ],
+  "browserLayoutsScope": "Local anonymous login only; mobile Chromium viewport and desktop, no private records or physical devices."
+}

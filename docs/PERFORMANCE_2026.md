@@ -49,8 +49,8 @@ están en [startup-baseline-2026.json](validation/startup-baseline-2026.json).
 La comprobación de referencia terminó con 10 navegaciones correctas, cero
 errores JavaScript y sin acceder a datos empresariales privados.
 
-La medición de la versión modificada debe ejecutarse cuando se congele su
-compilación; no se sustituye por una estimación a partir del código.
+La comparación final de la versión integrada aparece al final de este documento;
+se ejecutó sobre una compilación real y no se dedujo del código.
 
 ## Reproducir la comparación
 
@@ -112,3 +112,19 @@ La versión de arranque independiente se midió con el mismo protocolo: cinco ap
 | Formulario de acceso disponible | 2.029 s | 1.700 s | 1.943 s | 1.658 s |
 
 El acceso mejora aproximadamente 16 % en frío y 15 % al reabrir, bajo las condiciones locales descritas. No se han medido datos de empleados reales ni dispositivos físicos. Resultados: [startup-release-2026.json](validation/startup-release-2026.json).
+
+
+## Versión empresarial integrada: comparación final
+
+Código de aplicación congelado en `9731a3b`. Se repitió la referencia anterior y se midió la compilación final con la misma máquina, protocolo, caché de SDK y cinco pares de aperturas; sin compilaciones, emuladores ni suites de pruebas ejecutándose al mismo tiempo. La primera medición realizada con trabajo concurrente se descartó como comparación de rendimiento; no se usó para afirmar una mejora.
+
+| Mediana de 5 muestras | Referencia repetida fría | Integrada fría | Referencia reapertura | Integrada reapertura |
+| --- | ---: | ---: | ---: | ---: |
+| Primera interfaz Flutter | 0.938 s | 0.981 s | 0.982 s | 0.948 s |
+| Formulario de acceso utilizable | 1.863 s | **1.655 s** | 1.881 s | **1.641 s** |
+
+El acceso utilizable se adelantó aproximadamente **11 % en frío** y **13 % en reapertura** frente a la referencia repetida. La primera interfaz fría no mejoró en esta muestra; el beneficio medido está en que el acceso queda preparado antes. Frente al baseline original de 2.029/1.943 s, las diferencias son aproximadamente 18 %/16 %, pero la repetición cercana ofrece una comparación más conservadora. Son medianas locales de cinco muestras, sin afirmación estadística sobre todos los dispositivos.
+
+Se completaron 10 navegaciones de la versión final con HTTP 200, formulario visible y cero errores JavaScript. Los resultados, marcas y SHA-256 de `main.dart.js` están en [startup-enterprise-final-2026.json](validation/startup-enterprise-final-2026.json); la referencia repetida está en [startup-baseline-recheck-2026.json](validation/startup-baseline-recheck-2026.json).
+
+No se midió inicio privado autenticado, Android nativo, Safari/iPhone físico, latencia celular ni recepción FCM. La interfaz pública observada está dentro del objetivo de 1–2 segundos en estas condiciones locales; no constituye una garantía de 1–2 segundos para la red o los dispositivos de la empresa. El logo no tiene un tiempo mínimo ni una animación que obligue a esperar.
