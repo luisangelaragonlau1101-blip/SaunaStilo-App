@@ -100,3 +100,15 @@ La validación en iPhone/Safari y Android físicos, la cámara y el micrófono, 
 recepción FCM con la aplicación cerrada y una conexión móvil lenta deben
 comprobarse en los dispositivos correspondientes. Una vista de Chromium con
 dimensiones de teléfono no valida esas capacidades nativas.
+
+
+## Primera publicación compatible con Firebase existente
+
+La versión de arranque independiente se midió con el mismo protocolo: cinco aperturas frías y cinco reaperturas, acceso visible y sin errores JavaScript. El build se realizó antes del commit de publicación; el JSON registra el commit base y el estado de fuentes para no atribuir la medición a la versión anterior.
+
+| Mediana | Antes frío | Después frío | Antes reapertura | Después reapertura |
+| --- | ---: | ---: | ---: | ---: |
+| Primera interfaz Flutter | 1.031 s | 0.977 s | 1.002 s | 0.924 s |
+| Formulario de acceso disponible | 2.029 s | 1.700 s | 1.943 s | 1.658 s |
+
+El acceso mejora aproximadamente 16 % en frío y 15 % al reabrir, bajo las condiciones locales descritas. No se han medido datos de empleados reales ni dispositivos físicos. Resultados: [startup-release-2026.json](validation/startup-release-2026.json).

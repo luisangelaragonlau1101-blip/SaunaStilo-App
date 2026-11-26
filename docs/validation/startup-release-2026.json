@@ -1,0 +1,440 @@
+{
+  "version": 1,
+  "recordedAt": "2026-11-26T02:07:48.733Z",
+  "label": "startup-release-2026",
+  "conditions": {
+    "renderer": "Flutter release JavaScript / CanvasKit",
+    "browser": "Chromium headless",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "session": "Unauthenticated, no private company data accessed",
+    "cold": "New browser context, empty HTTP cache and local storage",
+    "warm": "New page in the same context after the cold navigation, HTTP/local caches retained",
+    "transport": "Local static mirror for public Firebase/font SDK URLs only, fetched and verified with curl TLS. URLs rewritten identically for both releases; browser caching remains enabled. No private API requests mirrored.",
+    "serviceWorkers": "blocked to compare startup independently of offline-worker installation",
+    "cpuThrottling": "none",
+    "networkThrottling": "none",
+    "interpretation": "Navigation to first Flutter frame and accessible login; authenticated home and native-device startup are not measured.",
+    "publicSdkMirror": "Prewarmed with an unmeasured navigation before all cold/warm samples"
+  },
+  "samples": [
+    {
+      "iteration": 1,
+      "mode": "cold",
+      "firstFrameMs": 1100.4000000003725,
+      "loginReadyMs": 1803.5,
+      "marks": [
+        {
+          "name": "stilo:start",
+          "ms": 1026.0999999996275
+        },
+        {
+          "name": "stilo:start",
+          "ms": 1026.199999999255
+        },
+        {
+          "name": "stilo:firebase-ready",
+          "ms": 1400.9000000003725
+        },
+        {
+          "name": "stilo:firebase-ready",
+          "ms": 1400.9000000003725
+        },
+        {
+          "name": "stilo:auth-ready",
+          "ms": 1525.5
+        },
+        {
+          "name": "stilo:auth-ready",
+          "ms": 1525.5
+        }
+      ],
+      "resources": 29,
+      "cache": {
+        "disk": 4,
+        "serviceWorker": 0,
+        "network": 26
+      },
+      "errors": [],
+      "http": 200
+    },
+    {
+      "iteration": 1,
+      "mode": "warm",
+      "firstFrameMs": 921.4000000003725,
+      "loginReadyMs": 1695.9000000003725,
+      "marks": [
+        {
+          "name": "stilo:start",
+          "ms": 845.5999999996275
+        },
+        {
+          "name": "stilo:start",
+          "ms": 845.6999999992549
+        },
+        {
+          "name": "stilo:firebase-ready",
+          "ms": 1280
+        },
+        {
+          "name": "stilo:firebase-ready",
+          "ms": 1280.0999999996275
+        },
+        {
+          "name": "stilo:auth-ready",
+          "ms": 1404.699999999255
+        },
+        {
+          "name": "stilo:auth-ready",
+          "ms": 1404.699999999255
+        }
+      ],
+      "resources": 29,
+      "cache": {
+        "disk": 28,
+        "serviceWorker": 0,
+        "network": 2
+      },
+      "errors": [],
+      "http": 200
+    },
+    {
+      "iteration": 2,
+      "mode": "cold",
+      "firstFrameMs": 996.1999999992549,
+      "loginReadyMs": 1755.5999999996275,
+      "marks": [
+        {
+          "name": "stilo:start",
+          "ms": 907.0999999996275
+        },
+        {
+          "name": "stilo:start",
+          "ms": 907.1999999992549
+        },
+        {
+          "name": "stilo:firebase-ready",
+          "ms": 1357.800000000745
+        },
+        {
+          "name": "stilo:firebase-ready",
+          "ms": 1357.800000000745
+        },
+        {
+          "name": "stilo:auth-ready",
+          "ms": 1476.5
+        },
+        {
+          "name": "stilo:auth-ready",
+          "ms": 1476.5
+        }
+      ],
+      "resources": 29,
+      "cache": {
+        "disk": 4,
+        "serviceWorker": 0,
+        "network": 26
+      },
+      "errors": [],
+      "http": 200
+    },
+    {
+      "iteration": 2,
+      "mode": "warm",
+      "firstFrameMs": 918.0999999996275,
+      "loginReadyMs": 1621.7000000011176,
+      "marks": [
+        {
+          "name": "stilo:start",
+          "ms": 842.8000000007451
+        },
+        {
+          "name": "stilo:start",
+          "ms": 843
+        },
+        {
+          "name": "stilo:firebase-ready",
+          "ms": 1228.800000000745
+        },
+        {
+          "name": "stilo:firebase-ready",
+          "ms": 1228.800000000745
+        },
+        {
+          "name": "stilo:auth-ready",
+          "ms": 1358.5
+        },
+        {
+          "name": "stilo:auth-ready",
+          "ms": 1358.5
+        }
+      ],
+      "resources": 29,
+      "cache": {
+        "disk": 28,
+        "serviceWorker": 0,
+        "network": 2
+      },
+      "errors": [],
+      "http": 200
+    },
+    {
+      "iteration": 3,
+      "mode": "cold",
+      "firstFrameMs": 965.5,
+      "loginReadyMs": 1700.1000000014901,
+      "marks": [
+        {
+          "name": "stilo:start",
+          "ms": 891.5
+        },
+        {
+          "name": "stilo:start",
+          "ms": 891.7000000011176
+        },
+        {
+          "name": "stilo:firebase-ready",
+          "ms": 1286.300000000745
+        },
+        {
+          "name": "stilo:firebase-ready",
+          "ms": 1286.4000000003725
+        },
+        {
+          "name": "stilo:auth-ready",
+          "ms": 1414.2000000011176
+        },
+        {
+          "name": "stilo:auth-ready",
+          "ms": 1414.2000000011176
+        }
+      ],
+      "resources": 29,
+      "cache": {
+        "disk": 4,
+        "serviceWorker": 0,
+        "network": 26
+      },
+      "errors": [],
+      "http": 200
+    },
+    {
+      "iteration": 3,
+      "mode": "warm",
+      "firstFrameMs": 979.5,
+      "loginReadyMs": 1658.4000000003725,
+      "marks": [
+        {
+          "name": "stilo:start",
+          "ms": 905.5999999996275
+        },
+        {
+          "name": "stilo:start",
+          "ms": 905.6999999992549
+        },
+        {
+          "name": "stilo:firebase-ready",
+          "ms": 1259.199999999255
+        },
+        {
+          "name": "stilo:firebase-ready",
+          "ms": 1259.199999999255
+        },
+        {
+          "name": "stilo:auth-ready",
+          "ms": 1375.4000000003725
+        },
+        {
+          "name": "stilo:auth-ready",
+          "ms": 1375.4000000003725
+        }
+      ],
+      "resources": 29,
+      "cache": {
+        "disk": 28,
+        "serviceWorker": 0,
+        "network": 2
+      },
+      "errors": [],
+      "http": 200
+    },
+    {
+      "iteration": 4,
+      "mode": "cold",
+      "firstFrameMs": 969.5999999996275,
+      "loginReadyMs": 1643.5999999996275,
+      "marks": [
+        {
+          "name": "stilo:start",
+          "ms": 891.0999999996275
+        },
+        {
+          "name": "stilo:start",
+          "ms": 891.3000000007451
+        },
+        {
+          "name": "stilo:firebase-ready",
+          "ms": 1239.2000000011176
+        },
+        {
+          "name": "stilo:firebase-ready",
+          "ms": 1239.2000000011176
+        },
+        {
+          "name": "stilo:auth-ready",
+          "ms": 1360.7000000011176
+        },
+        {
+          "name": "stilo:auth-ready",
+          "ms": 1360.800000000745
+        }
+      ],
+      "resources": 29,
+      "cache": {
+        "disk": 4,
+        "serviceWorker": 0,
+        "network": 26
+      },
+      "errors": [],
+      "http": 200
+    },
+    {
+      "iteration": 4,
+      "mode": "warm",
+      "firstFrameMs": 924.5,
+      "loginReadyMs": 1642.8999999985099,
+      "marks": [
+        {
+          "name": "stilo:start",
+          "ms": 857.2999999988824
+        },
+        {
+          "name": "stilo:start",
+          "ms": 857.3999999985099
+        },
+        {
+          "name": "stilo:firebase-ready",
+          "ms": 1232.3999999985099
+        },
+        {
+          "name": "stilo:firebase-ready",
+          "ms": 1232.5999999996275
+        },
+        {
+          "name": "stilo:auth-ready",
+          "ms": 1358
+        },
+        {
+          "name": "stilo:auth-ready",
+          "ms": 1358.0999999996275
+        }
+      ],
+      "resources": 29,
+      "cache": {
+        "disk": 28,
+        "serviceWorker": 0,
+        "network": 2
+      },
+      "errors": [],
+      "http": 200
+    },
+    {
+      "iteration": 5,
+      "mode": "cold",
+      "firstFrameMs": 977.2999999988824,
+      "loginReadyMs": 1681.2999999988824,
+      "marks": [
+        {
+          "name": "stilo:start",
+          "ms": 882.7999999988824
+        },
+        {
+          "name": "stilo:start",
+          "ms": 882.9000000003725
+        },
+        {
+          "name": "stilo:firebase-ready",
+          "ms": 1275.9000000003725
+        },
+        {
+          "name": "stilo:firebase-ready",
+          "ms": 1276
+        },
+        {
+          "name": "stilo:auth-ready",
+          "ms": 1413.2999999988824
+        },
+        {
+          "name": "stilo:auth-ready",
+          "ms": 1413.2999999988824
+        }
+      ],
+      "resources": 29,
+      "cache": {
+        "disk": 4,
+        "serviceWorker": 0,
+        "network": 26
+      },
+      "errors": [],
+      "http": 200
+    },
+    {
+      "iteration": 5,
+      "mode": "warm",
+      "firstFrameMs": 924,
+      "loginReadyMs": 1663.5999999996275,
+      "marks": [
+        {
+          "name": "stilo:start",
+          "ms": 853.7999999988824
+        },
+        {
+          "name": "stilo:start",
+          "ms": 853.8999999985099
+        },
+        {
+          "name": "stilo:firebase-ready",
+          "ms": 1266.8999999985099
+        },
+        {
+          "name": "stilo:firebase-ready",
+          "ms": 1266.8999999985099
+        },
+        {
+          "name": "stilo:auth-ready",
+          "ms": 1392.8999999985099
+        },
+        {
+          "name": "stilo:auth-ready",
+          "ms": 1392.8999999985099
+        }
+      ],
+      "resources": 29,
+      "cache": {
+        "disk": 28,
+        "serviceWorker": 0,
+        "network": 2
+      },
+      "errors": [],
+      "http": 200
+    }
+  ],
+  "browserVersion": "151.0.7922.173",
+  "summary": {
+    "cold": {
+      "count": 5,
+      "firstFrameMedianMs": 977.2999999988824,
+      "loginReadyMedianMs": 1700.1000000014901
+    },
+    "warm": {
+      "count": 5,
+      "firstFrameMedianMs": 924,
+      "loginReadyMedianMs": 1658.4000000003725
+    }
+  },
+  "status": "passed",
+  "baseCommit": null,
+  "sourceState": "codex/release-startup-2026 working tree before release commit"
+}
