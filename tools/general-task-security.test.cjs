@@ -27,7 +27,7 @@ test('master cannot use blank project to assign to an unrestricted employee',asy
 
 test('worker submits without attachments, cannot self-approve; admin approves and worker cannot reopen',async()=>{
  const admin=env.authenticatedContext('admin').firestore();
- await setDoc(doc(admin,'actividades','review-flow'),data());
+ await setDoc(doc(admin,'actividades','review-flow'),{...data(),requiereEvidencia:false});
  const worker=env.authenticatedContext('worker').firestore();
  const ref=doc(worker,'actividades','review-flow');
  await assertSucceeds(updateDoc(ref,{estatus:'en_progreso',porcentaje:35}));
@@ -41,12 +41,12 @@ test('worker submits without attachments, cannot self-approve; admin approves an
 
 
 test('legacy root schema preserves atomic delivery and history percentage without granting other workers access',async()=>{
- const rules=fs.readFileSync('firestore.rules','utf8').replace("'cantidadEvidencias',\n            'porcentaje'", "'cantidadEvidencias'");
+ const rules=fs.readFileSync('firestore.rules','utf8').replace("'evidenciaEntregaId',\n            'porcentaje'", "'evidenciaEntregaId'");
  const legacy=await initializeTestEnvironment({projectId:'demo-sauna-legacy-task-percentage',firestore:{rules}});
  try {
   await legacy.withSecurityRulesDisabled(async c=>{
    for(const id of ['worker','other'])await setDoc(doc(c.firestore(),'usuarios',id),{rol:'trabajador',activo:true});
-   await setDoc(doc(c.firestore(),'actividades','legacy-delivery'),{...data(),estatus:'en_progreso',porcentaje:20});
+   await setDoc(doc(c.firestore(),'actividades','legacy-delivery'),{...data(),requiereEvidencia:false,estatus:'en_progreso',porcentaje:20});
   });
   const worker=legacy.authenticatedContext('worker').firestore();
   const ref=doc(worker,'actividades','legacy-delivery');
@@ -62,4 +62,14 @@ test('legacy root schema preserves atomic delivery and history percentage withou
   await assertSucceeds(deliver(worker,false));
   if((await getDoc(ref)).data().estatus!=='en_revision'||(await getDoc(event)).data().porcentaje!==100)throw Error('Canonical history lost delivery or percentage');
  } finally {await legacy.cleanup();}
+});
+
+
+test('required evidence cannot be replaced by a forged counter or a missing file',async()=>{
+ const admin=env.authenticatedContext('admin').firestore();
+ await setDoc(doc(admin,'actividades','required-proof'),data());
+ const worker=env.authenticatedContext('worker').firestore();
+ const ref=doc(worker,'actividades','required-proof');
+ await assertFails(updateDoc(ref,{estatus:'en_revision',completadoEn:serverTimestamp(),cantidadEvidencias:1,evidenciasCount:1}));
+ await assertFails(updateDoc(ref,{estatus:'en_revision',completadoEn:serverTimestamp(),evidenciaEntregaId:'does-not-exist'}));
 });

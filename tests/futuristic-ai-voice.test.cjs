@@ -36,8 +36,8 @@ test('every role uses the daily operations shell and retains all role-filtered a
   assert.match(bridge, /OperationsShell/);
   assert.match(shell, /AppActionCatalog\.forUser/);
   assert.match(read('lib/screens/business_workspace_screen.dart'), /alerta_general/);
-  assert.match(shell, /BusinessWorkspaceScreen/);
-  for (const label of ['Inicio', 'Comunidad', 'Mensajes', 'Tareas', 'Perfil']) assert.ok(shell.includes("label: '" + label + "'"));
+  assert.match(read('lib/services/app_action_catalog.dart'), /BusinessWorkspaceScreen/);
+  for (const label of ['Inicio', 'Más', 'Mensajes', 'Tareas', 'Perfil']) assert.ok(shell.includes("label: '" + label + "'"));
   assert.match(shell, /JornadaCompacta/);
   assert.match(shell, /OperationsTaskList/);
 });

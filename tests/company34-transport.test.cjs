@@ -1,5 +1,5 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs');
-test('company actions keep the authenticated API contract and local fallbacks',()=>{
+test('company actions keep the authenticated API contract and explicit Firebase attendance routing',()=>{
  const s=fs.readFileSync('lib/services/company_learning_service.dart','utf8');
  assert.ok(s.includes('https://api-v2.appdeploy.ai/app/ollin-smart-vxs23c/api/sauna'));
  assert.ok(s.includes('https://ollin-smart-vxs23c.v2.appdeploy.ai/api/sauna'));
@@ -7,6 +7,7 @@ test('company actions keep the authenticated API contract and local fallbacks',(
  assert.ok(s.includes('getIdToken'));
  assert.ok(s.includes('currentUser?.uid != user.uid'));
  assert.ok(s.includes('FirestoreDailyTasksService'));
- assert.ok(s.includes('LocalAttendanceFallback'));
+ assert.ok(s.includes('FirebaseAttendanceService(auth: _auth).call(action, data)'));
+ assert.ok(!s.includes('return LocalAttendanceFallback'));
  assert.ok(!s.includes('Este servicio está temporalmente pausado. Intenta más tarde; no se confirmó esta operación.'));
 });

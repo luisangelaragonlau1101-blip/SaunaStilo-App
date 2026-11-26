@@ -15,6 +15,6 @@ test('personal tasks and shopping creation and edits are administrative while ex
  assert.match(service,/u.role==='admin','Las tareas, comidas, compras y eventos/);assert.doesNotMatch(service,/u.role==='admin'\|\|item.createdBy===u.uid/);
 });
 test('home exposes one canonical project-task workflow, inbox and no secret-derived privileges',()=>{
- const home=read('lib/screens/operations_shell.dart');assert.match(home,/AppActionCatalog.mainMenu/);assert.match(home,/BusinessWorkspaceScreen/);assert.match(home,/EngineeringScreen/);
+ const home=read('lib/screens/operations_shell.dart');assert.match(home,/AppActionCatalog.mainMenu/);assert.match(read('lib/services/app_action_catalog.dart'),/BusinessWorkspaceScreen/);assert.match(read('lib/services/app_action_catalog.dart'),/EngineeringScreen/);
  const permissions=read('lib/screens/engineering_screen.dart');assert.match(permissions,/widget.administrator.rol != AppRoles.admin/);assert.doesNotMatch(permissions,/Osiris|Naomi|Zaldívar/);
 });

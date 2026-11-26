@@ -50,9 +50,9 @@ test('master task creation never changes project status without admin role', () 
   const s=read('lib/services/actividades_service.dart');
   assert.doesNotMatch(s,/batch.update\(proyectoRef/);
   assert.match(s,/await _db.runTransaction/);
-  assert.match(s,/doc\('tarea_\$\{ref.id\}'\)/);
-  assert.match(s,/members.contains\(target.id\)/);
-  assert.match(read('firestore.rules'),/allow create: if isAdmin\(\) \|\| validMasterTask\(\)/);
+  assert.match(s,/id: 'tarea_\$\{ref.id\}_\$id'/);
+  assert.match(s,/assignedIds.every\(members.contains\)/);
+  assert.match(read('firestore.rules'),/allow create: if [^;]*validMasterTask\(\)/);
 });
 test('Online Smart iframe sends no authentication tokens or private profile to provider', () => {
   const page=read('lib/screens/online_smart_screen.dart');
