@@ -3,7 +3,9 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     function signedIn() {
-      return request.auth != null;
+      return request.auth != null
+        && (!exists(/databases/$(database)/documents/usuarios/$(request.auth.uid))
+          || get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data.get('activo', true) != false);
     }
 
     function userPath() {
@@ -298,6 +300,7 @@ service cloud.firestore {
     function isSafeNotificationCreate() {
       return signedIn()
         && request.resource.data.get('privadoFinanzas', false) != true
+        && request.resource.data.get('privadoCompras', false) != true
         && request.resource.data.get('privadoCompras', false) != true
         && !request.resource.data.get('tipo','').matches('(factura|finanza|compra|instalacion).*')
         && request.resource.data.creadoPor == request.auth.uid
@@ -724,6 +727,7 @@ service cloud.firestore {
     function notificationVisible(data) {
       return activeProfile()
         && (data.get('privadoFinanzas', false) != true || financeView())
+        && (data.get('privadoCompras', false) != true || purchaseAccess())
         && (data.get('destinatarioId', '') == request.auth.uid
         || data.get('destinatarioId', '') == 'todos'
         || data.get('rolesDestinatarios', []).hasAny([role(), 'todos']));

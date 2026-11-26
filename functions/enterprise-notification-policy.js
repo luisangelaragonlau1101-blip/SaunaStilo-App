@@ -1,5 +1,5 @@
 'use strict';
-const {active, canViewFinance} = require('./enterprise-access');
+const {active, canViewFinance, canApprovePurchases} = require('./enterprise-access');
 
 const NOTIFICATION_CATEGORIES = Object.freeze(['tareas','compras','finanzas','instalaciones','jornada','cumpleanos','generales']);
 function notificationCategory(data) {
@@ -15,6 +15,7 @@ function notificationCategory(data) {
 function shouldDeliverNotification(profile, data, preferences = {}) {
   if (!active(profile) || data.cancelada === true) return false;
   if ((data.privadoFinanzas === true || notificationCategory(data) === 'finanzas') && !canViewFinance(profile)) return false;
+  if (data.privadoCompras === true && !canApprovePurchases(profile)) return false;
   return preferences[notificationCategory(data)] !== false;
 }
 function localParts(now, timeZone = 'America/Mexico_City') {

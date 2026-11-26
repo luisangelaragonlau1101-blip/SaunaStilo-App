@@ -52,7 +52,7 @@ function financialSummary(rows, config = {}, month = '') {
     if (m.tipo === 'egreso') s.egresos += m.centavos || 0;
     if (m.tipo === 'egreso' && m.subtipo === 'impuesto') s.impuestosPagados += m.centavos || 0;
     const tax = effectiveTax(m);
-    if (!tax) s.sinClasificar++;
+    if (!tax || !m.subtipo || (m.tipo !== 'traspaso' && !m.cuentaId)) s.sinClasificar++;
     // Deposits and owner contributions are never silently classified as sales.
     if (m.tipo === 'ingreso' && ['anticipo', 'parcialidad', 'liquidacion', 'venta'].includes(m.subtipo)) {
       s.ventasCobradas += m.centavos || 0;
@@ -63,7 +63,7 @@ function financialSummary(rows, config = {}, month = '') {
   }
   s.ivaEstimadoPorPagar = Math.max(0, s.ivaCobrado - s.ivaRetenido - s.ivaAcreditable);
   s.impuestosDeclarados = config.declaraciones?.[month]?.declaradoCentavos ?? null;
-  s.isrEstimado = config.confirmada === true && config.regimen && config.isrMetodo === 'estimacion_contabilidad' ? config.isrEstimados?.[month] ?? null : null;
+  s.isrEstimado = config.confirmada === true && ['actividad_empresarial','resico','otro'].includes(config.regimen) && config.isrMetodo === 'estimacion_contabilidad' ? config.isrEstimados?.[month] ?? null : null;
   return s;
 }
 function accountBalances(rows, accounts = []) {
@@ -83,7 +83,11 @@ function projectProfitability(project, rows, plan = {}) {
   const own = rows.filter(m => m.proyectoId === project.id && m.tipo !== 'traspaso');
   const costs = own.filter(m => m.tipo === 'egreso' && m.subtipo !== 'impuesto');
   const received = own.filter(m => m.tipo === 'ingreso' && ['anticipo', 'parcialidad', 'liquidacion', 'venta'].includes(m.subtipo)).reduce((s, m) => s + m.centavos, 0);
-  const netCost = costs.reduce((s, m) => s + m.centavos - (m.facturaEstado === 'verificada' && m.fiscal?.acreditableConfirmado ? effectiveTax(m)?.vat || 0 : 0), 0);
+  const netCost = costs.reduce((s, m) => {
+    const tax = effectiveTax(m);
+    const credited = m.facturaEstado === 'verificada' && m.fiscal?.acreditableConfirmado && tax ? Math.max(0, tax.vat - tax.retainedVat) : 0;
+    return s + m.centavos - credited;
+  }, 0);
   const sale = plan.precioVentaCentavos ?? null, netSale = plan.precioVentaNetoCentavos ?? null;
   const pending = plan.costosPendientesCentavos || 0, estimated = plan.costosEstimadosCentavos || 0;
   return { id: project.id, titulo: project.titulo || project.nombre || 'Proyecto', precioVentaCentavos: sale, precioVentaNetoCentavos: netSale, anticiposCentavos: received, saldoPorCobrar: sale == null ? null : Math.max(0, sale - received), costoRegistrado: netCost, costosPendientes: pending, costosEstimados: estimated, margenEstimado: netSale == null ? null : netSale - netCost - pending - estimated, categorias: Object.fromEntries([...new Set(costs.map(m => m.categoria || 'Otros'))].map(c => [c, costs.filter(m => (m.categoria || 'Otros') === c).reduce((s, m) => s + m.centavos, 0)])) };

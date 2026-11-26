@@ -81,7 +81,7 @@ class _EnterprisePendingSummaryState extends State<EnterprisePendingSummary> {
                   if (snapshot.hasError) ...[
                     const Text('No se pudieron actualizar los pendientes.'),
                     TextButton(
-                      onPressed: () => setState(() => _summary = _load()),
+                      onPressed: () => setState(() { _summary = _load(); }),
                       child: const Text('Reintentar'),
                     ),
                   ],

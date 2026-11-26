@@ -3,7 +3,9 @@ rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
     function signedIn() {
-      return request.auth != null;
+      return request.auth != null
+        && (!firestore.exists(/databases/(default)/documents/usuarios/$(request.auth.uid))
+          || firestore.get(/databases/(default)/documents/usuarios/$(request.auth.uid)).data.get('activo', true) != false);
     }
 
     function role() {
@@ -37,7 +39,7 @@ service firebase.storage {
 
     match /finance/{userId}/{operationId}/{fileName} {
       allow read: if activeProfile() && (request.auth.uid == userId || financeView());
-      allow create: if financeUpload() && request.auth.uid == userId
+      allow create: if resource == null && financeUpload() && request.auth.uid == userId
         && request.resource.size > 0 && request.resource.size <= 10 * 1024 * 1024
         && request.resource.contentType in ['image/jpeg','image/png','image/webp','application/pdf','application/xml','text/xml'];
       // Receipts/fiscal evidence remain immutable. Corrections are new files.

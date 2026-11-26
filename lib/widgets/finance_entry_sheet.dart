@@ -45,7 +45,7 @@ class _FinanceEntryState extends State<FinanceEntrySheet> {
       if (photos.length >= 8) throw StateError('Puedes agregar hasta ocho comprobantes.');
       Uint8List? bytes; String? name;
       if (camera) { final image = await ImagePicker().pickImage(source: ImageSource.camera, imageQuality: 75, maxWidth: 1800); if (image != null) { bytes = await image.readAsBytes(); name = image.name; } }
-      else { final picked = await FilePicker.pickFiles(withData: true, type: FileType.custom, allowedExtensions: ['jpg', 'jpeg', 'png', 'webp', 'pdf']); if (picked != null) { bytes = await picked.single.readAsBytes(); name = picked.single.name; } }
+      else { final picked = await FilePicker.pickFiles(withData: true, type: FileType.custom, allowedExtensions: ['jpg', 'jpeg', 'png', 'webp', 'pdf']); if (picked.isNotEmpty) { bytes = await picked.single.readAsBytes(); name = picked.single.name; } }
       if (bytes != null && name != null) {
         if (bytes.length > 10 * 1024 * 1024) throw StateError('El comprobante puede pesar hasta 10 MB.');
         if (mounted) setState(() { photos.add((name: name!, bytes: bytes!, saved: null)); error = null; });
@@ -53,6 +53,7 @@ class _FinanceEntryState extends State<FinanceEntrySheet> {
     } catch (e) { if (mounted) setState(() => error = e is StateError ? e.message.toString() : 'No pudimos abrir la cámara. Puedes adjuntar una foto guardada.'); }
   }
   Future<void> _save() async {
+    if (busy) return;
     final cents = moneyInCents(amount.text);
     if (cents == null) { setState(() => error = 'Escribe un importe mayor que cero, sin separadores de miles.'); return; }
     setState(() { busy = true; error = null; });

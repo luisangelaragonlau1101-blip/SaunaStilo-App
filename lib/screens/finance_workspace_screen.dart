@@ -143,11 +143,15 @@ class _FinanceWorkspaceState extends State<FinanceWorkspaceScreen> {
     }, help: 'El ISR se muestra únicamente cuando Contabilidad confirmó el régimen y capturó una estimación para el periodo. No calcula nómina ni mezcla reglas de regímenes.');
   }
   Future<void> classify(Map<String, dynamic> row) => form('Clasificar movimiento', [
+    FinanceField('subtipo', 'Tipo de movimiento', initial: row['subtipo'] ?? 'otro', options: row['tipo'] == 'ingreso'
+      ? const {'venta': 'Venta', 'anticipo': 'Anticipo', 'parcialidad': 'Parcialidad', 'liquidacion': 'Liquidación', 'aportacion': 'Aportación del titular', 'deposito': 'Depósito por revisar', 'devolucion': 'Devolución', 'otro': 'Otro'}
+      : const {'compra': 'Compra', 'retiro': 'Retiro', 'impuesto': 'Pago de impuestos', 'devolucion': 'Devolución', 'otro': 'Otro'}),
+    FinanceField('cuentaId', 'Cuenta del movimiento', initial: accountOptions.containsKey(row['cuentaId']) ? row['cuentaId'] : '', options: {'': 'Mantener sin cuenta asignada', ...accountOptions}),
     FinanceField('tratamiento', 'Tratamiento fiscal', initial: financeMap(row['fiscal'])['tratamiento'] ?? 'pendiente', options: const {'pendiente': 'Por clasificar', 'gravado': 'Gravado', 'tasa_cero': 'Tasa cero', 'exento': 'Exento', 'no_objeto': 'No objeto'}),
     const FinanceField('tasa', 'Tasa IVA', initial: '1600', options: {'1600': '16 %', '800': '8 % cuando corresponda'}),
     FinanceField('total', 'Total del comprobante', initial: ((financeMap(row['fiscal'])['totalCentavos'] as num? ?? row['centavos'] as num) / 100).toStringAsFixed(2), money: true),
     const FinanceField('retencionIva', 'IVA retenido', money: true), const FinanceField('retencionIsr', 'ISR retenido', money: true),
-  ], 'classifyMovement', (v) => {'id': row['id'], 'fiscal': {'tratamiento': v['tratamiento'], 'tasaBps': int.parse(v['tasa'].toString()), 'totalCentavos': financeCents(v['total'], zero: false), 'retencionIvaCentavos': financeCents(v['retencionIva']), 'retencionIsrCentavos': financeCents(v['retencionIsr'])}});
+  ], 'classifyMovement', (v) => {'id': row['id'], 'subtipo': v['subtipo'], if (v['cuentaId'].toString().isNotEmpty) 'cuentaId': v['cuentaId'], 'fiscal': {'tratamiento': v['tratamiento'], 'tasaBps': int.parse(v['tasa'].toString()), 'totalCentavos': financeCents(v['total'], zero: false), 'retencionIvaCentavos': financeCents(v['retencionIva']), 'retencionIsrCentavos': financeCents(v['retencionIsr'])}});
   Future<void> importStatement() async {
     final accountId = await showDialog<String>(context: context, builder: (c) => SimpleDialog(title: const Text('Cuenta del estado de cuenta'), children: [
       for (final a in accounts.where((a) => a['tipo'] == 'banco')) SimpleDialogOption(onPressed: () => Navigator.pop(c, a['id'].toString()), child: Text(a['nombre'].toString())),
@@ -155,7 +159,7 @@ class _FinanceWorkspaceState extends State<FinanceWorkspaceScreen> {
     if (accountId == null || !mounted) return;
     try {
       final file = await FilePicker.pickFiles(type: FileType.custom, allowedExtensions: ['csv'], withData: true);
-      if (file == null || file.isEmpty) return;
+      if (file.isEmpty) return;
       final rows = FinanceReports.statementRows(utf8.decode(await file.single.readAsBytes()));
       if (rows.length > 100) throw StateError('Importa hasta 100 renglones por archivo.');
       final operation = EnterpriseFinanceService.operationId();

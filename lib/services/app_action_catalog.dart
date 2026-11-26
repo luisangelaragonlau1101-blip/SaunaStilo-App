@@ -1,3 +1,4 @@
+import '../screens/enterprise_settings_screen.dart' deferred as enterprise_settings;
 import '../screens/finance_workspace_screen.dart' deferred as finance;
 import '../screens/purchases_workspace_screen.dart' deferred as purchases;
 import '../screens/installation_orders_screen.dart' deferred as installations;
@@ -116,6 +117,8 @@ class AppActionCatalog {
     final master = user.rol == AppRoles.maestro;
 
     final actions = <AppAction>[
+      if (admin) AppAction(id:'funciones_empresa',title:'Funciones y permisos',subtitle:'Autorizar áreas de trabajo y organizar horarios',icon:Icons.admin_panel_settings_outlined,color:_pink,builder:(_)=>DeferredWorkspace(load:enterprise_settings.loadLibrary,title:'Permisos',builder:(_)=>enterprise_settings.EnterprisePermissionsScreen(user:user))),
+      AppAction(id:'preferencias_avisos',title:'Preferencias de avisos',subtitle:'Elegir las notificaciones que quiero recibir',icon:Icons.notifications_outlined,color:_amber,builder:(_)=>DeferredWorkspace(load:enterprise_settings.loadLibrary,title:'Preferencias',builder:(_)=>enterprise_settings.NotificationPreferencesScreen(user:user))),
       if (EnterprisePermissions.canViewFinance(user)) AppAction(id: 'finanzas', title: 'Administración financiera', subtitle: 'Banco, efectivo, facturas y presupuestos', icon: Icons.account_balance_outlined, color: _mint, builder: (_) => DeferredWorkspace(load: finance.loadLibrary, title: 'Finanzas', builder: (_) => finance.FinanceWorkspaceScreen(user: user))),
       if (EnterprisePermissions.canRequestPurchase(user) || EnterprisePermissions.canApprovePurchases(user)) AppAction(id: 'compras', title: 'Gestión de compras', subtitle: 'Solicitar y revisar compras', icon: Icons.shopping_bag_outlined, color: _amber, builder: (_) => DeferredWorkspace(load: purchases.loadLibrary, title: 'Compras', builder: (_) => purchases.PurchasesWorkspaceScreen(user: user, administrative: EnterprisePermissions.canApprovePurchases(user)))),
       if (user.activo) AppAction(id: 'instalaciones_control', title: 'Órdenes de instalación', subtitle: 'Materiales, herramientas e historial', icon: Icons.handyman_outlined, color: _blue, builder: (_) => DeferredWorkspace(load: installations.loadLibrary, title: 'Instalaciones', builder: (_) => installations.InstallationOrdersScreen(user: user))),

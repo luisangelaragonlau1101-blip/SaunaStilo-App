@@ -29,7 +29,7 @@ class FinanceReports {
       ...movements.map((m) => [m['fecha'], m['tipo'], m['subtipo'] ?? '', m['concepto'], ((m['centavos'] as num? ?? 0) / 100).toStringAsFixed(2), m['cuentaId'] ?? 'historico_sin_cuenta', m['proyectoId'] ?? '', m['categoria'] ?? '', m['facturaEstado'] ?? 'sin_clasificar', m['creadoPor'] ?? '', m['id']]),
     ]);
     // Escape formulas in untrusted text before opening in a spreadsheet.
-    final rows = const CsvToListConverter(shouldParseNumbers: false).convert(csv).map((r) => r.map((v) { final s = v.toString(); return RegExp(r'^[=+@\t\r]').hasMatch(s) ? "'$s" : s; }).toList()).toList();
+    final rows = const CsvToListConverter(shouldParseNumbers: false).convert(csv).map((r) => r.map((v) { final s = v.toString(); return RegExp(r'^[=+@\t\r-]').hasMatch(s) ? "'$s" : s; }).toList()).toList();
     await FilePicker.saveFile(dialogTitle: 'Guardar reporte para Contabilidad', fileName: 'STILO-movimientos-$month.csv', type: FileType.custom, allowedExtensions: ['csv'], bytes: Uint8List.fromList(utf8.encode('\uFEFF${const ListToCsvConverter().convert(rows)}')));
   }
 

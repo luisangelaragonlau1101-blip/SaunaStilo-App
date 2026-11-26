@@ -64,7 +64,7 @@ async function dashboard(db, profile, uid, data) {
   const reserve = ['reservaFiscalCentavos', 'reservaMaterialesCentavos', 'reservaInstalacionesCentavos', 'reservaCompromisosCentavos'].reduce((s, k) => s + (config[k] || 0), 0);
   const projects = documents(projectSn).map(p => ({ id: p.id, titulo: p.titulo || p.nombre || 'Proyecto' }));
   return { month, viewerId: uid, movements: rows, accounts, invoices: documents(invoiceSn).filter(f => f.estado !== 'verificada'), requests: documents(requestSn), budgets, config,
-    summary: { ...domain.financialSummary(rows, config, month), saldoRegistrado: accounts.reduce((s, a) => s + a.saldoRegistrado, 0), reservasCentavos: reserve, disponibleRegistrado: accounts.reduce((s, a) => s + a.saldoRegistrado, 0) - reserve },
+    summary: { ...domain.financialSummary(rows, config, month), saldoRegistrado: accounts.reduce((s, a) => s + a.saldoRegistrado, 0), reservasCentavos: reserve, disponibleRegistrado: accounts.filter(a => ['banco','efectivo'].includes(a.tipo)).reduce((s, a) => s + a.saldoRegistrado, 0) - reserve, saldoSinCuenta: accounts.filter(a => !['banco','efectivo'].includes(a.tipo)).reduce((s, a) => s + a.saldoRegistrado, 0) },
     projects, statements: documents(statementSn), profitability: projects.map(p => domain.projectProfitability(p, all, documents(plansSn).find(x => x.id === p.id) || {})), canWrite: access.canFinance(profile), canApprove: access.canApprovePurchases(profile),
   };
 }
@@ -75,14 +75,22 @@ async function mutate(db, uid, input, handler) {
     const p = actor.exists ? actor.data() : null;
     requirePermission(access.active(p));
     if (existing.exists) { if (existing.data().digest !== digest) fail('El identificador ya corresponde a otra operación. Revisa el registro antes de continuar.'); return existing.data().result; }
-    const result = await handler(tx, p, operation);
+    const audit = {};
+    const result = await handler(tx, p, operation, audit);
     tx.create(opRef, { creadoPor: uid, accion: input.action, digest, result, creadoEn: FieldValue.serverTimestamp() });
-    tx.create(db.collection('gestion_auditoria').doc(`${uid}_${operation}`), { creadoPor: uid, accion: input.action, operationId: operation, referencia: result.id || '', creadoEn: FieldValue.serverTimestamp(), digest });
+    tx.create(db.collection('gestion_auditoria').doc(`${uid}_${operation}`), { creadoPor: uid, accion: input.action, operationId: operation, referencia: result.id || '', creadoEn: FieldValue.serverTimestamp(), digest, solicitud: input, ...audit });
     return result;
   });
 }
-function notify(tx, db, uid, operation, { recipient, title, message, type, reference }) {
-  tx.set(db.collection('notificaciones').doc(`finance_${uid}_${operation}`), { titulo: title, mensaje: message, tipo: type, destinatarioId: recipient || '', rolesDestinatarios: recipient ? [] : ['admin', 'finanzas', 'contabilidad'], privadoFinanzas: type.startsWith('factura'), privadoCompras: type === 'compra_pendiente', leidosPor: [], creadoPor: uid, fecha: FieldValue.serverTimestamp(), entidadId: reference, pantalla: type.startsWith('compra') ? 'compras' : 'facturas' });
+function writeNotice(tx, db, uid, operation, { recipient, title, message, type, reference }, permissionRecipients=[]) {
+  const roles=['admin','finanzas','contabilidad'];
+  const body={titulo:title,mensaje:message,tipo:type,destinatarioId:recipient||'',rolesDestinatarios:recipient?[]:roles,privadoFinanzas:type.startsWith('factura'),privadoCompras:type==='compra_pendiente',leidosPor:[],creadoPor:uid,fecha:FieldValue.serverTimestamp(),entidadId:reference,pantalla:type.startsWith('compra')?'compras':'facturas'};
+  tx.set(db.collection('notificaciones').doc(`finance_${uid}_${operation}`),body);
+  if(!recipient)for(const profile of permissionRecipients){
+    if(roles.includes(profile.rol))continue;
+    const allowed=type.startsWith('compra')?access.canApprovePurchases(profile):access.canViewFinance(profile);
+    if(allowed)tx.set(db.collection('notificaciones').doc(`finance_${uid}_${operation}_${profile.id}`),{...body,destinatarioId:profile.id,rolesDestinatarios:[]});
+  }
 }
 async function runFinance(request, dependencies = {}) {
   const uid = request.auth?.uid;
@@ -122,7 +130,10 @@ async function runFinance(request, dependencies = {}) {
     const [bytes] = await file.download();
     parsed = domain.parseCfdi(bytes.toString('utf8'));
   }
-  return mutate(db, uid, data, async (tx, p, operation) => {
+  const notifying=['recordMovement','convertPurchase','requestPurchase','resolvePurchase','purchaseInformation','invoiceAttach','invoiceState','verifyInvoice'].includes(data.action);
+  const recipients=notifying?documents(await db.collection('usuarios').where('permisosEmpresa','array-contains-any',['finanzas','autorizarCompras','direccion']).get()):[];
+  const notify=(...args)=>writeNotice(...args,recipients);
+  return mutate(db, uid, data, async (tx, p, operation, audit) => {
     const finance = access.canFinance(p);
     switch (data.action) {
       case 'recordMovement':
@@ -242,8 +253,20 @@ async function runFinance(request, dependencies = {}) {
         requirePermission(finance);
         const ref = db.collection('gestion_movimientos').doc(id(data.id)), old = await tx.get(ref);
         if (!old.exists || old.data().tipo === 'traspaso') fail('Selecciona un ingreso o gasto.');
-        const fiscal = domain.fiscalData(data.fiscal, old.data().centavos);
-        tx.update(ref, { fiscal, clasificadoPor: uid, clasificadoEn: FieldValue.serverTimestamp() });
+        const previous = old.data();
+        const fiscal = domain.fiscalData(data.fiscal, previous.centavos);
+        const subtype = text(data.subtipo || previous.subtipo || 'otro', 40);
+        const allowed = previous.tipo === 'ingreso'
+          ? ['venta', 'anticipo', 'parcialidad', 'liquidacion', 'aportacion', 'devolucion', 'otro', 'deposito']
+          : ['compra', 'retiro', 'impuesto', 'devolucion', 'otro'];
+        if (!allowed.includes(subtype)) fail('El tipo de movimiento no corresponde.');
+        const account = data.cuentaId ? id(data.cuentaId) : previous.cuentaId || '';
+        if (account) {
+          const configured = await tx.get(db.collection('gestion_cuentas').doc(account));
+          if (!configured.exists && !DEFAULT_ACCOUNTS.some(a => a.id === account)) fail('Selecciona una cuenta registrada.');
+        }
+        audit.anterior = { fiscal: previous.fiscal || null, subtipo: previous.subtipo || null, cuentaId: previous.cuentaId || null };
+        tx.update(ref, { fiscal, subtipo: subtype, ...(account ? {cuentaId: account} : {}), clasificadoPor: uid, clasificadoEn: FieldValue.serverTimestamp() });
         return { id: ref.id };
       }
       case 'saveFiscalConfig': {
