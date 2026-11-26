@@ -9,12 +9,13 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
-      SAUNA_SIGNING_STORE: ${{ runner.temp }}/sauna-signing.p12
       SAUNA_SIGNING_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
       SAUNA_SIGNING_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
       EXPECTED_CERT_SHA256: ${{ vars.ANDROID_CERT_SHA256 }}
     steps:
       - uses: actions/checkout@v4
+      - name: Prepare retained signing location on the runner
+        run: printf 'SAUNA_SIGNING_STORE=%s/sauna-signing.p12\n' "$RUNNER_TEMP" >> "$GITHUB_ENV"
       - name: Require protected owner-managed signing credentials
         env:
           KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
@@ -58,4 +59,4 @@ jobs:
           retention-days: 30
       - name: Remove signing material from runner
         if: always()
-        run: rm -f "$SAUNA_SIGNING_STORE"
+        run: rm -f "$RUNNER_TEMP/sauna-signing.p12"
