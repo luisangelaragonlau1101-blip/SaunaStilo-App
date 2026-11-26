@@ -4,8 +4,8 @@ service cloud.firestore {
   match /databases/{database}/documents {
     function signedIn() {
       return request.auth != null
-        && (!exists(/databases/$(database)/documents/usuarios/$(request.auth.uid))
-          || get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data.get('activo', true) != false);
+        && exists(/databases/$(database)/documents/usuarios/$(request.auth.uid))
+        && get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data.get('activo', true) != false;
     }
 
     function userPath() {
@@ -396,6 +396,8 @@ service cloud.firestore {
     }
 
     match /usuarios/{userId} {
+      // The access gate may inspect only its own missing/inactive profile.
+      allow get: if request.auth != null && request.auth.uid == userId;
       allow read: if signedIn();
       allow create: if isAdmin();
       allow update: if isAdmin() || isSafeOwnProfileUpdate(userId);

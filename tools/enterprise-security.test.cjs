@@ -46,3 +46,12 @@ test('preferences are personal and inactive accounts cannot access general emplo
   await assertFails(getDoc(doc(env.authenticatedContext('buyer').firestore(),'preferencias_notificaciones','worker')));
   await assertFails(getDoc(doc(env.authenticatedContext('inactive').firestore(),'usuarios','worker')));
 });
+
+
+test('an authenticated account without an employee profile cannot inspect coworkers or private files',async()=>{
+ const pending=env.authenticatedContext('unprovisioned');
+ await assertSucceeds(getDoc(doc(pending.firestore(),'usuarios','unprovisioned')));
+ await assertFails(getDoc(doc(pending.firestore(),'usuarios','worker')));
+ await assertFails(getDoc(doc(pending.firestore(),'gestion_movimientos','private')));
+ await assertFails(getBytes(ref(pending.storage(),'finance/buyer/receipt/ticket.jpg')));
+});
