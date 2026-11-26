@@ -14,94 +14,384 @@ import '../services/company_learning_service.dart';
 import '../services/inventory_photo_codec.dart';
 import '../widgets/work_status.dart';
 import '../widgets/task_action_bar.dart';
+import '../widgets/quick_task_actions.dart';
+import '../services/offline_workspace.dart';
+import '../workflow/task_lifecycle.dart';
+import 'installation_orders_screen.dart';
 import 'modal_asignar_actividades.dart';
 
-String _operation() => '${DateTime.now().microsecondsSinceEpoch}-${Random.secure().nextInt(1 << 32)}';
+String _operation() =>
+    '${DateTime.now().microsecondsSinceEpoch}-${Random.secure().nextInt(1 << 32)}';
 
 class DailyTasksScreen extends StatefulWidget {
   final UserModel user;
   final DateTime? day;
-  final bool embedded, operations;
+  final bool embedded, operations, allDates, showCreate;
   final String kind;
+  final String? projectId;
   final CompanyLearningService? service;
-  const DailyTasksScreen({super.key, required this.user, this.day, this.service, this.embedded = false,
-    this.kind = 'dia', this.operations = false});
-  @override State<DailyTasksScreen> createState() => _DailyTasksScreenState();
+  const DailyTasksScreen({
+    super.key,
+    required this.user,
+    this.day,
+    this.service,
+    this.embedded = false,
+    this.kind = 'all',
+    this.operations = false,
+    this.projectId,
+    this.allDates = false,
+    this.showCreate = true,
+  });
+  @override
+  State<DailyTasksScreen> createState() => _DailyTasksScreenState();
 }
-class _DailyTasksScreenState extends State<DailyTasksScreen> with WidgetsBindingObserver {
-  late final CompanyLearningService _service = widget.service ?? CompanyLearningService();
+
+class _DailyTasksScreenState extends State<DailyTasksScreen>
+    with WidgetsBindingObserver {
+  late final CompanyLearningService _service =
+      widget.service ?? CompanyLearningService();
   late DateTime _day = widget.day ?? AttendanceGatewayService.today;
   List<Map<String, dynamic>> _items = [];
-  Timer? _timer;
-  bool _busy = false;
+  int _generation = 0;
+  bool _busy = false, _cached = false, _pendingSync = false;
   String? _error;
   String _filter = 'abiertas';
-  String get _key => widget.operations ? DateFormat('yyyyMM').format(_day) : AttendanceGatewayService.dayKey(_day);
-  String get _title => widget.operations ? 'Instalaciones y envíos' : widget.kind == 'extra' ? 'Tareas extras' : 'Tareas del día';
-  @override void initState() {
-    super.initState(); WidgetsBinding.instance.addObserver(this); unawaited(_load());
-    _timer = Timer.periodic(const Duration(seconds: 60), (_) {
-      if (mounted && TickerMode.of(context) && WidgetsBinding.instance.lifecycleState != AppLifecycleState.paused && WidgetsBinding.instance.lifecycleState != AppLifecycleState.hidden) unawaited(_load());
-    });
+  String get _key => widget.operations
+      ? DateFormat('yyyyMM').format(_day)
+      : AttendanceGatewayService.dayKey(_day);
+  String get _title => widget.operations
+      ? 'Instalaciones y envíos'
+      : widget.kind == 'extra'
+      ? 'Tareas extras'
+      : 'Mis actividades';
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    unawaited(_load());
   }
-  @override void didChangeAppLifecycleState(AppLifecycleState state) { if (state == AppLifecycleState.resumed) unawaited(_load()); }
+
+  @override
+  void didUpdateWidget(covariant DailyTasksScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.user.id != widget.user.id ||
+        oldWidget.user.rol != widget.user.rol ||
+        oldWidget.projectId != widget.projectId ||
+        oldWidget.allDates != widget.allDates) {
+      _generation++;
+      _items = [];
+      _busy = false;
+      _error = null;
+      unawaited(_load());
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) unawaited(_load());
+  }
+
   Future<void> _load() async {
     if (_busy) return;
-    final key = _key;
-    setState(() { _busy = true; _error = null; });
+    final key = _key, generation = ++_generation;
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
     try {
-      final response = await _service.call('daily-list', {'day': key, 'includePending': !widget.operations && key == AttendanceGatewayService.dayKey(AttendanceGatewayService.today)});
-      if (mounted && key == _key) setState(() => _items = (response['items'] as List).map((v) => Map<String, dynamic>.from(v as Map)).toList());
-    } catch (error) { if (mounted) setState(() => _error = CompanyLearningService.message(error)); }
-    finally { if (mounted) { setState(() => _busy = false); if (key != _key) unawaited(_load()); } }
+      final response = await _service.call('daily-list', {
+        'day': key,
+        'includePending':
+            !widget.operations &&
+            key ==
+                AttendanceGatewayService.dayKey(AttendanceGatewayService.today),
+        'projectId': widget.projectId,
+        'allDates': widget.allDates,
+      });
+      if (mounted && key == _key && generation == _generation)
+        setState(() {
+          _items = (response['items'] as List)
+              .map((v) => Map<String, dynamic>.from(v as Map))
+              .toList();
+          _cached = response['cached'] == true;
+          _pendingSync = response['pendingSync'] == true;
+        });
+    } catch (error) {
+      if (mounted && generation == _generation)
+        setState(() {
+          _items = [];
+          _error = CompanyLearningService.message(error);
+        });
+    } finally {
+      if (mounted && generation == _generation) {
+        setState(() => _busy = false);
+        if (key != _key) unawaited(_load());
+      }
+    }
   }
+
   Future<void> _create() async {
     if (widget.user.rol != 'admin') return;
-    await showModalBottomSheet<String>(context: context, isScrollControlled: true, backgroundColor: Colors.transparent,
-      builder: (_) => ModalAsignarActividad(proyectoId: '', rolUsuario: widget.user.rol, initialDay: _day,
-        workKind: widget.operations ? 'instalacion' : widget.kind, operations: widget.operations));
+    await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => ModalAsignarActividad(
+        proyectoId: '',
+        rolUsuario: widget.user.rol,
+        initialDay: _day,
+        workKind: widget.operations ? 'instalacion' : widget.kind,
+        operations: widget.operations,
+      ),
+    );
     if (mounted) await _load();
   }
-  @override void dispose() { _timer?.cancel(); WidgetsBinding.instance.removeObserver(this); super.dispose(); }
-  @override Widget build(BuildContext context) {
-    final all = _items.where((t) => widget.operations || (t['workKind'] ?? 'dia') == widget.kind).toList();
+
+  @override
+  void dispose() {
+    _generation++;
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final all = _items
+        .where(
+          (t) =>
+              widget.operations ||
+              widget.kind == 'all' ||
+              (t['workKind'] ?? 'dia') == widget.kind,
+        )
+        .toList();
     final pending = all.where((t) => t['status'] != 'completado').length;
     final review = all.where((t) => t['status'] == 'en_revision').length;
-    final items = all.where((t) => switch (_filter) { 'revision' => t['status'] == 'en_revision', 'finalizadas' => t['status'] == 'completado', 'abiertas' => t['status'] != 'completado', _ => true }).toList();
+    final items = all
+        .where(
+          (t) => switch (_filter) {
+            'revision' => t['status'] == 'en_revision',
+            'finalizadas' => t['status'] == 'completado',
+            'abiertas' => t['status'] != 'completado',
+            _ => true,
+          },
+        )
+        .toList();
     return Scaffold(
       appBar: widget.embedded ? null : AppBar(title: Text(_title)),
-      body: RefreshIndicator(onRefresh: _load, child: ListView(padding: const EdgeInsets.fromLTRB(16, 12, 16, 110), children: [
-        Container(padding: const EdgeInsets.all(20), decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(26), color: StiloColors.surface,
-          border: Border.all(color: StiloColors.border),
-          boxShadow: [BoxShadow(color: const Color(0xFF8E1538).withValues(alpha: .16), blurRadius: 24, offset: const Offset(0, 8))]),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(_title, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800)),
-            const SizedBox(height: 8),
-            Text(widget.operations ? 'Cada entrega, de principio a fin. Comparte fotos, avances y el porcentaje real.' : widget.kind == 'extra' ? 'Asignaciones independientes de los proyectos, con su propia entrega y aprobación.' : 'Tu trabajo de hoy, con el siguiente paso siempre a la vista.', style: TextStyle(color: StiloColors.text.withValues(alpha: .70), height: 1.5)),
-            const SizedBox(height: 14), Wrap(spacing: 8, runSpacing: 8, children: [Chip(label: Text('$pending abiertas')), Chip(label: Text('$review por aprobar')), Chip(label: Text('${all.length - pending} finalizadas'))]),
-          ])),
-        const SizedBox(height: 12),
-        Row(children: [IconButton(tooltip: widget.operations ? 'Mes anterior' : 'Día anterior', onPressed: _busy ? null : () { setState(() => _day = widget.operations ? DateTime(_day.year, _day.month - 1) : _day.subtract(const Duration(days: 1))); _load(); }, icon: const Icon(Icons.chevron_left)),
-          Expanded(child: OutlinedButton.icon(onPressed: _busy ? null : () async {
-            final picked = await showDatePicker(context: context, initialDate: _day, firstDate: DateTime(2020), lastDate: DateTime(2035));
-            if (picked != null && mounted) { setState(() { _day = picked; _items = []; }); await _load(); }
-          }, icon: const Icon(Icons.calendar_month), label: Text(DateFormat(widget.operations ? 'MM/yyyy' : 'dd/MM/yyyy').format(_day)))),
-          IconButton(tooltip: widget.operations ? 'Mes siguiente' : 'Día siguiente', onPressed: _busy ? null : () { setState(() => _day = widget.operations ? DateTime(_day.year, _day.month + 1) : _day.add(const Duration(days: 1))); _load(); }, icon: const Icon(Icons.chevron_right)),
-        ]),
-        if (widget.operations) const Padding(padding: EdgeInsets.all(8), child: Text('Historial por mes de asignación. Los avances y revisiones permanecen en su mes original.')),
-        if (widget.user.rol == 'admin') FilledButton.icon(onPressed: _create, icon: const Icon(Icons.add_task), label: Text(widget.operations ? 'Asignar instalación o envío' : 'Asignar tarea')),
-        const SizedBox(height: 12),
-        Wrap(spacing: 7, runSpacing: 7, children: [for (final entry in {'abiertas':'Abiertas', 'revision':'Por aprobar', 'finalizadas':'Finalizadas', 'todas':'Todas'}.entries)
-          ChoiceChip(label: Text(entry.value), selected: _filter == entry.key, onSelected: (_) => setState(() => _filter = entry.key))]),
-        if (_busy) const Padding(padding: EdgeInsets.symmetric(vertical: 12), child: LinearProgressIndicator()),
-        if (_error != null) Card(child: Padding(padding: const EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)), TextButton.icon(onPressed: _busy ? null : _load, icon: const Icon(Icons.refresh), label: const Text('Volver a intentar'))]))),
-        if (!_busy && _error == null && items.isEmpty) const Padding(padding: EdgeInsets.all(24), child: Text('Todo despejado en esta vista. Puedes cambiar de fecha o filtro.')),
-        for (final task in items) WorkTaskCard(task: task, user: widget.user, onTap: () async {
-          await Navigator.push(context, MaterialPageRoute<void>(builder: (_) => DailyTaskDetail(user: widget.user, task: task, service: _service)));
-          if (mounted) await _load();
-        }),
-      ])),
+      body: RefreshIndicator(
+        onRefresh: _load,
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 110),
+          children: [
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(26),
+                color: StiloColors.surface,
+                border: Border.all(color: StiloColors.border),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF8E1538).withValues(alpha: .16),
+                    blurRadius: 24,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    _title,
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    widget.operations
+                        ? 'Cada entrega, de principio a fin. Comparte fotos, avances y el porcentaje real.'
+                        : widget.kind == 'extra'
+                        ? 'Asignaciones independientes de los proyectos, con su propia entrega y aprobación.'
+                        : 'Tu trabajo de hoy, con el siguiente paso siempre a la vista.',
+                    style: TextStyle(
+                      color: StiloColors.text.withValues(alpha: .70),
+                      height: 1.5,
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      Chip(label: Text('$pending abiertas')),
+                      Chip(label: Text('$review por aprobar')),
+                      Chip(label: Text('${all.length - pending} finalizadas')),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            if (!widget.allDates)
+              Row(
+                children: [
+                  IconButton(
+                    tooltip: widget.operations
+                        ? 'Mes anterior'
+                        : 'Día anterior',
+                    onPressed: _busy
+                        ? null
+                        : () {
+                            setState(
+                              () => _day = widget.operations
+                                  ? DateTime(_day.year, _day.month - 1)
+                                  : _day.subtract(const Duration(days: 1)),
+                            );
+                            _load();
+                          },
+                    icon: const Icon(Icons.chevron_left),
+                  ),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: _busy
+                          ? null
+                          : () async {
+                              final picked = await showDatePicker(
+                                context: context,
+                                initialDate: _day,
+                                firstDate: DateTime(2020),
+                                lastDate: DateTime(2035),
+                              );
+                              if (picked != null && mounted) {
+                                setState(() {
+                                  _day = picked;
+                                  _items = [];
+                                });
+                                await _load();
+                              }
+                            },
+                      icon: const Icon(Icons.calendar_month),
+                      label: Text(
+                        DateFormat(
+                          widget.operations ? 'MM/yyyy' : 'dd/MM/yyyy',
+                        ).format(_day),
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: widget.operations
+                        ? 'Mes siguiente'
+                        : 'Día siguiente',
+                    onPressed: _busy
+                        ? null
+                        : () {
+                            setState(
+                              () => _day = widget.operations
+                                  ? DateTime(_day.year, _day.month + 1)
+                                  : _day.add(const Duration(days: 1)),
+                            );
+                            _load();
+                          },
+                    icon: const Icon(Icons.chevron_right),
+                  ),
+                ],
+              ),
+            if (widget.operations)
+              const Padding(
+                padding: EdgeInsets.all(8),
+                child: Text(
+                  'Historial por mes de asignación. Los avances y revisiones permanecen en su mes original.',
+                ),
+              ),
+            if (widget.showCreate && widget.user.rol == 'admin')
+              FilledButton.icon(
+                onPressed: _create,
+                icon: const Icon(Icons.add_task),
+                label: Text(
+                  widget.operations
+                      ? 'Asignar instalación o envío'
+                      : 'Asignar tarea',
+                ),
+              ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 7,
+              runSpacing: 7,
+              children: [
+                for (final entry in {
+                  'abiertas': 'Abiertas',
+                  'revision': 'Por aprobar',
+                  'finalizadas': 'Finalizadas',
+                  'todas': 'Todas',
+                }.entries)
+                  ChoiceChip(
+                    label: Text(entry.value),
+                    selected: _filter == entry.key,
+                    onSelected: (_) => setState(() => _filter = entry.key),
+                  ),
+              ],
+            ),
+            OfflineDataBadge(cached: _cached, pending: _pendingSync),
+            if (_busy)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 12),
+                child: LinearProgressIndicator(),
+              ),
+            if (_error != null)
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _error!,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.error,
+                        ),
+                      ),
+                      TextButton.icon(
+                        onPressed: _busy ? null : _load,
+                        icon: const Icon(Icons.refresh),
+                        label: const Text('Volver a intentar'),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            if (!_busy && _error == null && items.isEmpty)
+              const Padding(
+                padding: EdgeInsets.all(24),
+                child: Text(
+                  'Todo despejado en esta vista. Puedes cambiar de fecha o filtro.',
+                ),
+              ),
+            for (final task in items)
+              WorkTaskCard(
+                key: ValueKey(task['taskId']),
+                task: task,
+                user: widget.user,
+                service: _service,
+                quickActions: true,
+                onChanged: _load,
+                onTap: () async {
+                  await Navigator.push(
+                    context,
+                    MaterialPageRoute<void>(
+                      builder: (_) => taskDestination(
+                        user: widget.user,
+                        task: task,
+                        service: _service,
+                      ),
+                    ),
+                  );
+                  if (mounted) await _load();
+                },
+              ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -110,28 +400,165 @@ class WorkTaskCard extends StatelessWidget {
   final Map<String, dynamic> task;
   final VoidCallback onTap;
   final UserModel? user;
-  const WorkTaskCard({super.key, required this.task, required this.onTap, this.user});
-  @override Widget build(BuildContext context) => Card(clipBehavior: Clip.antiAlias, child: InkWell(onTap: onTap,
-    child: Padding(padding: const EdgeInsets.all(18), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Row(children: [Expanded(child: Text(workKindLabel(task['workKind'], project: (task['projectId'] ?? '').toString().isNotEmpty), style: TextStyle(fontSize: 12, color: StiloColors.text.withValues(alpha: .6)))), WorkStatus(task['status'])]),
-      const SizedBox(height: 12), Text(task['title'] as String, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
-      const SizedBox(height: 6), Text('${task['userName']} · ${task['evidenceCount'] ?? 0} adjuntos', style: TextStyle(color: StiloColors.text.withValues(alpha: .7))),
-      if (task['day'] != null) Padding(padding: const EdgeInsets.only(top: 8), child: Text(task['day'] == AttendanceGatewayService.dayKey(AttendanceGatewayService.today) ? 'Asignada para hoy' : 'Asignada: ${task['day'].toString().replaceFirstMapped(RegExp(r'^(\d{4})(\d{2})(\d{2})$'), (m) => '${m[3]}/${m[2]}/${m[1]}')}', style: TextStyle(fontSize: 12, color: StiloColors.muted))),
-      const SizedBox(height: 14), Row(children: [Expanded(child: LinearProgressIndicator(value: (((task['percentage'] as num?) ?? 0).clamp(0, 100).toDouble() / 100), minHeight: 5, borderRadius: BorderRadius.circular(6))), const SizedBox(width: 12), Text('${task['percentage'] ?? 0} %'), const SizedBox(width: 8), const Icon(Icons.arrow_forward_rounded, size: 18)]),
-      const SizedBox(height: 12),
-      TaskActionBar(status: (task['status'] ?? 'pendiente').toString(), admin: user?.rol == 'admin', responsible: user?.id == task['userId'], onComplete: onTap, onApprove: onTap),
-    ]))));
+  final CompanyLearningService? service;
+  final Future<void> Function()? onChanged;
+  final bool quickActions;
+  final TaskPhotoCapture? capturePhoto;
+  const WorkTaskCard({
+    super.key,
+    required this.task,
+    required this.onTap,
+    this.user,
+    this.service,
+    this.onChanged,
+    this.quickActions = false,
+    this.capturePhoto,
+  });
+  @override
+  Widget build(BuildContext context) => Card(
+    clipBehavior: Clip.antiAlias,
+    child: InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.all(18),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Wrap(
+              spacing: 12,
+              runSpacing: 8,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                Text(
+                  workKindLabel(
+                    task['workKind'],
+                    project: (task['projectId'] ?? '').toString().isNotEmpty,
+                  ),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: StiloColors.text.withValues(alpha: .6),
+                  ),
+                ),
+                WorkStatus(task['status']),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text(
+              task['title'] as String,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+            ),
+            if ((task['projectId'] ?? '').toString().isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 7),
+                child: Text(
+                  (task['projectTitle'] ?? '').toString().isEmpty
+                      ? 'Proyecto asignado'
+                      : 'Proyecto: ${task['projectTitle']}',
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+              ),
+            if (taskResponsibleIds(task).length > 1)
+              Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: Text(
+                  'Actividad compartida · ${taskResponsibleIds(task).length} integrantes',
+                ),
+              ),
+            const SizedBox(height: 6),
+            Text(
+              '${task['userName']} · ${task['evidenceCount'] ?? 0} adjuntos',
+              style: TextStyle(color: StiloColors.text.withValues(alpha: .7)),
+            ),
+            if (task['day'] != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Text(
+                  task['day'] ==
+                          AttendanceGatewayService.dayKey(
+                            AttendanceGatewayService.today,
+                          )
+                      ? 'Asignada para hoy'
+                      : 'Asignada: ${task['day'].toString().replaceFirstMapped(RegExp(r'^(\d{4})(\d{2})(\d{2})$'), (m) => '${m[3]}/${m[2]}/${m[1]}')}',
+                  style: TextStyle(fontSize: 12, color: StiloColors.muted),
+                ),
+              ),
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                Expanded(
+                  child: LinearProgressIndicator(
+                    value:
+                        (((task['percentage'] as num?) ?? 0)
+                            .clamp(0, 100)
+                            .toDouble() /
+                        100),
+                    minHeight: 5,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  task['percentagePendingDetail'] == true
+                      ? 'Ver avance'
+                      : '${task['percentage'] ?? 0} %',
+                ),
+                const SizedBox(width: 8),
+                const Icon(Icons.arrow_forward_rounded, size: 18),
+              ],
+            ),
+            const SizedBox(height: 12),
+            if (quickActions && user != null)
+              QuickTaskActions(
+                task: task,
+                user: user!,
+                service: service ?? CompanyLearningService(),
+                onChanged: onChanged ?? () async {},
+                capturePhoto: capturePhoto,
+                onDetails: onTap,
+              )
+            else
+              TaskActionBar(
+                status: (task['status'] ?? 'pendiente').toString(),
+                admin: user?.rol == 'admin',
+                responsible: taskAssignedTo(task, user?.id ?? ''),
+                onComplete: onTap,
+                onApprove: onTap,
+              ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
+Widget taskDestination({
+  required UserModel user,
+  required Map<String, dynamic> task,
+  CompanyLearningService? service,
+}) {
+  final orderId = (task['installationOrderId'] ?? '').toString();
+  return orderId.isNotEmpty
+      ? InstallationOrderDetailScreen(user: user, orderId: orderId)
+      : DailyTaskDetail(user: user, task: task, service: service);
 }
 
 class DailyTaskDetail extends StatefulWidget {
   final UserModel user;
   final Map<String, dynamic> task;
   final CompanyLearningService? service;
-  const DailyTaskDetail({super.key, required this.user, required this.task, this.service});
-  @override State<DailyTaskDetail> createState() => _DailyTaskDetailState();
+  const DailyTaskDetail({
+    super.key,
+    required this.user,
+    required this.task,
+    this.service,
+  });
+  @override
+  State<DailyTaskDetail> createState() => _DailyTaskDetailState();
 }
+
 class _DailyTaskDetailState extends State<DailyTaskDetail> {
-  late final CompanyLearningService _service = widget.service ?? CompanyLearningService();
+  late final CompanyLearningService _service =
+      widget.service ?? CompanyLearningService();
   late Map<String, dynamic> _task = {...widget.task};
   final _comment = TextEditingController();
   final _operations = <String, String>{};
@@ -140,28 +567,63 @@ class _DailyTaskDetailState extends State<DailyTaskDetail> {
   Map<String, dynamic>? _retryData;
   Uint8List? _pendingBytes;
   double _percentage = 0;
-  bool get _own => widget.user.id == _task['userId'];
+  bool get _own => taskAssignedTo(_task, widget.user.id);
   bool get _reviewer => widget.user.rol == 'admin';
   bool get _closed => ['completado', 'en_revision'].contains(_task['status']);
-  Map<String, dynamic> get _reference => {'day': _task['day'], 'taskId': _task['taskId']};
-  @override void initState() { super.initState(); unawaited(_load()); }
+  Map<String, dynamic> get _reference => {
+    'day': _task['day'],
+    'taskId': _task['taskId'],
+  };
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_load());
+  }
+
   Future<void> _load() async {
     if (_busy) return;
-    setState(() { _busy = true; _error = null; });
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
     try {
       final response = await _service.call('daily-read', _reference);
-      if (mounted) setState(() { _task = Map<String, dynamic>.from(response['task'] as Map); _percentage = (_task['percentage'] as num? ?? 0).toDouble(); _ready = true; });
-    } catch (error) { if (mounted) setState(() { _error = CompanyLearningService.message(error); _ready = false; }); }
-    finally { if (mounted) setState(() => _busy = false); }
+      if (mounted)
+        setState(() {
+          _task = Map<String, dynamic>.from(response['task'] as Map);
+          _percentage = (_task['percentage'] as num? ?? 0).toDouble();
+          _ready = true;
+        });
+    } catch (error) {
+      if (mounted)
+        setState(() {
+          _error = CompanyLearningService.message(error);
+          _ready = false;
+        });
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
   }
-  Future<bool> _send(String action, [Map<String, dynamic> data = const {}]) async {
+
+  Future<bool> _send(
+    String action, [
+    Map<String, dynamic> data = const {},
+  ]) async {
     if (_busy || !_ready) return false;
     final operationKey = '$action:${jsonEncode(data)}';
     final operationId = _operations.putIfAbsent(operationKey, _operation);
-    setState(() { _busy = true; _error = null; });
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
     try {
-      final response = await _service.call(action, {..._reference, ...data, 'operationId': operationId});
-      if (response['saved'] != true) throw StateError('No se confirmó el guardado.');
+      final response = await _service.call(action, {
+        ..._reference,
+        ...data,
+        'operationId': operationId,
+      });
+      if (response['saved'] != true)
+        throw StateError('No se confirmó el guardado.');
       if (!mounted) return false;
       setState(() {
         _task = Map<String, dynamic>.from(response['task'] as Map);
@@ -172,117 +634,513 @@ class _DailyTaskDetailState extends State<DailyTaskDetail> {
       });
       if (_noticeWarning == null) _operations.remove(operationKey);
       return true;
-    } catch (error) { if (mounted) setState(() => _error = CompanyLearningService.message(error)); return false; }
-    finally { if (mounted) setState(() => _busy = false); }
+    } catch (error) {
+      if (mounted)
+        setState(() => _error = CompanyLearningService.message(error));
+      return false;
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
   }
+
   Future<void> _pick({bool camera = false}) async {
     if (_busy) return;
     try {
-      Uint8List bytes; String name;
+      Uint8List bytes;
+      String name;
       if (camera) {
-        final photo = await ImagePicker().pickImage(source: ImageSource.camera, maxWidth: 1600, imageQuality: 75);
+        final photo = await ImagePicker().pickImage(
+          source: ImageSource.camera,
+          maxWidth: 1600,
+          imageQuality: 75,
+        );
         if (photo == null) return;
-        bytes = await photo.readAsBytes(); name = photo.name;
+        bytes = await photo.readAsBytes();
+        name = photo.name;
       } else {
-        final files = await FilePicker.pickFiles(type: FileType.custom, allowedExtensions: ['jpg', 'jpeg', 'png', 'webp', 'pdf'], allowMultiple: false);
+        final files = await FilePicker.pickFiles(
+          type: FileType.custom,
+          allowedExtensions: ['jpg', 'jpeg', 'png', 'webp', 'pdf'],
+          allowMultiple: false,
+        );
         if (files.isEmpty) return;
         final file = files.single;
-        if (await file.length() > 8 * 1024 * 1024) throw StateError('El archivo debe pesar como máximo 8 MB.');
-        bytes = await file.readAsBytes(); name = file.name;
+        if (await file.length() > 8 * 1024 * 1024)
+          throw StateError('El archivo debe pesar como máximo 8 MB.');
+        bytes = await file.readAsBytes();
+        name = file.name;
       }
       if (!name.toLowerCase().endsWith('.pdf')) {
-        bytes = InventoryPhotoCodec.decode(await InventoryPhotoCodec.encode(bytes))!;
+        bytes = InventoryPhotoCodec.decode(
+          await InventoryPhotoCodec.encode(bytes),
+        )!;
         name = '${name.split('.').first}.png';
       }
-      if (bytes.isEmpty || bytes.length > 2 * 1024 * 1024) throw StateError('El PDF debe pesar como máximo 2 MB.');
-      if (mounted) setState(() { _pendingBytes = bytes; _pendingName = name; _error = null; });
-    } catch (error) { if (mounted) setState(() => _error = CompanyLearningService.message(error)); }
+      if (bytes.isEmpty || bytes.length > 2 * 1024 * 1024)
+        throw StateError('El PDF debe pesar como máximo 2 MB.');
+      if (mounted)
+        setState(() {
+          _pendingBytes = bytes;
+          _pendingName = name;
+          _error = null;
+        });
+    } catch (error) {
+      if (mounted)
+        setState(() => _error = CompanyLearningService.message(error));
+    }
   }
+
   Future<bool> _upload() async {
     if (_pendingBytes == null) return true;
-    final ok = await _send('daily-evidence', {'name': _pendingName, 'base64': base64Encode(_pendingBytes!)});
-    if (ok && mounted) setState(() { _pendingBytes = null; _pendingName = null; });
+    final ok = await _send('daily-evidence', {
+      'name': _pendingName,
+      'base64': base64Encode(_pendingBytes!),
+    });
+    if (ok && mounted)
+      setState(() {
+        _pendingBytes = null;
+        _pendingName = null;
+      });
     return ok;
   }
+
   Future<void> _deliver() async {
     if (_busy || !_ready) return;
-    final confirmed = await showDialog<bool>(context: context, builder: (c) => AlertDialog(
-      title: const Text('¿Terminaste esta tarea?'),
-      content: const Text('Se enviará a Administración para su aprobación. Puedes adjuntar evidencias o una descripción, pero no son obligatorias para entregar.'),
-      actions: [TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Seguir trabajando')),
-        FilledButton(onPressed: () => Navigator.pop(c, true), child: const Text('Sí, entregar'))]));
+    if (_task['requiresEvidence'] == true &&
+        (_task['evidenceCount'] as num? ?? 0) == 0 &&
+        (_task['evidence'] as List? ?? const []).isEmpty &&
+        _pendingBytes == null) {
+      setState(
+        () => _error =
+            'Adjunta una foto o evidencia para entregar esta actividad.',
+      );
+      return;
+    }
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (c) => AlertDialog(
+        title: const Text('¿Terminaste esta tarea?'),
+        content: Text(
+          _task['requiresEvidence'] == true
+              ? 'Se enviará tu trabajo con su evidencia a Administración para revisión.'
+              : 'Se enviará a Administración para su aprobación. El comentario y la foto son opcionales en esta actividad.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(c, false),
+            child: const Text('Seguir trabajando'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(c, true),
+            child: const Text('Sí, entregar'),
+          ),
+        ],
+      ),
+    );
     if (confirmed != true || !mounted) return;
     if (!await _upload() || !mounted) return;
-    if (await _send('daily-complete', {'comment': _comment.text.trim()}) && mounted) _comment.clear();
+    if (await _send('daily-complete', {'comment': _comment.text.trim()}) &&
+        mounted)
+      _comment.clear();
   }
+
   Future<void> _review(bool approve) async {
-    if (!approve && _comment.text.trim().isEmpty) { setState(() => _error = 'Explica qué debe corregirse.'); return; }
-    if (await _send('daily-review', {'decision': approve ? 'approve' : 'changes', 'submissionId': _task['submissionId'], 'comment': _comment.text.trim()}) && mounted) _comment.clear();
+    if (!approve && _comment.text.trim().isEmpty) {
+      setState(() => _error = 'Explica qué debe corregirse.');
+      return;
+    }
+    if (await _send('daily-review', {
+          'decision': approve ? 'approve' : 'changes',
+          'submissionId': _task['submissionId'],
+          'submittedAt': _task['submittedAt'],
+          'comment': _comment.text.trim(),
+        }) &&
+        mounted)
+      _comment.clear();
   }
+
+  Future<void> _reopen() async {
+    final comment = TextEditingController();
+    final reason = await showDialog<String>(
+      context: context,
+      builder: (c) => AlertDialog(
+        title: const Text('Reabrir actividad'),
+        content: TextField(
+          controller: comment,
+          autofocus: true,
+          maxLength: 2000,
+          minLines: 2,
+          maxLines: 4,
+          decoration: const InputDecoration(labelText: 'Motivo de reapertura'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(c),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () {
+              if (comment.text.trim().isNotEmpty)
+                Navigator.pop(c, comment.text.trim());
+            },
+            child: const Text('Reabrir'),
+          ),
+        ],
+      ),
+    );
+    comment.dispose();
+    if (reason != null && mounted)
+      await _send('daily-reopen', {'comment': reason});
+  }
+
   Future<void> _openEvidence(Map evidence) async {
     final url = Uri.tryParse(evidence['url']?.toString() ?? '');
-    final contentType = (evidence['contentType'] ?? evidence['tipoMime'] ?? '').toString();
-    if (url == null) { setState(() => _error = 'Actualiza la tarea para abrir la evidencia.'); return; }
+    final contentType = (evidence['contentType'] ?? evidence['tipoMime'] ?? '')
+        .toString();
+    if (url == null) {
+      setState(() => _error = 'Actualiza la tarea para abrir la evidencia.');
+      return;
+    }
     if (contentType.startsWith('image/') && url.scheme == 'data') {
       try {
         final comma = url.toString().indexOf(',');
-        final bytes = comma < 0 ? null : base64Decode(url.toString().substring(comma + 1));
+        final bytes = comma < 0
+            ? null
+            : base64Decode(url.toString().substring(comma + 1));
         if (bytes != null) {
-          await showDialog<void>(context: context, builder: (c) => Dialog(child: Column(mainAxisSize: MainAxisSize.min, children: [Flexible(child: InteractiveViewer(child: Image.memory(bytes, errorBuilder: (_, error, stack) => const Padding(padding: EdgeInsets.all(24), child: Text('No pudimos abrir la foto.'))))), TextButton(onPressed: () => Navigator.pop(c), child: const Text('Cerrar'))])));
+          await showDialog<void>(
+            context: context,
+            builder: (c) => Dialog(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Flexible(
+                    child: InteractiveViewer(
+                      child: Image.memory(
+                        bytes,
+                        errorBuilder: (_, error, stack) => const Padding(
+                          padding: EdgeInsets.all(24),
+                          child: Text('No pudimos abrir la foto.'),
+                        ),
+                      ),
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.pop(c),
+                    child: const Text('Cerrar'),
+                  ),
+                ],
+              ),
+            ),
+          );
           return;
         }
-      } catch (_) { /* fall through to the normal update message */ }
+      } catch (_) {
+        /* fall through to the normal update message */
+      }
     }
-    if (url.scheme != 'https') { setState(() => _error = 'Actualiza la tarea para abrir la evidencia.'); return; }
+    if (url.scheme != 'https') {
+      setState(() => _error = 'Actualiza la tarea para abrir la evidencia.');
+      return;
+    }
     if (contentType.startsWith('image/')) {
-      await showDialog<void>(context: context, builder: (c) => Dialog(child: Column(mainAxisSize: MainAxisSize.min, children: [Flexible(child: InteractiveViewer(child: Image.network(url.toString(), errorBuilder: (_, error, stack) => const Padding(padding: EdgeInsets.all(24), child: Text('El enlace expiró. Actualiza la tarea.'))))), TextButton(onPressed: () => Navigator.pop(c), child: const Text('Cerrar'))])));
-    } else if (!await launchUrl(url, mode: LaunchMode.externalApplication) && mounted) { setState(() => _error = 'No se pudo abrir el archivo. Actualiza la tarea e intenta otra vez.'); }
+      await showDialog<void>(
+        context: context,
+        builder: (c) => Dialog(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Flexible(
+                child: InteractiveViewer(
+                  child: Image.network(
+                    url.toString(),
+                    errorBuilder: (_, error, stack) => const Padding(
+                      padding: EdgeInsets.all(24),
+                      child: Text('El enlace expiró. Actualiza la tarea.'),
+                    ),
+                  ),
+                ),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(c),
+                child: const Text('Cerrar'),
+              ),
+            ],
+          ),
+        ),
+      );
+    } else if (!await launchUrl(url, mode: LaunchMode.externalApplication) &&
+        mounted) {
+      setState(
+        () => _error =
+            'No se pudo abrir el archivo. Actualiza la tarea e intenta otra vez.',
+      );
+    }
   }
-  @override void dispose() { _comment.dispose(); super.dispose(); }
-  @override Widget build(BuildContext context) {
+
+  @override
+  void dispose() {
+    _comment.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final enabled = _ready && !_busy;
     final editable = enabled && !_closed && (_own || _reviewer);
     final review = _reviewer && _task['status'] == 'en_revision';
-    return Scaffold(appBar: AppBar(title: Text(workKindLabel(_task['workKind'], project: (_task['projectId'] ?? '').toString().isNotEmpty)), actions: [IconButton(tooltip: 'Actualizar tarea', onPressed: _busy ? null : _load, icon: const Icon(Icons.refresh))]),
-      body: ListView(padding: const EdgeInsets.fromLTRB(20, 12, 20, 110), children: [
-        Align(alignment: Alignment.centerLeft, child: WorkStatus(_task['status'])), const SizedBox(height: 16),
-        Text(_task['title'] as String, style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w800)),
-        const SizedBox(height: 12),
-        TaskActionBar(status: (_task['status'] ?? 'pendiente').toString(), admin: _reviewer, responsible: _own, enabled: enabled, onComplete: _deliver, onApprove: () => _review(true)),
-        const SizedBox(height: 10), Text(_task['details'] as String? ?? '', style: const TextStyle(height: 1.5)),
-        const SizedBox(height: 12), Text('Responsable: ${_task['userName']}\nAsignó: ${_task['createdByName']}', style: TextStyle(color: StiloColors.text.withValues(alpha: .70), height: 1.6)),
-        const SizedBox(height: 14), LinearProgressIndicator(value: (((_task['percentage'] as num?) ?? 0).clamp(0, 100).toDouble() / 100), minHeight: 7, borderRadius: BorderRadius.circular(6)),
-        const SizedBox(height: 7), Text('${_task['percentage'] ?? 0} % de avance'),
-        if (_task['status'] == 'en_revision') const Padding(padding: EdgeInsets.symmetric(vertical: 12), child: Text('Trabajo entregado. Falta la aprobación para finalizar.')),
-        if ((_task['reviewComment'] ?? '').toString().isNotEmpty) Card(child: Padding(padding: const EdgeInsets.all(16), child: Text('Revisión: ${_task['reviewComment']}'))),
-        if (_busy) const Padding(padding: EdgeInsets.symmetric(vertical: 12), child: LinearProgressIndicator()),
-        if (_error != null) Padding(padding: const EdgeInsets.symmetric(vertical: 12), child: Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error))),
-        if (_noticeWarning != null) Card(child: Column(children: [Padding(padding: const EdgeInsets.all(12), child: Text(_noticeWarning!)), TextButton(onPressed: !enabled || _retryAction == null ? null : () => _send(_retryAction!, _retryData!), child: const Text('Reintentar aviso'))])),
-        const SizedBox(height: 18), const Text('Evidencias y fotos', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
-        for (final evidence in _task['evidence'] as List? ?? []) ListTile(contentPadding: EdgeInsets.zero, leading: const Icon(Icons.attachment), title: Text(evidence['name'] as String), subtitle: const Text('Guardada en la tarea'), trailing: const Icon(Icons.open_in_new), onTap: () => _openEvidence(evidence as Map)),
-        if (!_closed && (_own || _reviewer)) ...[
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          workKindLabel(
+            _task['workKind'],
+            project: (_task['projectId'] ?? '').toString().isNotEmpty,
+          ),
+        ),
+        actions: [
+          IconButton(
+            tooltip: 'Actualizar tarea',
+            onPressed: _busy ? null : _load,
+            icon: const Icon(Icons.refresh),
+          ),
+        ],
+      ),
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 110),
+        children: [
+          Align(
+            alignment: Alignment.centerLeft,
+            child: WorkStatus(_task['status']),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            _task['title'] as String,
+            style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w800),
+          ),
           const SizedBox(height: 12),
-          Wrap(spacing: 8, children: [OutlinedButton.icon(onPressed: editable ? _pick : null, icon: const Icon(Icons.add_photo_alternate_outlined), label: const Text('Adjuntar foto o PDF')), OutlinedButton.icon(onPressed: editable ? () => _pick(camera: true) : null, icon: const Icon(Icons.camera_alt_outlined), label: const Text('Tomar foto'))]),
-          if (_pendingBytes != null) ListTile(title: Text(_pendingName!), subtitle: const Text('Se subirá al guardar o entregar'), trailing: IconButton(tooltip: 'Quitar adjunto', onPressed: _busy ? null : () => setState(() { _pendingBytes = null; _pendingName = null; }), icon: const Icon(Icons.close))),
+          TaskActionBar(
+            status: (_task['status'] ?? 'pendiente').toString(),
+            admin: _reviewer,
+            responsible: _own,
+            enabled: enabled,
+            onComplete: _deliver,
+            onApprove: () => _review(true),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            _task['details'] as String? ?? '',
+            style: const TextStyle(height: 1.5),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Responsable: ${_task['userName']}\nAsignó: ${_task['createdByName']}',
+            style: TextStyle(
+              color: StiloColors.text.withValues(alpha: .70),
+              height: 1.6,
+            ),
+          ),
           const SizedBox(height: 14),
-          TextField(controller: _comment, enabled: editable, maxLength: 2000, minLines: 2, maxLines: 4, decoration: const InputDecoration(labelText: '¿Qué hiciste?', hintText: 'Describe tu avance o el trabajo terminado')),
-          Text('Avance: ${_percentage.round()} %'), Slider(value: _percentage.clamp(0, 100).toDouble(), min: 0, max: 100, divisions: 20, label: '${_percentage.round()} %', onChanged: editable ? (v) => setState(() => _percentage = v) : null),
-          OutlinedButton.icon(onPressed: editable ? () async {
-            final comment = _comment.text.trim(); final percentage = _percentage.round();
-            if (comment.isEmpty) { setState(() => _error = 'Describe tu avance para guardarlo.'); return; }
-            if (!await _upload() || !mounted) return;
-            if (await _send('daily-progress', {'comment': comment, 'percentage': percentage}) && mounted) _comment.clear();
-          } : null, icon: const Icon(Icons.save_outlined), label: const Text('Guardar avance')),
-          const Text('Adjuntos y descripción opcionales. Al terminar, Administración revisa y aprueba.', style: TextStyle(fontSize: 12)),
+          LinearProgressIndicator(
+            value:
+                (((_task['percentage'] as num?) ?? 0).clamp(0, 100).toDouble() /
+                100),
+            minHeight: 7,
+            borderRadius: BorderRadius.circular(6),
+          ),
+          const SizedBox(height: 7),
+          Text('${_task['percentage'] ?? 0} % de avance'),
+          if (_task['status'] == 'en_revision')
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 12),
+              child: Text(
+                'Trabajo entregado. Falta la aprobación para finalizar.',
+              ),
+            ),
+          if ((_task['reviewComment'] ?? '').toString().isNotEmpty)
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text('Revisión: ${_task['reviewComment']}'),
+              ),
+            ),
+          if (_busy)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 12),
+              child: LinearProgressIndicator(),
+            ),
+          if (_error != null)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              child: Text(
+                _error!,
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
+              ),
+            ),
+          if (_noticeWarning != null)
+            Card(
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Text(_noticeWarning!),
+                  ),
+                  TextButton(
+                    onPressed: !enabled || _retryAction == null
+                        ? null
+                        : () => _send(_retryAction!, _retryData!),
+                    child: const Text('Reintentar aviso'),
+                  ),
+                ],
+              ),
+            ),
+          const SizedBox(height: 18),
+          const Text(
+            'Evidencias y fotos',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+          ),
+          for (final evidence in _task['evidence'] as List? ?? [])
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.attachment),
+              title: Text(evidence['name'] as String),
+              subtitle: const Text('Guardada en la tarea'),
+              trailing: const Icon(Icons.open_in_new),
+              onTap: () => _openEvidence(evidence as Map),
+            ),
+          if (!_closed && (_own || _reviewer)) ...[
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              children: [
+                OutlinedButton.icon(
+                  onPressed: editable ? _pick : null,
+                  icon: const Icon(Icons.add_photo_alternate_outlined),
+                  label: const Text('Adjuntar foto o PDF'),
+                ),
+                OutlinedButton.icon(
+                  onPressed: editable ? () => _pick(camera: true) : null,
+                  icon: const Icon(Icons.camera_alt_outlined),
+                  label: const Text('Tomar foto'),
+                ),
+              ],
+            ),
+            if (_pendingBytes != null)
+              ListTile(
+                title: Text(_pendingName!),
+                subtitle: const Text('Se subirá al guardar o entregar'),
+                trailing: IconButton(
+                  tooltip: 'Quitar adjunto',
+                  onPressed: _busy
+                      ? null
+                      : () => setState(() {
+                          _pendingBytes = null;
+                          _pendingName = null;
+                        }),
+                  icon: const Icon(Icons.close),
+                ),
+              ),
+            const SizedBox(height: 14),
+            TextField(
+              controller: _comment,
+              enabled: editable,
+              maxLength: 2000,
+              minLines: 2,
+              maxLines: 4,
+              decoration: const InputDecoration(
+                labelText: '¿Qué hiciste?',
+                hintText: 'Describe tu avance o el trabajo terminado',
+              ),
+            ),
+            Text('Avance: ${_percentage.round()} %'),
+            Slider(
+              value: _percentage.clamp(0, 100).toDouble(),
+              min: 0,
+              max: 100,
+              divisions: 20,
+              label: '${_percentage.round()} %',
+              onChanged: editable
+                  ? (v) => setState(() => _percentage = v)
+                  : null,
+            ),
+            OutlinedButton.icon(
+              onPressed: editable
+                  ? () async {
+                      final comment = _comment.text.trim();
+                      final percentage = _percentage.round();
+                      if (comment.isEmpty) {
+                        setState(
+                          () => _error = 'Describe tu avance para guardarlo.',
+                        );
+                        return;
+                      }
+                      if (!await _upload() || !mounted) return;
+                      if (await _send('daily-progress', {
+                            'comment': comment,
+                            'percentage': percentage,
+                          }) &&
+                          mounted)
+                        _comment.clear();
+                    }
+                  : null,
+              icon: const Icon(Icons.save_outlined),
+              label: const Text('Guardar avance'),
+            ),
+            Text(
+              _task['requiresEvidence'] == true
+                  ? 'La evidencia es obligatoria. El comentario es opcional; Administración revisa y aprueba.'
+                  : 'Foto y comentario opcionales para esta actividad. Administración revisa y aprueba.',
+              style: const TextStyle(fontSize: 12),
+            ),
+          ],
+          if (_reviewer &&
+              ['completado', 'en_revision'].contains(_task['status']) &&
+              (_task['installationOrderId'] ?? '').toString().isEmpty)
+            OutlinedButton.icon(
+              onPressed: enabled ? _reopen : null,
+              icon: const Icon(Icons.restart_alt_rounded),
+              label: const Text('Reabrir actividad'),
+            ),
+          if (review) ...[
+            const SizedBox(height: 18),
+            const Text(
+              'Revisar entrega',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _comment,
+              enabled: enabled,
+              maxLength: 2000,
+              minLines: 2,
+              maxLines: 4,
+              decoration: const InputDecoration(
+                labelText: 'Observación de la revisión',
+              ),
+            ),
+            OutlinedButton.icon(
+              onPressed: enabled ? () => _review(false) : null,
+              icon: const Icon(Icons.edit_note),
+              label: const Text('Solicitar cambios'),
+            ),
+          ],
+          const SizedBox(height: 24),
+          const Text(
+            'Historial de avances',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+          ),
+          for (final event in (_task['history'] as List? ?? []).reversed)
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.history_rounded),
+              title: Text(
+                '${event['comment'] ?? ''}${event['percentage'] != null ? ' · ${event['percentage']} %' : ''}',
+              ),
+              subtitle: Text(
+                '${event['actorName'] ?? ''}\n${event['at'] ?? ''}',
+              ),
+            ),
         ],
-        if (review) ...[
-          const SizedBox(height: 18), const Text('Revisar entrega', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700)),
-          const SizedBox(height: 12), TextField(controller: _comment, enabled: enabled, maxLength: 2000, minLines: 2, maxLines: 4, decoration: const InputDecoration(labelText: 'Observación de la revisión')),
-          OutlinedButton.icon(onPressed: enabled ? () => _review(false) : null, icon: const Icon(Icons.edit_note), label: const Text('Solicitar cambios')),
-        ],
-        const SizedBox(height: 24), const Text('Historial de avances', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
-        for (final event in (_task['history'] as List? ?? []).reversed) ListTile(contentPadding: EdgeInsets.zero, leading: const Icon(Icons.history_rounded), title: Text('${event['comment'] ?? ''}${event['percentage'] != null ? ' · ${event['percentage']} %' : ''}'), subtitle: Text('${event['actorName'] ?? ''}\n${event['at'] ?? ''}')),
-      ]),
+      ),
     );
   }
 }

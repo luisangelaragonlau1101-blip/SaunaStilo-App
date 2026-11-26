@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import '../models/actividad_model.dart';
+import '../workflow/task_lifecycle.dart';
 import '../models/evidencia_actividad_model.dart';
 import 'media_upload_service.dart';
 import 'notificaciones_service.dart';
@@ -38,40 +39,83 @@ class ActividadesService {
     final ref = _actividadesRef.doc(actividad.id);
     await _db.runTransaction((tx) async {
       final profile = await tx.get(_db.collection('usuarios').doc(uid));
-      final target = await tx.get(_db.collection('usuarios').doc(actividad.asignadoATrabajadorId));
+      final assignedIds = taskResponsibleIds(actividad.toJson());
+      if (assignedIds.isEmpty ||
+          assignedIds.length > 30 ||
+          !assignedIds.contains(actividad.asignadoATrabajadorId)) {
+        throw StateError('Selecciona de una a treinta responsables.');
+      }
+      final targets = await Future.wait(
+        assignedIds.map((id) => tx.get(_db.collection('usuarios').doc(id))),
+      );
       final role = profile.data()?['rol'];
-      if (!profile.exists || profile.data()?['activo'] == false) throw StateError('Tu cuenta no está activa.');
-      if (!target.exists || target.data()?['activo'] == false) throw StateError('La persona no tiene una cuenta activa.');
+      if (!profile.exists || profile.data()?['activo'] == false)
+        throw StateError('Tu cuenta no está activa.');
+      if (targets.any(
+        (target) => !target.exists || target.data()?['activo'] == false,
+      ))
+        throw StateError('Todas las personas deben tener una cuenta activa.');
       if (actividad.proyectoId.isNotEmpty) {
-        final project = await tx.get(_db.collection('proyectos').doc(actividad.proyectoId));
-        final members = (project.data()?['encargados'] as List? ?? const []).whereType<String>().toList();
+        final project = await tx.get(
+          _db.collection('proyectos').doc(actividad.proyectoId),
+        );
+        final members = (project.data()?['encargados'] as List? ?? const [])
+            .whereType<String>()
+            .toList();
         if (!project.exists) throw StateError('El proyecto ya no existe.');
-        if (role != 'admin' && (role != 'maestro' || !members.contains(uid) || !members.contains(target.id))) {
-          throw StateError('El maestro debe estar asignado al proyecto y elegir a uno de sus integrantes.');
+        if (role != 'admin' &&
+            (role != 'maestro' ||
+                !members.contains(uid) ||
+                !assignedIds.every(members.contains))) {
+          throw StateError(
+            'El maestro debe estar asignado al proyecto y elegir a uno de sus integrantes.',
+          );
         }
       } else if (role != 'admin') {
-        throw StateError('Solo Administración puede asignar tareas generales sin proyecto.');
+        throw StateError(
+          'Solo Administración puede asignar tareas generales sin proyecto.',
+        );
       }
-      if (actividad.titulo.trim().length < 3 || actividad.titulo.length > 150 || actividad.descripcion.length > 2000 || !actividad.fechaTermino.isAfter(actividad.fechaInicio)) {
-        throw StateError('Revisa el título, las indicaciones y la fecha de entrega.');
+      if (actividad.titulo.trim().length < 3 ||
+          actividad.titulo.length > 150 ||
+          actividad.descripcion.length > 2000 ||
+          !actividad.fechaTermino.isAfter(actividad.fechaInicio)) {
+        throw StateError(
+          'Revisa el título, las indicaciones y la fecha de entrega.',
+        );
       }
       final old = await tx.get(ref);
       if (old.exists) {
-        if (old.data()?['creadoPor'] != uid || old.data()?['proyectoId'] != actividad.proyectoId || old.data()?['titulo'] != actividad.titulo || old.data()?['descripcion'] != actividad.descripcion || old.data()?['asignadoATrabajadorId'] != actividad.asignadoATrabajadorId) {
+        if (old.data()?['creadoPor'] != uid ||
+            old.data()?['proyectoId'] != actividad.proyectoId ||
+            old.data()?['titulo'] != actividad.titulo ||
+            old.data()?['descripcion'] != actividad.descripcion ||
+            old.data()?['asignadoATrabajadorId'] !=
+                actividad.asignadoATrabajadorId ||
+            taskResponsibleIds(old.data()!).join('|') !=
+                assignedIds.join('|')) {
           throw StateError('El identificador de la tarea ya está en uso.');
         }
         return; // Previously confirmed; never reset progress on a retry.
       }
-      tx.set(ref, actividad.toJson()..addAll({'creadoPor': uid, 'creadoEn': FieldValue.serverTimestamp()}));
+      tx.set(
+        ref,
+        actividad.toJson()..addAll({
+          'creadoPor': uid,
+          'creadoEn': FieldValue.serverTimestamp(),
+        }),
+      );
       // Creating a task must not rewrite the project or its financial workflow.
     });
-    try {
-      final notice = NotificacionesService.datosAviso(titulo: 'Nueva tarea asignada', mensaje: actividad.titulo,
-        tipo: 'tarea', destinatarioId: actividad.asignadoATrabajadorId)
-        ..addAll({'actividadId': ref.id, 'proyectoId': actividad.proyectoId});
-      await _db.collection('notificaciones').doc('tarea_${ref.id}').set(notice).timeout(const Duration(seconds: 8));
-    } catch (_) {
-      // The task remains saved; a failed push must never make the user create it twice.
+    for (final id in taskResponsibleIds(actividad.toJson())) {
+      await NotificacionesService(firestore: _db).enviarEvento(
+        id: 'tarea_${ref.id}_$id',
+        titulo: 'Nueva tarea asignada',
+        mensaje: actividad.titulo,
+        tipo: 'tarea',
+        destinatarioId: id,
+        campos: {'actividadId': ref.id, 'proyectoId': actividad.proyectoId},
+      );
     }
   }
 
@@ -146,7 +190,8 @@ class ActividadesService {
       throw ArgumentError('El trabajador es obligatorio.');
     }
     _validarSesionAutenticada(trabajadorIdLimpio);
-    if (porcentaje != null && (porcentaje < 0 || porcentaje > 100)) throw ArgumentError('El avance debe estar entre 0 y 100 %.');
+    if (porcentaje != null && (porcentaje < 0 || porcentaje > 100))
+      throw ArgumentError('El avance debe estar entre 0 y 100 %.');
     if (comentarioLimpio.isEmpty && archivos.isEmpty && !esCierre) {
       throw ArgumentError(
         'Escribe un avance o adjunta por lo menos una evidencia.',
@@ -157,16 +202,35 @@ class ActividadesService {
     if (!actividadSnapshot.exists) {
       throw StateError('La actividad ya no existe.');
     }
-    final actividadData =
-        actividadSnapshot.data() ?? const <String, dynamic>{};
-    final profile = await _db.collection('usuarios').doc(trabajadorIdLimpio).get();
-    final adminOperation = profile.data()?['rol'] == 'admin' && profile.data()?['activo'] != false;
-    _validarTrabajadorAsignado(actividadData, trabajadorIdLimpio, adminOperation);
+    final actividadData = actividadSnapshot.data() ?? const <String, dynamic>{};
+    final profile = await _db
+        .collection('usuarios')
+        .doc(trabajadorIdLimpio)
+        .get();
+    final adminOperation =
+        profile.data()?['rol'] == 'admin' && profile.data()?['activo'] != false;
+    _validarTrabajadorAsignado(
+      actividadData,
+      trabajadorIdLimpio,
+      adminOperation,
+    );
     final avanceRef = operationId == null
         ? _avancesRef(actividadIdLimpio).doc()
         : _avancesRef(actividadIdLimpio).doc(operationId);
-    if (operationId != null && (await avanceRef.get()).exists) {
-      return _avisarActividad(actividadData, actividadIdLimpio, avanceRef.id, esCierre);
+    if (operationId != null) {
+      final previous = await avanceRef.get();
+      if (previous.exists) {
+        if (previous.data()?['trabajadorId'] != trabajadorIdLimpio ||
+            previous.data()?['esCierre'] != esCierre) {
+          throw StateError('Esta operación ya se confirmó con otros datos.');
+        }
+        return _avisarActividad(
+          actividadData,
+          actividadIdLimpio,
+          avanceRef.id,
+          esCierre,
+        );
+      }
     }
     if (['completado', 'en_revision'].contains(_estatus(actividadData))) {
       throw StateError('Una actividad completada ya no admite avances.');
@@ -196,7 +260,16 @@ class ActividadesService {
             : archivo.tipoMime.trim();
         if (tipoMime.startsWith('image/')) {
           final url = await InventoryPhotoCodec.encode(bytes);
-          evidenciasSubidas.add(_EvidenciaSubida(documentRef: evidenciaRef, url: url, storagePath: '', nombre: archivo.nombre, tipoMime: 'image/png', tamanioBytes: InventoryPhotoCodec.decode(url)!.length));
+          evidenciasSubidas.add(
+            _EvidenciaSubida(
+              documentRef: evidenciaRef,
+              url: url,
+              storagePath: '',
+              nombre: archivo.nombre,
+              tipoMime: 'image/png',
+              tamanioBytes: InventoryPhotoCodec.decode(url)!.length,
+            ),
+          );
           continue;
         }
         final archivoSubido = await _media.upload(
@@ -221,9 +294,11 @@ class ActividadesService {
       // las evidencias en grupos para no imponer un límite de archivos desde
       // la aplicación, aunque el trabajador adjunte cientos en un avance.
       const tamanioLote = 8;
-      for (var inicio = 0;
-          inicio < evidenciasSubidas.length;
-          inicio += tamanioLote) {
+      for (
+        var inicio = 0;
+        inicio < evidenciasSubidas.length;
+        inicio += tamanioLote
+      ) {
         final fin = (inicio + tamanioLote < evidenciasSubidas.length)
             ? inicio + tamanioLote
             : evidenciasSubidas.length;
@@ -248,46 +323,102 @@ class ActividadesService {
         );
       }
 
+      String? deliveryEvidenceId;
+      if (esCierre) {
+        if (evidenciasSubidas.isNotEmpty) {
+          deliveryEvidenceId = evidenciasSubidas.first.documentRef.id;
+        } else {
+          final existingEvidence = await _evidenciasRef(
+            actividadIdLimpio,
+          ).limit(10).get();
+          for (final evidence in existingEvidence.docs) {
+            if ((evidence.data()['url'] ?? '').toString().isNotEmpty) {
+              deliveryEvidenceId = evidence.id;
+              break;
+            }
+          }
+        }
+      }
+      var concurrentReplay = false;
+
       // Relee la actividad al confirmar. Así una reasignación, eliminación u
       // otro avance concurrente no permite que un estado viejo gane la carrera.
       // El avance final y el cambio a completado se guardan atómicamente.
-      Future<void> commitProgress({required bool rootPercentage}) =>
-          _db.runTransaction((transaction) async {
+      Future<void> commitProgress({
+        required bool rootPercentage,
+      }) => _db.runTransaction((transaction) async {
         final snapshotActual = await transaction.get(actividadRef);
         if (!snapshotActual.exists) {
           throw StateError('La actividad ya no existe.');
         }
-        final dataActual =
-            snapshotActual.data() ?? const <String, dynamic>{};
-        final actor = await transaction.get(_db.collection('usuarios').doc(trabajadorIdLimpio));
-        if (!actor.exists || actor.data()?['activo'] == false) throw StateError('Tu cuenta no está activa.');
-        _validarTrabajadorAsignado(dataActual, trabajadorIdLimpio, actor.data()?['rol'] == 'admin');
+        final dataActual = snapshotActual.data() ?? const <String, dynamic>{};
+        final previous = await transaction.get(avanceRef);
+        if (previous.exists) {
+          if (previous.data()?['trabajadorId'] != trabajadorIdLimpio ||
+              previous.data()?['esCierre'] != esCierre) {
+            throw StateError('Esta operación ya se confirmó con otros datos.');
+          }
+          concurrentReplay = true;
+          return;
+        }
+        final actor = await transaction.get(
+          _db.collection('usuarios').doc(trabajadorIdLimpio),
+        );
+        if (!actor.exists || actor.data()?['activo'] == false)
+          throw StateError('Tu cuenta no está activa.');
+        _validarTrabajadorAsignado(
+          dataActual,
+          trabajadorIdLimpio,
+          actor.data()?['rol'] == 'admin',
+        );
 
         final estatusActual = _estatus(dataActual);
         if (['completado', 'en_revision'].contains(estatusActual)) {
           throw StateError('La actividad ya fue completada.');
         }
-        if (esCierre && !['pendiente', 'en_progreso', 'cambios_solicitados'].contains(estatusActual)) {
+        if (esCierre &&
+            ![
+              'pendiente',
+              'en_progreso',
+              'cambios_solicitados',
+            ].contains(estatusActual)) {
           throw StateError(
             'La actividad no admite una entrega en su estado actual.',
           );
         }
         if (!esCierre &&
             estatusActual != 'pendiente' &&
-            estatusActual != 'en_progreso' && estatusActual != 'cambios_solicitados') {
+            estatusActual != 'en_progreso' &&
+            estatusActual != 'cambios_solicitados') {
           throw StateError('La actividad no admite nuevos avances.');
         }
 
         final totalEvidencias =
             _contadorEvidencias(dataActual) + evidenciasSubidas.length;
+        final legacyEvidence =
+            dataActual['evidenciaFotos'] is List &&
+            (dataActual['evidenciaFotos'] as List).whereType<String>().any(
+              (url) => url.isNotEmpty,
+            );
+        if (esCierre &&
+            dataActual['requiereEvidencia'] == true &&
+            deliveryEvidenceId == null &&
+            !legacyEvidence) {
+          throw StateError(
+            'Esta actividad requiere una foto o evidencia antes de entregar.',
+          );
+        }
 
         transaction.set(avanceRef, {
-          'comentario': comentarioLimpio.isEmpty && esCierre ? 'Trabajo terminado; entregado para aprobación.' : comentarioLimpio,
+          'comentario': comentarioLimpio.isEmpty && esCierre
+              ? 'Trabajo terminado; entregado para aprobación.'
+              : comentarioLimpio,
           'trabajadorId': trabajadorIdLimpio,
           'fecha': FieldValue.serverTimestamp(),
           'esCierre': esCierre,
           'cantidadEvidencias': evidenciasSubidas.length,
-          if (porcentaje != null || esCierre) 'porcentaje': esCierre ? 100 : porcentaje,
+          if (porcentaje != null || esCierre)
+            'porcentaje': esCierre ? 100 : porcentaje,
         });
 
         final actualizaciones = <String, dynamic>{
@@ -305,6 +436,8 @@ class ActividadesService {
         if (esCierre) {
           actualizaciones['estatus'] = 'en_revision';
           actualizaciones['completadoEn'] = FieldValue.serverTimestamp();
+          if (deliveryEvidenceId != null)
+            actualizaciones['evidenciaEntregaId'] = deliveryEvidenceId;
         } else if (estatusActual == 'pendiente') {
           actualizaciones['estatus'] = 'en_progreso';
           actualizaciones['iniciadoEn'] = FieldValue.serverTimestamp();
@@ -323,54 +456,191 @@ class ActividadesService {
         // con las mismas comprobaciones de cuenta, responsable y estado.
         await commitProgress(rootPercentage: false);
       }
+      if (concurrentReplay) {
+        await _eliminarDocumentosEvidencia(documentosEvidenciaEscritos);
+        await _eliminarBlobsSubidos(evidenciasSubidas);
+      }
     } catch (e) {
       await _eliminarDocumentosEvidencia(documentosEvidenciaEscritos);
       await _eliminarBlobsSubidos(evidenciasSubidas);
       throw Exception('No se pudo registrar el avance: $e');
     }
-    return _avisarActividad(actividadData, actividadIdLimpio, avanceRef.id, esCierre);
+    return _avisarActividad(
+      actividadData,
+      actividadIdLimpio,
+      avanceRef.id,
+      esCierre,
+    );
   }
 
-  Future<bool> _avisarActividad(Map<String, dynamic> data, String id, String eventId, bool entrega) =>
-      NotificacionesService(firestore: _db).enviarEvento(
-        id: 'actividad_${id}_$eventId', titulo: entrega ? 'Actividad por aprobar' : 'Nuevo avance de actividad',
-        mensaje: data['titulo']?.toString() ?? 'Actividad actualizada', tipo: 'tarea',
-        destinatarioId: data['creadoPor']?.toString() ?? '', rolesDestinatarios: const ['admin'],
-        campos: {'actividadId': id, 'proyectoId': data['proyectoId'] ?? ''});
+  Future<bool> _avisarActividad(
+    Map<String, dynamic> data,
+    String id,
+    String eventId,
+    bool entrega,
+  ) => NotificacionesService(firestore: _db).enviarEvento(
+    id: 'actividad_${id}_$eventId',
+    titulo: entrega ? 'Actividad por aprobar' : 'Nuevo avance de actividad',
+    mensaje: data['titulo']?.toString() ?? 'Actividad actualizada',
+    tipo: 'tarea',
+    destinatarioId: data['creadoPor']?.toString() ?? '',
+    rolesDestinatarios: const ['admin'],
+    campos: {'actividadId': id, 'proyectoId': data['proyectoId'] ?? ''},
+  );
 
-  Future<bool> revisarActividad({required String actividadId, required bool aprobar,
-    required String comentario, required DateTime? entregaEsperada, String? operationId}) async {
+  Future<bool> revisarActividad({
+    required String actividadId,
+    required bool aprobar,
+    required String comentario,
+    required DateTime? entregaEsperada,
+    String? operationId,
+  }) async {
     final uid = (_auth ?? FirebaseAuth.instance).currentUser?.uid;
     if (uid == null) throw StateError('Inicia sesión.');
-    if (!aprobar && comentario.trim().isEmpty) throw StateError('Explica qué debe corregirse.');
+    if (!aprobar && comentario.trim().isEmpty)
+      throw StateError('Explica qué debe corregirse.');
     final ref = _actividadesRef.doc(actividadId);
     final event = _avancesRef(actividadId).doc(operationId);
     Map<String, dynamic> data = {};
     await _db.runTransaction((tx) async {
       final profile = await tx.get(_db.collection('usuarios').doc(uid));
       final snapshot = await tx.get(ref);
-      if (profile.data()?['rol'] != 'admin' || profile.data()?['activo'] == false) throw StateError('Solo Administración aprueba estas actividades.');
+      if (profile.data()?['rol'] != 'admin' ||
+          profile.data()?['activo'] == false)
+        throw StateError('Solo Administración aprueba estas actividades.');
       if (!snapshot.exists) throw StateError('La actividad ya no existe.');
       data = snapshot.data()!;
+      if ((data['installationOrderId'] ?? '').toString().isNotEmpty)
+        throw StateError(
+          'Revisa esta preparación desde su orden de instalación.',
+        );
       final previous = await tx.get(event);
       if (previous.exists) {
-        if (previous.data()?['trabajadorId'] != uid || previous.data()?['decision'] != aprobar) throw StateError('La revisión ya se guardó con otros datos.');
+        if (previous.data()?['trabajadorId'] != uid ||
+            previous.data()?['decision'] != aprobar)
+          throw StateError('La revisión ya se guardó con otros datos.');
         return;
       }
-      if (!['en_revision', 'completado'].contains(_estatus(data)) || data['aprobadoEn'] != null) throw StateError('Esta actividad no tiene una entrega pendiente de aprobación.');
+      if (!['en_revision', 'completado'].contains(_estatus(data)) ||
+          data['aprobadoEn'] != null)
+        throw StateError(
+          'Esta actividad no tiene una entrega pendiente de aprobación.',
+        );
       final actual = data['completadoEn'];
-      if ((actual is Timestamp ? actual.toDate() : null) != entregaEsperada) throw StateError('La entrega cambió. Actualiza antes de revisarla.');
-      tx.update(ref, {'estatus': aprobar ? 'completado' : 'cambios_solicitados',
-        'observacionesAdmin': comentario.trim(), 'revisadoPor': uid, 'revisadoEn': FieldValue.serverTimestamp(),
+      if ((actual is Timestamp ? actual.toDate() : null) != entregaEsperada)
+        throw StateError('La entrega cambió. Actualiza antes de revisarla.');
+      tx.update(ref, {
+        'estatus': aprobar ? 'completado' : 'cambios_solicitados',
+        'observacionesAdmin': comentario.trim(),
+        'revisadoPor': uid,
+        'revisadoEn': FieldValue.serverTimestamp(),
         'aprobadoEn': aprobar ? FieldValue.serverTimestamp() : null,
-        if (aprobar) 'porcentaje': 100});
-      tx.set(event, {'comentario': '${aprobar ? 'Aprobada y finalizada' : 'Cambios solicitados'}${comentario.trim().isEmpty ? '' : ': ${comentario.trim()}'}',
-        'trabajadorId': uid, 'fecha': FieldValue.serverTimestamp(), 'esCierre': false, 'cantidadEvidencias': 0, 'decision': aprobar});
+        if (aprobar) 'porcentaje': 100,
+      });
+      tx.set(event, {
+        'comentario':
+            '${aprobar ? 'Aprobada y finalizada' : 'Cambios solicitados'}${comentario.trim().isEmpty ? '' : ': ${comentario.trim()}'}',
+        'trabajadorId': uid,
+        'fecha': FieldValue.serverTimestamp(),
+        'esCierre': false,
+        'cantidadEvidencias': 0,
+        'decision': aprobar,
+      });
     });
-    return NotificacionesService(firestore: _db).enviarEvento(id: 'revision_${event.id}',
-      titulo: aprobar ? 'Actividad aprobada' : 'Actividad: cambios solicitados',
-      mensaje: data['titulo']?.toString() ?? 'Revisa tu actividad', tipo: 'tarea',
-      destinatarioId: data['asignadoATrabajadorId']?.toString() ?? '', campos: {'actividadId': actividadId});
+    return _avisarResponsables(
+      data,
+      actividadId,
+      'revision_${event.id}',
+      aprobar ? 'Actividad aprobada' : 'Actividad: cambios solicitados',
+    );
+  }
+
+  Future<bool> _avisarResponsables(
+    Map<String, dynamic> data,
+    String id,
+    String eventId,
+    String title,
+  ) async {
+    final results = await Future.wait(
+      taskResponsibleIds(data).map(
+        (uid) => NotificacionesService(firestore: _db).enviarEvento(
+          id: '${eventId}_${id}_$uid',
+          titulo: title,
+          mensaje: data['titulo']?.toString() ?? 'Revisa tu actividad',
+          tipo: 'tarea',
+          destinatarioId: uid,
+          campos: {'actividadId': id},
+        ),
+      ),
+    );
+    return results.every((value) => value);
+  }
+
+  /// An explicit administrative reopening preserves previous evidence and audit.
+  Future<bool> reabrirActividad({
+    required String actividadId,
+    required String comentario,
+    String? operationId,
+  }) async {
+    final uid = (_auth ?? FirebaseAuth.instance).currentUser?.uid;
+    if (uid == null) throw StateError('Inicia sesión.');
+    if (comentario.trim().isEmpty || comentario.length > 2000) {
+      throw StateError('Explica brevemente por qué se reabre la actividad.');
+    }
+    final ref = _actividadesRef.doc(actividadId);
+    final event = _avancesRef(actividadId).doc(operationId);
+    Map<String, dynamic> data = {};
+    await _db.runTransaction((tx) async {
+      final actor = await tx.get(_db.collection('usuarios').doc(uid));
+      final task = await tx.get(ref);
+      final previous = await tx.get(event);
+      if (!actor.exists ||
+          actor.data()?['activo'] == false ||
+          actor.data()?['rol'] != 'admin') {
+        throw StateError('Solo Administración puede reabrir actividades.');
+      }
+      if (!task.exists) throw StateError('La actividad ya no existe.');
+      data = task.data()!;
+      if ((data['installationOrderId'] ?? '').toString().isNotEmpty) {
+        throw StateError(
+          'Revisa esta preparación desde su orden de instalación.',
+        );
+      }
+      if (previous.exists) {
+        if (previous.data()?['trabajadorId'] != uid ||
+            previous.data()?['reabierta'] != true) {
+          throw StateError('Esta operación ya se confirmó con otros datos.');
+        }
+        return;
+      }
+      if (!['en_revision', 'completado'].contains(_estatus(data))) {
+        throw StateError(
+          'Solo se puede reabrir una actividad entregada o aprobada.',
+        );
+      }
+      tx.update(ref, {
+        'estatus': 'cambios_solicitados',
+        'aprobadoEn': null,
+        'completadoEn': null,
+        'observacionesAdmin': comentario.trim(),
+        'revisadoPor': uid,
+        'revisadoEn': FieldValue.serverTimestamp(),
+      });
+      tx.set(event, {
+        'comentario': 'Actividad reabierta: ${comentario.trim()}',
+        'trabajadorId': uid,
+        'fecha': FieldValue.serverTimestamp(),
+        'esCierre': false,
+        'cantidadEvidencias': 0,
+        'reabierta': true,
+      });
+    });
+    return _avisarResponsables(
+      data,
+      actividadId,
+      'reabrir_${event.id}',
+      'Actividad reabierta',
+    );
   }
 
   /// Pasa una actividad pendiente a en progreso. La operación es idempotente
@@ -385,7 +655,16 @@ class ActividadesService {
       final snapshot = await transaction.get(actividadRef);
       if (!snapshot.exists) throw StateError('La actividad ya no existe.');
       final data = snapshot.data() ?? const <String, dynamic>{};
-      _validarTrabajadorAsignado(data, trabajadorId.trim());
+      final actor = await transaction.get(
+        _db.collection('usuarios').doc(trabajadorId.trim()),
+      );
+      if (!actor.exists || actor.data()?['activo'] == false)
+        throw StateError('Tu cuenta no está activa.');
+      _validarTrabajadorAsignado(
+        data,
+        trabajadorId.trim(),
+        actor.data()?['rol'] == 'admin',
+      );
 
       final estatusActual = _estatus(data);
       if (estatusActual == 'en_progreso') return;
@@ -407,8 +686,13 @@ class ActividadesService {
     required String actividadId,
     required String trabajadorId,
   }) async {
-    await registrarAvance(actividadId: actividadId, trabajadorId: trabajadorId,
-      comentario: 'Trabajo terminado; se entrega para revisión.', archivos: [], esCierre: true);
+    await registrarAvance(
+      actividadId: actividadId,
+      trabajadorId: trabajadorId,
+      comentario: 'Trabajo terminado; se entrega para revisión.',
+      archivos: [],
+      esCierre: true,
+    );
   }
 
   // El cierre debe pasar por registrarAvance(esCierre: true) o por el método
@@ -435,9 +719,7 @@ class ActividadesService {
     }
 
     try {
-      await _actividadesRef.doc(actividadId).update({
-        'estatus': estatusLimpio,
-      });
+      await _actividadesRef.doc(actividadId).update({'estatus': estatusLimpio});
     } catch (e) {
       throw Exception('Error al actualizar el estatus: $e');
     }
@@ -489,8 +771,7 @@ class ActividadesService {
   Future<void> eliminarActividad(String actividadId) async {
     final actividadIdLimpio = actividadId.trim();
     try {
-      final evidenciasSnapshot =
-          await _evidenciasRef(actividadIdLimpio).get();
+      final evidenciasSnapshot = await _evidenciasRef(actividadIdLimpio).get();
       final avancesSnapshot = await _avancesRef(actividadIdLimpio).get();
 
       // Limpia los binarios nuevos. Los archivos históricos no guardaban su
@@ -525,9 +806,14 @@ class ActividadesService {
   /// estado y fechas del flujo del trabajador permanecen intactos.
   Future<void> actualizarActividad(ActividadModel actividad) async {
     await _actividadesRef.doc(actividad.id).update({
-      'titulo': actividad.titulo, 'descripcion': actividad.descripcion,
+      'titulo': actividad.titulo,
+      'descripcion': actividad.descripcion,
       'asignadoATrabajadorId': actividad.asignadoATrabajadorId,
-      'fechaTermino': actividad.fechaTermino, 'fechaAsignada': actividad.fechaAsignada,
+      if (actividad.asignadosIds.isNotEmpty)
+        'asignadosIds': actividad.asignadosIds.toSet().toList(),
+      'requiereEvidencia': actividad.requiereEvidencia,
+      'fechaTermino': actividad.fechaTermino,
+      'fechaAsignada': actividad.fechaAsignada,
     });
   }
 
@@ -555,12 +841,16 @@ class ActividadesService {
 
   static void _validarTrabajadorAsignado(
     Map<String, dynamic> data,
-    String trabajadorId, [bool adminOperation = false]
-  ) {
-    final asignado = data['asignadoATrabajadorId'] is String
-        ? (data['asignadoATrabajadorId'] as String).trim()
-        : '';
-    if (trabajadorId.isEmpty || asignado != trabajadorId && !adminOperation) {
+    String trabajadorId, [
+    bool adminOperation = false,
+  ]) {
+    if ((data['installationOrderId'] ?? '').toString().isNotEmpty) {
+      throw StateError(
+        'Abre el checklist de instalación para registrar este trabajo.',
+      );
+    }
+    if (trabajadorId.isEmpty ||
+        !taskAssignedTo(data, trabajadorId) && !adminOperation) {
       throw StateError(
         'Esta actividad no está asignada al trabajador autenticado.',
       );
@@ -590,23 +880,15 @@ class ActividadesService {
   }
 
   static String _nombreSeguro(String nombre) {
-    final limpio = nombre.trim().replaceAll(
-      RegExp(r'[^a-zA-Z0-9._-]+'),
-      '_',
-    );
+    final limpio = nombre.trim().replaceAll(RegExp(r'[^a-zA-Z0-9._-]+'), '_');
     return limpio.isEmpty ? 'evidencia' : limpio;
   }
 
-  Future<void> _eliminarBlobsSubidos(
-    List<_EvidenciaSubida> evidencias,
-  ) async {
+  Future<void> _eliminarBlobsSubidos(List<_EvidenciaSubida> evidencias) async {
     for (final evidencia in evidencias.reversed) {
       if (evidencia.storagePath.isEmpty) continue;
       try {
-        await _media.delete(
-          url: evidencia.url,
-          path: evidencia.storagePath,
-        );
+        await _media.delete(url: evidencia.url, path: evidencia.storagePath);
       } catch (_) {
         // Limpieza de mejor esfuerzo: se conserva el error original de subida o
         // escritura para que la interfaz muestre la causa real al usuario.

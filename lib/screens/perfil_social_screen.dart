@@ -46,9 +46,9 @@ class PerfilSocialScreen extends StatelessWidget {
         final nombre = data['nombre']?.toString() ?? 'Usuario';
         final rol = data['rol']?.toString() ?? AppRoles.trabajador;
         final foto = data['fotoUrl']?.toString() ?? '';
-        final cumpleanos = data['cumpleanos'] is Timestamp
-            ? (data['cumpleanos'] as Timestamp).toDate()
-            : null;
+        // Birth dates are private. Shared day/month is available in the
+        // birthday calendar through the authorized server projection.
+        const DateTime? cumpleanos = null;
         final puedeVerOperacion =
             usuarioActual.rol == AppRoles.admin || _esPropio;
         final actividadesQuery = puedeVerOperacion

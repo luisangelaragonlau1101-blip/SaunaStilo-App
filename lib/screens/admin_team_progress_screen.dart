@@ -6,6 +6,9 @@ import '../presentation/appearance.dart';
 import '../services/company_learning_service.dart';
 import '../widgets/soft_workspace.dart';
 import '../workflow/team_progress.dart';
+import '../workflow/productivity_2026.dart';
+import '../workflow/task_lifecycle.dart';
+import '../widgets/employee_weekly_progress.dart';
 import '../widgets/work_status.dart';
 import 'daily_tasks_screen.dart';
 
@@ -28,6 +31,7 @@ class _TeamProgressState extends State<AdminTeamProgressScreen>
   final _defaultService = CompanyLearningService();
   CompanyLearningService get _api => widget.service ?? _defaultService;
   List<Map<String, dynamic>> _items = [], _people = [], _projects = [];
+  List<WorkActivity> _activityRecords = [];
   String _person = 'all',
       _department = 'all',
       _project = 'all',
@@ -74,6 +78,7 @@ class _TeamProgressState extends State<AdminTeamProgressScreen>
 
   void _clear() {
     _items = [];
+    _activityRecords = [];
     _people = [];
     _projects = [];
     _loaded = false;
@@ -137,6 +142,9 @@ class _TeamProgressState extends State<AdminTeamProgressScreen>
         _items = {
           for (final task in tasks) task['taskId']: task,
         }.values.toList();
+        _activityRecords = _items
+            .map(WorkActivity.fromMap)
+            .toList(growable: false);
         final people = {
           for (final person in rows('people')) person['id']: person,
         };
@@ -175,16 +183,21 @@ class _TeamProgressState extends State<AdminTeamProgressScreen>
     }
   }
 
-  List<Map<String, dynamic>> _filtered({bool state = true}) {
+  List<String> _responsible(Map<String, dynamic> task) =>
+      taskResponsibleIds(task);
+
+  List<Map<String, dynamic>> _filtered({bool state = true, bool dates = true}) {
     final people = {for (final p in _people) p['id']: p};
     return _items.where((t) {
-      if (_person != 'all' && t['userId'] != _person ||
+      if (_person != 'all' && !_responsible(t).contains(_person) ||
           _department != 'all' &&
-              people[t['userId']]?['department'] != _department ||
+              !_responsible(
+                t,
+              ).any((id) => people[id]?['department'] == _department) ||
           _project != 'all' && t['projectId'] != _project ||
           _kind != 'all' && t['workKind'] != _kind)
         return false;
-      if (!teamTaskInPeriod(t, _period)) return false;
+      if (dates && !teamTaskInPeriod(t, _period)) return false;
       final searchable =
           '${t['title']} ${t['userName']} ${t['details']} ${_projectName(t)}'
               .toLowerCase();
@@ -288,6 +301,11 @@ class _TeamProgressState extends State<AdminTeamProgressScreen>
     final rows = _filtered(),
         scope = _filtered(state: false),
         stats = TeamProgressStats.from(scope);
+    final productivity = WorkProductivity.fromActivities(
+      _filtered(state: false, dates: false).map(WorkActivity.fromMap),
+      today: companyDay(DateTime.now()),
+      personId: _person == 'all' ? null : _person,
+    );
     final departments =
         _people
             .map((p) => (p['department'] ?? '').toString())
@@ -392,6 +410,35 @@ class _TeamProgressState extends State<AdminTeamProgressScreen>
                     ? 'Sin asignaciones en esta selección.'
                     : 'Avance promedio: ${stats.percentage} % · ${stats.approved} de ${stats.total} aprobadas',
                 style: const TextStyle(fontWeight: FontWeight.w700),
+              ),
+              ExpansionTile(
+                key: const ValueKey('team-productivity'),
+                title: const Text('Aprobaciones semanales y mensuales'),
+                subtitle: Text(
+                  '${productivity.approvedWeek} esta semana · ${productivity.approvedMonth} este mes',
+                ),
+                childrenPadding: const EdgeInsets.symmetric(vertical: 12),
+                children: [
+                  const Text(
+                    'Fecha real de aprobación. Cada actividad compartida se cuenta una sola vez en el resumen general. Conserva los filtros de persona, departamento, proyecto y tipo.',
+                  ),
+                  const SizedBox(height: 14),
+                  ProductivityChart(buckets: productivity.weekly),
+                  const SizedBox(height: 20),
+                  const Text(
+                    'Este mes, por semana',
+                    style: TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                  const SizedBox(height: 12),
+                  ProductivityChart(
+                    buckets: productivity.monthly,
+                    monthly: true,
+                  ),
+                  if (productivity.unknownApprovalDate > 0)
+                    Text(
+                      '${productivity.unknownApprovalDate} tareas aprobadas sin fecha histórica quedan fuera de estas gráficas.',
+                    ),
+                ],
               ),
               const SizedBox(height: 18),
               TextField(
@@ -561,7 +608,9 @@ class _TeamProgressState extends State<AdminTeamProgressScreen>
                   ))
                     _personCard(
                       person,
-                      scope.where((t) => t['userId'] == person['id']).toList(),
+                      scope
+                          .where((t) => _responsible(t).contains(person['id']))
+                          .toList(),
                     ),
                 ],
               ),
@@ -625,6 +674,33 @@ class _TeamProgressState extends State<AdminTeamProgressScreen>
     List<Map<String, dynamic>> tasks,
   ) {
     final stats = TeamProgressStats.from(tasks);
+    final rest = person['diasDescanso'];
+    final schedule = WorkSchedule(
+      restWeekdays: rest is List
+          ? rest
+                .whereType<num>()
+                .map((d) => d.toInt())
+                .where((d) => d >= 1 && d <= 7)
+                .toSet()
+          : {7, if (person['trabajaSabados'] != true) 6},
+      approvedLeaveDays: {
+        if (person['diasSinJornada'] is List)
+          for (final day
+              in (person['diasSinJornada'] as List).whereType<String>())
+            if (RegExp(r'^\d{8}$').hasMatch(day))
+              ...[
+                DateTime.tryParse(
+                  '${day.substring(0, 4)}-${day.substring(4, 6)}-${day.substring(6)}',
+                ),
+              ].whereType<DateTime>(),
+      },
+    );
+    final productivity = WorkProductivity.fromActivities(
+      _activityRecords,
+      today: companyDay(DateTime.now()),
+      personId: person['id']?.toString(),
+      schedule: schedule,
+    );
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -654,6 +730,14 @@ class _TeamProgressState extends State<AdminTeamProgressScreen>
               ),
               const SizedBox(height: 6),
               Text('${stats.percentage} % de avance promedio'),
+              const SizedBox(height: 8),
+              Text(
+                '${productivity.approvedWeek} aprobadas esta semana · ${productivity.currentStreak} jornadas de racha',
+              ),
+              const Text(
+                'Racha de los últimos 90 días; respeta descansos y días sin asignaciones.',
+                style: TextStyle(fontSize: 12),
+              ),
             ],
             TextButton.icon(
               onPressed: () =>

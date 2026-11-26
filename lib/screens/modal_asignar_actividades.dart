@@ -16,10 +16,19 @@ class ModalAsignarActividad extends StatefulWidget {
   final DateTime? initialDay;
   final String workKind;
   final bool operations;
-  const ModalAsignarActividad({super.key, required this.proyectoId, required this.rolUsuario, this.actividadAEditar, this.initialDay, this.workKind = 'dia', this.operations = false});
+  const ModalAsignarActividad({
+    super.key,
+    required this.proyectoId,
+    required this.rolUsuario,
+    this.actividadAEditar,
+    this.initialDay,
+    this.workKind = 'dia',
+    this.operations = false,
+  });
   @override
   State<ModalAsignarActividad> createState() => _ModalAsignarActividadState();
 }
+
 class _ModalAsignarActividadState extends State<ModalAsignarActividad> {
   final _form = GlobalKey<FormState>();
   final _title = TextEditingController(), _body = TextEditingController();
@@ -28,122 +37,579 @@ class _ModalAsignarActividadState extends State<ModalAsignarActividad> {
   late final String _uid;
   late final String _draftKey;
   String? _target, _error;
-  bool _busy = false, _loading = true;
+  bool _busy = false,
+      _loading = true,
+      _shared = false,
+      _requiresEvidence = true;
+  final _targets = <String>{};
   List<Map<String, String>> _people = [];
-  DateTime _day = DateTime.now(), _deadline = DateTime.now().add(Duration(days: 1));
+  DateTime _day = AttendanceGatewayService.today,
+      _deadline = AttendanceGatewayService.today.add(const Duration(hours: 19));
   @override
   void initState() {
     super.initState();
     _workKind = widget.workKind;
-    if (widget.initialDay != null) { _day = widget.initialDay!; _deadline = DateTime(_day.year, _day.month, _day.day, 19); }
+    if (widget.initialDay != null) {
+      _day = widget.initialDay!;
+      _deadline = DateTime(_day.year, _day.month, _day.day, 19);
+    }
     final old = widget.actividadAEditar;
     _uid = FirebaseAuth.instance.currentUser?.uid ?? '';
-    _id = old?.id ?? FirebaseFirestore.instance.collection('actividades').doc().id;
-    _draftKey = 'tarea:${widget.proyectoId}:${widget.workKind}:${old?.id ?? 'nueva'}';
-    if (old != null) {_title.text = old.titulo; _body.text = old.descripcion; _target = old.asignadoATrabajadorId; _day = old.fechaAsignada; _deadline = old.fechaTermino;}
+    _id =
+        old?.id ??
+        FirebaseFirestore.instance.collection('actividades').doc().id;
+    _draftKey =
+        'tarea:${widget.proyectoId}:${widget.workKind}:${old?.id ?? 'nueva'}';
+    if (old != null) {
+      _title.text = old.titulo;
+      _body.text = old.descripcion;
+      _target = old.asignadoATrabajadorId;
+      _day = old.fechaAsignada.toUtc().subtract(const Duration(hours: 6));
+      _deadline = old.fechaTermino.toUtc().subtract(const Duration(hours: 6));
+      _shared = old.asignadosIds.length > 1;
+      _targets.addAll(old.asignadosIds);
+      _requiresEvidence = old.requiereEvidencia;
+      _workKind = old.workKind;
+    }
     _load();
   }
+
   @override
-  void dispose() {_title.dispose(); _body.dispose(); super.dispose();}
+  void dispose() {
+    _title.dispose();
+    _body.dispose();
+    super.dispose();
+  }
+
   Future<void> _load() async {
-    setState(() {_loading = true; _error = null;});
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
     try {
       final db = FirebaseFirestore.instance;
       final admin = widget.rolUsuario == 'admin';
       var members = <String>[];
       if (widget.proyectoId.isNotEmpty) {
-        final project = await db.collection('proyectos').doc(widget.proyectoId).get().timeout(Duration(seconds: 15));
-        members = (project.data()?['encargados'] as List? ?? []).whereType<String>().toList();
-        if (!project.exists || (!admin && (widget.rolUsuario != 'maestro' || !members.contains(_uid)))) {
-          throw StateError('Administración debe asignarte como integrante de este proyecto.');
+        final project = await db
+            .collection('proyectos')
+            .doc(widget.proyectoId)
+            .get()
+            .timeout(Duration(seconds: 15));
+        members = (project.data()?['encargados'] as List? ?? [])
+            .whereType<String>()
+            .toList();
+        if (!project.exists ||
+            (!admin &&
+                (widget.rolUsuario != 'maestro' || !members.contains(_uid)))) {
+          throw StateError(
+            'Administración debe asignarte como integrante de este proyecto.',
+          );
         }
       } else if (!admin) {
         throw StateError('Solo Administración asigna tareas sin proyecto.');
       }
-      final people = await db.collection('usuarios').get().timeout(Duration(seconds: 15));
-      final entries = people.docs.where((d) => d.data()['activo'] != false &&
-        (admin || widget.proyectoId.isEmpty && widget.rolUsuario == 'maestro' || members.contains(d.id))).map((d) => {'id': d.id, 'nombre': '${d.data()['nombre'] ?? d.data()['Nombre'] ?? 'Integrante'} · ${d.data()['rol'] ?? ''}'}).toList();
-      entries.sort((a,b) => a['nombre']!.compareTo(b['nombre']!));
+      final people = await db
+          .collection('usuarios')
+          .get()
+          .timeout(Duration(seconds: 15));
+      final entries = people.docs
+          .where(
+            (d) =>
+                d.data()['activo'] != false &&
+                (admin ||
+                    widget.proyectoId.isEmpty &&
+                        widget.rolUsuario == 'maestro' ||
+                    members.contains(d.id)),
+          )
+          .map(
+            (d) => {
+              'id': d.id,
+              'nombre':
+                  '${d.data()['nombre'] ?? d.data()['Nombre'] ?? 'Integrante'} · ${d.data()['rol'] ?? ''}',
+            },
+          )
+          .toList();
+      entries.sort((a, b) => a['nombre']!.compareTo(b['nombre']!));
       if (!mounted) return;
-      setState(() {_people = entries; if (!_people.any((p) => p['id'] == _target)) _target = null;});
-      if (entries.isEmpty) setState(() => _error = widget.proyectoId.isEmpty ? 'No hay personas activas disponibles. Revisa las cuentas del equipo.' : 'Este proyecto no tiene integrantes activos. Administración puede agregarlos desde Proyectos.');
-    } catch (e) {if (mounted) setState(() => _error = _explain(e));}
-    finally {if (mounted) setState(() => _loading = false);}
+      setState(() {
+        _people = entries;
+        if (!_people.any((p) => p['id'] == _target)) _target = null;
+        _targets.removeWhere((id) => !_people.any((p) => p['id'] == id));
+      });
+      if (entries.isEmpty)
+        setState(
+          () => _error = widget.proyectoId.isEmpty
+              ? 'No hay personas activas disponibles. Revisa las cuentas del equipo.'
+              : 'Este proyecto no tiene integrantes activos. Administración puede agregarlos desde Proyectos.',
+        );
+    } catch (e) {
+      if (mounted) setState(() => _error = _explain(e));
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
   }
+
   String _explain(Object e) {
-    if (e is FirebaseException && e.code == 'permission-denied') return 'El servidor negó el permiso. Revisa el rol y publica las reglas de esta versión; no se guardó la tarea.';
+    if (e is FirebaseException && e.code == 'permission-denied')
+      return 'El servidor negó el permiso. Revisa el rol y publica las reglas de esta versión; no se guardó la tarea.';
     if (e is StateError) return e.message.toString();
     return 'No se confirmó la operación. Revisa Internet. Puedes guardar un borrador en este dispositivo sin asignarlo todavía.';
   }
+
   Future<void> _draft({bool restore = false}) async {
     try {
       if (restore) {
         final d = await OfflineWorkspace.read(_uid, _draftKey);
         if (!mounted) return;
-        if (d == null) {setState(() => _error = 'No hay borrador guardado en este dispositivo.'); return;}
-        setState(() {_title.text = d['titulo'] ?? ''; _body.text = d['descripcion'] ?? ''; if (widget.actividadAEditar == null && (d['id'] ?? '').isNotEmpty) _id = d['id']!; _day = DateTime.tryParse(d['dia'] ?? '') ?? _day; _deadline = DateTime.tryParse(d['entrega'] ?? '') ?? _deadline; _target = _people.any((p) => p['id'] == d['persona']) ? d['persona'] : null;});
+        if (d == null) {
+          setState(
+            () => _error = 'No hay borrador guardado en este dispositivo.',
+          );
+          return;
+        }
+        setState(() {
+          _title.text = d['titulo'] ?? '';
+          _body.text = d['descripcion'] ?? '';
+          if (widget.actividadAEditar == null && (d['id'] ?? '').isNotEmpty)
+            _id = d['id']!;
+          _day = DateTime.tryParse(d['dia'] ?? '') ?? _day;
+          _deadline = DateTime.tryParse(d['entrega'] ?? '') ?? _deadline;
+          _target = _people.any((p) => p['id'] == d['persona'])
+              ? d['persona']
+              : null;
+        });
       } else {
         final allowed = await OfflineWorkspace.confirmDevice(context);
         if (!allowed) return;
-        await OfflineWorkspace.save(_uid, _draftKey, {'titulo': _title.text, 'descripcion': _body.text, 'persona': _target ?? '', 'id': _id, 'dia': _day.toIso8601String(), 'entrega': _deadline.toIso8601String()});
-        if (mounted) setState(() => _error = 'Borrador local guardado. Aún NO es una tarea asignada; vuelve a abrirlo y pulsa Guardar con conexión.');
+        await OfflineWorkspace.save(_uid, _draftKey, {
+          'titulo': _title.text,
+          'descripcion': _body.text,
+          'persona': _target ?? '',
+          'id': _id,
+          'dia': _day.toIso8601String(),
+          'entrega': _deadline.toIso8601String(),
+        });
+        if (mounted)
+          setState(
+            () => _error =
+                'Borrador local guardado. Aún NO es una tarea asignada; vuelve a abrirlo y pulsa Guardar con conexión.',
+          );
       }
-    } catch (_) {if (mounted) setState(() => _error = 'No se pudo guardar o recuperar el borrador.');}
+    } catch (_) {
+      if (mounted)
+        setState(() => _error = 'No se pudo guardar o recuperar el borrador.');
+    }
   }
+
   Future<void> _save() async {
     if (_busy || _loading || !_form.currentState!.validate()) return;
-    if (!_deadline.isAfter(_day)) {setState(() => _error = 'La entrega debe ser posterior al día de la tarea.'); return;}
-    setState(() {_busy = true; _error = null;});
+    if (_shared && (_targets.length < 2 || _targets.length > 30)) {
+      setState(
+        () => _error =
+            'Selecciona de dos a treinta integrantes para la actividad compartida.',
+      );
+      return;
+    }
+    if (!_deadline.isAfter(_day)) {
+      setState(
+        () => _error = 'La entrega debe ser posterior al día de la tarea.',
+      );
+      return;
+    }
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
     try {
       final old = widget.actividadAEditar;
-      final task = ActividadModel(id: _id, proyectoId: widget.proyectoId, titulo: _title.text.trim(), descripcion: _body.text.trim(),
-        asignadoATrabajadorId: _target!, fechaInicio: old?.fechaInicio ?? _day, fechaAsignada: _day, fechaTermino: _deadline);
+      final task = ActividadModel(
+        id: _id,
+        proyectoId: widget.proyectoId,
+        titulo: _title.text.trim(),
+        descripcion: _body.text.trim(),
+        asignadoATrabajadorId: _target!,
+        asignadosIds: _shared ? _targets.toList() : const [],
+        workKind: _workKind,
+        requiereEvidencia: _requiresEvidence,
+        fechaInicio:
+            old?.fechaInicio ??
+            DateTime.utc(_day.year, _day.month, _day.day, 6),
+        fechaAsignada: DateTime.utc(_day.year, _day.month, _day.day, 6),
+        fechaTermino: DateTime.utc(
+          _deadline.year,
+          _deadline.month,
+          _deadline.day,
+          _deadline.hour + 6,
+          _deadline.minute,
+        ),
+      );
       final daily = old == null && widget.proyectoId.isEmpty;
       if (daily) {
         final response = await CompanyLearningService().call('daily-create', {
           'day': AttendanceGatewayService.dayKey(_day),
-          'workKind': _workKind, 'operationId': _id, 'title': task.titulo,
-          'details': task.descripcion, 'userId': _target,
-          'dueAt': DateTime.utc(_deadline.year, _deadline.month, _deadline.day, _deadline.hour + 6, _deadline.minute).toIso8601String(),
+          'workKind': _workKind,
+          'operationId': _id,
+          'title': task.titulo,
+          'details': task.descripcion,
+          'userId': _target,
+          'userIds': _shared ? _targets.toList() : [_target!],
+          'requiresEvidence': _requiresEvidence,
+          'dueAt': DateTime.utc(
+            _deadline.year,
+            _deadline.month,
+            _deadline.day,
+            _deadline.hour + 6,
+            _deadline.minute,
+          ).toIso8601String(),
         });
-        if (response['saved'] != true) throw StateError('No se confirmó la asignación.');
-      } else if (old == null) {await ActividadesService().crearActividad(task);} else {await ActividadesService().actualizarActividad(task);}
-      try {await OfflineWorkspace.remove(_uid, _draftKey);} catch (_) {}
+        if (response['saved'] != true)
+          throw StateError('No se confirmó la asignación.');
+      } else if (old == null) {
+        await ActividadesService().crearActividad(task);
+      } else {
+        await ActividadesService().actualizarActividad(task);
+      }
+      try {
+        await OfflineWorkspace.remove(_uid, _draftKey);
+      } catch (_) {}
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(daily ? 'Tarea asignada. Ya aparece en Tareas del día de la persona.' : 'Tarea guardada en el servidor. El aviso del teléfono se entrega por separado.')));
-      Navigator.pop(context, daily ? AttendanceGatewayService.dayKey(_day) : null);
-    } catch (e) {if (mounted) setState(() => _error = _explain(e));}
-    finally {if (mounted) setState(() => _busy = false);}
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            daily
+                ? 'Tarea asignada. Ya aparece en Tareas del día de la persona.'
+                : 'Tarea guardada en el servidor. El aviso del teléfono se entrega por separado.',
+          ),
+        ),
+      );
+      Navigator.pop(
+        context,
+        daily ? AttendanceGatewayService.dayKey(_day) : null,
+      );
+    } catch (e) {
+      if (mounted) setState(() => _error = _explain(e));
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
   }
+
+  Future<void> _choosePeople() async {
+    final selected = <String>{..._targets, if (_target != null) _target!};
+    final result = await showDialog<Set<String>>(
+      context: context,
+      builder: (c) => StatefulBuilder(
+        builder: (c, update) => AlertDialog(
+          title: const Text('Integrantes de la actividad'),
+          content: SizedBox(
+            width: 440,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    'Una actividad compartida, una entrega y una aprobación para todo el equipo.',
+                  ),
+                  for (final person in _people)
+                    CheckboxListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: Text(person['nombre']!),
+                      value: selected.contains(person['id']),
+                      onChanged: (checked) => update(() {
+                        if (checked == true && selected.length < 30)
+                          selected.add(person['id']!);
+                        else if (checked == false)
+                          selected.remove(person['id']);
+                      }),
+                    ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(c),
+              child: const Text('Cancelar'),
+            ),
+            FilledButton(
+              onPressed: selected.length < 2
+                  ? null
+                  : () => Navigator.pop(c, selected),
+              child: Text('Listo (${selected.length})'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (result != null && mounted)
+      setState(() {
+        _targets.clear();
+        _targets.addAll(result);
+        if (!_targets.contains(_target)) _target = _targets.first;
+      });
+  }
+
   Future<void> _date(bool deadline) async {
     final initial = deadline ? _deadline : _day;
-    final d = await showDatePicker(context: context, initialDate: initial, firstDate: DateTime(2020), lastDate: DateTime(2035));
+    final d = await showDatePicker(
+      context: context,
+      initialDate: initial,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2035),
+    );
     if (d == null || !mounted) return;
-    if (!deadline) {setState(() => _day = d); return;}
-    final t = await showTimePicker(context: context, initialTime: TimeOfDay.fromDateTime(_deadline));
-    if (t != null && mounted) setState(() => _deadline = DateTime(d.year,d.month,d.day,t.hour,t.minute));
+    if (!deadline) {
+      setState(() => _day = d);
+      return;
+    }
+    final t = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(_deadline),
+    );
+    if (t != null && mounted)
+      setState(
+        () => _deadline = DateTime(d.year, d.month, d.day, t.hour, t.minute),
+      );
   }
+
   @override
-  Widget build(BuildContext context) => PopScope(canPop: !_busy, child: Material(color: StiloColors.surface,
-    borderRadius: BorderRadius.vertical(top: Radius.circular(30)), child: SafeArea(child: SingleChildScrollView(
-      padding: EdgeInsets.fromLTRB(22,22,22,MediaQuery.viewInsetsOf(context).bottom+22), child: Form(key: _form, child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch, mainAxisSize: MainAxisSize.min, children: [
-        Text(widget.actividadAEditar == null ? 'Crear y asignar tarea' : 'Editar tarea', style: TextStyle(fontSize: 23,fontWeight: FontWeight.w800)),
-        SizedBox(height: 8), Text('La tarea se confirma en el servidor. Sin conexión puedes conservar un borrador.', style: TextStyle(color: StiloColors.text.withValues(alpha: .60))),
-        SizedBox(height: 12),
-        Text(widget.proyectoId.isEmpty ? (widget.operations ? 'INSTALACIONES Y ENVÍOS' : _workKind == 'extra' ? 'TAREA EXTRA · SIN PROYECTO' : 'TAREA DEL DÍA · CUALQUIER PERFIL ACTIVO') : 'TAREA VINCULADA AL PROYECTO', style: TextStyle(color: StiloColors.accent, fontWeight: FontWeight.w700, fontSize: 11)),
-        SizedBox(height: 15),
-        if (widget.operations) Padding(padding: EdgeInsets.only(bottom: 14), child: SegmentedButton<String>(segments: const [ButtonSegment(value: 'instalacion', label: Text('Instalación'), icon: Icon(Icons.handyman_outlined)), ButtonSegment(value: 'envio', label: Text('Envío'), icon: Icon(Icons.local_shipping_outlined))], selected: {_workKind}, onSelectionChanged: _busy ? null : (v) => setState(() => _workKind = v.first))),
-        TextFormField(contextMenuBuilder: privacyTextMenu, controller: _title, enabled: !_busy, maxLength: 150, decoration: InputDecoration(labelText: 'Nombre de la tarea'), validator: (v) => (v?.trim().length ?? 0)<3 ? 'Escribe al menos 3 caracteres.' : null),
-        TextFormField(contextMenuBuilder: privacyTextMenu, controller: _body, enabled: !_busy, maxLength: 2000, minLines: 2, maxLines: 5, decoration: InputDecoration(labelText: widget.operations ? 'Destino, referencia e indicaciones' : 'Indicaciones de la tarea')),
-        if (_loading) LinearProgressIndicator() else DropdownButtonFormField<String>(initialValue: _target, key: ValueKey('$_target:${_people.length}'), isExpanded: true,
-          decoration: InputDecoration(labelText: 'Asignar a'), items: _people.map((p) => DropdownMenuItem(value: p['id'], child: Text(p['nombre']!, overflow: TextOverflow.ellipsis))).toList(),
-          onChanged: _busy ? null : (v) => setState(() => _target = v), validator: (v) => v == null ? 'Selecciona a una persona.' : null),
-        Wrap(spacing: 8, children: [TextButton.icon(onPressed: _busy ? null : () => _date(false), icon: Icon(Icons.today_outlined), label: Text('Día ${DateFormat('dd/MM').format(_day)}')),
-          TextButton.icon(onPressed: _busy ? null : () => _date(true), icon: Icon(Icons.event_available_outlined), label: Text('Entrega ${DateFormat('dd/MM HH:mm').format(_deadline)}'))]),
-        if (_error != null) Padding(padding: EdgeInsets.symmetric(vertical: 12), child: Text(_error!, style: TextStyle(color: Colors.orangeAccent))),
-        if (!_loading && _people.isEmpty) TextButton(onPressed: _busy ? null : _load, child: Text('Volver a cargar integrantes')),
-        FilledButton.icon(onPressed: _busy || _loading ? null : _save, icon: Icon(Icons.add_task_rounded), label: Text(_busy ? 'Confirmando…' : 'Guardar y asignar')),
-        Wrap(spacing: 8, children: [TextButton(onPressed: _busy ? null : () => _draft(), child: Text('Guardar borrador local')), TextButton(onPressed: _busy ? null : () => _draft(restore:true), child: Text('Recuperar borrador'))]),
-      ]))))));
+  Widget build(BuildContext context) => PopScope(
+    canPop: !_busy,
+    child: Material(
+      color: StiloColors.surface,
+      borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+      child: SafeArea(
+        child: SingleChildScrollView(
+          padding: EdgeInsets.fromLTRB(
+            22,
+            22,
+            22,
+            MediaQuery.viewInsetsOf(context).bottom + 22,
+          ),
+          child: Form(
+            key: _form,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  widget.actividadAEditar == null
+                      ? 'Crear y asignar tarea'
+                      : 'Editar tarea',
+                  style: TextStyle(fontSize: 23, fontWeight: FontWeight.w800),
+                ),
+                SizedBox(height: 8),
+                Text(
+                  'La tarea se confirma en el servidor. Sin conexión puedes conservar un borrador.',
+                  style: TextStyle(
+                    color: StiloColors.text.withValues(alpha: .60),
+                  ),
+                ),
+                SizedBox(height: 12),
+                Text(
+                  widget.proyectoId.isEmpty
+                      ? (widget.operations
+                            ? 'INSTALACIONES Y ENVÍOS'
+                            : _workKind == 'extra'
+                            ? 'TAREA EXTRA · SIN PROYECTO'
+                            : 'TAREA DEL DÍA · CUALQUIER PERFIL ACTIVO')
+                      : 'TAREA VINCULADA AL PROYECTO',
+                  style: TextStyle(
+                    color: StiloColors.accent,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 11,
+                  ),
+                ),
+                SizedBox(height: 15),
+                if (widget.operations)
+                  Padding(
+                    padding: EdgeInsets.only(bottom: 14),
+                    child: SegmentedButton<String>(
+                      segments: const [
+                        ButtonSegment(
+                          value: 'instalacion',
+                          label: Text('Instalación'),
+                          icon: Icon(Icons.handyman_outlined),
+                        ),
+                        ButtonSegment(
+                          value: 'envio',
+                          label: Text('Envío'),
+                          icon: Icon(Icons.local_shipping_outlined),
+                        ),
+                      ],
+                      selected: {_workKind},
+                      onSelectionChanged: _busy
+                          ? null
+                          : (v) => setState(() => _workKind = v.first),
+                    ),
+                  ),
+                TextFormField(
+                  contextMenuBuilder: privacyTextMenu,
+                  controller: _title,
+                  enabled: !_busy,
+                  maxLength: 150,
+                  decoration: InputDecoration(labelText: 'Nombre de la tarea'),
+                  validator: (v) => (v?.trim().length ?? 0) < 3
+                      ? 'Escribe al menos 3 caracteres.'
+                      : null,
+                ),
+                if (_loading)
+                  LinearProgressIndicator()
+                else
+                  DropdownButtonFormField<String>(
+                    initialValue: _target,
+                    key: ValueKey('$_target:${_people.length}'),
+                    isExpanded: true,
+                    decoration: InputDecoration(labelText: 'Asignar a'),
+                    items: _people
+                        .map(
+                          (p) => DropdownMenuItem(
+                            value: p['id'],
+                            child: Text(
+                              p['nombre']!,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: _busy
+                        ? null
+                        : (v) => setState(() {
+                            _target = v;
+                            if (_shared && v != null) _targets.add(v);
+                          }),
+                    validator: (v) =>
+                        v == null ? 'Selecciona a una persona.' : null,
+                  ),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Actividad compartida'),
+                  subtitle: const Text('Varios integrantes, una sola entrega'),
+                  value: _shared,
+                  onChanged: _busy
+                      ? null
+                      : (value) => setState(() {
+                          _shared = value;
+                          if (_target != null) _targets.add(_target!);
+                        }),
+                ),
+                if (_shared)
+                  OutlinedButton.icon(
+                    onPressed: _busy ? null : _choosePeople,
+                    icon: const Icon(Icons.group_outlined),
+                    label: Text('Elegir integrantes (${_targets.length})'),
+                  ),
+                ExpansionTile(
+                  tilePadding: EdgeInsets.zero,
+                  title: const Text('Foto, indicaciones y fechas'),
+                  children: [
+                    SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('Foto o evidencia obligatoria'),
+                      value: _requiresEvidence,
+                      onChanged: _busy
+                          ? null
+                          : (value) =>
+                                setState(() => _requiresEvidence = value),
+                    ),
+                    if (!widget.operations && widget.proyectoId.isEmpty)
+                      DropdownButtonFormField<String>(
+                        initialValue: _workKind,
+                        decoration: const InputDecoration(
+                          labelText: 'Tipo de actividad',
+                        ),
+                        items: const [
+                          DropdownMenuItem(
+                            value: 'dia',
+                            child: Text('General / del día'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'extra',
+                            child: Text('Extra'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'mantenimiento',
+                            child: Text('Mantenimiento'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'preparacion',
+                            child: Text('Preparación'),
+                          ),
+                        ],
+                        onChanged: _busy
+                            ? null
+                            : (value) => setState(() => _workKind = value!),
+                      ),
+                    TextFormField(
+                      contextMenuBuilder: privacyTextMenu,
+                      controller: _body,
+                      enabled: !_busy,
+                      maxLength: 2000,
+                      minLines: 1,
+                      maxLines: 4,
+                      decoration: InputDecoration(
+                        labelText: widget.operations
+                            ? 'Destino e indicaciones (opcional)'
+                            : 'Indicaciones (opcional)',
+                      ),
+                    ),
+                    Wrap(
+                      spacing: 8,
+                      children: [
+                        TextButton.icon(
+                          onPressed: _busy ? null : () => _date(false),
+                          icon: Icon(Icons.today_outlined),
+                          label: Text(
+                            'Día ${DateFormat('dd/MM').format(_day)}',
+                          ),
+                        ),
+                        TextButton.icon(
+                          onPressed: _busy ? null : () => _date(true),
+                          icon: Icon(Icons.event_available_outlined),
+                          label: Text(
+                            'Entrega ${DateFormat('dd/MM HH:mm').format(_deadline)}',
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                if (_error != null)
+                  Padding(
+                    padding: EdgeInsets.symmetric(vertical: 12),
+                    child: Text(
+                      _error!,
+                      style: TextStyle(color: Colors.orangeAccent),
+                    ),
+                  ),
+                if (!_loading && _people.isEmpty)
+                  TextButton(
+                    onPressed: _busy ? null : _load,
+                    child: Text('Volver a cargar integrantes'),
+                  ),
+                FilledButton.icon(
+                  onPressed: _busy || _loading ? null : _save,
+                  icon: Icon(Icons.add_task_rounded),
+                  label: Text(_busy ? 'Confirmando…' : 'Guardar y asignar'),
+                ),
+                Wrap(
+                  spacing: 8,
+                  children: [
+                    TextButton(
+                      onPressed: _busy ? null : () => _draft(),
+                      child: Text('Guardar borrador local'),
+                    ),
+                    TextButton(
+                      onPressed: _busy ? null : () => _draft(restore: true),
+                      child: Text('Recuperar borrador'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
 }

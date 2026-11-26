@@ -51,8 +51,9 @@ class _AvisosSonorosState extends State<AvisosSonoros> with WidgetsBindingObserv
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _openedSubscription = FirebaseMessaging.onMessageOpenedApp.listen((message) => _openNotice(message.data['notificationId']?.toString()));
-    _escuchar();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _escuchar();
       _preparePushNotifications();
       if (kIsWeb) {
         _openNotice(Uri.base.queryParameters['notification']);

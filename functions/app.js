@@ -4,6 +4,9 @@ const base = require('./index');
 const { decodeVoiceWav } = require('./voice-audio');
 const { saunaAssistantV2 } = require('./assistant-v2');
 const { assignProjectActivity, repeatWorkdayReminders } = require('./team-operations');
+const { enterprisePreferences, enterpriseAccess } = require('./enterprise-preferences');
+const { cancelAttendanceReminders, syncBirthdayProjection } = require('./enterprise-notifications');
+const { enterpriseAttendance } = require('./enterprise-attendance');
 const {
   getVoiceStatus,
   enrollVoice,
@@ -83,9 +86,16 @@ const synthesizeAdminVoice = onCall(
 );
 
 module.exports = {
+  enterpriseFinance: require('./enterprise-finance').enterpriseFinance,
+  enterpriseInstallations: require('./enterprise-installations').enterpriseInstallations,
   ...base,
   // Keep the installed APK endpoint while using the audited attendance ledger.
   ...require('./attendance-functions'),
+  enterprisePreferences,
+  enterpriseAccess,
+  enterpriseAttendance,
+  cancelAttendanceReminders,
+  syncBirthdayProjection,
   saunaAssistantV2,
   getAdminVoiceStatus,
   enrollAdminVoice,

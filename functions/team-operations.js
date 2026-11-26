@@ -45,22 +45,11 @@ const assignProjectActivity = onCall({region:'us-central1',timeoutSeconds:30,max
   });
 });
 
-const repeatWorkdayReminders = onSchedule({region:'us-central1',schedule:'*/15 * * * *',timeZone:'America/Mexico_City',timeoutSeconds:120,maxInstances:1}, async () => {
-  const db = getFirestore(); const now = new Date();
-  const parts = Object.fromEntries(new Intl.DateTimeFormat('en-US',{timeZone:'America/Mexico_City',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(now).map(p=>[p.type,p.value]));
-  const dayKey = `${parts.year}${parts.month}${parts.day}`;
-  const users = await db.collection('usuarios').get();
-  for (let start=0;start<users.docs.length;start+=20) {
-    await Promise.all(users.docs.slice(start,start+20).map(async user => {
-      if (!remindersDue(user.data(),{horaEntrada:true},now).length && !remindersDue(user.data(),{},now).length) return;
-      const attendance = await db.collection('asistencias').doc(`${user.id}_${dayKey}`).get();
-      for (const reminder of remindersDue(user.data(),attendance.data(),now)) {
-        const ref = db.collection('notificaciones').doc(`recordatorio_${dayKey}_${reminder.action}_${reminder.slot}_${user.id}`);
-        try {
-          await ref.create({titulo:`Recuerda registrar tu ${reminder.action}`,mensaje:'Tu registro de hoy sigue pendiente. Abre Mi jornada en Inicio para revisarlo.',tipo:`asistencia_${reminder.action}`,destinatarioId:user.id,rolesDestinatarios:[],leidosPor:[],creadoPor:'sistema',fecha:FieldValue.serverTimestamp(),ruta:'/asistencia'});
-        } catch (error) { if (error.code !== 6 && error.code !== 'already-exists') throw error; }
-      }
-    }));
-  }
+const repeatWorkdayReminders = onSchedule({region:'us-central1',schedule:'*/5 * * * *',timeZone:'America/Mexico_City',timeoutSeconds:120,maxInstances:1}, async () => {
+  const {runWorkdayReminders,runBirthdayNotices}=require('./enterprise-notifications');
+  const db=getFirestore(),now=new Date();
+  await runWorkdayReminders(db,now);
+  await runBirthdayNotices(db,now);
 });
+
 module.exports = {assignProjectActivity,repeatWorkdayReminders};

@@ -21,7 +21,7 @@ class _PersonalMessageOverlayState extends State<PersonalMessageOverlay> with Wi
   Timer? _stop;
   bool _showing = false;
   @override
-  void initState() { super.initState(); WidgetsBinding.instance.addObserver(this); _listen(); }
+  void initState() { super.initState(); WidgetsBinding.instance.addObserver(this); WidgetsBinding.instance.addPostFrameCallback((_) { if (mounted) _listen(); }); }
   @override
   void didUpdateWidget(covariant PersonalMessageOverlay oldWidget) {
     super.didUpdateWidget(oldWidget);

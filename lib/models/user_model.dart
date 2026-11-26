@@ -7,10 +7,15 @@ class AppRoles {
   static const String maestro = 'maestro';
   static const String trabajador = 'trabajador';
   static const String almacenista = 'almacenista';
+  static const String finanzas = 'finanzas';
+  static const String contabilidad = 'contabilidad';
+  static const String direccion = 'direccion';
 }
 
 class UserModel {
   final String id;
+  final bool activo;
+  final List<String> permisosEmpresa;
   final bool panelPersonal;
   final bool panelIngenieria;
   bool get usesPersonalPanel => panelPersonal && rol == AppRoles.trabajador;
@@ -39,6 +44,8 @@ class UserModel {
 
   UserModel({
     required this.id,
+    this.activo = true,
+    this.permisosEmpresa = const [],
     this.panelPersonal = false,
     this.panelIngenieria = false,
     required this.nombre,
@@ -58,6 +65,10 @@ class UserModel {
     Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
     return UserModel(
       id: doc.id,
+      activo: data['activo'] != false,
+      permisosEmpresa: data['permisosEmpresa'] is List
+          ? List<String>.unmodifiable((data['permisosEmpresa'] as List).whereType<String>())
+          : const [],
       panelPersonal: data['panelPersonal'] == true,
       panelIngenieria: data['panelIngenieria'] == true,
       nombre: data['nombre'] ?? '',

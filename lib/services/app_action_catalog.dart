@@ -1,3 +1,8 @@
+import '../screens/finance_workspace_screen.dart' deferred as finance;
+import '../screens/purchases_workspace_screen.dart' deferred as purchases;
+import '../screens/installation_orders_screen.dart' deferred as installations;
+import '../widgets/deferred_workspace.dart';
+import '../workflow/enterprise_permissions.dart';
 import '../screens/warehouse_workspace_screen.dart';
 import '../screens/admin_team_progress_screen.dart';
 import '../screens/business_workspace_screen.dart';
@@ -111,6 +116,9 @@ class AppActionCatalog {
     final master = user.rol == AppRoles.maestro;
 
     final actions = <AppAction>[
+      if (EnterprisePermissions.canViewFinance(user)) AppAction(id: 'finanzas', title: 'Administración financiera', subtitle: 'Banco, efectivo, facturas y presupuestos', icon: Icons.account_balance_outlined, color: _mint, builder: (_) => DeferredWorkspace(load: finance.loadLibrary, title: 'Finanzas', builder: (_) => finance.FinanceWorkspaceScreen(user: user))),
+      if (EnterprisePermissions.canRequestPurchase(user) || EnterprisePermissions.canApprovePurchases(user)) AppAction(id: 'compras', title: 'Gestión de compras', subtitle: 'Solicitar y revisar compras', icon: Icons.shopping_bag_outlined, color: _amber, builder: (_) => DeferredWorkspace(load: purchases.loadLibrary, title: 'Compras', builder: (_) => purchases.PurchasesWorkspaceScreen(user: user, administrative: EnterprisePermissions.canApprovePurchases(user)))),
+      if (user.activo) AppAction(id: 'instalaciones_control', title: 'Órdenes de instalación', subtitle: 'Materiales, herramientas e historial', icon: Icons.handyman_outlined, color: _blue, builder: (_) => DeferredWorkspace(load: installations.loadLibrary, title: 'Instalaciones', builder: (_) => installations.InstallationOrdersScreen(user: user))),
       if (admin) AppAction(id: 'avances_equipo', title: 'Avances del equipo', subtitle: 'Todas las tareas, entregas, porcentajes y evidencias', icon: Icons.insights_rounded, color: _mint, primary: true, keywords: const ['cumplimiento','avance','finalizadas','aprobadas','pendientes','equipo'], builder: (_) => AdminTeamProgressScreen(user: user)),
       if (admin) AppAction(id: 'gestion', title: 'Gestión de la empresa', subtitle: 'Recursos Humanos, finanzas y administración', icon: Icons.business_center_outlined, color: _pink, keywords: const ['siigo', 'aspel', 'nomina', 'recursos humanos'], builder: (_) => BusinessWorkspaceScreen(user: user)),
       if (admin) AppAction(id: 'plan_personal', title: 'Organizar al personal', subtitle: 'Asignar comidas, compras, eventos y pendientes', icon: Icons.edit_calendar_rounded, color: _amber, keywords: const ['hogar','compras','eventos','comida','personal'], builder: (_) => PersonalPlanningAdminScreen(user: user)),

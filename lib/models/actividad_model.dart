@@ -19,11 +19,9 @@ List<String> _listaTextosGrowable(dynamic valor) {
 }
 
 String _normalizarEstatus(dynamic valor) {
-  final estatus = _textoSeguro(valor)
-      .trim()
-      .toLowerCase()
-      .replaceAll('-', '_')
-      .replaceAll(' ', '_');
+  final estatus = _textoSeguro(
+    valor,
+  ).trim().toLowerCase().replaceAll('-', '_').replaceAll(' ', '_');
   switch (estatus) {
     case 'completada':
     case 'completed':
@@ -48,6 +46,8 @@ class ActividadModel {
   String titulo;
   String descripcion;
   String asignadoATrabajadorId;
+  List<String> asignadosIds;
+  String workKind;
   DateTime fechaInicio;
   DateTime fechaTermino;
   DateTime fechaAsignada;
@@ -69,6 +69,8 @@ class ActividadModel {
     required this.titulo,
     required this.descripcion,
     required this.asignadoATrabajadorId,
+    List<String>? asignadosIds,
+    this.workKind = 'dia',
     required this.fechaInicio,
     required this.fechaTermino,
     DateTime? fechaAsignada,
@@ -83,7 +85,8 @@ class ActividadModel {
     this.porcentaje = 0,
     this.ultimoAvance,
     this.requiereEvidencia = true,
-  }) : fechaAsignada = fechaAsignada ?? fechaInicio,
+  }) : asignadosIds = List<String>.from(asignadosIds ?? const []),
+       fechaAsignada = fechaAsignada ?? fechaInicio,
        evidenciaFotos = List<String>.from(evidenciaFotos ?? const <String>[]),
        historialEventos = List<EventoActividad>.from(
          historialEventos ?? const <EventoActividad>[],
@@ -94,7 +97,8 @@ class ActividadModel {
   /// sumarlos, porque durante la migración ambos pueden representar los mismos
   /// archivos.
   bool get aprobada => estatus == 'completado' && aprobadoEn != null;
-  bool get porAprobar => estatus == 'en_revision' || estatus == 'completado' && aprobadoEn == null;
+  bool get porAprobar =>
+      estatus == 'en_revision' || estatus == 'completado' && aprobadoEn == null;
   String get estadoVisible => porAprobar ? 'en_revision' : estatus;
 
   int get totalEvidencias =>
@@ -131,13 +135,14 @@ class ActividadModel {
       proyectoId: _textoSeguro(json['proyectoId']),
       titulo: _textoSeguro(json['titulo']),
       descripcion: _textoSeguro(json['descripcion']),
-      asignadoATrabajadorId: _textoSeguro(
-        json['asignadoATrabajadorId'],
-      ),
+      asignadoATrabajadorId: _textoSeguro(json['asignadoATrabajadorId']),
+      asignadosIds: _listaTextosGrowable(json['asignadosIds']),
+      workKind: _textoSeguro(json['workKind']).isEmpty
+          ? 'dia'
+          : _textoSeguro(json['workKind']),
       fechaInicio: fechaInicio,
       fechaTermino: fechaTermino,
-      fechaAsignada:
-          _fechaDesdeFirestore(json['fechaAsignada']) ?? fechaInicio,
+      fechaAsignada: _fechaDesdeFirestore(json['fechaAsignada']) ?? fechaInicio,
       completadoEn: _fechaDesdeFirestore(json['completadoEn']),
       aprobadoEn: _fechaDesdeFirestore(json['aprobadoEn']),
       estatus: _normalizarEstatus(json['estatus']),
@@ -160,6 +165,9 @@ class ActividadModel {
       'titulo': titulo,
       'descripcion': descripcion,
       'asignadoATrabajadorId': asignadoATrabajadorId,
+      if (asignadosIds.isNotEmpty)
+        'asignadosIds': asignadosIds.toSet().toList(),
+      if (workKind != 'dia') 'workKind': workKind,
       'fechaInicio': fechaInicio,
       'fechaTermino': fechaTermino,
       'fechaAsignada': fechaAsignada,

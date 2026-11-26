@@ -11,6 +11,10 @@ const { getMessaging } = require('firebase-admin/messaging');
 const { generationConfig, assistantFailure, reserveAssistantRequest, ownedMediaUrls } = require('./assistant-policy');
 const { buildPushPayload } = require('./push-payload');
 const { reminderSlot } = require('./reminder-policy');
+const { shouldDeliverNotification, reminderCompleted } = require('./enterprise-notification-policy');
+const { canViewFinance, canApprovePurchases } = require('./enterprise-access');
+const { runWorkdayReminders } = require('./enterprise-notifications');
+const { deliverBatch } = require('./enterprise-push-delivery');
 
 initializeApp();
 setGlobalOptions({ region: 'us-central1', maxInstances: 10 });
@@ -318,13 +322,18 @@ exports.updateAttendance = onCall(
 );
 
 exports.sendSaunaStiloNotification = onDocumentCreated(
-  'notificaciones/{notificationId}',
+  {document:'notificaciones/{notificationId}',retry:true},
   async (event) => {
     const snapshot = event.data;
     if (!snapshot) return;
 
     const notificationId = event.params.notificationId;
     const data = snapshot.data();
+    if (data.cancelada === true) return;
+    if (data.recordatorio === true && data.asistenciaId) {
+      const current = await getFirestore().collection('asistencias').doc(String(data.asistenciaId)).get();
+      if (reminderCompleted(data.accion, current.data() || {})) return;
+    }
     const title = String(data.titulo || 'Sauna Stilo').trim();
     const body = String(data.mensaje || 'Tienes un nuevo aviso.').trim();
     const type = String(data.tipo || 'general').trim();
@@ -341,7 +350,7 @@ exports.sendSaunaStiloNotification = onDocumentCreated(
       const creator = creatorId
         ? await getFirestore().collection(USERS_COLLECTION).doc(creatorId).get()
         : null;
-      if (!creator || !creator.exists || creator.data().rol !== 'admin') {
+      if (!creator || !creator.exists || creator.data().rol !== 'admin' || creator.data().activo === false) {
         console.warn('[push] Alarma rechazada por falta de autorización', {
           notificationId,
           creatorId,
@@ -351,9 +360,11 @@ exports.sendSaunaStiloNotification = onDocumentCreated(
       }
     }
 
-    const users = await resolveRecipients({ targetUserId, targetRoles });
+    const users = await resolveRecipients({ targetUserId, targetRoles, data });
     const tokenOwners = new Map();
     for (const user of users) {
+      const preferences = await getFirestore().collection('preferencias_notificaciones').doc(user.id).get();
+      if (!shouldDeliverNotification(user.data(),data,preferences.data() || {})) continue;
       const tokens = Array.isArray(user.data().fcmTokens)
         ? user.data().fcmTokens.filter((token) => typeof token === 'string' && token)
         : [];
@@ -372,10 +383,9 @@ exports.sendSaunaStiloNotification = onDocumentCreated(
     const invalidTokens = new Set();
     for (let start = 0; start < tokens.length; start += MAX_TOKENS_PER_SEND) {
       const batchTokens = tokens.slice(start, start + MAX_TOKENS_PER_SEND);
-      const response = await getMessaging().sendEachForMulticast({
-        tokens: batchTokens,
-        ...buildPushPayload({ notificationId, data }),
-      });
+      const response = await deliverBatch({db:getFirestore(),key:notificationId,tokens:batchTokens,
+        payload:buildPushPayload({ notificationId, data }),send:message=>getMessaging().sendEachForMulticast(message)});
+      if (!response) continue;
 
       response.responses.forEach((item, index) => {
         const code = item.error && item.error.code;
@@ -519,67 +529,13 @@ exports.reminderSalida = onSchedule(
 
 exports.reminderAusencias = onSchedule(
   { schedule: '30 9 * * 1-6', timeZone: 'America/Mexico_City' },
-  async () => {
-    const db = getFirestore();
-    const dateKey = mexicoDateKey();
-    const users = await db.collection(USERS_COLLECTION).get();
-    await Promise.all(users.docs.map(async (user) => {
-      const data = user.data() || {};
-      if (String(data.rol || '').toLowerCase() === 'admin') return;
-      if (isMexicoSaturday() && data.trabajaSabados !== true) return;
-      const attendance = await db
-        .collection('asistencias')
-        .doc(`${user.id}_${dateKey}`)
-        .get();
-      if (attendance.exists && attendance.data().horaEntrada) return;
-      await db.collection('notificaciones').doc(`ausencia_${dateKey}_${user.id}`).set({
-        titulo: 'Te extrañamos en Sauna Stilo',
-        mensaje: 'Aún no aparece tu entrada de hoy. Regístrala o avisa a administración si necesitas apoyo.',
-        tipo: 'asistencia_ausente',
-        destinatarioId: user.id,
-        rolesDestinatarios: [],
-        leidosPor: [],
-        fecha: FieldValue.serverTimestamp(),
-      }, { merge: true });
-      await db.collection('notificaciones').doc(`ausencia_admin_${dateKey}_${user.id}`).set({
-        titulo: `Entrada pendiente · ${clean(data.nombre) || 'Trabajador'}`,
-        mensaje: `${clean(data.nombre) || 'Un integrante del equipo'} todavía no registra su entrada.`,
-        tipo: 'asistencia_ausente_admin',
-        destinatarioId: '',
-        rolesDestinatarios: ['admin'],
-        leidosPor: [],
-        fecha: FieldValue.serverTimestamp(),
-      }, { merge: true });
-    }));
-  },
+  async () => runWorkdayReminders(getFirestore(),new Date(),['entrada']),
 );
 
-async function createWorkdayReminders({ type, title, body }) {
-  const db = getFirestore();
-  const dateKey = mexicoDateKey();
-  const users = await db.collection(USERS_COLLECTION).get();
-  await Promise.all(users.docs.map(async (user) => {
-    const data = user.data() || {};
-    if (String(data.rol || '').toLowerCase() === 'admin') return null;
-    if (isMexicoSaturday() && data.trabajaSabados !== true) return null;
-    const attendance = await db
-      .collection('asistencias')
-      .doc(`${user.id}_${dateKey}`)
-      .get();
-    const attendanceData = attendance.exists ? attendance.data() || {} : {};
-    const reminder = reminderSlot({ type, user: data, attendance: attendanceData });
-    if (!reminder) return null;
-    return db.collection('notificaciones').doc(`jornada_${type}_${reminder.dateKey}_${user.id}_${reminder.slot}`).create({
-      titulo: title,
-      mensaje: body,
-      tipo: `asistencia_${type}`,
-      ruta: '/asistencia',
-      destinatarioId: user.id,
-      rolesDestinatarios: [],
-      leidosPor: [],
-      fecha: FieldValue.serverTimestamp(),
-    }).catch(error => { if (error.code !== 6 && error.code !== 'already-exists') throw error; });
-  }));
+async function createWorkdayReminders({ type }) {
+  // Retain existing deployed scheduler names. All use the same deterministic
+  // event IDs and individualized policy, so overlapping jobs do not nag twice.
+  return runWorkdayReminders(getFirestore(),new Date(),[type]);
 }
 
 function isMexicoSaturday() {
@@ -648,11 +604,23 @@ function distanceMeters(lat1, lon1, lat2, lon2) {
   return radius * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-async function resolveRecipients({ targetUserId, targetRoles }) {
+async function resolveRecipients({ targetUserId, targetRoles, data = {} }) {
   const db = getFirestore();
   const users = new Map();
   const forEveryone =
     targetUserId === 'todos' || targetRoles.includes('todos');
+
+  if (data.privadoFinanzas === true || data.privadoCompras === true) {
+    const snapshot = await db.collection(USERS_COLLECTION).get();
+    for (const person of snapshot.docs) {
+      if (data.privadoFinanzas === true ? canViewFinance(person.data()) : canApprovePurchases(person.data())) users.set(person.id,person);
+    }
+    if (targetUserId && !['todos',''].includes(targetUserId)) {
+      const recipient = await db.collection(USERS_COLLECTION).doc(targetUserId).get();
+      if (recipient.exists && (data.privadoFinanzas !== true || canViewFinance(recipient.data()))) users.set(recipient.id,recipient);
+    }
+    return [...users.values()];
+  }
 
   if (forEveryone) {
     const snapshot = await db.collection(USERS_COLLECTION).get();

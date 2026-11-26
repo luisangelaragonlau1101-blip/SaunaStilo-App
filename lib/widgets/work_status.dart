@@ -8,7 +8,13 @@ String workStatusLabel(String? status) => switch (status) {
   _ => 'Pendiente',
 };
 String workKindLabel(String? kind, {bool project = false}) => switch (kind) {
-  'proyecto' => 'Actividad de proyecto', 'extra' => 'Tarea extra', 'instalacion' => 'Instalación', 'envio' => 'Envío', _ => project ? 'Actividad de proyecto' : 'Tarea del día',
+  'proyecto' => 'Actividad de proyecto',
+  'extra' => 'Tarea extra',
+  'instalacion' => 'Instalación',
+  'preparacion' => 'Preparación de herramientas',
+  'mantenimiento' => 'Mantenimiento',
+  'envio' => 'Envío',
+  _ => project ? 'Actividad de proyecto' : 'Tarea del día',
 };
 Color workStatusColor(String? status) => switch (status) {
   'completado' => const Color(0xFF72CCA4),
@@ -16,12 +22,26 @@ Color workStatusColor(String? status) => switch (status) {
   'cambios_solicitados' => const Color(0xFFFF7E91),
   _ => const Color(0xFFBEA1DF),
 };
+
 class WorkStatus extends StatelessWidget {
   final String? status;
   const WorkStatus(this.status, {super.key});
-  @override Widget build(BuildContext context) => Container(
+  @override
+  Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
-    decoration: BoxDecoration(color: workStatusColor(status).withValues(alpha: .13), borderRadius: BorderRadius.circular(22)),
-    child: Text(workStatusLabel(status), style: TextStyle(color: Theme.of(context).brightness == Brightness.light ? Theme.of(context).colorScheme.onSurface : workStatusColor(status), fontSize: 12, fontWeight: FontWeight.w700)),
+    decoration: BoxDecoration(
+      color: workStatusColor(status).withValues(alpha: .13),
+      borderRadius: BorderRadius.circular(22),
+    ),
+    child: Text(
+      workStatusLabel(status),
+      style: TextStyle(
+        color: Theme.of(context).brightness == Brightness.light
+            ? Theme.of(context).colorScheme.onSurface
+            : workStatusColor(status),
+        fontSize: 12,
+        fontWeight: FontWeight.w700,
+      ),
+    ),
   );
 }

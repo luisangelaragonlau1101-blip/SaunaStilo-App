@@ -1,105 +1,140 @@
-import '../widgets/work_status.dart';
-import '../widgets/task_action_bar.dart';
-import '../presentation/appearance.dart';
-export 'work_workspace_screen.dart' show EquipoTareasScreen;
-import 'project_workspace_screen.dart';
-import 'daily_tasks_screen.dart';
-import 'extra_work_screen.dart';
-import '../workflow/staff_policy.dart';
-import '../widgets/project_progress_card.dart';
-import '../widgets/task_creation_choice.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import '../services/offline_workspace.dart';
-import 'package:intl/intl.dart';
-import '../models/actividad_model.dart';
-import '../models/user_model.dart';
-import '../widgets/project_picker.dart';
-import 'modal_asignar_actividades.dart';
-import 'trabajador_modal_detalle_actividad.dart' as worker;
-import 'admin_modal_detalle_actividad.dart' as admin;
 
+import '../models/user_model.dart';
+import '../services/offline_workspace.dart';
+import '../widgets/project_picker.dart';
+import '../widgets/project_progress_card.dart';
+import '../workflow/staff_policy.dart';
+import 'daily_tasks_screen.dart';
+import 'modal_asignar_actividades.dart';
+
+export 'work_workspace_screen.dart' show EquipoTareasScreen;
+
+/// Project filtering uses the same activity cards and delivery flow as Home.
+/// An activity is never copied merely because it appears in another workspace.
 class ProjectActivitiesScreen extends StatefulWidget {
   final UserModel usuario;
   final bool embedded;
   final String? initialProjectId, initialProjectTitle;
-  const ProjectActivitiesScreen({super.key, required this.usuario, this.embedded = false, this.initialProjectId, this.initialProjectTitle});
+  const ProjectActivitiesScreen({
+    super.key,
+    required this.usuario,
+    this.embedded = false,
+    this.initialProjectId,
+    this.initialProjectTitle,
+  });
   @override
-  State<ProjectActivitiesScreen> createState() => _ProjectActivitiesScreenState();
+  State<ProjectActivitiesScreen> createState() => _ProjectActivitiesState();
 }
-class _ProjectActivitiesScreenState extends State<ProjectActivitiesScreen> {
-  late String? _proyectoId = widget.initialProjectId;
-  late String _proyectoTitulo = widget.initialProjectTitle ?? 'Mis tareas';
-  bool _soloPendientes = true;
-  bool get _admin => widget.usuario.rol == AppRoles.admin;
-  bool get _puedeAsignar => canAssignWork(widget.usuario.rol);
 
-  Future<void> _crearTarea() async {
-    if (!_puedeAsignar) return;
-    if (_proyectoId != null) {
-      await _asignarEnProyecto(_proyectoId!);
+class _ProjectActivitiesState extends State<ProjectActivitiesScreen> {
+  late String? _projectId = widget.initialProjectId;
+  late String _projectTitle =
+      widget.initialProjectTitle ?? 'Todos mis proyectos';
+  int _revision = 0;
+  Future<void> _selectProject({bool create = false}) async {
+    final project = await elegirProyecto(
+      context,
+      widget.usuario,
+      titulo: create
+          ? 'Proyecto para la nueva actividad'
+          : 'Actividades de un proyecto',
+    );
+    if (project == null || !mounted) return;
+    setState(() {
+      _projectId = project.id;
+      _projectTitle = project.titulo;
+    });
+    if (create) await _create();
+  }
+
+  Future<void> _create() async {
+    if (_projectId == null) {
+      await _selectProject(create: true);
       return;
     }
-    await _seleccionarProyecto(crear: true);
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => ModalAsignarActividad(
+        proyectoId: _projectId!,
+        rolUsuario: widget.usuario.rol,
+      ),
+    );
+    if (mounted) setState(() => _revision++);
   }
-  Future<void> _asignarEnProyecto(String proyectoId) => showModalBottomSheet<void>(context: context, isScrollControlled: true,
-    backgroundColor: Colors.transparent, builder: (_) => ModalAsignarActividad(
-      proyectoId: proyectoId, rolUsuario: widget.usuario.rol));
-  Future<void> _seleccionarProyecto({bool crear = false}) async {
-    final proyecto = await elegirProyecto(context, widget.usuario,
-      titulo: crear ? 'Proyecto para la nueva tarea' : 'Tareas de un proyecto');
-    if (!mounted || proyecto == null) return;
-    setState(() { _proyectoId = proyecto.id; _proyectoTitulo = proyecto.titulo; });
-    if (crear) await _asignarEnProyecto(proyecto.id);
-  }
-  void _abrir(ActividadModel tarea) {
-    if (_admin || tarea.asignadoATrabajadorId == widget.usuario.id) {
-      showModalBottomSheet<void>(context: context, isScrollControlled: true,
-        backgroundColor: Colors.transparent, builder: (_) => _admin
-          ? admin.ModalDetalleActividad(actividad: tarea)
-          : worker.ModalDetalleActividad(actividad: tarea));
-    } else {
-      showDialog<void>(context: context, builder: (context) => AlertDialog(
-        title: Text(tarea.titulo), content: SingleChildScrollView(child: Text(
-          '${tarea.descripcion}\n\nEstado: ${tarea.estatus}\nEvidencias: ${tarea.totalEvidencias}\nEntrega: ${DateFormat('dd/MM HH:mm').format(tarea.fechaTermino)}\n\nLos avances los registra la persona asignada.')),
-        actions: [TextButton(onPressed: () => Navigator.pop(context), child: Text('Cerrar'))]));
+
+  @override
+  void didUpdateWidget(covariant ProjectActivitiesScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.usuario.id != widget.usuario.id ||
+        oldWidget.usuario.rol != widget.usuario.rol) {
+      _projectId = null;
+      _projectTitle = 'Todos mis proyectos';
+      _revision++;
     }
   }
+
   @override
-  Widget build(BuildContext context) {
-    Theme.of(context);
-    Query<Map<String, dynamic>> query = FirebaseFirestore.instance.collection('actividades');
-    if (_proyectoId != null) { query = query.where('proyectoId', isEqualTo: _proyectoId); }
-    else if (!_admin) { query = query.where('asignadoATrabajadorId', isEqualTo: widget.usuario.id); }
-    return Scaffold(backgroundColor: StiloColors.background,
-      appBar: widget.embedded ? null : AppBar(title: Text('Actividades de proyectos')),
-      body: Column(children: [
-        Padding(padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10), child: Wrap(spacing: 8, runSpacing: 6, children: [
-          ActionChip(avatar: Icon(Icons.folder_open_rounded, size: 18), label: Text(_proyectoId == null ? 'Por proyecto' : _proyectoTitulo), onPressed: _seleccionarProyecto),
-          if (_proyectoId != null) ActionChip(label: Text('Ver mis tareas'), onPressed: () => setState(() => _proyectoId = null)),
-          FilterChip(label: Text('Pendientes'), selected: _soloPendientes, onSelected: (v) => setState(() => _soloPendientes = v)),
-        ])),
-        if (_puedeAsignar) Padding(padding: EdgeInsets.fromLTRB(16, 0, 16, 12), child: SizedBox(width: double.infinity,
-          child: FilledButton.icon(onPressed: _crearTarea, icon: Icon(Icons.add_rounded), label: Text('Asignar actividad de proyecto')))),
-        if (!_puedeAsignar) Padding(padding: EdgeInsets.fromLTRB(16, 0, 16, 10), child: Column(children: [Text('Completa tus asignaciones y añade evidencias. No puedes cambiar sus instrucciones ni asignarte tareas.', style: TextStyle(color: StiloColors.text.withValues(alpha: .60), fontSize: 12)), TextButton.icon(onPressed: () => Navigator.push(context, MaterialPageRoute<void>(builder: (_) => ExtraWorkScreen(user: widget.usuario))), icon: Icon(Icons.auto_awesome_rounded, color: Color(0xFFFFB876)), label: Text('Reportar trabajo extra ya realizado'))])),
-        if (_proyectoId != null) Padding(padding: EdgeInsets.symmetric(horizontal: 16), child: ProjectProgressCard(projectId: _proyectoId!)),
-        Expanded(child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(stream: query.snapshots(includeMetadataChanges: true), builder: (context, snapshot) {
-          if (snapshot.hasError) return Center(child: Padding(padding: EdgeInsets.all(24), child: Text('No pudimos consultar estas tareas. Revisa tu conexión o pide a Administración que confirme tu asignación al proyecto.')));
-          if (!snapshot.hasData) return Center(child: CircularProgressIndicator());
-          final tareas = snapshot.data!.docs.map((d) => ActividadModel.fromJson(d.data(), d.id)).where((t) => !_soloPendientes || !t.aprobada).toList()
-            ..sort((a,b) => a.fechaTermino.compareTo(b.fechaTermino));
-          if (tareas.isEmpty) return Center(child: Text(snapshot.data!.metadata.isFromCache ? 'Sin tareas guardadas en este dispositivo. Conecta para consultar el servidor.' : 'No hay tareas en esta vista.'));
-          return Column(children: [OfflineDataBadge(cached: snapshot.data!.metadata.isFromCache, pending: snapshot.data!.metadata.hasPendingWrites), Expanded(child: ListView.builder(padding: EdgeInsets.fromLTRB(12, 0, 12, 24), itemCount: tareas.length, itemBuilder: (context, i) {
-            final t = tareas[i];
-            return Card(child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [ListTile(contentPadding: EdgeInsets.all(16),
-              leading: Icon(t.aprobada ? Icons.task_alt_rounded : Icons.assignment_outlined, color: StiloColors.accent),
-              title: Text(t.titulo, style: TextStyle(fontWeight: FontWeight.w700)),
-              subtitle: Text('${t.proyectoId.isEmpty ? 'General' : 'Proyecto'} · ${workStatusLabel(t.estadoVisible)} · ${t.totalEvidencias} evidencias\n${DateFormat('dd/MM · HH:mm').format(t.fechaTermino)}'),
-              trailing: Icon(Icons.chevron_right_rounded), onTap: () => _abrir(t)),
-              Padding(padding: const EdgeInsets.fromLTRB(16, 0, 16, 16), child: TaskActionBar(status: t.estadoVisible, admin: _admin, responsible: t.asignadoATrabajadorId == widget.usuario.id, onComplete: () => _abrir(t), onApprove: () => _abrir(t))),
-            ]));
-          }))]);
-        })),
-      ]));
-  }
+  Widget build(BuildContext context) => Scaffold(
+    appBar: widget.embedded
+        ? null
+        : AppBar(title: const Text('Actividades por proyecto')),
+    body: Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+          child: Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              ActionChip(
+                avatar: const Icon(Icons.folder_open_outlined, size: 18),
+                label: Text(_projectTitle),
+                onPressed: _selectProject,
+              ),
+              if (_projectId != null)
+                ActionChip(
+                  label: const Text('Ver todas mis actividades'),
+                  onPressed: () => setState(() {
+                    _projectId = null;
+                    _projectTitle = 'Todos mis proyectos';
+                  }),
+                ),
+            ],
+          ),
+        ),
+        if (canAssignWork(widget.usuario.rol))
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: _create,
+                icon: const Icon(Icons.add_task_rounded),
+                label: const Text('Asignar actividad de proyecto'),
+              ),
+            ),
+          ),
+        if (_projectId != null)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+            child: ProjectProgressCard(projectId: _projectId!),
+          ),
+        Expanded(
+          child: DailyTasksScreen(
+            key: ValueKey('$_projectId:$_revision:${widget.usuario.id}'),
+            user: widget.usuario,
+            embedded: true,
+            kind: 'all',
+            projectId: _projectId,
+            allDates: true,
+            showCreate: false,
+          ),
+        ),
+      ],
+    ),
+  );
 }

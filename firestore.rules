@@ -19,7 +19,38 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      return role() == 'admin';
+      return activeProfile() && role() == 'admin';
+    }
+
+    function activeProfile() {
+      return hasProfile() && get(userPath()).data.get('activo', true) != false;
+    }
+
+    function enterprisePermission(key) {
+      return activeProfile() && (role() == 'admin'
+        || get(userPath()).data.get('permisosEmpresa', []).hasAny([key]));
+    }
+
+    function financeAccess() {
+      return activeProfile() && (role() in ['admin','finanzas','contabilidad']
+        || enterprisePermission('finanzas'));
+    }
+
+    function financeView() {
+      return financeAccess() || enterprisePermission('direccion');
+    }
+
+    function purchaseAccess() {
+      return financeAccess() || enterprisePermission('autorizarCompras');
+    }
+
+    function installationManager() {
+      return enterprisePermission('instalaciones');
+    }
+
+    function installationCoordinator() {
+      return activeProfile() && (role() in ['admin','maestro','almacenista']
+        || enterprisePermission('instalaciones') || enterprisePermission('coordinarInstalaciones'));
     }
 
     function isWarehouse() {
@@ -252,7 +283,6 @@ service cloud.firestore {
         && request.resource.data.get('coloresFavoritos', '').size() <= 160
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
           'nombre',
-          'cumpleanos',
           'fotoUrl',
           'fotoRuta',
           'fcmTokens',
@@ -267,6 +297,9 @@ service cloud.firestore {
 
     function isSafeNotificationCreate() {
       return signedIn()
+        && request.resource.data.get('privadoFinanzas', false) != true
+        && request.resource.data.get('privadoCompras', false) != true
+        && !request.resource.data.get('tipo','').matches('(factura|finanza|compra|instalacion).*')
         && request.resource.data.creadoPor == request.auth.uid
         && request.resource.data.destinatarioId != 'todos'
         && request.resource.data.rolesDestinatarios is list
@@ -351,7 +384,12 @@ service cloud.firestore {
     function assignedToActivity(activityId) {
       let activity = get(/databases/$(database)/documents/actividades/$(activityId));
       return isAdmin()
-        || activity.data.asignadoATrabajadorId == request.auth.uid;
+        || activityOwned(activity.data);
+    }
+
+    function activityOwned(data) {
+      return activeProfile() && (data.get('asignadoATrabajadorId', '') == request.auth.uid
+        || data.get('asignadosIds', []).hasAny([request.auth.uid]));
     }
 
     match /usuarios/{userId} {
@@ -483,14 +521,17 @@ service cloud.firestore {
       let d = request.resource.data;
       let project = get(/databases/$(database)/documents/proyectos/$(d.proyectoId)).data;
       return projectMaster(d.proyectoId)
-        && d.keys().hasOnly(['proyectoId','titulo','descripcion','asignadoATrabajadorId','fechaInicio','fechaTermino','fechaAsignada','completadoEn','estatus','observacionesAdmin','comentariosTrabajador','evidenciaFotos','historialEventos','evidenciasCount','cantidadEvidencias','ultimoAvance','requiereEvidencia','creadoPor','creadoEn'])
+        && d.keys().hasOnly(['proyectoId','titulo','descripcion','asignadoATrabajadorId','asignadosIds','workKind','fechaInicio','fechaTermino','fechaAsignada','completadoEn','estatus','observacionesAdmin','comentariosTrabajador','evidenciaFotos','historialEventos','evidenciasCount','cantidadEvidencias','ultimoAvance','requiereEvidencia','creadoPor','creadoEn'])
         && d.creadoPor == request.auth.uid && d.creadoEn == request.time
         && d.titulo is string && d.titulo.size() > 0 && d.titulo.size() <= 250
         && d.descripcion is string && d.descripcion.size() <= 5000
         && d.asignadoATrabajadorId is string && d.asignadoATrabajadorId in project.encargados
+        && (!('asignadosIds' in d) || (d.asignadosIds is list && d.asignadosIds.size() > 0
+          && d.asignadosIds.size() <= 30 && d.asignadosIds[0] == d.asignadoATrabajadorId
+          && d.asignadosIds.hasOnly(project.encargados)))
         && d.fechaInicio is timestamp && d.fechaAsignada is timestamp && d.fechaTermino is timestamp
         && d.fechaTermino > d.fechaInicio && d.estatus == 'pendiente'
-        && d.requiereEvidencia == true && d.evidenciasCount == 0 && d.cantidadEvidencias == 0
+        && d.requiereEvidencia is bool && d.evidenciasCount == 0 && d.cantidadEvidencias == 0
         && d.evidenciaFotos == [] && d.historialEventos == []
         && d.completadoEn == null && d.ultimoAvance == null
         && d.observacionesAdmin == '' && d.comentariosTrabajador == '';
@@ -507,13 +548,23 @@ service cloud.firestore {
         && d.fechaTermino is timestamp && d.fechaTermino > resource.data.fechaInicio;
     }
 
-    function validWorkerActivityUpdate() {
+    function validDeliveryEvidence(activityId) {
+      let old = resource.data;
+      let data = request.resource.data;
+      return old.get('requiereEvidencia', false) != true
+        || old.get('evidenciaFotos', []).size() > 0
+        || (data.get('evidenciaEntregaId','') is string && data.get('evidenciaEntregaId','').size() > 0
+          && getAfter(/databases/$(database)/documents/actividades/$(activityId)/evidencias/$(data.evidenciaEntregaId)).data.get('url','').size() > 0);
+    }
+
+    function validWorkerActivityUpdate(activityId) {
       let before = resource.data.get('estatus', 'pendiente');
       let after = request.resource.data.get('estatus', 'pendiente');
       let pct = request.resource.data.get('porcentaje', 0);
       return before in ['pendiente', 'en_progreso', 'en_proceso', 'progreso', 'cambios_solicitados']
         && after in ['pendiente', 'en_progreso', 'en_proceso', 'progreso', 'cambios_solicitados', 'en_revision']
-        && (after != 'en_revision' || request.resource.data.completadoEn == request.time)
+        && (after != 'en_revision' || (request.resource.data.completadoEn == request.time
+          && validDeliveryEvidence(activityId)))
         && pct is int && pct >= 0 && pct <= 100;
     }
 
@@ -523,13 +574,14 @@ service cloud.firestore {
         && !exists(/databases/$(database)/documents/actividades/$(activityId));
       allow read: if signedIn()
         && (isAdmin()
-          || resource.data.asignadoATrabajadorId == request.auth.uid
+          || activityOwned(resource.data)
           || assignedToProject(resource.data.proyectoId));
-      allow create: if isAdmin() || validMasterTask();
-      allow delete: if isAdmin();
-      allow update: if isAdmin() || editsOwnMasterTask()
-        || (signedIn()
-          && resource.data.asignadoATrabajadorId == request.auth.uid
+      allow create: if (isAdmin() || validMasterTask())
+        && request.resource.data.get('installationOrderId','') == '';
+      allow delete: if isAdmin() && resource.data.get('installationOrderId','') == '';
+      allow update: if resource.data.get('installationOrderId','') == '' && (isAdmin() || editsOwnMasterTask()
+        || (activeProfile()
+          && activityOwned(resource.data)
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
             'estatus',
             'iniciadoEn',
@@ -538,15 +590,22 @@ service cloud.firestore {
             'comentariosTrabajador',
             'evidenciasCount',
             'cantidadEvidencias',
+            'evidenciaEntregaId',
             'porcentaje'
           ])
-          && validWorkerActivityUpdate());
+          && validWorkerActivityUpdate(activityId)));
 
       match /evidencias/{evidenceId} {
-        allow read, write: if signedIn() && assignedToActivity(activityId);
+        allow read: if activeProfile() && assignedToActivity(activityId);
+        allow create: if activeProfile() && assignedToActivity(activityId)
+          && get(/databases/$(database)/documents/actividades/$(activityId)).data.get('installationOrderId','') == '';
+        allow update, delete: if false;
       }
       match /avances/{progressId} {
-        allow read, write: if signedIn() && assignedToActivity(activityId);
+        allow read: if activeProfile() && assignedToActivity(activityId);
+        allow create: if activeProfile() && assignedToActivity(activityId)
+          && get(/databases/$(database)/documents/actividades/$(activityId)).data.get('installationOrderId','') == '';
+        allow update, delete: if false;
       }
     }
 
@@ -663,7 +722,9 @@ service cloud.firestore {
     }
 
     function notificationVisible(data) {
-      return signedIn() && (data.get('destinatarioId', '') == request.auth.uid
+      return activeProfile()
+        && (data.get('privadoFinanzas', false) != true || financeView())
+        && (data.get('destinatarioId', '') == request.auth.uid
         || data.get('destinatarioId', '') == 'todos'
         || data.get('rolesDestinatarios', []).hasAny([role(), 'todos']));
     }
@@ -767,13 +828,16 @@ service cloud.firestore {
     match /solicitudes_herramientas/{documentId} {
       allow read: if signedIn();
       allow create: if initialToolRequest();
-      allow update: if workerToolReport() || warehouseApproval(documentId);
+      allow update: if resource.data.get('origenOrden','') == ''
+        && (workerToolReport() || warehouseApproval(documentId));
       // Requests and confirmed movements are retained, including cancellations.
       allow delete: if false;
       match /historial/{eventId} {
         allow read: if isWarehouse() || (signedIn()
           && get(/databases/$(database)/documents/solicitudes_herramientas/$(documentId)).data.trabajadorId == request.auth.uid);
-        allow create: if isWarehouse() && eventId in ['salida','rechazo','entrada']
+        allow create: if isWarehouse()
+          && get(/databases/$(database)/documents/solicitudes_herramientas/$(documentId)).data.get('origenOrden','') == ''
+          && eventId in ['salida','rechazo','entrada']
           && request.resource.data.keys().hasOnly(['accion','solicitudId','insumoId','cantidad','responsableId','responsableNombre','trabajadorId','fecha','observacion','conFalla'])
           && request.resource.data.accion == eventId && request.resource.data.solicitudId == documentId
           && request.resource.data.responsableId == request.auth.uid && request.resource.data.fecha == request.time
@@ -804,9 +868,11 @@ service cloud.firestore {
     }
     match /cajitas_inventario/{documentId} {
       allow read: if signedIn();
-      allow create, delete: if isWarehouse();
-      allow update: if isWarehouse()
-        || isValidWorkerToolUpdate(documentId);
+      allow create: if isWarehouse() && request.resource.data.get('ordenInstalacionId','') == '';
+      allow delete: if isWarehouse() && resource.data.get('ordenInstalacionId','') == '';
+      allow update: if resource.data.get('ordenInstalacionId','') == ''
+        && request.resource.data.get('ordenInstalacionId','') == ''
+        && (isWarehouse() || isValidWorkerToolUpdate(documentId));
     }
     match /traspasos_inventario/{documentId} {
       allow read: if isWarehouse();
@@ -815,8 +881,10 @@ service cloud.firestore {
       allow read: if signedIn()
         && (resource.data.get('origen_usuario_id', '') == request.auth.uid
           || resource.data.get('destino_usuario_id', '') == request.auth.uid);
-      allow create: if isWarehouse() || createsValidToolTransfer(documentId);
-      allow update: if isWarehouse() || resolvesOwnToolTransfer(documentId);
+      allow create: if get(toolPath(request.resource.data.herramienta_id)).data.get('ordenInstalacionId','') == ''
+        && (isWarehouse() || createsValidToolTransfer(documentId));
+      allow update: if get(toolPath(resource.data.herramienta_id)).data.get('ordenInstalacionId','') == ''
+        && (isWarehouse() || resolvesOwnToolTransfer(documentId));
       allow delete: if isWarehouse();
     }
     match /reparaciones_taller/{documentId} {
@@ -877,9 +945,79 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // Legacy admin access does not bypass immutable movement history or game turns.
+    // New enterprise mutations run through authenticated, transactional
+    // callables. These rules protect reads and prohibit bypasses by clients.
+    match /gestion_movimientos/{id} {
+      allow read: if financeView();
+      allow create: if isAdmin()
+        && request.resource.data.get('schemaVersion', 0) != 2026
+        && request.resource.data.keys().hasOnly(['tipo','concepto','centavos','moneda','categoria','fecha','referencia','creadoPor','creadoEn'])
+        && request.resource.data.tipo in ['ingreso','egreso']
+        && request.resource.data.centavos is int && request.resource.data.centavos > 0
+        && request.resource.data.centavos <= 99999999999
+        && request.resource.data.creadoPor == request.auth.uid
+        && request.resource.data.creadoEn == request.time;
+      allow update, delete: if false;
+    }
+    match /gestion_compras/{id} {
+      allow read: if purchaseAccess() || (activeProfile() && resource.data.creadoPor == request.auth.uid);
+      allow write: if false;
+    }
+    match /{financeCollection}/{id} {
+      allow read: if financeCollection in ['gestion_cuentas','gestion_facturas','gestion_presupuestos','gestion_config','gestion_auditoria','gestion_conciliaciones','gestion_proyectos'] && financeView();
+      allow write: if false;
+    }
+    match /instalacion_ordenes/{orderId} {
+      allow read: if activeProfile() && (installationManager() || resource.data.participantes.hasAny([request.auth.uid]));
+      allow write: if false;
+      match /eventos/{eventId} {
+        allow read: if activeProfile() && (installationManager()
+          || get(/databases/$(database)/documents/instalacion_ordenes/$(orderId)).data.participantes.hasAny([request.auth.uid]));
+        allow write: if false;
+      }
+    }
+    match /instalacion_plantillas/{id} {
+      allow read: if installationCoordinator();
+      allow write: if false;
+    }
+    match /preferencias_personales/{id} {
+      allow read: if activeProfile() && request.auth.uid == id;
+      allow write: if false;
+    }
+    match /cumpleanos_equipo/{id} {
+      allow read: if activeProfile();
+      allow write: if false;
+    }
+    match /preferencias_notificaciones/{id} {
+      allow read: if activeProfile() && request.auth.uid == id;
+      allow create, update: if activeProfile() && request.auth.uid == id
+        && request.resource.data.keys().hasOnly(['tareas','compras','finanzas','instalaciones','jornada','cumpleanos','generales','actualizadoEn'])
+        && request.resource.data.get('tareas',true) is bool
+        && request.resource.data.get('compras',true) is bool
+        && request.resource.data.get('finanzas',true) is bool
+        && request.resource.data.get('instalaciones',true) is bool
+        && request.resource.data.get('jornada',true) is bool
+        && request.resource.data.get('cumpleanos',true) is bool
+        && request.resource.data.get('generales',true) is bool
+        && request.resource.data.actualizadoEn == request.time;
+      allow delete: if false;
+    }
+    match /empresa_auditoria/{id} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    // Legacy admin access must not bypass immutable enterprise ledgers,
+    // reserved inventory, server-owned orders, private dates or game turns.
     match /{rootCollection}/{document=**} {
-      allow read, write: if isAdmin() && !(rootCollection in ['solicitudes_herramientas','partidas_equipo']);
+      allow read, write: if isAdmin() && !(rootCollection in [
+        'solicitudes_herramientas','partidas_equipo','actividades','cajitas_inventario','traspasos_inventario',
+        'gestion_movimientos','gestion_cuentas','gestion_facturas','gestion_compras','gestion_presupuestos',
+        'gestion_config','gestion_auditoria','gestion_operaciones','gestion_conciliaciones','gestion_cfdi_uuids','gestion_proyectos',
+        'instalacion_ordenes','instalacion_plantillas','instalacion_operaciones',
+        'preferencias_personales','preferencias_notificaciones','cumpleanos_equipo',
+        'empresa_auditoria','jornada_operaciones','push_entregas'
+      ]);
     }
   }
 }

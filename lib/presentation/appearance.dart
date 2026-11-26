@@ -26,6 +26,9 @@ class AppearanceController extends ChangeNotifier {
   String? _uid;
   String _palette = 'stilo';
   bool celebrations = true, compact = false, modern = true;
+  // Decoration is opt-in and is never part of the startup prerequisites.
+  bool seasonalEffects = false;
+  DateTime? anniversaryDate;
   int _generation = 0;
   Future<void>? _writes;
   String? get userId => _uid;
@@ -33,6 +36,7 @@ class AppearanceController extends ChangeNotifier {
   Future<void> bindUser(String? uid) async {
     final generation = ++_generation;
     _uid = uid; _palette = 'stilo'; celebrations = true; compact = false; modern = true;
+    seasonalEffects = false; anniversaryDate = null;
     notifyListeners();
     if (uid == null) return;
     try {
@@ -42,15 +46,20 @@ class AppearanceController extends ChangeNotifier {
       celebrations = prefs.getBool('stilo.appearance.$uid.celebrations') ?? true;
       compact = prefs.getBool('stilo.appearance.$uid.compact') ?? false;
       modern = prefs.getBool('stilo.appearance.$uid.modern') ?? true;
+      seasonalEffects = prefs.getBool('stilo.appearance.$uid.seasonalEffects') ?? false;
+      anniversaryDate = DateTime.tryParse(prefs.getString('stilo.appearance.$uid.anniversary') ?? '');
       notifyListeners();
     } catch (_) { /* Defaults remain usable if device storage is unavailable. */ }
   }
-  Future<void> save({String? paletteId, bool? festive, bool? simple, bool? contemporary}) async {
+  Future<void> setSeasonalEffects(bool enabled) => save(seasonal: enabled);
+  Future<void> save({String? paletteId, bool? festive, bool? simple, bool? contemporary, bool? seasonal, DateTime? anniversary, bool clearAnniversary = false}) async {
     final uid = _uid;
     if (uid == null) throw StateError('Inicia sesión para guardar tu estilo.');
     if (paletteId != null && !stiloPalettes.any((p) => p.id == paletteId)) throw ArgumentError('Color desconocido.');
     final generation = _generation;
     final nextModern = contemporary ?? modern;
+    final nextSeasonal = seasonal ?? seasonalEffects;
+    final nextAnniversary = clearAnniversary ? null : anniversary ?? anniversaryDate;
     final nextPalette = paletteId ?? _palette, nextCelebrations = festive ?? celebrations, nextCompact = simple ?? compact;
     final operation = (_writes ?? Future<void>.value()).catchError((Object _) {}).then((_) async {
       final prefs = await SharedPreferences.getInstance();
@@ -58,9 +67,14 @@ class AppearanceController extends ChangeNotifier {
       final savedFestive = await prefs.setBool('stilo.appearance.$uid.celebrations', nextCelebrations);
       final savedCompact = await prefs.setBool('stilo.appearance.$uid.compact', nextCompact);
       final savedModern = await prefs.setBool('stilo.appearance.$uid.modern', nextModern);
-      if (!saved || !savedFestive || !savedCompact || !savedModern) throw StateError('No se pudo guardar el estilo en este dispositivo.');
+      final savedSeasonal = await prefs.setBool('stilo.appearance.$uid.seasonalEffects', nextSeasonal);
+      final savedAnniversary = nextAnniversary == null
+          ? await prefs.remove('stilo.appearance.$uid.anniversary')
+          : await prefs.setString('stilo.appearance.$uid.anniversary', nextAnniversary.toIso8601String());
+      if (!saved || !savedFestive || !savedCompact || !savedModern || !savedSeasonal || !savedAnniversary) throw StateError('No se pudo guardar el estilo en este dispositivo.');
       if (generation != _generation) return;
-      _palette = nextPalette; celebrations = nextCelebrations; compact = nextCompact; modern = nextModern; notifyListeners();
+      _palette = nextPalette; celebrations = nextCelebrations; compact = nextCompact; modern = nextModern;
+      seasonalEffects = nextSeasonal; anniversaryDate = nextAnniversary; notifyListeners();
     });
     _writes = operation;
     await operation;
@@ -152,9 +166,9 @@ class AppearanceScreen extends StatefulWidget {
 class _AppearanceState extends State<AppearanceScreen> {
   bool busy = false;
   String? error;
-  Future<void> change({String? palette, bool? festive, bool? simple, bool? contemporary}) async {
+  Future<void> change({String? palette, bool? festive, bool? simple, bool? contemporary, bool? seasonal, DateTime? anniversary, bool clearAnniversary = false}) async {
     setState(() {busy = true; error = null;});
-    try { await AppearanceController.instance.save(paletteId: palette, festive: festive, simple: simple, contemporary: contemporary); }
+    try { await AppearanceController.instance.save(paletteId: palette, festive: festive, simple: simple, contemporary: contemporary, seasonal: seasonal, anniversary: anniversary, clearAnniversary: clearAnniversary); }
     catch (_) { if (mounted) setState(() => error = 'No se guardó el cambio. Intenta otra vez.'); }
     finally { if (mounted) setState(() => busy = false); }
   }
@@ -174,7 +188,18 @@ class _AppearanceState extends State<AppearanceScreen> {
       ]))),
       SwitchListTile(title: const Text('Interfaz moderna'), subtitle: const Text('Navegación adaptable y nuevos accesos. Desactívala para volver a la interfaz original.'), value: settings.modern, onChanged: busy ? null : (v) => change(contemporary: v)),
       SwitchListTile(title: const Text('Inicio sencillo'), subtitle: const Text('Oculta el resumen adicional; conserva tus accesos y tu jornada.'), value: settings.compact, onChanged: busy ? null : (v) => change(simple: v)),
-      SwitchListTile(title: const Text('Celebraciones'), subtitle: const Text('Detalles de temporada y una felicitación en tu cumpleaños.'), value: settings.celebrations, onChanged: busy ? null : (v) => change(festive: v)),
+      SwitchListTile(title: const Text('Celebraciones'), subtitle: const Text('Felicitaciones y detalles de tu fecha especial en el panel.'), value: settings.celebrations, onChanged: busy ? null : (v) => change(festive: v)),
+      SwitchListTile(key: const ValueKey('seasonal-effects'), title: const Text('Decoraciones de temporada'), subtitle: const Text('Copos discretos en diciembre y detalles de Año Nuevo. Respeta el movimiento reducido y se pausa cuando no usas la app.'), value: settings.seasonalEffects, onChanged: busy ? null : (v) => change(seasonal: v)),
+      if (settings.seasonalEffects) ListTile(
+        leading: const Icon(Icons.celebration_outlined),
+        title: const Text('Celebración de STILO'),
+        subtitle: Text(settings.anniversaryDate == null ? 'Elige una fecha opcional para decorar tu pantalla.' : '${settings.anniversaryDate!.day}/${settings.anniversaryDate!.month} · solo en este dispositivo'),
+        trailing: settings.anniversaryDate == null ? null : IconButton(tooltip: 'Quitar fecha de celebración', onPressed: busy ? null : () => change(clearAnniversary: true), icon: const Icon(Icons.close_rounded)),
+        onTap: busy ? null : () async {
+          final selected = await showDatePicker(context: context, initialDate: settings.anniversaryDate ?? DateTime.now(), firstDate: DateTime(1900), lastDate: DateTime(2200), helpText: 'Fecha de celebración de STILO');
+          if (selected != null && mounted) await change(anniversary: selected);
+        },
+      ),
       if (busy) const LinearProgressIndicator(), if (error != null) Text(error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
     ]));
   });

@@ -1,3 +1,4 @@
+import 'birthday_privacy_screen.dart';
 import 'package:file_picker/file_picker.dart';
 import '../services/inventory_photo_codec.dart';
 import '../widgets/inline_photo.dart';
@@ -108,35 +109,9 @@ class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
     );
   }
 
-  // 📅 LÓGICA PARA EDITAR CUMPLEAÑOS
+  // Private birthday data is saved by the authenticated server endpoint.
   Future<void> _editarCumpleanos(DateTime? fechaActual) async {
-    DateTime initialDate = fechaActual ?? DateTime(2000);
-
-    final DateTime? fechaSeleccionada = await showDatePicker(
-      context: context,
-      initialDate: initialDate,
-      firstDate: DateTime(1930),
-      lastDate: DateTime.now(),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: Theme.of(context).colorScheme.copyWith(
-              primary: colorMorado,
-              onPrimary: StiloColors.text,
-              surface: colorTarjeta,
-              onSurface: StiloColors.text,
-            ),
-          ),
-          child: child!,
-        );
-      },
-    );
-
-    if (fechaSeleccionada != null && fechaSeleccionada != fechaActual) {
-      await FirebaseFirestore.instance.collection('usuarios').doc(widget.usuario.id).update({
-        'cumpleanos': Timestamp.fromDate(fechaSeleccionada),
-      });
-    }
+    await Navigator.push(context, MaterialPageRoute<void>(builder: (_) => const BirthdayPrivacyScreen()));
   }
 
   // 🔒 LÓGICA PARA CAMBIAR CONTRASEÑA
@@ -231,17 +206,6 @@ class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
 
         String mesRegistro = DateFormat('MMMM yyyy', 'es').format(usuarioActualizado.fechaRegistro);
         String fechaRegistroStr = "${mesRegistro[0].toUpperCase()}${mesRegistro.substring(1)}";
-
-        String cumpleanosStr = usuarioActualizado.cumpleanos != null
-            ? "${usuarioActualizado.cumpleanos!.day.toString().padLeft(2, '0')} de ${DateFormat('MMMM', 'es').format(usuarioActualizado.cumpleanos!)}"
-            : 'Toca para agregar';
-
-        if (usuarioActualizado.cumpleanos != null) {
-          List<String> partes = cumpleanosStr.split(' de ');
-          if (partes.length == 2) {
-             cumpleanosStr = "${partes[0]} de ${partes[1][0].toUpperCase()}${partes[1].substring(1)}";
-          }
-        }
 
         // --- EXTRACCIÓN DEL HORARIO ASIGNADO ---
         String horaEntrada = rawData['horaEntrada'] ?? 'Sin asignar';
@@ -404,8 +368,8 @@ class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
                             ),
                             _buildFilaAjuste(
                               icono: Icons.cake_outlined,
-                              titulo: "Cumpleaños",
-                              valor: cumpleanosStr,
+                              titulo: "Cumpleaños y privacidad",
+                              valor: "Fecha, visibilidad y felicitaciones",
                               mostrarBorde: true,
                               editable: true,
                               onTap: () => _editarCumpleanos(usuarioActualizado.cumpleanos),

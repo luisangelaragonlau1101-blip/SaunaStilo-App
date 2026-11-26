@@ -1,3 +1,5 @@
+import 'finance_workspace_screen.dart' deferred as finance;
+import '../widgets/deferred_workspace.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -21,7 +23,7 @@ class BusinessWorkspaceScreen extends StatelessWidget {
       else ...[const Text('Administración', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800)), const SizedBox(height: 8), const Text('Personas, ventas, abastecimiento y control interno en un solo espacio.')],
       const SizedBox(height: 24),
       _option(context, Icons.badge_outlined, 'Recursos Humanos', 'Expedientes, altas, horarios, nómina e incorporación', () => open(HumanResourcesScreen(user: user)), 1),
-      _option(context, Icons.account_balance_wallet_outlined, 'Control financiero interno', 'Registrar ingresos y egresos; revisar el saldo registrado', () => open(BusinessLedgerScreen(user: user)), 4),
+      _option(context, Icons.account_balance_wallet_outlined, 'Control financiero interno', 'Registrar ingresos y egresos; revisar el saldo registrado', () => open(DeferredWorkspace(load: finance.loadLibrary, title: 'Administración financiera', builder: (_) => finance.FinanceWorkspaceScreen(user: user))), 4),
       for (final id in ['clientes','ventas','cotizaciones','proveedores','bandeja_admin','plan_personal','conocimiento_ia','alerta_general','voz']) ...actions.where((a) => a.id == id).map((a) => _option(context, a.icon, a.title, a.subtitle, () => Navigator.push(context, MaterialPageRoute<void>(builder: a.builder)), 2)),
       const SizedBox(height: 16), const Card(child: Padding(padding: EdgeInsets.all(18), child: Text('Alcance administrativo: estos registros son para el control interno de Sauna Stilo. No están conectados a Siigo Aspel y no emiten CFDI, timbran nómina ni generan contabilidad fiscal.'))),
     ]));

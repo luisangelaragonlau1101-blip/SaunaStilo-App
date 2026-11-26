@@ -4,7 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:http/http.dart' as http;
 
 import 'firestore_daily_tasks_service.dart';
-import 'local_attendance_fallback.dart';
+import 'firebase_attendance_service.dart';
 
 /// Authenticated company-service client.
 ///
@@ -83,32 +83,13 @@ class CompanyLearningService {
       // A write must never silently switch to another database after an error.
       return FirestoreDailyTasksService(firebaseAuth: _auth).run(action, data);
     }
+    if (action.startsWith('attendance-')) {
+      return FirebaseAttendanceService(auth: _auth).call(action, data);
+    }
     final token = await user.getIdToken();
     if (token == null || token.isEmpty) throw StateError('No se pudo validar tu sesión. Inicia sesión nuevamente.');
 
-    if (action.startsWith('attendance-')) {
-      try {
-        return await _callRemote(user, token, action, data);
-      } catch (_) {
-        // Attendance remains usable on the device while the optional service
-        // is paused. Every result is marked pendingSync by the fallback.
-        return LocalAttendanceFallback(firebaseAuth: _auth).run(action, {
-          ...data,
-          if (!data.containsKey('day')) 'day': _todayKey(),
-        });
-      }
-    }
-
     return _callRemote(user, token, action, data);
-  }
-
-  String _todayKey() {
-    // The company payroll day is always the Mexico City day, regardless of
-    // the browser/device timezone.
-    final now = DateTime.now().toUtc().subtract(const Duration(hours: 6));
-    return '${now.year.toString().padLeft(4, '0')}'
-        '${now.month.toString().padLeft(2, '0')}'
-        '${now.day.toString().padLeft(2, '0')}';
   }
 
   Future<Map<String, dynamic>> _callRemote(
@@ -161,6 +142,8 @@ class CompanyLearningService {
   static String message(Object error) {
     if (error is StateError) return error.message.toString();
     if (error is FirebaseException && error.code == 'permission-denied') return 'No tienes permiso para esta acción. Administración debe verificar las reglas publicadas y tu asignación.';
+    if (error is FirebaseException && ['not-found', 'unimplemented'].contains(error.code)) return 'El servicio de jornada está pendiente de activarse en Firebase. Administración debe publicar las funciones antes de registrar movimientos.';
+    if (error is FirebaseException && error.code == 'failed-precondition' && error.message?.isNotEmpty == true) return error.message!;
     return 'No se confirmó la operación. Revisa tu conexión y vuelve a intentar.';
   }
 }
