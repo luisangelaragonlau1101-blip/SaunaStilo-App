@@ -145,7 +145,7 @@ class _QuickTaskActionsState extends State<QuickTaskActions> {
     String comment = '';
     if (!approve) {
       final controller = TextEditingController();
-      final answer = await showDialog<String>(
+      final route = DialogRoute<String>(
         context: context,
         builder: (c) => AlertDialog(
           title: const Text('¿Qué debe corregirse?'),
@@ -174,6 +174,11 @@ class _QuickTaskActionsState extends State<QuickTaskActions> {
           ],
         ),
       );
+      final answer = await Navigator.of(
+        context,
+        rootNavigator: true,
+      ).push(route);
+      await route.completed;
       controller.dispose();
       if (answer == null || !mounted) return;
       comment = answer;

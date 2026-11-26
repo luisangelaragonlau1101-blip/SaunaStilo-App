@@ -8,7 +8,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../models/evidencia_actividad_model.dart';
 import '../models/actividad_model.dart';
 import 'actividades_service.dart';
-import 'notificaciones_service.dart';
 import '../workflow/task_lifecycle.dart';
 
 /// Firestore fallback for the daily-work hub.

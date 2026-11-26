@@ -5,6 +5,7 @@ const {createHash} = require('node:crypto');
 const {requireProfile, active} = require('./enterprise-access');
 const {dateKey, ZONES, ledgerSummary, milliseconds} = require('./attendance-ledger');
 
+const ATTENDANCE_ROLES=['admin','trabajador','maestro','almacenista','finanzas','contabilidad','direccion'];
 function requireState(ok,code,message) { if (!ok) throw new HttpsError(code,message); }
 function id(value) { return typeof value === 'string' && /^[A-Za-z0-9_-]{1,128}$/.test(value); }
 function gpsAllowed(lat,lon) {
@@ -14,7 +15,7 @@ function gpsAllowed(lat,lon) {
 }
 function receipt(uid,day,data={},profile={},extra={}) {
   return {exito:true,pendingSync:false,supportsManual:profile.asistenciaManualPermitida===true,
-    supportsRecording:active(profile) && ['trabajador','maestro','almacenista'].includes(profile.rol),
+    supportsRecording:active(profile) && ATTENDANCE_ROLES.includes(profile.rol),
     requiresLocation:profile.asistenciaManualPermitida!==true,
     supportsPauses:true,asistenciaId:`${uid}_${day}`,day,data:wireDates(data),receiptRevision:String(data.revision || 0),...extra};
 }
@@ -56,7 +57,7 @@ async function runEnterpriseAttendance({db,uid,data={},now=new Date()}) {
   }
   requireState(['record','pause','approve'].includes(action),'invalid-argument','Movimiento no reconocido.');
   if (action!=='approve') {
-    requireState(target===uid && ['trabajador','maestro','almacenista'].includes(profile.rol),'permission-denied','Esta cuenta solo supervisa la jornada.');
+    requireState(target===uid && ATTENDANCE_ROLES.includes(profile.rol),'permission-denied','Esta cuenta solo supervisa la jornada.');
     requireState(day===currentDay,'failed-precondition','Los registros personales corresponden al día actual.');
   } else requireState(profile.rol==='admin','permission-denied','Solo Administración autoriza la comida.');
   if (data.requestId!=null) requireState(id(data.requestId),'invalid-argument','Identificador de movimiento inválido.');
@@ -72,7 +73,7 @@ async function runEnterpriseAttendance({db,uid,data={},now=new Date()}) {
     const actor=actorDoc.data(),old=record.data() || {};
     requireState(active(actor),'permission-denied','Tu cuenta no está activa.');
     if (action==='approve') requireState(actor.rol==='admin','permission-denied','Tu autorización cambió.');
-    else requireState(['trabajador','maestro','almacenista'].includes(actor.rol),'permission-denied','Tu cuenta no registra asistencia.');
+    else requireState(ATTENDANCE_ROLES.includes(actor.rol),'permission-denied','Tu cuenta no registra asistencia.');
     requireState(!record.exists || old.trabajadorId===target,'failed-precondition','El registro requiere revisión de Administración.');
     if (operation.exists) {
       requireState(operation.data().hash===hash,'already-exists','El identificador ya pertenece a otro movimiento.');

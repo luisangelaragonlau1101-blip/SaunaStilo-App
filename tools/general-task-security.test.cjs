@@ -73,3 +73,17 @@ test('required evidence cannot be replaced by a forged counter or a missing file
  await assertFails(updateDoc(ref,{estatus:'en_revision',completadoEn:serverTimestamp(),cantidadEvidencias:1,evidenciasCount:1}));
  await assertFails(updateDoc(ref,{estatus:'en_revision',completadoEn:serverTimestamp(),evidenciaEntregaId:'does-not-exist'}));
 });
+
+
+test('a shared activity has one delivery: secondary assignees can work but cannot change membership or approve',async()=>{
+ const admin=env.authenticatedContext('admin').firestore();
+ await assertSucceeds(setDoc(doc(admin,'actividades','shared'),{...data(),asignadosIds:['worker','other'],requiereEvidencia:false}));
+ const secondary=doc(env.authenticatedContext('other').firestore(),'actividades','shared');
+ await assertSucceeds(getDoc(secondary));
+ await assertSucceeds(updateDoc(secondary,{estatus:'en_progreso'}));
+ await assertFails(updateDoc(secondary,{asignadosIds:['other']}));
+ await assertFails(updateDoc(secondary,{estatus:'completado',aprobadoEn:serverTimestamp()}));
+ await assertSucceeds(updateDoc(secondary,{estatus:'en_revision',completadoEn:serverTimestamp()}));
+ await assertFails(updateDoc(doc(env.authenticatedContext('worker').firestore(),'actividades','shared'),{estatus:'en_progreso'}));
+ await assertSucceeds(updateDoc(doc(admin,'actividades','shared'),{estatus:'completado',aprobadoEn:serverTimestamp()}));
+});

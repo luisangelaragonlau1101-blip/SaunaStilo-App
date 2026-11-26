@@ -1,3 +1,5 @@
+import 'package:firebase_auth/firebase_auth.dart';
+import 'native_attendance_watch.dart';
 import 'dart:async';
 import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -8,20 +10,31 @@ import 'company_learning_service.dart';
 /// backend. Administrative synchronization uses the administrator's own session.
 class AttendanceGatewayService {
   final CompanyLearningService api;
+  final bool _native;
   AttendanceGatewayService({CompanyLearningService? api})
-      : api = api ?? CompanyLearningService();
+    : _native = api == null,
+      api = api ?? CompanyLearningService();
 
   static final _changes = StreamController<void>.broadcast();
   static String dayKey(DateTime date) =>
       '${date.year.toString().padLeft(4, '0')}${date.month.toString().padLeft(2, '0')}${date.day.toString().padLeft(2, '0')}';
-  static DateTime get today => DateTime.now().toUtc().subtract(const Duration(hours: 6));
+  static DateTime get today =>
+      DateTime.now().toUtc().subtract(const Duration(hours: 6));
   static Map<String, dynamic> decodeDay(Map<String, dynamic> result) {
     final data = Map<String, dynamic>.from(result['data'] as Map? ?? {});
-    for (final field in ['fecha', 'horaEntrada', 'horaSalida', 'salidaComidaSolicitada', 'salidaComidaReal', 'regresoComidaReal']) {
+    for (final field in [
+      'fecha',
+      'horaEntrada',
+      'horaSalida',
+      'salidaComidaSolicitada',
+      'salidaComidaReal',
+      'regresoComidaReal',
+    ]) {
       final value = data[field];
       if (value is String) {
         final date = DateTime.tryParse(value);
-        if (date == null) throw StateError('El servidor devolvió una hora inválida.');
+        if (date == null)
+          throw StateError('El servidor devolvió una hora inválida.');
         data[field] = Timestamp.fromDate(date);
       }
     }
@@ -29,7 +42,12 @@ class AttendanceGatewayService {
   }
 
   Future<Map<String, dynamic>> loadDay(String userId, {String? day}) async =>
-      decodeDay(await api.call('attendance-state', {'userId': userId, if (day != null) 'day': day}));
+      decodeDay(
+        await api.call('attendance-state', {
+          'userId': userId,
+          if (day != null) 'day': day,
+        }),
+      );
 
   Stream<T> _watch<T>(Future<T> Function() load) {
     late StreamController<T> controller;
@@ -40,105 +58,195 @@ class AttendanceGatewayService {
     var cancelled = false;
     Future<void> refresh() async {
       if (cancelled || controller.isClosed) return;
-      if (busy) { reload = true; return; }
+      if (busy) {
+        reload = true;
+        return;
+      }
       busy = true;
       try {
         final value = await load();
         if (!cancelled && !controller.isClosed) controller.add(value);
       } catch (error, stack) {
-        if (!cancelled && !controller.isClosed) controller.addError(error, stack);
+        if (!cancelled && !controller.isClosed)
+          controller.addError(error, stack);
       } finally {
         busy = false;
-        if (reload && !cancelled && !controller.isClosed) { reload = false; unawaited(refresh()); }
+        if (reload && !cancelled && !controller.isClosed) {
+          reload = false;
+          unawaited(refresh());
+        }
       }
     }
-    controller = StreamController<T>(onListen: () {
-      unawaited(refresh());
-      timer = Timer.periodic(const Duration(seconds: 45), (_) => unawaited(refresh()));
-      changes = _changes.stream.listen((_) => unawaited(refresh()));
-    }, onCancel: () { cancelled = true; timer?.cancel(); changes?.cancel(); });
+
+    controller = StreamController<T>(
+      onListen: () {
+        unawaited(refresh());
+        timer = Timer.periodic(
+          const Duration(seconds: 45),
+          (_) => unawaited(refresh()),
+        );
+        changes = _changes.stream.listen((_) => unawaited(refresh()));
+      },
+      onCancel: () {
+        cancelled = true;
+        timer?.cancel();
+        changes?.cancel();
+      },
+    );
     return controller.stream;
   }
 
   Stream<Map<String, dynamic>> watchDay(String userId, {String? day}) =>
-      _watch(() => loadDay(userId, day: day));
+      _native && FirebaseAuth.instance.currentUser?.uid == userId
+      ? watchNativeAttendance(userId, day: day, refreshes: _changes.stream)
+      : _watch(() => loadDay(userId, day: day));
 
   static void refresh() => _changes.add(null);
 
-  Future<Map<String, dynamic>> record(String movement, {double? latitude, double? longitude, bool manual = false}) async {
-    final result = decodeDay(await api.call('attendance-record', {
-      'movement': movement,
-      if (manual) 'manual': true,
-      if (latitude != null) 'latitud': latitude,
-      if (longitude != null) 'longitud': longitude,
-    }));
-    if (result['exito'] != true) throw StateError('El servidor no confirmó el registro. Actualiza tu jornada antes de reintentar.');
+  Future<Map<String, dynamic>> record(
+    String movement, {
+    double? latitude,
+    double? longitude,
+    bool manual = false,
+  }) async {
+    final result = decodeDay(
+      await api.call('attendance-record', {
+        'movement': movement,
+        if (manual) 'manual': true,
+        if (latitude != null) 'latitud': latitude,
+        if (longitude != null) 'longitud': longitude,
+      }),
+    );
+    if (result['exito'] != true)
+      throw StateError(
+        'El servidor no confirmó el registro. Actualiza tu jornada antes de reintentar.',
+      );
     refresh();
     return result;
   }
 
   static String newRequestId() {
     final random = Random.secure();
-    return List.generate(4, (_) => random.nextInt(0x100000000).toRadixString(16).padLeft(8, '0')).join();
+    return List.generate(
+      4,
+      (_) => random.nextInt(0x100000000).toRadixString(16).padLeft(8, '0'),
+    ).join();
   }
 
-  Future<Map<String, dynamic>> recordPause({required String direction, required String requestId, String? kind, String? detail, String? pauseId}) async {
-    final result = decodeDay(await api.call('attendance-pause', {
-      'direction': direction, 'requestId': requestId,
-      if (kind != null) 'kind': kind,
-      if (detail != null) 'detail': detail,
-      if (pauseId != null) 'pauseId': pauseId,
-    }));
-    if (result['exito'] != true) throw StateError('No se confirmó la pausa. Actualiza para comprobar su estado.');
+  Future<Map<String, dynamic>> recordPause({
+    required String direction,
+    required String requestId,
+    String? kind,
+    String? detail,
+    String? pauseId,
+  }) async {
+    final result = decodeDay(
+      await api.call('attendance-pause', {
+        'direction': direction,
+        'requestId': requestId,
+        if (kind != null) 'kind': kind,
+        if (detail != null) 'detail': detail,
+        if (pauseId != null) 'pauseId': pauseId,
+      }),
+    );
+    if (result['exito'] != true)
+      throw StateError(
+        'No se confirmó la pausa. Actualiza para comprobar su estado.',
+      );
     refresh();
     return result;
   }
 
-  Future<List<Map<String, dynamic>>> receiptHistory(String userId, DateTime start, DateTime end) async {
+  Future<List<Map<String, dynamic>>> receiptHistory(
+    String userId,
+    DateTime start,
+    DateTime end,
+  ) async {
     final days = <String>[];
     final lastDay = dayKey(today);
-    for (var day = DateTime(start.year, start.month, start.day);
-        !day.isAfter(end) && days.length < 7; day = day.add(const Duration(days: 1))) {
+    for (
+      var day = DateTime(start.year, start.month, start.day);
+      !day.isAfter(end) && days.length < 7;
+      day = day.add(const Duration(days: 1))
+    ) {
       if (dayKey(day).compareTo(lastDay) <= 0) days.add(dayKey(day));
     }
     if (days.isEmpty) return [];
-    final response = await api.call('attendance-history', {'userId': userId, 'days': days});
-    return (response['items'] as List).map((item) => decodeDay(Map<String, dynamic>.from(item as Map))).toList();
+    final response = await api.call('attendance-history', {
+      'userId': userId,
+      'days': days,
+    });
+    return (response['items'] as List)
+        .map((item) => decodeDay(Map<String, dynamic>.from(item as Map)))
+        .toList();
   }
 
-  Future<List<AsistenciaModel>> history(String userId, DateTime start, DateTime end) async =>
-      (await receiptHistory(userId, start, end)).where((item) => (item['data'] as Map).isNotEmpty)
-          .map((item) => AsistenciaModel.fromData(item['asistenciaId'] as String, item['data'] as Map<String, dynamic>)).toList();
+  Future<List<AsistenciaModel>> history(
+    String userId,
+    DateTime start,
+    DateTime end,
+  ) async => (await receiptHistory(userId, start, end))
+      .where((item) => (item['data'] as Map).isNotEmpty)
+      .map(
+        (item) => AsistenciaModel.fromData(
+          item['asistenciaId'] as String,
+          item['data'] as Map<String, dynamic>,
+        ),
+      )
+      .toList();
 
-  Stream<List<Map<String, dynamic>>> watchRecentReceipts(String userId) => _watch(() {
-    final now = today;
-    return receiptHistory(userId, now.subtract(const Duration(days: 6)), now);
-  });
+  Stream<List<Map<String, dynamic>>> watchRecentReceipts(String userId) =>
+      _watch(() {
+        final now = today;
+        return receiptHistory(
+          userId,
+          now.subtract(const Duration(days: 6)),
+          now,
+        );
+      });
 
-  Stream<List<AsistenciaModel>> watchHistory(String userId, DateTime start, DateTime end) =>
-      _watch(() => history(userId, start, end));
+  Stream<List<AsistenciaModel>> watchHistory(
+    String userId,
+    DateTime start,
+    DateTime end,
+  ) => _watch(() => history(userId, start, end));
 
   Future<void> syncDay(String day) async {
     String? cursor;
     final seen = <String>{};
     do {
-      final response = await api.call('attendance-sync-page', {'day': day, if (cursor != null) 'cursor': cursor});
+      final response = await api.call('attendance-sync-page', {
+        'day': day,
+        if (cursor != null) 'cursor': cursor,
+      });
       cursor = response['nextToken'] as String?;
-      if (cursor != null && !seen.add(cursor)) throw StateError('No terminó la actualización de las jornadas. Vuelve a intentar.');
+      if (cursor != null && !seen.add(cursor))
+        throw StateError(
+          'No terminó la actualización de las jornadas. Vuelve a intentar.',
+        );
     } while (cursor != null);
     refresh();
   }
 
   Future<void> syncPeriod(DateTime start, DateTime end) async {
-    if (end.difference(start).inDays > 31) throw StateError('Actualiza como máximo un mes a la vez.');
-    for (var day = DateTime(start.year, start.month, start.day); !day.isAfter(end); day = day.add(const Duration(days: 1))) {
+    if (end.difference(start).inDays > 31)
+      throw StateError('Actualiza como máximo un mes a la vez.');
+    for (
+      var day = DateTime(start.year, start.month, start.day);
+      !day.isAfter(end);
+      day = day.add(const Duration(days: 1))
+    ) {
       if (dayKey(day).compareTo(dayKey(today)) <= 0) await syncDay(dayKey(day));
     }
   }
 
   Future<void> approveMeal(String userId, String day) async {
-    final result = await api.call('attendance-approve', {'userId': userId, 'day': day});
-    if (result['exito'] != true) throw StateError('No se confirmó la autorización de comida.');
+    final result = await api.call('attendance-approve', {
+      'userId': userId,
+      'day': day,
+    });
+    if (result['exito'] != true)
+      throw StateError('No se confirmó la autorización de comida.');
     refresh();
   }
 }

@@ -271,7 +271,7 @@ class _OperationsHomeState extends State<_OperationsHome> {
         ],
       ),
       enterprise: EnterprisePendingSummary(user: widget.usuario),
-      journey: JornadaCompacta(usuario: widget.usuario),
+      journey: JornadaCompacta(usuario: widget.usuario, compactHome: true),
       activities: TodayTasksCard(user: widget.usuario),
       installations: InstallationHomeCard(user: widget.usuario),
       weekly: EmployeeWeeklyProgress(user: widget.usuario),

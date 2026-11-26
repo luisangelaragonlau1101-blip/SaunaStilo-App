@@ -1,12 +1,131 @@
 {
   "indexes": [
-    {"collectionGroup":"actividades","queryScope":"COLLECTION","fields":[{"fieldPath":"asignadoATrabajadorId","order":"ASCENDING"},{"fieldPath":"fechaAsignada","order":"DESCENDING"}]},
-    {"collectionGroup":"actividades","queryScope":"COLLECTION","fields":[{"fieldPath":"asignadoATrabajadorId","order":"ASCENDING"},{"fieldPath":"aprobadoEn","order":"DESCENDING"}]},
-    {"collectionGroup":"actividades","queryScope":"COLLECTION","fields":[{"fieldPath":"asignadosIds","arrayConfig":"CONTAINS"},{"fieldPath":"fechaAsignada","order":"DESCENDING"}]},
-    {"collectionGroup":"actividades","queryScope":"COLLECTION","fields":[{"fieldPath":"asignadosIds","arrayConfig":"CONTAINS"},{"fieldPath":"aprobadoEn","order":"DESCENDING"}]},
-    {"collectionGroup":"instalacion_ordenes","queryScope":"COLLECTION","fields":[{"fieldPath":"participantes","arrayConfig":"CONTAINS"},{"fieldPath":"estado","order":"ASCENDING"}]},
-    {"collectionGroup":"cumpleanos_equipo","queryScope":"COLLECTION","fields":[{"fieldPath":"month","order":"ASCENDING"},{"fieldPath":"day","order":"ASCENDING"}]},
-    {"collectionGroup":"asistencias","queryScope":"COLLECTION","fields":[{"fieldPath":"trabajadorId","order":"ASCENDING"},{"fieldPath":"fecha","order":"DESCENDING"}]}
+    {
+      "collectionGroup": "actividades",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "asignadoATrabajadorId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "fechaAsignada",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "actividades",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "asignadoATrabajadorId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "aprobadoEn",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "actividades",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "asignadosIds",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "fechaAsignada",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "actividades",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "asignadosIds",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "aprobadoEn",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "instalacion_ordenes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "participantes",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "estado",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "cumpleanos_equipo",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "month",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "day",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "asistencias",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "trabajadorId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "fecha",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "actividades",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "asignadoATrabajadorId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "fechaInicio",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "actividades",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "asignadosIds",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "fechaInicio",
+          "order": "DESCENDING"
+        }
+      ]
+    }
   ],
   "fieldOverrides": []
 }

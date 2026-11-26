@@ -37,6 +37,16 @@ class EmployeeProductivityService {
                   ? tasks.where('asignadosIds', arrayContains: uid)
                   : tasks.where('asignadoATrabajadorId', isEqualTo: uid))
               .where(
+                'fechaInicio',
+                isGreaterThanOrEqualTo: atCompanyMidnight(since),
+              )
+              .orderBy('fechaInicio', descending: true),
+        ),
+        _read(
+          (shared
+                  ? tasks.where('asignadosIds', arrayContains: uid)
+                  : tasks.where('asignadoATrabajadorId', isEqualTo: uid))
+              .where(
                 'fechaAsignada',
                 isGreaterThanOrEqualTo: atCompanyMidnight(since),
               )

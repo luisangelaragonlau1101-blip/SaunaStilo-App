@@ -59,7 +59,7 @@ class FirebaseAttendanceService {
 
   FirebaseAuth get _auth => _authOverride ?? FirebaseAuth.instance;
   FirebaseFirestore get _db => _firestoreOverride ?? FirebaseFirestore.instance;
-  String? get _uid => _currentUidOverride != null ? _currentUidOverride!() : _auth.currentUser?.uid;
+  String? get _uid => _currentUidOverride != null ? _currentUidOverride() : _auth.currentUser?.uid;
 
   static Future<Map<String, double>> deviceLocation() async {
     if (!await Geolocator.isLocationServiceEnabled()) {
@@ -88,7 +88,7 @@ class FirebaseAttendanceService {
     final payload = <String, dynamic>{...request, 'action': action};
     if (action == 'attendance-record' || action == 'attendance-pause') {
       final profile = _readProfileOverride != null
-          ? await _readProfileOverride!(uid)
+          ? await _readProfileOverride(uid)
           : (await _db.collection('usuarios').doc(uid).get()).data();
       if (_uid != uid) throw StateError('La sesión cambió. Abre de nuevo Mi jornada.');
       if (profile == null || profile['activo'] == false) {
@@ -106,7 +106,7 @@ class FirebaseAttendanceService {
     }
     final Object? data;
     if (_invokeOverride != null) {
-      data = await _invokeOverride!(payload);
+      data = await _invokeOverride(payload);
     } else {
       final response = await (_functionsOverride ?? FirebaseFunctions.instance)
           .httpsCallable('enterpriseAttendance', options: HttpsCallableOptions(timeout: const Duration(seconds: 35)))

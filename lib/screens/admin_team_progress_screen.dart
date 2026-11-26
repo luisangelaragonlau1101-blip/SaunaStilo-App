@@ -149,14 +149,17 @@ class _TeamProgressState extends State<AdminTeamProgressScreen>
           for (final person in rows('people')) person['id']: person,
         };
         for (final task in _items) {
-          final id = task['userId'];
-          if (id != null && id != '' && !people.containsKey(id)) {
-            people[id] = {
-              'id': id,
-              'name': task['userName'] ?? 'Integrante',
-              'role': 'Perfil no disponible',
-              'department': '',
-            };
+          for (final id in _responsible(task)) {
+            if (id.isNotEmpty && !people.containsKey(id)) {
+              people[id] = {
+                'id': id,
+                'name': id == task['userId']
+                    ? task['userName'] ?? 'Integrante'
+                    : 'Integrante anterior',
+                'role': 'Perfil no disponible',
+                'department': '',
+              };
+            }
           }
         }
         _people = people.values.toList()
